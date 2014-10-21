@@ -1,7 +1,16 @@
 language: java
 
+jdk:
+  - oraclejdk8
+  - oraclejdk7
+  - openjdk7
+  - openjdk6
+
+
 env:
   - TARGET=clean-build
   - TARGET=buildJar
+	TARGET=test
+
 
 script: ant -buildfile ./Compiler/build/build.xml $TARGET

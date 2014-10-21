@@ -2,38 +2,67 @@
 	<description>
 		simple example build file
 	</description>
-	
+
 	<!-- set global properties for this build -->
 	<property name="src" location="src" />
+	<property name="tests" location="tests" />
 	<property name="bin" location="bin" />
 	<property name="target" location="target" />
-	
+	<property name="reports.tests" location="testreports" />
+
 	<target name="build" description="compile the source ">
 		<!-- Compile the java code from ${src} into ${bin} -->
 		<mkdir dir="${bin}" />
 		<javac srcdir="${src}" destdir="${bin}" />
 	</target>
 
-	
+
 	<target name="clean" description="clean up">
 		<delete dir="${bin}" />
 		<delete dir="${target}" />
+		<delete dir="${reports.tests}" />
 	</target>
-	
-	
-	<target name="buildJar">
+
+
+	<target name="buildJar" depends="clean-build">
 		<mkdir dir="${target}" />
-		<jar
-			destfile="${target}]/${ant.project.name}.jar"
+		<jar destfile="${target}]/${ant.project.name}.jar"
 			filesetmanifest="mergewithoutmain">
 			<manifest>
 				<attribute name="Main-Class" value="compiler.main.CompilerApp" />
 				<attribute name="Class-Path" value="." />
 			</manifest>
-			<fileset dir="${bin}"/>
+			<fileset dir="${bin}" />
 		</jar>
 	</target>
-	
-	
-	<target name="clean-build" description="clean and build" depends="clean,build" />
+
+
+	<target name="clean-build" description="clean and build"
+		depends="clean,build" />
+
+
+	<target name="buildTests" description="compile the test sources"
+		depends="build">
+		<javac srcdir="${tests}" destdir="${bin}" />
+	</target>
+
+
+	<target name="test" depends="buildTests">
+		<mkdir dir="${reports.tests}" />
+
+		<junit printsummary="on" fork="true" haltonfailure="yes">
+			<classpath>
+				<pathelement path="${bin}" />
+			</classpath>
+
+			<formatter type="plain" />
+			<formatter type="xml" />
+
+			<batchtest todir="${reports.tests}">
+				<fileset dir="${tests}">
+					<include name="**/*Test*.java" />
+				</fileset>
+			</batchtest>
+		</junit>
+	</target>
 </project>
