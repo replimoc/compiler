@@ -21,7 +21,7 @@
 	</target>
 	
 	
-	<target name="createJar">
+	<target name="buildJar">
 		<mkdir dir="${target}" />
 		<jar
 			destfile="${target}]/${ant.project.name}.jar"
