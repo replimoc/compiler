@@ -10,7 +10,7 @@ jdk:
 env:
   - TARGET=clean-build
   - TARGET=buildJar
-	TARGET=test
+  - TARGET=test
 
 
 script: ant -buildfile ./Compiler/build/build.xml $TARGET
