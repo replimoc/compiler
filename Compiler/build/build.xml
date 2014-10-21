@@ -8,19 +8,33 @@
 	<property name="tests" location="tests" />
 	<property name="bin" location="bin" />
 	<property name="target" location="target" />
-	<property name="reports.tests" location="testreports" />
+
+
+	<path id="classpath.base" />
+
+
+	<path id="classpath.test">
+		<pathelement location="lib/junit-4.11.jar" />
+		<pathelement location="lib/hamcrest-core-1.3.jar" />
+		<pathelement location="${bin}" />
+		<path refid="classpath.base" />
+	</path>
+
+
 
 	<target name="build" description="compile the source ">
 		<!-- Compile the java code from ${src} into ${bin} -->
 		<mkdir dir="${bin}" />
-		<javac srcdir="${src}" destdir="${bin}" />
+		<javac srcdir="${src}" destdir="${bin}" includeantruntime="false">
+			<classpath refid="classpath.base" />
+		</javac>
+		<echo message="Build done" />
 	</target>
 
 
 	<target name="clean" description="clean up">
 		<delete dir="${bin}" />
 		<delete dir="${target}" />
-		<delete dir="${reports.tests}" />
 	</target>
 
 
@@ -41,27 +55,25 @@
 		depends="clean,build" />
 
 
-	<target name="buildTests" description="compile the test sources"
+	<target name="buildTests" description="compile test sources"
 		depends="build">
-		<javac srcdir="${tests}" destdir="${bin}" />
+		<javac srcdir="${tests}" destdir="${bin}" includeantruntime="false">
+			<classpath refid="classpath.test" />
+		</javac>
+		<echo message="Build of tests done" />
 	</target>
 
 
 	<target name="test" depends="buildTests">
-		<mkdir dir="${reports.tests}" />
-
 		<junit printsummary="on" fork="true" haltonfailure="yes">
 			<classpath>
-				<pathelement path="${bin}" />
+				<path refid="classpath.test" />
 			</classpath>
 
-			<formatter type="plain" />
-			<formatter type="xml" />
+			<formatter type="brief" usefile="false" />
 
-			<batchtest todir="${reports.tests}">
-				<fileset dir="${tests}">
-					<include name="**/*Test*.java" />
-				</fileset>
+			<batchtest>
+				<fileset dir="${tests}" includes="**/*Test*.java" />
 			</batchtest>
 		</junit>
 	</target>

@@ -8,7 +8,6 @@ jdk:
 
 
 env:
-  - TARGET=clean-build
   - TARGET=buildJar
   - TARGET=test
 
