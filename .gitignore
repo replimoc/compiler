@@ -1,3 +1,5 @@
 /.metadata
 bin
 /Compiler/.settings
+/Compiler/build/*.jar
+/.recommenders
