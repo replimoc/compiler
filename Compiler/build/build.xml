@@ -1,0 +1,39 @@
+<project name="Compiler" default="clean-build" basedir="../">
+	<description>
+		simple example build file
+	</description>
+	
+	<!-- set global properties for this build -->
+	<property name="src" location="src" />
+	<property name="bin" location="bin" />
+	<property name="target" location="target" />
+	
+	<target name="build" description="compile the source ">
+		<!-- Compile the java code from ${src} into ${bin} -->
+		<mkdir dir="${bin}" />
+		<javac srcdir="${src}" destdir="${bin}" />
+	</target>
+
+	
+	<target name="clean" description="clean up">
+		<delete dir="${bin}" />
+		<delete dir="${target}" />
+	</target>
+	
+	
+	<target name="createJar">
+		<mkdir dir="${target}" />
+		<jar
+			destfile="${target}]/${ant.project.name}.jar"
+			filesetmanifest="mergewithoutmain">
+			<manifest>
+				<attribute name="Main-Class" value="compiler.main.CompilerApp" />
+				<attribute name="Class-Path" value="." />
+			</manifest>
+			<fileset dir="${bin}"/>
+		</jar>
+	</target>
+	
+	
+	<target name="clean-build" description="clean and build" depends="clean,build" />
+</project>
