@@ -5,3 +5,4 @@ bin
 /.recommenders
 /doc/*.bak
 /doc/*.mdr
+/Compiler/target

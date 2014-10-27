@@ -42,7 +42,7 @@
 
 	<target name="buildJar" depends="clean-build">
 		<mkdir dir="${target}" />
-		<jar destfile="${target}]/${ant.project.name}.jar"
+		<jar destfile="${target}/${ant.project.name}.jar"
 			filesetmanifest="mergewithoutmain">
 			<manifest>
 				<attribute name="Main-Class" value="compiler.main.CompilerApp" />
