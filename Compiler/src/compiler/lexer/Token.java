@@ -28,4 +28,20 @@ public class Token {
 	public Position getPosition() {
 		return position;
 	}
+
+	public String getTokenString() {
+		switch (type) {
+		case IDENTIFIER:
+		case INTEGER:
+		case ERROR:
+			return type.getString() + " " + value;
+		default:
+			return type.getString();
+		}
+	}
+
+	@Override
+	public String toString() {
+		return position + ": " + getTokenString();
+	}
 }
