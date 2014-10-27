@@ -3,3 +3,5 @@ bin
 /Compiler/.settings
 /Compiler/build/*.jar
 /.recommenders
+/doc/*.bak
+/doc/*.mdr
