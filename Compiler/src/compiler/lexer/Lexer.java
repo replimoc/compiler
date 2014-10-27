@@ -115,6 +115,7 @@ public class Lexer {
 				lexComment();
 				t = getNextToken();
 			} else if (c == '=') { // /=
+				nextChar();
 				// TODO
 			} else { // /
 				// TODO
@@ -123,8 +124,8 @@ public class Lexer {
 		case '!':
 			nextChar();
 			if (c == '=') { // !=
-				// TODO
 				nextChar();
+				// TODO
 			} else { // !
 				// TODO
 			}
