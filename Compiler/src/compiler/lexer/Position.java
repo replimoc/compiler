@@ -16,4 +16,9 @@ public class Position {
 	public int getCharacter() {
 		return character;
 	}
+
+	@Override
+	public String toString() {
+		return String.format("line %3d, character %2d", line, character);
+	}
 }
