@@ -91,7 +91,6 @@ digraph G {
 	"-" -> "-=" [label="'='"];
 	main -> "." [label="'.'"];
 	main -> "," [label="','"];
-	main -> "/" [label="'/'"];
 	"/" -> "/=" [label="'='"];
 	main -> ":" [label="':'"];
 	main -> ";" [label="';'"];
