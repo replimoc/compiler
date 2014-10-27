@@ -1,4 +1,4 @@
-<project name="Compiler" default="clean-build" basedir="../">
+<project name="Compiler" default="all" basedir="../">
 	<description>
 		simple example build file
 	</description>
@@ -10,7 +10,9 @@
 	<property name="target" location="target" />
 
 
-	<path id="classpath.base" />
+	<path id="classpath.base">
+		<pathelement location="lib/commons-cli-1.2.jar" />
+	</path>
 
 
 	<path id="classpath.test">
@@ -53,6 +55,9 @@
 
 	<target name="clean-build" description="clean and build"
 		depends="clean,build" />
+
+
+	<target name="all" description="clean and build" depends="clean-build,test,buildJar" />
 
 
 	<target name="buildTests" description="compile test sources"
