@@ -3,6 +3,7 @@ digraph G {
 	IDENT;
 	NUM;
 	NUM0;
+	EOF;
 	"!";
 	"!=";
 	"%";
@@ -57,6 +58,7 @@ digraph G {
 	main -> main [label="'\\n'"];
 	main -> main [label="'\\r'"];
 
+	main -> EOF [label="EOF"];
 	main -> "/" [label="'/'"];
 	"/" -> "/*" [label="'*'"];
 	"/*" -> "/*" [label="Z\\{*}"];
