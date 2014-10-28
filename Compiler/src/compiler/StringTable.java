@@ -11,14 +11,14 @@ import java.util.HashMap;
  */
 public class StringTable {
 
-	private HashMap<String, Symbol> entries;
+	private HashMap<String, Symbol> entries = new HashMap<String, Symbol>();
 	
 	/**
 	 * Returns corresponding symbol for given string.
 	 * @param string String to store.
 	 * @return Symbol representing given string.
 	 */
-	public Symbol get(String string) {
+	public Symbol insert(String string) {
 		Symbol symbol = entries.get(string);
 		if (symbol == null) {
 			symbol = new Symbol(string);
