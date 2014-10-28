@@ -31,11 +31,12 @@ public class CompilerApp {
 			if (cmd.hasOption("help"))
 			{
 				printHelp(options);
-				return;
+				System.exit(0);
 			}
 
 			if (cmd.hasOption(LEXTEST)) {
 				executeLexerTest(cmd.getOptionValue(LEXTEST));
+				System.exit(0);
 			}
 		} catch (ParseException e) {
 			System.err.println("Wrong Command Line Parameters: " + e.getMessage());
@@ -51,7 +52,7 @@ public class CompilerApp {
 		do {
 			token = lexer.getNextToken();
 			System.out.println(token);
-		} while (token.getType() != TokenType.EOF);
+		} while (token != null && token.getType() != TokenType.EOF);
 	}
 
 	private static void printHelp(Options options) {

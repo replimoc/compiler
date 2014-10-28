@@ -11,9 +11,8 @@ public class CompilerAppTest {
 		CompilerApp.main(new String[] { "--help" });
 	}
 
-	// TODO uncomment, when lexer is not crashing any more
-	// @Test
-	// public void testLextest() throws IOException {
-	// CompilerApp.main(new String[] { "--lextest", "./testdata/EmptyMain.java" });
-	// }
+	@Test
+	public void testLextest() throws IOException {
+		CompilerApp.main(new String[] { "--lextest", "./testdata/EmptyMain.java" });
+	}
 }
