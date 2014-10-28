@@ -1,9 +1,13 @@
 <project name="Compiler" default="all" basedir="../">
-	<description>
-		simple example build file
+
+    <description>
+		ant file for project
 	</description>
 
-	<!-- set global properties for this build -->
+    <!-- default target -->
+    <target name="all" description="compile sources and create jar file" depends="build,buildJar" />
+
+    <!-- set global properties for this build -->
 	<property name="src" location="src" />
 	<property name="tests" location="tests" />
 	<property name="bin" location="bin" />
@@ -23,7 +27,6 @@
 	</path>
 
 
-
 	<target name="build" description="compile the source ">
 		<!-- Compile the java code from ${src} into ${bin} -->
 		<mkdir dir="${bin}" />
@@ -33,32 +36,22 @@
 		<echo message="Build done" />
 	</target>
 
+    <target name="clean" description="clean up">
+        <delete dir="${bin}" />
+        <delete dir="${target}" />
+    </target>
 
-	<target name="clean" description="clean up">
-		<delete dir="${bin}" />
-		<delete dir="${target}" />
-	</target>
-
-
-	<target name="buildJar" depends="clean-build">
+	<target name="buildJar" depends="build">
 		<mkdir dir="${target}" />
 		<jar destfile="${target}/${ant.project.name}.jar"
 			filesetmanifest="mergewithoutmain">
 			<manifest>
 				<attribute name="Main-Class" value="compiler.main.CompilerApp" />
-				<attribute name="Class-Path" value="." />
+				<attribute name="Class-Path" value="./lib/commons-cli-1.2.jar" />
 			</manifest>
 			<fileset dir="${bin}" />
 		</jar>
 	</target>
-
-
-	<target name="clean-build" description="clean and build"
-		depends="clean,build" />
-
-
-	<target name="all" description="clean and build" depends="clean-build,test,buildJar" />
-
 
 	<target name="buildTests" description="compile test sources"
 		depends="build">
@@ -67,7 +60,6 @@
 		</javac>
 		<echo message="Build of tests done" />
 	</target>
-
 
 	<target name="test" depends="buildTests">
 		<junit printsummary="on" fork="true" haltonfailure="yes">
