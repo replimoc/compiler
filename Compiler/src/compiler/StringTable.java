@@ -2,6 +2,8 @@ package compiler;
 
 import java.util.HashMap;
 
+import compiler.lexer.TokenType;
+
 /**
  * Implementation of StringTable: Data Structure storing identifiers for efficient lookup.
  * The stored object is called Symbol.
@@ -10,20 +12,41 @@ import java.util.HashMap;
  *
  */
 public class StringTable {
+	
+	public class Entry {
+		private final Symbol symbol;
+		private final TokenType type;
+		
+		public Entry(String string, TokenType type) {
+			this.symbol = new Symbol(string);
+			this.type = type;
+		}
 
-	private HashMap<String, Symbol> entries;
+		public Symbol getSymbol() {
+			return symbol;
+		}
+
+		public TokenType getType() {
+			return type;
+		}
+
+	}
+
+	private HashMap<String, Entry> entries;
 	
 	/**
 	 * Returns corresponding symbol for given string.
 	 * @param string String to store.
 	 * @return Symbol representing given string.
 	 */
-	public Symbol get(String string) {
-		Symbol symbol = entries.get(string);
-		if (symbol == null) {
-			symbol = new Symbol(string);
-			entries.put(string, symbol);
+	public Entry insert(String string, TokenType type) {
+		Entry entry = entries.get(string);
+		if (entry == null) {
+			entry = new Entry(string, type);
+			entries.put(string, entry);
 		}
-		return symbol;
+		return entry;
 	}
+	
+	//insert_token_type
 }
