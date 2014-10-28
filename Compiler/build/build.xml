@@ -1,24 +1,17 @@
 <project name="Compiler" default="all" basedir="../">
-
-    <description>
-		ant file for project
+	<description>
+		simple example build file
 	</description>
 
-    <!-- default target -->
-    <target name="all" description="compile sources and create jar file" depends="build,buildJar" />
-
-    <!-- set global properties for this build -->
+	<!-- set global properties for this build -->
 	<property name="src" location="src" />
 	<property name="tests" location="tests" />
 	<property name="bin" location="bin" />
 	<property name="target" location="target" />
 
-	<property name="jarLocation" location="${target}/${ant.project.name}.jar" />
-
-	<property name="commons-cli" location="lib/commons-cli-1.2.jar" />
 
 	<path id="classpath.base">
-		<pathelement location="${commons-cli}" />
+		<pathelement location="lib/commons-cli-1.2.jar" />
 	</path>
 
 
@@ -30,7 +23,8 @@
 	</path>
 
 
-	<target name="clean-build" depends="clean" description="compile the source">
+
+	<target name="build" description="compile the source ">
 		<!-- Compile the java code from ${src} into ${bin} -->
 		<mkdir dir="${bin}" />
 		<javac srcdir="${src}" destdir="${bin}" includeantruntime="false">
@@ -39,52 +33,43 @@
 		<echo message="Build done" />
 	</target>
 
-    <target name="clean" description="clean up">
-        <delete dir="${bin}" />
-        <delete dir="${target}" />
-    </target>
 
-	<target name="buildJar" depends="build">
+	<target name="clean" description="clean up">
+		<delete dir="${bin}" />
+		<delete dir="${target}" />
+	</target>
+
+
+	<target name="buildJar" depends="clean-build">
 		<mkdir dir="${target}" />
-		<jar destfile="${jarLocation}" filesetmanifest="mergewithoutmain">
+		<jar destfile="${target}/${ant.project.name}.jar" filesetmanifest="mergewithoutmain">
 			<manifest>
 				<attribute name="Main-Class" value="compiler.main.CompilerApp" />
-				<attribute name="Class-Path" value="./lib/commons-cli-1.2.jar" />
+				<attribute name="Class-Path" value="." />
 			</manifest>
 			<fileset dir="${bin}" />
-			<zipfileset excludes="META-INF/*.SF" src="${commons-cli}" />
 		</jar>
 	</target>
 
 
-	<!-- Builds the jar file and tries to execute it as a simple test -->
-	<target name="testJar" depends="buildJar">
-		<exec executable="java">
-			<arg value="-jar" />
-			<arg value="${jarLocation}" />
-			<arg value="--help" />
-		</exec>
-	</target>
+	<target name="clean-build" description="clean and build"
+		depends="clean,build" />
 
 
-	<target name="all" description="clean and build everything, run tests and build jar file">
-		<antcall target="test" />
-		<antcall target="testJar" />
-	</target>
-
+	<target name="all" description="clean and build" depends="clean-build,test,buildJar" />
 
 
 	<target name="buildTests" description="compile test sources"
-		depends="clean-build">
+		depends="build">
 		<javac srcdir="${tests}" destdir="${bin}" includeantruntime="false">
 			<classpath refid="classpath.test" />
 		</javac>
 		<echo message="Build of tests done" />
 	</target>
 
+
 	<target name="test" depends="buildTests">
-		<junit printsummary="on" fork="true" dir="${basedir}"
-			haltonfailure="yes">
+		<junit printsummary="on" fork="true" dir="${basedir}" haltonfailure="yes">
 			<classpath>
 				<path refid="classpath.test" />
 			</classpath>
