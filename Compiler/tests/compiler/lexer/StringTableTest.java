@@ -12,24 +12,33 @@ public class StringTableTest {
 	public void testInsert() {
 		StringTable st = new StringTable();
 		
-		Symbol symb1 = st.insert("test");
-		assertEquals("test", symb1.getValue());
+		StringTable.Entry entry1 = st.insert("test", null);
+		assertEquals("test", entry1.getSymbol().getValue());
 		
-		Symbol symb2 = st.insert("test");
-		assertEquals("test", symb2.getValue());
+		StringTable.Entry entry2 = st.insert("test", null);
+		assertEquals("test", entry2.getSymbol().getValue());
 		
-		assertEquals(true, symb1 == symb2);
+		assertEquals(true, entry1 == entry2);
 		
-		Symbol symb3 = st.insert("test1");
-		assertEquals("test1", symb3.getValue());
+		StringTable.Entry entry3 = st.insert("test1", null);
+		assertEquals("test1", entry3.getSymbol().getValue());
 		
-		assertEquals(false, symb1 == symb3);
-		assertEquals(false, symb2 == symb3);
+		assertEquals(false, entry1 == entry3);
+		assertEquals(false, entry2 == entry3);
 		
-		Symbol symbEmpty = st.insert("");
-		assertEquals("", symbEmpty.getValue());
+		StringTable.Entry  symbEmpty = st.insert("", null);
+		assertEquals("", symbEmpty.getSymbol().getValue());
 		
-		Symbol symbNull = st.insert(null);
-		assertEquals(null, symbNull.getValue());
+		StringTable.Entry  symbNull = st.insert(null, null);
+		assertEquals(null, symbNull.getSymbol().getValue());
+		
+		StringTable.Entry entry4 = st.insert("test", TokenType.IDENTIFIER);
+		assertEquals(null, entry4.getType());
+		
+		StringTable.Entry entry5 = st.insert("test5", TokenType.IDENTIFIER);
+		assertEquals(TokenType.IDENTIFIER, entry5.getType());
+		
+		StringTable.Entry entry6 = st.insert("test6", TokenType.INTEGER);
+		assertEquals(TokenType.INTEGER, entry6.getType());
 	}
 }
