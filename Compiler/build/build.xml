@@ -42,8 +42,7 @@
 
 	<target name="buildJar" depends="clean-build">
 		<mkdir dir="${target}" />
-		<jar destfile="${target}/${ant.project.name}.jar"
-			filesetmanifest="mergewithoutmain">
+		<jar destfile="${target}/${ant.project.name}.jar" filesetmanifest="mergewithoutmain">
 			<manifest>
 				<attribute name="Main-Class" value="compiler.main.CompilerApp" />
 				<attribute name="Class-Path" value="." />
@@ -70,7 +69,10 @@
 
 
 	<target name="test" depends="buildTests">
-		<junit printsummary="on" fork="true" haltonfailure="yes">
+		<echo>current directory: ${user.dir}</echo>
+		<echo>base directory: ${basedir}</echo>
+
+		<junit printsummary="on" fork="true" dir="${basedir}">
 			<classpath>
 				<path refid="classpath.test" />
 			</classpath>

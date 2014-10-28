@@ -31,12 +31,12 @@ public class CompilerApp {
 			if (cmd.hasOption("help"))
 			{
 				printHelp(options);
-				System.exit(0);
+				return;
 			}
 
 			if (cmd.hasOption(LEXTEST)) {
 				executeLexerTest(cmd.getOptionValue(LEXTEST));
-				System.exit(0);
+				return;
 			}
 		} catch (ParseException e) {
 			System.err.println("Wrong Command Line Parameters: " + e.getMessage());
@@ -51,8 +51,8 @@ public class CompilerApp {
 		Token token;
 		do {
 			token = lexer.getNextToken();
-			System.out.println(token);
-		} while (token != null && token.getType() != TokenType.EOF);
+			System.out.println(token != null ? token.getTokenString() : "null");
+		} while (token == null || token.getType() != TokenType.EOF);
 	}
 
 	private static void printHelp(Options options) {
