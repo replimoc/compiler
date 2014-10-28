@@ -117,105 +117,105 @@ public class Lexer {
 				t = getNextToken();
 			} else if (c == '=') { // /=
 				nextChar();
-				// TODO
+				t = token(TokenType.DIVIDEASSIGN);
 			} else { // /
-				// TODO
+				t = token(TokenType.DIVIDE);
 			}
 			break;
 		case '!':
 			nextChar();
 			if (c == '=') { // !=
 				nextChar();
-				// TODO
+				t = token(TokenType.NOTEQUAL);
 			} else { // !
-				// TODO
+				t = token(TokenType.LOGICALNOT);
 			}
 			break;
 		case '%':
 			nextChar();
 			if (c == '=') { // %=
 				nextChar();
-				// TODO
+				t = token(TokenType.MODULOASSIGN);
 			} else { // %
-				// TODO
+				t = token(TokenType.MODULO);
 			}
 			break;
 		case '&':
 			nextChar();
 			if (c == '&') { // &&
 				nextChar();
-				// TODO
+				t = token(TokenType.LOGICALAND);
 			} else if (c == '=') { // &=
 				nextChar();
-				// TODO
+				t = token(TokenType.ANDASSIGN);
 			} else { // &
-				// TODO
+				t = token(TokenType.AND);
 			}
 			break;
 		case '(':
 			nextChar();
-			// TODO
+			t = token(TokenType.LP);
 			break;
 		case ')':
 			nextChar();
-			// TODO
+			t = token(TokenType.RP);
 			break;
 		case '*':
 			nextChar();
 			if (c == '=') { // *=
 				nextChar();
-				// TODO
+				t = token(TokenType.MULTIPLYASSIGN);
 			} else { // *
-				// TODO
+				t = token(TokenType.MULTIPLY);
 			}
 			break;
 		case '+':
 			nextChar();
 			if (c == '+') { // ++
 				nextChar();
-				// TODO
+				t = token(TokenType.INCREMENT);
 			} else if (c == '=') { // +=
 				nextChar();
-				// TODO
+				t = token(TokenType.ADDASSIGN);
 			} else { // +
-				// TODO
+				t = token(TokenType.ADD);
 			}
 			break;
 		case '-':
 			nextChar();
 			if (c == '-') { // --
 				nextChar();
-				// TODO
+				t = token(TokenType.DECREMENT);
 			} else if (c == '=') { // -=
 				nextChar();
-				// TODO
+				t = token(TokenType.SUBTRACTASSIGN);
 			} else { // -
-				// TODO
+				t = token(TokenType.SUBTRACT);
 			}
 			break;
 		case '.':
 			nextChar();
-			// TODO
+			t = token(TokenType.POINT);
 			break;
 		case ',':
 			nextChar();
-			// TODO
+			t = token(TokenType.COMMA);
 			break;
 		case ':':
 			nextChar();
-			// TODO
+			t = token(TokenType.COLON);
 			break;
 		case ';':
 			nextChar();
-			// TODO
+			t = token(TokenType.SEMICOLON);
 			break;
 		case '=':
 			nextChar();
 			if (c == '=') { // ==
 				nextChar();
-				// TODO
+				t = token(TokenType.EQUAL);
 			} else { // =
-				// TODO
+				t = token(TokenType.ASSIGN);
 			}
 			break;
 		case '<':
@@ -224,15 +224,15 @@ public class Lexer {
 				nextChar();
 				if (c == '=') { // <<=
 					nextChar();
-					// TODO
+					t = token(TokenType.LSASSIGN);
 				} else { // <<
-					// TODO
+					t = token(TokenType.LS);
 				}
 			} else if (c == '=') { // <=
 				nextChar();
-				// TODO
+				t = token(TokenType.LESSEQUAL);
 			} else { // <
-				// TODO
+				t = token(TokenType.LESS);
 			}
 			break;
 		case '>':
@@ -243,62 +243,67 @@ public class Lexer {
 					nextChar();
 					if (c == '=') { // >>>=
 						nextChar();
-						// TODO
+						t = token(TokenType.RSZEROFILLASSIGN);
 					} else { // >>>
-						// TODO
+						t = token(TokenType.RSZEROFILL);
 					}
 				} else if (c == '=') { // >>=
 					nextChar();
-					// TODO
+					t = token(TokenType.RSASSIGN);
 				} else { // >>
-
+					t = token(TokenType.RS);
 				}
 			} else if (c == '=') { // >=
 				nextChar();
-				// TODO
+				t = token(TokenType.GREATEREQUAL);
 			} else { // >
-				// TODO
+				t = token(TokenType.GREATER);
 			}
 			break;
 		case '?':
 			nextChar();
-			// TODO
+			t = token(TokenType.CONDITIONAL);
 			break;
 		case '[':
 			nextChar();
-			// TODO
+			t = token(TokenType.LSQUAREBRACKET);
 			break;
 		case ']':
 			nextChar();
-			// TODO
+			t = token(TokenType.RSQUAREBRACKET);
 			break;
 		case '^':
 			nextChar();
-			// TODO
+			if (c == '=') { // ^=
+				nextChar();
+				t = token(TokenType.EXCLUSIVEORASSIGN);
+			} else { // ^
+				t = token(TokenType.EXCLUSIVEOR);
+			}
 			break;
 		case '{':
 			nextChar();
-			// TODO
+			t = token(TokenType.LCURLYBRACKET);
 			break;
 		case '|':
 			nextChar();
 			if (c == '|') { // ||
 				nextChar();
-				// TODO
+				t = token(TokenType.LOGICALOR);
 			} else if (c == '=') { // |=
 				nextChar();
-				// TODO
+				t = token(TokenType.INCLUSIVEORASSIGN);
 			} else { // |
-				// TODO
+				t = token(TokenType.INCLUSIVEOR);
 			}
 			break;
 		case '}':
 			nextChar();
-			// TODO
+			t = token(TokenType.RCURLYBRACKET);
 			break;
 		case '~':
 			nextChar();
-			// TODO
+			t = token(TokenType.BINARYCOMPLEMENT);
 			break;
 		default:
 			t = token(TokenType.ERROR, "Unexpected char '" + c + "'");
