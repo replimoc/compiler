@@ -69,10 +69,7 @@
 
 
 	<target name="test" depends="buildTests">
-		<echo>current directory: ${user.dir}</echo>
-		<echo>base directory: ${basedir}</echo>
-
-		<junit printsummary="on" fork="true" dir="${basedir}">
+		<junit printsummary="on" fork="true" dir="${basedir}" haltonfailure="yes">
 			<classpath>
 				<path refid="classpath.test" />
 			</classpath>
