@@ -10,9 +10,10 @@ public class Lexer {
 	private IReader reader;
 	private StringTable stringTable;
 
-	public Lexer(BufferedInputStream bufferedInputStream, StringTable stringTable) throws Exception {
+	public Lexer(BufferedInputStream bufferedInputStream, StringTable stringTable) throws IOException {
 		this.reader = new Reader(bufferedInputStream);
 		this.stringTable = stringTable;
+		nextChar();
 	}
 
 	public Token getNextToken() throws IOException {
@@ -29,7 +30,7 @@ public class Lexer {
 		} else if (is19()) {
 			t = lexIntegerLiteral();
 		} else if (c == '0') {
-			nextChar();
+			nextChar(); // FIXME: What happens in case of a number like 01234. I guess this would generate two integer tokens instead of an error
 			t = token(TokenType.INTEGER, "0");
 		} else {
 			t = lexOperatorAndComment();
@@ -79,21 +80,21 @@ public class Lexer {
 	 * Lex functions
 	 */
 	private Token lexIdentifier() throws IOException {
-		String text = "";
+		StringBuffer text = new StringBuffer();
 		do {
-			text += Character.toChars(c);
+			text.append((char) c);
 			nextChar();
 		} while (isAZaz_09());
-		return token(TokenType.IDENTIFIER, text);
+		return token(TokenType.IDENTIFIER, text.toString());
 	}
 
 	private Token lexIntegerLiteral() throws IOException {
-		String num = "";
+		StringBuffer num = new StringBuffer();
 		do {
-			num += Character.toChars(c);
+			num.append((char) c);
 			nextChar();
 		} while (is09());
-		return token(TokenType.INTEGER, num);
+		return token(TokenType.INTEGER, num.toString());
 	}
 
 	private void lexComment() throws IOException {
@@ -325,6 +326,7 @@ public class Lexer {
 			this.bufferedInputStream = bufferedInputStream;
 		}
 
+		@Override
 		public int getChar() throws IOException {
 			c = bufferedInputStream.read();
 			if (c == '\n' || c == '\r') {
@@ -336,6 +338,7 @@ public class Lexer {
 			return c;
 		}
 
+		@Override
 		public Position getPosition() {
 			return new Position(line, character);
 		}

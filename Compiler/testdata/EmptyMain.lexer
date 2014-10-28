@@ -1,0 +1,16 @@
+class
+identifier EmptyMain
+{
+public
+static
+void
+identifier main
+(
+identifier String
+[
+]
+identifier args
+)
+{
+}
+}
