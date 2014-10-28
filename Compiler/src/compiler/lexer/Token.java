@@ -67,9 +67,9 @@ public class Token {
 		// to comply with the --lextest settings
 		switch (type) {
 		case IDENTIFIER:
-			return "identifier_" + value;
+			return "identifier " + value;
 		case INTEGER:
-			return "integer_literal_" + value;
+			return "integer literal " + value;
 		case ERROR:
 			return type.getString() + " " + value;
 		default:
