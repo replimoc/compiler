@@ -10,7 +10,7 @@ public class Lexer {
 	private IReader reader;
 	private StringTable stringTable;
 
-	public Lexer(BufferedInputStream bufferedInputStream, StringTable stringTable) throws Exception {
+	public Lexer(BufferedInputStream bufferedInputStream, StringTable stringTable) {
 		this.reader = new Reader(bufferedInputStream);
 		this.stringTable = stringTable;
 	}
@@ -325,6 +325,7 @@ public class Lexer {
 			this.bufferedInputStream = bufferedInputStream;
 		}
 
+		@Override
 		public int getChar() throws IOException {
 			c = bufferedInputStream.read();
 			if (c == '\n' || c == '\r') {
@@ -336,6 +337,7 @@ public class Lexer {
 			return c;
 		}
 
+		@Override
 		public Position getPosition() {
 			return new Position(line, character);
 		}
