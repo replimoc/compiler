@@ -30,8 +30,15 @@ public class Lexer {
 		} else if (is19()) {
 			t = lexIntegerLiteral();
 		} else if (c == '0') {
-			nextChar(); // FIXME: What happens in case of a number like 01234. I guess this would generate two integer tokens instead of an error
-			t = token(TokenType.INTEGER, "0");
+			nextChar();
+			if (is09()) {
+				t = token(TokenType.ERROR, "Unexpected number after an '0'.");
+				while (is09()) { // Parse all integer until another token available.
+					nextChar();
+				}
+			} else {
+				t = token(TokenType.INTEGER, "0");
+			}
 		} else {
 			t = lexOperatorAndComment();
 		}
