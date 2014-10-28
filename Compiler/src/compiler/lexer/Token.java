@@ -5,34 +5,71 @@ public class Token {
 	private final String value;
 	private final Position position;
 
+	/**
+	 * Constructor. Sets the type of the token to the given {@link TokenType} and the position of the token to the given {@link Position}.
+	 * 
+	 * @param type
+	 * @param position
+	 */
 	public Token(TokenType type, Position position) {
 		this.type = type;
 		this.position = position;
 		this.value = null;
 	}
 
+	/**
+	 * Constructor. Sets the type of the token to the given {@link TokenType} and the position of the token to the given {@link Position}. Sets the
+	 * value of the token to the given value.
+	 * 
+	 * @param type
+	 * @param position
+	 * @param value
+	 */
 	public Token(TokenType type, Position position, String value) {
 		this.type = type;
 		this.position = position;
 		this.value = value;
 	}
 
+	/**
+	 * Return the type of the token.
+	 * 
+	 * @return
+	 */
 	public TokenType getType() {
 		return type;
 	}
 
+	/**
+	 * Return the value of the token.
+	 * 
+	 * @return
+	 */
 	public String getValue() {
 		return value;
 	}
 
+	/**
+	 * Return the position of the token.
+	 * 
+	 * @return
+	 */
 	public Position getPosition() {
 		return position;
 	}
 
+	/**
+	 * Return the token string value.
+	 * 
+	 * @return
+	 */
 	public String getTokenString() {
+		// to comply with the --lextest settings
 		switch (type) {
 		case IDENTIFIER:
+			return "identifier_" + value;
 		case INTEGER:
+			return "integer_literal_" + value;
 		case ERROR:
 			return type.getString() + " " + value;
 		default:
