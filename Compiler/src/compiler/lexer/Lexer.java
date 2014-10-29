@@ -15,6 +15,7 @@ public class Lexer {
 	public Lexer(BufferedInputStream bufferedInputStream, StringTable stringTable) throws IOException {
 		this.reader = new Reader(bufferedInputStream);
 		this.stringTable = stringTable;
+		initStringTable(stringTable);
 		nextChar();
 	}
 
@@ -329,6 +330,14 @@ public class Lexer {
 			break;
 		}
 		return t;
+	}
+
+	private static void initStringTable(StringTable stringTable) {
+		for (TokenType curr : TokenType.values()) {
+			if (curr.isKeyword()) {
+				stringTable.insert(curr.getString(), curr);
+			}
+		}
 	}
 
 	/*
