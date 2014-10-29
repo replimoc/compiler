@@ -1,8 +1,10 @@
 package compiler.lexer;
 
+import compiler.Symbol;
+
 public class Token {
 	private final TokenType type;
-	private final String value;
+	private final Symbol value;
 	private final Position position;
 
 	/**

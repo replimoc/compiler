@@ -35,6 +35,18 @@ public class StringTable {
 	}
 
 	private HashMap<String, Entry> entries = new HashMap<String, Entry>();
+
+		public Symbol getSymbol() {
+			return symbol;
+		}
+
+		public TokenType getType() {
+			return type;
+		}
+
+	}
+
+	private HashMap<String, Entry> entries;
 	
 	/**
 	 * Returns corresponding symbol for given string.
