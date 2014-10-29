@@ -54,7 +54,7 @@ public class LextestOutputTest {
             String filename = lextestFile.getFileName().toString();
             if(excludedSourceFiles.contains(filename)) continue;
 
-            String programFilename = "testdata/sources/" + filename.replace(".lexer", ".mj");
+            String programFilename = "testdata/sources/" + filename.replace(".lexer", ".java");
 
             if (!Files.exists(Paths.get(programFilename))) {
                 Assert.fail("cannot find program to output " + filename);
