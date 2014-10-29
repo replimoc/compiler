@@ -22,12 +22,17 @@ public class Lexer {
 	public Token getNextToken() throws IOException {
 		Token t = null;
 
+		if (this.reader == null) {
+			return null;
+		}
+
 		while (isWhitespace()) {
 			nextChar();
 		}
 
 		if (c == -1) { // Character is EOF
 			t = token(TokenType.EOF);
+			this.reader = null;
 		} else if (isAZaz_()) {
 			t = lexIdentifier();
 		} else if (is19()) {
