@@ -4,6 +4,8 @@ import java.io.BufferedInputStream;
 import java.io.IOException;
 
 import compiler.StringTable;
+import compiler.StringTable.Entry;
+import compiler.Symbol;
 
 public class Lexer {
 	private int c;
@@ -13,6 +15,7 @@ public class Lexer {
 	public Lexer(BufferedInputStream bufferedInputStream, StringTable stringTable) throws IOException {
 		this.reader = new Reader(bufferedInputStream);
 		this.stringTable = stringTable;
+		initStringTable(stringTable);
 		nextChar();
 	}
 
@@ -30,8 +33,15 @@ public class Lexer {
 		} else if (is19()) {
 			t = lexIntegerLiteral();
 		} else if (c == '0') {
-			nextChar(); // FIXME: What happens in case of a number like 01234. I guess this would generate two integer tokens instead of an error
-			t = token(TokenType.INTEGER, "0");
+			nextChar();
+			if (is09()) {
+				t = tokenError("Unexpected number after an '0'.");
+				while (is09()) { // Parse all integer until another token available.
+					nextChar();
+				}
+			} else {
+				t = tokenStringTable(TokenType.INTEGER, "0");
+			}
 		} else {
 			t = lexOperatorAndComment();
 		}
@@ -46,8 +56,17 @@ public class Lexer {
 		return token(tokenType, null);
 	}
 
-	private Token token(TokenType tokenType, String value) {
+	private Token token(TokenType tokenType, Symbol value) {
 		return new Token(tokenType, reader.getPosition(), value);
+	}
+
+	private Token tokenStringTable(TokenType tokenType, String value) {
+		Entry tokenEntry = this.stringTable.insert(value, tokenType);
+		return token(tokenEntry.getType(), tokenEntry.getSymbol());
+	}
+
+	private Token tokenError(String message) {
+		return token(TokenType.ERROR, new Symbol(message));
 	}
 
 	/*
@@ -85,7 +104,7 @@ public class Lexer {
 			text.append((char) c);
 			nextChar();
 		} while (isAZaz_09());
-		return token(TokenType.IDENTIFIER, text.toString());
+		return tokenStringTable(TokenType.IDENTIFIER, text.toString());
 	}
 
 	private Token lexIntegerLiteral() throws IOException {
@@ -94,7 +113,7 @@ public class Lexer {
 			num.append((char) c);
 			nextChar();
 		} while (is09());
-		return token(TokenType.INTEGER, num.toString());
+		return tokenStringTable(TokenType.INTEGER, num.toString());
 	}
 
 	private void lexComment() throws IOException {
@@ -117,105 +136,105 @@ public class Lexer {
 				t = getNextToken();
 			} else if (c == '=') { // /=
 				nextChar();
-				// TODO
+				t = token(TokenType.DIVIDEASSIGN);
 			} else { // /
-				// TODO
+				t = token(TokenType.DIVIDE);
 			}
 			break;
 		case '!':
 			nextChar();
 			if (c == '=') { // !=
 				nextChar();
-				// TODO
+				t = token(TokenType.NOTEQUAL);
 			} else { // !
-				// TODO
+				t = token(TokenType.LOGICALNOT);
 			}
 			break;
 		case '%':
 			nextChar();
 			if (c == '=') { // %=
 				nextChar();
-				// TODO
+				t = token(TokenType.MODULOASSIGN);
 			} else { // %
-				// TODO
+				t = token(TokenType.MODULO);
 			}
 			break;
 		case '&':
 			nextChar();
 			if (c == '&') { // &&
 				nextChar();
-				// TODO
+				t = token(TokenType.LOGICALAND);
 			} else if (c == '=') { // &=
 				nextChar();
-				// TODO
+				t = token(TokenType.ANDASSIGN);
 			} else { // &
-				// TODO
+				t = token(TokenType.AND);
 			}
 			break;
 		case '(':
 			nextChar();
-			// TODO
+			t = token(TokenType.LP);
 			break;
 		case ')':
 			nextChar();
-			// TODO
+			t = token(TokenType.RP);
 			break;
 		case '*':
 			nextChar();
 			if (c == '=') { // *=
 				nextChar();
-				// TODO
+				t = token(TokenType.MULTIPLYASSIGN);
 			} else { // *
-				// TODO
+				t = token(TokenType.MULTIPLY);
 			}
 			break;
 		case '+':
 			nextChar();
 			if (c == '+') { // ++
 				nextChar();
-				// TODO
+				t = token(TokenType.INCREMENT);
 			} else if (c == '=') { // +=
 				nextChar();
-				// TODO
+				t = token(TokenType.ADDASSIGN);
 			} else { // +
-				// TODO
+				t = token(TokenType.ADD);
 			}
 			break;
 		case '-':
 			nextChar();
 			if (c == '-') { // --
 				nextChar();
-				// TODO
+				t = token(TokenType.DECREMENT);
 			} else if (c == '=') { // -=
 				nextChar();
-				// TODO
+				t = token(TokenType.SUBTRACTASSIGN);
 			} else { // -
-				// TODO
+				t = token(TokenType.SUBTRACT);
 			}
 			break;
 		case '.':
 			nextChar();
-			// TODO
+			t = token(TokenType.POINT);
 			break;
 		case ',':
 			nextChar();
-			// TODO
+			t = token(TokenType.COMMA);
 			break;
 		case ':':
 			nextChar();
-			// TODO
+			t = token(TokenType.COLON);
 			break;
 		case ';':
 			nextChar();
-			// TODO
+			t = token(TokenType.SEMICOLON);
 			break;
 		case '=':
 			nextChar();
 			if (c == '=') { // ==
 				nextChar();
-				// TODO
+				t = token(TokenType.EQUAL);
 			} else { // =
-				// TODO
+				t = token(TokenType.ASSIGN);
 			}
 			break;
 		case '<':
@@ -224,15 +243,15 @@ public class Lexer {
 				nextChar();
 				if (c == '=') { // <<=
 					nextChar();
-					// TODO
+					t = token(TokenType.LSASSIGN);
 				} else { // <<
-					// TODO
+					t = token(TokenType.LS);
 				}
 			} else if (c == '=') { // <=
 				nextChar();
-				// TODO
+				t = token(TokenType.LESSEQUAL);
 			} else { // <
-				// TODO
+				t = token(TokenType.LESS);
 			}
 			break;
 		case '>':
@@ -243,69 +262,82 @@ public class Lexer {
 					nextChar();
 					if (c == '=') { // >>>=
 						nextChar();
-						// TODO
+						t = token(TokenType.RSZEROFILLASSIGN);
 					} else { // >>>
-						// TODO
+						t = token(TokenType.RSZEROFILL);
 					}
 				} else if (c == '=') { // >>=
 					nextChar();
-					// TODO
+					t = token(TokenType.RSASSIGN);
 				} else { // >>
-
+					t = token(TokenType.RS);
 				}
 			} else if (c == '=') { // >=
 				nextChar();
-				// TODO
+				t = token(TokenType.GREATEREQUAL);
 			} else { // >
-				// TODO
+				t = token(TokenType.GREATER);
 			}
 			break;
 		case '?':
 			nextChar();
-			// TODO
+			t = token(TokenType.CONDITIONAL);
 			break;
 		case '[':
 			nextChar();
-			// TODO
+			t = token(TokenType.LSQUAREBRACKET);
 			break;
 		case ']':
 			nextChar();
-			// TODO
+			t = token(TokenType.RSQUAREBRACKET);
 			break;
 		case '^':
 			nextChar();
-			// TODO
+			if (c == '=') { // ^=
+				nextChar();
+				t = token(TokenType.EXCLUSIVEORASSIGN);
+			} else { // ^
+				t = token(TokenType.EXCLUSIVEOR);
+			}
 			break;
 		case '{':
 			nextChar();
-			// TODO
+			t = token(TokenType.LCURLYBRACKET);
 			break;
 		case '|':
 			nextChar();
 			if (c == '|') { // ||
 				nextChar();
-				// TODO
+				t = token(TokenType.LOGICALOR);
 			} else if (c == '=') { // |=
 				nextChar();
-				// TODO
+				t = token(TokenType.INCLUSIVEORASSIGN);
 			} else { // |
-				// TODO
+				t = token(TokenType.INCLUSIVEOR);
 			}
 			break;
 		case '}':
 			nextChar();
-			// TODO
+			t = token(TokenType.RCURLYBRACKET);
 			break;
 		case '~':
 			nextChar();
-			// TODO
+			t = token(TokenType.BINARYCOMPLEMENT);
 			break;
 		default:
-			t = token(TokenType.ERROR, "Unexpected char '" + c + "'");
+			t = tokenError("Unexpected char '" + c + "'");
 			nextChar();
 			break;
 		}
 		return t;
+	}
+
+	private static void initStringTable(StringTable stringTable) {
+		for (TokenType curr : TokenType.values()) {
+			if (curr.isKeyword()) {
+				stringTable.insert(curr.getString(), curr);
+			}
+		}
 	}
 
 	/*

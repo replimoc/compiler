@@ -1,8 +1,10 @@
 package compiler.lexer;
 
+import compiler.Symbol;
+
 public class Token {
 	private final TokenType type;
-	private final String value;
+	private final Symbol value;
 	private final Position position;
 
 	/**
@@ -25,7 +27,7 @@ public class Token {
 	 * @param position
 	 * @param value
 	 */
-	public Token(TokenType type, Position position, String value) {
+	public Token(TokenType type, Position position, Symbol value) {
 		this.type = type;
 		this.position = position;
 		this.value = value;
@@ -45,7 +47,7 @@ public class Token {
 	 * 
 	 * @return
 	 */
-	public String getValue() {
+	public Symbol getValue() {
 		return value;
 	}
 

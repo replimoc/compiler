@@ -35,7 +35,7 @@ public class StringTable {
 	}
 
 	private HashMap<String, Entry> entries = new HashMap<String, Entry>();
-	
+
 	/**
 	 * Returns corresponding symbol for given string.
 	 * @param string String to store.
