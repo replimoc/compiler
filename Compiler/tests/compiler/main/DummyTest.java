@@ -16,5 +16,11 @@ public class DummyTest {
 	public void testDummyTestable() {
 		assertTrue(new DummyTestable(true).isValue());
 		assertFalse(new DummyTestable(false).isValue());
+
+        int a;
+
+        a = 4142;
+
+        a = a + 5;
 	}
 }

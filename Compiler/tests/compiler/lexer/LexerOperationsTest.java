@@ -13,12 +13,12 @@ import java.nio.charset.StandardCharsets;
 /**
  * test correct parsing of operation
  * <p/>
- * binary ops: != , *= , * , = , += , + , -= , -- , - ,  TODO from here . , , , : , ; , <<= , << , <= , < , == , = , >= , >>= ,
- * >>>= , >>> , >> , > , ? , %= , % , &= , && , & , [ , ] , ^= , ^ , { , } , ~ , |= , || , |
+ * binary ops: != , *= , * , = , += , + , -= , -- , - , <<= , << , <= , < , == , = , >= , >>= ,
+ * >>>= , >>> , >> , > , TODO from here %= , % , &= , && , & , [ , ] , ^= , ^ , { , } , ~ , |= , || , |
  * <p/>
  * unary ops:  ! , ++,
  * <p/>
- * TODO ops: ( , ) , ',' ,
+ * TODO ops: ( , ) , ',' , . , : , ;, ? ,
  */
 public class LexerOperationsTest {
 
@@ -42,9 +42,9 @@ public class LexerOperationsTest {
     }
 
     @Test
-    public void testEqual() throws Exception {
+    public void testAssign() throws Exception {
         String[] expressions = {"a = b", "a= b", "a =b", "a=b"};
-        testBinaryOp(TokenType.EQUAL, expressions);
+        testBinaryOp(TokenType.ASSIGN, expressions);
     }
 
     @Test
@@ -137,6 +137,86 @@ public class LexerOperationsTest {
         Assert.assertEquals(TokenType.DECREMENT, second.getType());
     }
 
+    @Test
+    public void testDivAssign() throws Exception {
+        String[] expressions = {"a /= b", "a/= b", "a /=b", "a/=b"};
+        testBinaryOp(TokenType.DIVIDEASSIGN, expressions);
+    }
+
+    @Test
+    public void testDiv() throws Exception {
+        String[] expressions = {"a / b", "a/ b", "a /b", "a/b"};
+        testBinaryOp(TokenType.DIVIDE, expressions);
+    }
+
+    @Test
+    public void testLeftShiftAssign() throws Exception {
+        String[] expressions = {"a <<= b", "a<<= b", "a <<=b", "a<<=b"};
+        testBinaryOp(TokenType.LSASSIGN, expressions);
+    }
+
+    @Test
+    public void testLeftShift() throws Exception {
+        String[] expressions = {"a << b", "a<< b", "a <<b", "a<<b"};
+        testBinaryOp(TokenType.LS, expressions);
+    }
+
+    @Test
+    public void testLessEqual() throws Exception {
+        String[] expressions = {"a <= b", "a<= b", "a <=b", "a<=b"};
+        testBinaryOp(TokenType.LESSEQUAL, expressions);
+    }
+
+    @Test
+    public void testLess() throws Exception {
+        String[] expressions = {"a < b", "a< b", "a <b", "a<b"};
+        testBinaryOp(TokenType.LESS, expressions);
+    }
+
+    @Test
+    public void testEqual() throws Exception {
+        String[] expressions = {"a == b", "a== b", "a ==b", "a==b"};
+        testBinaryOp(TokenType.EQUAL, expressions);
+    }
+
+    @Test
+    public void testGreaterEqual() throws Exception {
+        String[] expressions = {"a >= b", "a>= b", "a >=b", "a>=b"};
+        testBinaryOp(TokenType.GREATEREQUAL, expressions);
+    }
+
+    @Test
+    public void testRightShiftAssign() throws Exception {
+        String[] expressions = {"a >>= b", "a>>= b", "a >>=b", "a>>=b"};
+        testBinaryOp(TokenType.RSASSIGN, expressions);
+    }
+
+    @Test
+    public void testRightShiftZeroFillAssign() throws Exception {
+        String[] expressions = {"a >>>= b", "a>>>= b", "a >>>=b", "a>>>=b"};
+        testBinaryOp(TokenType.RSZEROFILLASSIGN, expressions);
+    }
+
+    @Test
+    public void testRightShiftZeroFill() throws Exception {
+        String[] expressions = {"a >>> b", "a>>> b", "a >>>b", "a>>>b"};
+        testBinaryOp(TokenType.RSZEROFILL, expressions);
+    }
+
+    @Test
+    public void testRightShift() throws Exception {
+        String[] expressions = {"a >> b", "a>> b", "a >>b", "a>>b"};
+        testBinaryOp(TokenType.RS, expressions);
+    }
+
+    @Test
+    public void testGreater() throws Exception {
+        String[] expressions = {"a > b", "a> b", "a >b", "a>b"};
+        testBinaryOp(TokenType.GREATER, expressions);
+    }
+
+
+
     private void testBinaryOp(TokenType operation, String[] expressions) throws IOException {
         for (String expression : expressions) {
 
@@ -148,7 +228,7 @@ public class LexerOperationsTest {
             Token eof = lexer.getNextToken();
 
             Assert.assertEquals(TokenType.IDENTIFIER, a.getType());
-//            Assert.assertEquals('a', a.getValue()); // TODO method to get string rep of a symbol
+            Assert.assertEquals('a', a.getValue()); // TODO method to get string rep of a symbol
 
             Assert.assertEquals(operation, op.getType());
 
