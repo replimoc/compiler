@@ -4,6 +4,8 @@ import java.io.BufferedInputStream;
 import java.io.IOException;
 
 import compiler.StringTable;
+import compiler.StringTable.Entry;
+import compiler.Symbol;
 
 public class Lexer {
 	private int c;
@@ -32,12 +34,12 @@ public class Lexer {
 		} else if (c == '0') {
 			nextChar();
 			if (is09()) {
-				t = token(TokenType.ERROR, "Unexpected number after an '0'.");
+				t = tokenError("Unexpected number after an '0'.");
 				while (is09()) { // Parse all integer until another token available.
 					nextChar();
 				}
 			} else {
-				t = token(TokenType.INTEGER, "0");
+				t = tokenStringTable(TokenType.INTEGER, "0");
 			}
 		} else {
 			t = lexOperatorAndComment();
@@ -53,8 +55,17 @@ public class Lexer {
 		return token(tokenType, null);
 	}
 
-	private Token token(TokenType tokenType, String value) {
+	private Token token(TokenType tokenType, Symbol value) {
 		return new Token(tokenType, reader.getPosition(), value);
+	}
+
+	private Token tokenStringTable(TokenType tokenType, String value) {
+		Entry tokenEntry = this.stringTable.insert(value, tokenType);
+		return token(tokenEntry.getType(), tokenEntry.getSymbol());
+	}
+
+	private Token tokenError(String message) {
+		return token(TokenType.ERROR, new Symbol(message));
 	}
 
 	/*
@@ -92,7 +103,7 @@ public class Lexer {
 			text.append((char) c);
 			nextChar();
 		} while (isAZaz_09());
-		return token(TokenType.IDENTIFIER, text.toString());
+		return tokenStringTable(TokenType.IDENTIFIER, text.toString());
 	}
 
 	private Token lexIntegerLiteral() throws IOException {
@@ -101,7 +112,7 @@ public class Lexer {
 			num.append((char) c);
 			nextChar();
 		} while (is09());
-		return token(TokenType.INTEGER, num.toString());
+		return tokenStringTable(TokenType.INTEGER, num.toString());
 	}
 
 	private void lexComment() throws IOException {
@@ -313,7 +324,7 @@ public class Lexer {
 			t = token(TokenType.BINARYCOMPLEMENT);
 			break;
 		default:
-			t = token(TokenType.ERROR, "Unexpected char '" + c + "'");
+			t = tokenError("Unexpected char '" + c + "'");
 			nextChar();
 			break;
 		}
