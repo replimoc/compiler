@@ -27,7 +27,7 @@ public class Token {
 	 * @param position
 	 * @param value
 	 */
-	public Token(TokenType type, Position position, String value) {
+	public Token(TokenType type, Position position, Symbol value) {
 		this.type = type;
 		this.position = position;
 		this.value = value;
@@ -47,7 +47,7 @@ public class Token {
 	 * 
 	 * @return
 	 */
-	public String getValue() {
+	public Symbol getValue() {
 		return value;
 	}
 
