@@ -116,14 +116,20 @@ public class Lexer {
 		return tokenStringTable(TokenType.INTEGER, num.toString());
 	}
 
-	private void lexComment() throws IOException {
+	private Token lexComment() throws IOException {
+		Token t = null;
 		do {
 			do {
 				nextChar();
-			} while (c != '*');
+			} while (c != '*' && c != -1);
 			nextChar();
-		} while (c != '/');
+		} while (c != '/' && c != -1);
+
+		if (c == -1) {
+			t = tokenError("Detected not ending comment.");
+		}
 		nextChar();
+		return t;
 	}
 
 	private Token lexOperatorAndComment() throws IOException {
@@ -132,8 +138,10 @@ public class Lexer {
 		case '/': // tokens: /* ... */, /, /=
 			nextChar();
 			if (c == '*') {
-				lexComment();
-				t = getNextToken();
+				t = lexComment();
+				if (t == null) {
+					t = getNextToken();
+				}
 			} else if (c == '=') { // /=
 				nextChar();
 				t = token(TokenType.DIVIDEASSIGN);
