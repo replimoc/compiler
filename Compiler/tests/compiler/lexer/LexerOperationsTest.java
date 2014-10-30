@@ -11,14 +11,13 @@ import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 
 /**
- * test correct parsing of operation
+ * test correct parsing of operation (arithmetic and logical)
  * <p/>
  * binary ops: != , *= , * , = , += , + , -= , -- , - , <<= , << , <= , < , == , = , >= , >>= ,
- * >>>= , >>> , >> , > , TODO from here %= , % , &= , && , & , [ , ] , ^= , ^ , { , } , ~ , |= , || , |
+ * >>>= , >>> , >> , > , %= , % , &= , && , & ,  ^= , ^ , { , } , ~ , |= , || , |
  * <p/>
- * unary ops:  ! , ++,
+ * unary ops:  ! , ++, ~
  * <p/>
- * TODO ops: ( , ) , ',' , . , : , ;, ? ,
  */
 public class LexerOperationsTest {
 
@@ -82,8 +81,8 @@ public class LexerOperationsTest {
         BufferedInputStream is = getBufferedInputStream(expression);
         Lexer lexer = new Lexer(is, stringTable);
         lexer.getNextToken(); // skip a
-        Token second = lexer.getNextToken();
-        Assert.assertEquals(TokenType.INCREMENT, second.getType());
+        Assert.assertEquals(TokenType.ADD, lexer.getNextToken().getType());
+        Assert.assertEquals(TokenType.ADD, lexer.getNextToken().getType());
     }
 
     @Test
@@ -133,8 +132,7 @@ public class LexerOperationsTest {
         BufferedInputStream is = getBufferedInputStream(expression);
         Lexer lexer = new Lexer(is, stringTable);
         lexer.getNextToken(); // skip a
-        Token second = lexer.getNextToken();
-        Assert.assertEquals(TokenType.DECREMENT, second.getType());
+        Assert.assertNotEquals(TokenType.DECREMENT, lexer.getNextToken().getType());
     }
 
     @Test
@@ -214,8 +212,64 @@ public class LexerOperationsTest {
         String[] expressions = {"a > b", "a> b", "a >b", "a>b"};
         testBinaryOp(TokenType.GREATER, expressions);
     }
+    @Test
+    public void testModAssign() throws Exception {
+        String[] expressions = {"a %= b", "a%= b", "a %=b", "a%=b"};
+        testBinaryOp(TokenType.MODULOASSIGN, expressions);
+    }
+    @Test
+    public void testMod() throws Exception {
+        String[] expressions = {"a % b", "a% b", "a %b", "a%b"};
+        testBinaryOp(TokenType.MODULO, expressions);
+    }
+    @Test
+    public void testAndAssign() throws Exception {
+        String[] expressions = {"a &= b", "a&= b", "a &=b", "a&=b"};
+        testBinaryOp(TokenType.ANDASSIGN, expressions);
+    }
+    @Test
+    public void testLogicalAnd() throws Exception {
+        String[] expressions = {"a && b", "a&& b", "a &&b", "a&&b"};
+        testBinaryOp(TokenType.LOGICALAND, expressions);
+    }
+    @Test
+    public void testBinaryAnd() throws Exception {
+        String[] expressions = {"a & b", "a& b", "a &b", "a&b"};
+        testBinaryOp(TokenType.AND, expressions);
+    }
+    @Test
+    public void testXorAssign() throws Exception {
+        String[] expressions = {"a ^= b", "a^= b", "a ^=b", "a^=b"};
+        testBinaryOp(TokenType.EXCLUSIVEORASSIGN, expressions);
+    }
 
+    @Test
+    public void testXor() throws Exception {
+        String[] expressions = {"a ^ b", "a^ b", "a ^b", "a^b"};
+        testBinaryOp(TokenType.EXCLUSIVEOR, expressions);
+    }
 
+    @Test
+    public void testBinaryNot() throws Exception {
+        String[] expressions = {"~a", "~ a"};
+        testUnaryOp(TokenType.BINARYCOMPLEMENT, expressions);
+    }
+
+    @Test
+    public void testInclOrAssign() throws Exception {
+        String[] expressions = {"a |= b", "a|= b", "a |=b", "a|=b"};
+        testBinaryOp(TokenType.INCLUSIVEORASSIGN, expressions);
+    }
+    @Test
+    public void testOr() throws Exception {
+        String[] expressions = {"a || b", "a|| b", "a ||b", "a||b"};
+        testBinaryOp(TokenType.LOGICALOR, expressions);
+    }
+    @Test
+    public void testBinaryOr() throws Exception {
+        String[] expressions = {"a | b", "a| b", "a |b", "a|b"};
+        testBinaryOp(TokenType.INCLUSIVEOR, expressions);
+    }
 
     private void testBinaryOp(TokenType operation, String[] expressions) throws IOException {
         for (String expression : expressions) {
@@ -228,12 +282,12 @@ public class LexerOperationsTest {
             Token eof = lexer.getNextToken();
 
             Assert.assertEquals(TokenType.IDENTIFIER, a.getType());
-            Assert.assertEquals('a', a.getValue()); // TODO method to get string rep of a symbol
+            Assert.assertEquals("a", a.getValue().getValue());
 
             Assert.assertEquals(operation, op.getType());
 
             Assert.assertEquals(TokenType.IDENTIFIER, b.getType());
-//            Assert.assertEquals('b', b.getValue()); // TODO method to get string rep of a symbol
+            Assert.assertEquals("b", b.getValue().getValue());
 
             Assert.assertEquals(TokenType.EOF, eof.getType());
         }
@@ -251,7 +305,7 @@ public class LexerOperationsTest {
             Assert.assertEquals(operation, op.getType());
 
             Assert.assertEquals(TokenType.IDENTIFIER, a.getType());
-//            Assert.assertEquals('a', a.getValue()); // TODO method to get string rep of a symbol
+            Assert.assertEquals("a", a.getValue().getValue());
 
             Assert.assertEquals(TokenType.EOF, eof.getType());
         }
@@ -267,7 +321,7 @@ public class LexerOperationsTest {
             Token eof = lexer.getNextToken();
 
             Assert.assertEquals(TokenType.IDENTIFIER, a.getType());
-//            Assert.assertEquals('a', a.getValue()); // TODO method to get string rep of a symbol
+            Assert.assertEquals("a", a.getValue().getValue());
 
             Assert.assertEquals(operation, op.getType());
 

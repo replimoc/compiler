@@ -11,7 +11,9 @@ import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 
 /**
- * Test for correct lexing of integer literals
+ * Test for correct "lexing" of integer literals
+ *
+ * @author effenok
  */
 public class LexerIntegersTest {
 
@@ -36,9 +38,14 @@ public class LexerIntegersTest {
 
     @Test
     public void testNoNulls() throws Exception {
-        String[] literals = {"01234"};
-        // TODO pending advisor's answer
-//        testIntegerLiterals(literals);
+        String literal = "01234";
+        Lexer lexer = initLexer(literal);
+        Token tok1 = lexer.getNextToken();
+        Token tok2 = lexer.getNextToken();
+        Assert.assertEquals(TokenType.INTEGER, tok1);
+        Assert.assertEquals("0", tok1.getValue());
+        Assert.assertEquals(TokenType.INTEGER, tok2);
+        Assert.assertEquals("1234", tok2.getValue());
     }
 
     @Test
@@ -49,14 +56,12 @@ public class LexerIntegersTest {
 
     private void testIntegerLiterals(String[] literals) throws IOException {
         for (String literal : literals) {
-
-            BufferedInputStream is = getBufferedInputStream(literal);
-            Lexer lexer = new Lexer(is, stringTable);
+            Lexer lexer = initLexer(literal);
             Token literalToken = lexer.getNextToken();
             Token eof = lexer.getNextToken();
 
             Assert.assertEquals(TokenType.INTEGER, literalToken.getType());
-            Assert.assertEquals(literal, literalToken.getValue());
+            Assert.assertEquals(literal, literalToken.getValue().getValue());
 
             Assert.assertEquals(TokenType.EOF, eof.getType());
         }
@@ -64,9 +69,7 @@ public class LexerIntegersTest {
 
     private void testNegativeIntegerLiterals(String[] literals) throws IOException {
         for (String literal : literals) {
-
-            BufferedInputStream is = getBufferedInputStream(literal);
-            Lexer lexer = new Lexer(is, stringTable);
+            Lexer lexer = initLexer(literal);
             Token minusToken = lexer.getNextToken();
             Token literalToken = lexer.getNextToken();
             Token eof = lexer.getNextToken();
@@ -74,12 +77,14 @@ public class LexerIntegersTest {
             Assert.assertEquals(TokenType.SUBTRACT, minusToken.getType());
             Assert.assertEquals(TokenType.INTEGER, literalToken.getType());
             // TODO check javadoc for substring
-            Assert.assertEquals(literal.substring(1, literal.length()), literalToken.getValue());
+            Assert.assertEquals(literal.substring(1, literal.length()), literalToken.getValue().getValue());
             Assert.assertEquals(TokenType.EOF, eof.getType());
         }
     }
 
-    private BufferedInputStream getBufferedInputStream(String empty) {
-        return new BufferedInputStream(new ByteArrayInputStream(empty.getBytes(StandardCharsets.US_ASCII)));
+    private Lexer initLexer(String program) throws IOException {
+        BufferedInputStream is =
+                new BufferedInputStream(new ByteArrayInputStream(program.getBytes(StandardCharsets.US_ASCII)));
+        return new Lexer(is, stringTable);
     }
 }
