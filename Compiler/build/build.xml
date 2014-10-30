@@ -9,9 +9,12 @@
 	<property name="bin" location="bin" />
 	<property name="target" location="target" />
 
+	<property name="jarLocation" location="${target}/${ant.project.name}.jar" />
+
+	<property name="commons-cli" location="lib/commons-cli-1.2.jar" />
 
 	<path id="classpath.base">
-		<pathelement location="lib/commons-cli-1.2.jar" />
+		<pathelement location="${commons-cli}" />
 	</path>
 
 
@@ -24,7 +27,7 @@
 
 
 
-	<target name="build" description="compile the source ">
+	<target name="clean-build" depends="clean" description="compile the source">
 		<!-- Compile the java code from ${src} into ${bin} -->
 		<mkdir dir="${bin}" />
 		<javac srcdir="${src}" destdir="${bin}" includeantruntime="false">
@@ -42,25 +45,36 @@
 
 	<target name="buildJar" depends="clean-build">
 		<mkdir dir="${target}" />
-		<jar destfile="${target}/${ant.project.name}.jar" filesetmanifest="mergewithoutmain">
+		<jar destfile="${jarLocation}" filesetmanifest="mergewithoutmain">
 			<manifest>
 				<attribute name="Main-Class" value="compiler.main.CompilerApp" />
 				<attribute name="Class-Path" value="." />
 			</manifest>
 			<fileset dir="${bin}" />
+			<zipfileset excludes="META-INF/*.SF" src="${commons-cli}" />
 		</jar>
 	</target>
 
 
-	<target name="clean-build" description="clean and build"
-		depends="clean,build" />
+	<!-- Builds the jar file and tries to execute it as a simple test -->
+	<target name="testJar" depends="buildJar">
+		<exec executable="java">
+			<arg value="-jar" />
+			<arg value="${jarLocation}" />
+			<arg value="--help" />
+		</exec>
+	</target>
 
 
-	<target name="all" description="clean and build" depends="clean-build,test,buildJar" />
+	<target name="all" description="clean and build everything, run tests and build jar file">
+		<antcall target="test" />
+		<antcall target="testJar" />
+	</target>
+
 
 
 	<target name="buildTests" description="compile test sources"
-		depends="build">
+		depends="clean-build">
 		<javac srcdir="${tests}" destdir="${bin}" includeantruntime="false">
 			<classpath refid="classpath.test" />
 		</javac>
@@ -69,7 +83,8 @@
 
 
 	<target name="test" depends="buildTests">
-		<junit printsummary="on" fork="true" dir="${basedir}" haltonfailure="yes">
+		<junit printsummary="on" fork="true" dir="${basedir}"
+			haltonfailure="yes">
 			<classpath>
 				<path refid="classpath.test" />
 			</classpath>
