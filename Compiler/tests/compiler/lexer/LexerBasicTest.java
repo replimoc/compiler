@@ -25,9 +25,7 @@ public class LexerBasicTest {
     @Test
     public void testEmpty() throws Exception {
         String empty = "";
-        BufferedInputStream is = getBufferedInputStream(empty);
-
-        Lexer lexer = new Lexer(is, stringTable);
+        Lexer lexer = initLexer(empty);
 
         Token token = lexer.getNextToken();
         Assert.assertEquals(TokenType.EOF, token.getType());
@@ -40,8 +38,7 @@ public class LexerBasicTest {
     @Test
     public void testComment() throws Exception {
         String comment = " /* aadk ble \n \n\n da t\t\r\n  aaag d  */";
-        BufferedInputStream is = getBufferedInputStream(comment);
-        Lexer lexer = new Lexer(is, stringTable);
+        Lexer lexer = initLexer(comment);
 
         Token token = lexer.getNextToken();
         Assert.assertEquals(TokenType.EOF, token.getType());
@@ -54,8 +51,7 @@ public class LexerBasicTest {
     @Test
     public void testNotTerminatedComment() throws Exception {
         String comment = " /* aadk ble \n \n\n da t\t\r\n  aaag d  ";
-        BufferedInputStream is = getBufferedInputStream(comment);
-        Lexer lexer = new Lexer(is, stringTable);
+        Lexer lexer = initLexer(comment);
 
         Token token = lexer.getNextToken();
         Assert.assertEquals(TokenType.ERROR, token.getType());
@@ -64,8 +60,7 @@ public class LexerBasicTest {
     @Test
     public void testMultipleComments() throws Exception {
         String comment = " /* aadk ble  /* \n \n\n da /* t\t\r\n  aaag d  */ ";
-        BufferedInputStream is = getBufferedInputStream(comment);
-        Lexer lexer = new Lexer(is, stringTable);
+        Lexer lexer = initLexer(comment);
 
         Token token = lexer.getNextToken();
         Assert.assertEquals(TokenType.EOF, token.getType());
@@ -74,17 +69,18 @@ public class LexerBasicTest {
     @Test
     public void testMultipleCommentTerminations() throws Exception {
         String comment = " /* aadk ble  /* \n \n\n da /* t\t\r\n  aaag d  */ abc */ ";
-        BufferedInputStream is = getBufferedInputStream(comment);
-        Lexer lexer = new Lexer(is, stringTable);
+        Lexer lexer = initLexer(comment);
 
-        Token token = lexer.getNextToken();
-        Assert.assertEquals(TokenType.IDENTIFIER, token.getType());
-        token = lexer.getNextToken();
-        Assert.assertEquals(TokenType.ERROR, token.getType());
+        Assert.assertEquals(TokenType.IDENTIFIER, lexer.getNextToken().getType());
+        Assert.assertEquals(TokenType.MULTIPLY, lexer.getNextToken().getType());
+        Assert.assertEquals(TokenType.DIVIDE, lexer.getNextToken().getType());
+        Assert.assertEquals(TokenType.EOF, lexer.getNextToken().getType());
     }
 
-    private BufferedInputStream getBufferedInputStream(String empty) {
-        return new BufferedInputStream(new ByteArrayInputStream(empty.getBytes(StandardCharsets.US_ASCII)));
+    private Lexer initLexer(String program) throws IOException {
+        BufferedInputStream is =
+                new BufferedInputStream(new ByteArrayInputStream(program.getBytes(StandardCharsets.US_ASCII)));
+        return new Lexer(is, stringTable);
     }
 
 }

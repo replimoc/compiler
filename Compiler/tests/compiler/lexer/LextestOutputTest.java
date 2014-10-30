@@ -60,6 +60,8 @@ public class LextestOutputTest {
                 Assert.fail("cannot find program to output " + filename);
             }
 
+            System.out.println("===== " + programFilename + " =====");
+
             // run lexer and get output
             ProcessBuilder pb = new ProcessBuilder("./compiler.sh", "--lextest", programFilename);
             pb.redirectErrorStream(true);
@@ -75,6 +77,7 @@ public class LextestOutputTest {
 
             while ((expectedLine = expectedOutput.readLine()) != null) {
                 outputLine = compilerOutput.readLine();
+                System.out.println(outputLine);
                 Assert.assertNotNull("missing output: expected " + outputLine,outputLine);
                 Assert.assertEquals(expectedLine, outputLine);
             }
