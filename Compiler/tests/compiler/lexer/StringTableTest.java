@@ -2,7 +2,6 @@ package compiler.lexer;
 
 import static org.junit.Assert.assertEquals;
 import compiler.StringTable;
-import compiler.Symbol;
 
 import org.junit.Test;
 

@@ -100,7 +100,6 @@ public class LexerKeywordTest {
 	
 	private void testToken(Token token, TokenType expectedType) {
 		Assert.assertEquals(expectedType, token.getType());
-		//Assert.assertEquals("abstract", token.getValue());
 	}
 
 	private BufferedInputStream getBufferedInputStream(String empty) {
