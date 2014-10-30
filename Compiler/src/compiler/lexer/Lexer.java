@@ -38,15 +38,8 @@ public class Lexer {
 		} else if (is19()) {
 			t = lexIntegerLiteral();
 		} else if (c == '0') {
+			t = tokenStringTable(TokenType.INTEGER, "0");
 			nextChar();
-			if (is09()) {
-				t = tokenError("Unexpected number after an '0'.");
-				while (is09()) { // Parse all integer until another token available.
-					nextChar();
-				}
-			} else {
-				t = tokenStringTable(TokenType.INTEGER, "0");
-			}
 		} else {
 			t = lexOperatorAndComment();
 		}
