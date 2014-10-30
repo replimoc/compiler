@@ -16,3 +16,7 @@ script: ant -buildfile ./Compiler/build/build.xml $TARGET
 notifications:
   email:
     - compiler@lara.coderworks.de
+
+branches:
+  except:
+    - /^tests.*$/
