@@ -282,12 +282,12 @@ public class LexerOperationsTest {
             Token eof = lexer.getNextToken();
 
             Assert.assertEquals(TokenType.IDENTIFIER, a.getType());
-            Assert.assertEquals("a", a.getValue().getValue());
+            Assert.assertEquals("a", a.getSymbol().getValue());
 
             Assert.assertEquals(operation, op.getType());
 
             Assert.assertEquals(TokenType.IDENTIFIER, b.getType());
-            Assert.assertEquals("b", b.getValue().getValue());
+            Assert.assertEquals("b", b.getSymbol().getValue());
 
             Assert.assertEquals(TokenType.EOF, eof.getType());
         }
@@ -305,7 +305,7 @@ public class LexerOperationsTest {
             Assert.assertEquals(operation, op.getType());
 
             Assert.assertEquals(TokenType.IDENTIFIER, a.getType());
-            Assert.assertEquals("a", a.getValue().getValue());
+            Assert.assertEquals("a", a.getSymbol().getValue());
 
             Assert.assertEquals(TokenType.EOF, eof.getType());
         }
@@ -321,7 +321,7 @@ public class LexerOperationsTest {
             Token eof = lexer.getNextToken();
 
             Assert.assertEquals(TokenType.IDENTIFIER, a.getType());
-            Assert.assertEquals("a", a.getValue().getValue());
+            Assert.assertEquals("a", a.getSymbol().getValue());
 
             Assert.assertEquals(operation, op.getType());
 

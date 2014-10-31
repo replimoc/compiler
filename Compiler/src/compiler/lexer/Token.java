@@ -47,7 +47,7 @@ public class Token {
 	 * 
 	 * @return
 	 */
-	public Symbol getValue() {
+	public Symbol getSymbol() {
 		return value;
 	}
 

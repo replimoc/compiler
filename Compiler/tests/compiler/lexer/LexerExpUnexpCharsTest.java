@@ -104,7 +104,7 @@ public class LexerExpUnexpCharsTest {
 				} else if (i >= 48 && i <= 57) {
 					Token tok = lexer.getNextToken();
 					Assert.assertEquals(TokenType.INTEGER, tok.getType());
-					Assert.assertEquals(String.valueOf(i - 48), tok.getValue()
+					Assert.assertEquals(String.valueOf(i - 48), tok.getSymbol()
 							.getValue());
 				} else if (i == 58) {
 					Token tok = lexer.getNextToken();
@@ -128,7 +128,7 @@ public class LexerExpUnexpCharsTest {
 					Token tok = lexer.getNextToken();
 					Assert.assertEquals(TokenType.IDENTIFIER, tok.getType());
 					Assert.assertEquals(Character.toString((char) i), tok
-							.getValue().getValue());
+							.getSymbol().getValue());
 				} else if (i == 91) {
 					Token tok = lexer.getNextToken();
 					Assert.assertEquals(TokenType.LSQUAREBRACKET, tok.getType());
@@ -144,12 +144,12 @@ public class LexerExpUnexpCharsTest {
 				} else if (i == 95) {
 					Token tok = lexer.getNextToken();
 					Assert.assertEquals(TokenType.IDENTIFIER, tok.getType());
-					Assert.assertEquals("_", tok.getValue().getValue());
+					Assert.assertEquals("_", tok.getSymbol().getValue());
 				} else if (i >= 97 && i <= 122) {
 					Token tok = lexer.getNextToken();
 					Assert.assertEquals(TokenType.IDENTIFIER, tok.getType());
 					Assert.assertEquals(Character.toString((char) i), tok
-							.getValue().getValue());
+							.getSymbol().getValue());
 				} else if (i == 123) {
 					Token tok = lexer.getNextToken();
 					Assert.assertEquals(TokenType.LCURLYBRACKET, tok.getType());
