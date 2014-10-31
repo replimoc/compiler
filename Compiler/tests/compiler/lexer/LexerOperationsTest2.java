@@ -13,7 +13,7 @@ import java.nio.charset.StandardCharsets;
 /**
  * Test other operators - brackets, commas, etc
  * <p/>
- * ops: ( , ), , ,  . , : , ? , ;,  TODO  [ , ], { , }
+ * ops: ( , ), , ,  . , : , ? , ;, [ , ], { , }
  *
  * @author effenok
  */
