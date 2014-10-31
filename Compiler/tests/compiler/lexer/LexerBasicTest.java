@@ -58,6 +58,15 @@ public class LexerBasicTest {
     }
 
     @Test
+    public void testNotTerminatedCommentAfterStar() throws Exception {
+        String comment = " /* aadk ble \n * \n\n da *  t\t\r\n  aaag d  *  ";
+        Lexer lexer = initLexer(comment);
+
+        Token token = lexer.getNextToken();
+        Assert.assertEquals(TokenType.ERROR, token.getType());
+    }
+
+    @Test
     public void testMultipleComments() throws Exception {
         String comment = " /* aadk ble  /* \n \n\n da /* t\t\r\n  aaag d  */ ";
         Lexer lexer = initLexer(comment);
