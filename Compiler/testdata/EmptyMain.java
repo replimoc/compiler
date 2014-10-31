@@ -1,10 +1,10 @@
 class EmptyMain {
 
+    /***
+     * super empty method !
+     * @param args
+     */
 	public static void main(String[] args) {
-	    int a;
-	 //   a %== 1;
-//	    a = 01234;
-//	    a = ?a : a;
 	}
 
 }

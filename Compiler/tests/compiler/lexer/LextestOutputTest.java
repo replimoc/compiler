@@ -1,5 +1,6 @@
 package compiler.lexer;
 
+import compiler.StringTable;
 import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Ignore;
@@ -7,12 +8,10 @@ import org.junit.Test;
 
 import java.io.*;
 import java.nio.charset.StandardCharsets;
-import java.nio.file.DirectoryStream;
-import java.nio.file.Files;
-import java.nio.file.Path;
-import java.nio.file.Paths;
+import java.nio.file.*;
+import java.nio.file.attribute.BasicFileAttributes;
 import java.util.HashSet;
-
+import static java.nio.file.FileVisitResult.*;
 /**
  * Test case for correct output of compiler with --lextest option
  * <p/>
@@ -22,9 +21,80 @@ public class LextestOutputTest {
 
     HashSet<String> excludedSourceFiles = new HashSet<String>();
 
+    public static class LexTester extends SimpleFileVisitor<Path>
+    {
+        private static final String lexerExtension = ".lexer";
+        private static final String javaExtension = ".java";
+
+        private final PathMatcher matcher;
+
+        public LexTester() {
+            matcher = FileSystems.getDefault().getPathMatcher("glob:*" + lexerExtension);
+        }
+
+        @Override
+        public FileVisitResult visitFile(Path file, BasicFileAttributes attrs) {
+            Path name = file.getFileName();
+            if (name != null && matcher.matches(name)) {
+                String lexFilename = name.toString();
+                String sourceFilename = lexFilename.replace(lexerExtension, javaExtension);
+
+                Path sourceFilePath = file.getParent().resolve(sourceFilename);
+
+
+                if (!Files.exists(sourceFilePath)) {
+                    Assert.fail("cannot find program to output " + sourceFilePath);
+                }
+
+                try {
+                    System.out.println();
+                    System.out.println("sourceFilePath = " + sourceFilePath);
+                    testSourceFile(sourceFilePath, file);
+                } catch (IOException e) {
+                    e.printStackTrace();
+                    Assert.fail(e.getMessage());
+                }
+
+            }
+            return CONTINUE;
+        }
+
+    }
+
+
     @Before
     public void setUp() throws Exception {
 //        excludedSourceFiles.add("empty.lexer");
+    }
+
+    @Test
+    public void testLexerFiles() throws Exception {
+        Path testDir = Paths.get("testdata");
+        LexTester lexTester = new LexTester();
+        Files.walkFileTree(testDir, lexTester);
+    }
+
+    private static void testSourceFile(Path sourceFile, Path lexFile) throws IOException {
+        // read expected output
+        BufferedReader expectedOutput = Files.newBufferedReader(lexFile, StandardCharsets.US_ASCII);
+        BufferedInputStream sourceIs = new BufferedInputStream(Files.newInputStream(sourceFile));
+
+        Lexer lexer = new Lexer(sourceIs, new StringTable());
+
+        // compare expected output and actual output line by line
+        String expectedLine;
+        String actualLine;
+
+        while ((expectedLine = expectedOutput.readLine()) != null) {
+            Token nextToken = lexer.getNextToken();
+            Assert.assertNotNull("missing output: expected " + expectedLine, nextToken);
+            actualLine = nextToken.getTokenString();
+            System.out.println(actualLine);
+            Assert.assertEquals(expectedLine, actualLine);
+        }
+
+        Token nextToken = lexer.getNextToken();
+        Assert.assertNull("not expected output, expected eof", nextToken);
     }
 
     /**
