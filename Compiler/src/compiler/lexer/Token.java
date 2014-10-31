@@ -4,7 +4,7 @@ import compiler.Symbol;
 
 public class Token {
 	private final TokenType type;
-	private final Symbol value;
+	private final Symbol symbol;
 	private final Position position;
 
 	/**
@@ -16,21 +16,21 @@ public class Token {
 	public Token(TokenType type, Position position) {
 		this.type = type;
 		this.position = position;
-		this.value = null;
+		this.symbol = null;
 	}
 
 	/**
 	 * Constructor. Sets the type of the token to the given {@link TokenType} and the position of the token to the given {@link Position}. Sets the
-	 * value of the token to the given value.
+	 * symbol of the token to the given symbol.
 	 * 
 	 * @param type
 	 * @param position
-	 * @param value
+	 * @param symbol
 	 */
-	public Token(TokenType type, Position position, Symbol value) {
+	public Token(TokenType type, Position position, Symbol symbol) {
 		this.type = type;
 		this.position = position;
-		this.value = value;
+		this.symbol = symbol;
 	}
 
 	/**
@@ -43,12 +43,12 @@ public class Token {
 	}
 
 	/**
-	 * Return the value of the token.
+	 * Return the symbol of the token.
 	 * 
 	 * @return
 	 */
 	public Symbol getSymbol() {
-		return value;
+		return symbol;
 	}
 
 	/**
@@ -69,11 +69,11 @@ public class Token {
 		// to comply with the --lextest settings
 		switch (type) {
 		case IDENTIFIER:
-			return "identifier " + value;
+			return "identifier " + symbol;
 		case INTEGER:
-			return "integer literal " + value;
+			return "integer literal " + symbol;
 		case ERROR:
-			return type.getString() + " " + value;
+			return type.getString() + " " + symbol;
 		default:
 			return type.getString();
 		}
