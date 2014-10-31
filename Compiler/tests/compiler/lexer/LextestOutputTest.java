@@ -1,6 +1,8 @@
 package compiler.lexer;
 
 import compiler.StringTable;
+import junit.framework.AssertionFailedError;
+import junit.framework.ComparisonFailure;
 import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Ignore;
@@ -10,8 +12,12 @@ import java.io.*;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.*;
 import java.nio.file.attribute.BasicFileAttributes;
+import java.util.ArrayList;
 import java.util.HashSet;
+import java.util.List;
+
 import static java.nio.file.FileVisitResult.*;
+
 /**
  * Test case for correct output of compiler with --lextest option
  * <p/>
@@ -21,12 +27,12 @@ public class LextestOutputTest {
 
     HashSet<String> excludedSourceFiles = new HashSet<String>();
 
-    public static class LexTester extends SimpleFileVisitor<Path>
-    {
+    public static class LexTester extends SimpleFileVisitor<Path> {
         private static final String lexerExtension = ".lexer";
         private static final String javaExtension = ".java";
 
         private final PathMatcher matcher;
+        private List<Path> failedTestsList = new ArrayList<>();
 
         public LexTester() {
             matcher = FileSystems.getDefault().getPathMatcher("glob:*" + lexerExtension);
@@ -47,18 +53,26 @@ public class LextestOutputTest {
                 }
 
                 try {
-                    System.out.println();
-                    System.out.println("sourceFilePath = " + sourceFilePath);
                     testSourceFile(sourceFilePath, file);
-                } catch (IOException e) {
+                } catch (Exception e) {
+                    System.err.println("Test for file = " + file + " failed");
                     e.printStackTrace();
-                    Assert.fail(e.getMessage());
+                    failedTestsList.add(file);
+                } catch (AssertionError e) {
+                    System.err.println("Test for file = " + file + " failed");
+                    e.printStackTrace();
+                    failedTestsList.add(file);
                 }
 
             }
             return CONTINUE;
         }
 
+        public void checkForFailedTests() {
+            if (failedTestsList.size() != 0) {
+                Assert.fail("Tests for " + failedTestsList.size() + " test(s) failed");
+            }
+        }
     }
 
 
@@ -72,9 +86,10 @@ public class LextestOutputTest {
         Path testDir = Paths.get("testdata");
         LexTester lexTester = new LexTester();
         Files.walkFileTree(testDir, lexTester);
+        lexTester.checkForFailedTests();
     }
 
-    private static void testSourceFile(Path sourceFile, Path lexFile) throws IOException {
+    private static void testSourceFile(Path sourceFile, Path lexFile) throws Exception {
         // read expected output
         BufferedReader expectedOutput = Files.newBufferedReader(lexFile, StandardCharsets.US_ASCII);
         BufferedInputStream sourceIs = new BufferedInputStream(Files.newInputStream(sourceFile));
@@ -89,7 +104,7 @@ public class LextestOutputTest {
             Token nextToken = lexer.getNextToken();
             Assert.assertNotNull("missing output: expected " + expectedLine, nextToken);
             actualLine = nextToken.getTokenString();
-            System.out.println(actualLine);
+//            System.out.println(actualLine);
             Assert.assertEquals(expectedLine, actualLine);
         }
 
@@ -100,14 +115,14 @@ public class LextestOutputTest {
     /**
      * This test takes all expected outputs in $PROJECT_DIR/testdata/lextest-out, finds corresponding sources in
      * $PROJECT_DIR/testdata/sources,runs compiler with --lextest and sourceFile, and then compares output line by line.
-     *
+     * <p/>
      * This test requires project jar file in target directory
      * This test can only be run on linux (it calls script ./compiler.sh)
      * This test must be run from working directory $PROJECT_DIR = compiler/Compiler
-     *    (and I don't know how to fix this)
-     *
+     * (and I don't know how to fix this)
+     * <p/>
      * ...so it must be called manually
-     *
+     * <p/>
      * to exclude expected results from testing add them to excludedSourceFiles
      */
     @Test
@@ -121,7 +136,7 @@ public class LextestOutputTest {
         for (Path lextestFile : stream) {
             // find corresponding program in testdata/sources
             String filename = lextestFile.getFileName().toString();
-            if(excludedSourceFiles.contains(filename)) continue;
+            if (excludedSourceFiles.contains(filename)) continue;
 
             String programFilename = "testdata/sources/" + filename.replace(".lexer", ".java");
 
@@ -147,7 +162,7 @@ public class LextestOutputTest {
             while ((expectedLine = expectedOutput.readLine()) != null) {
                 outputLine = compilerOutput.readLine();
                 System.out.println(outputLine);
-                Assert.assertNotNull("missing output: expected " + outputLine,outputLine);
+                Assert.assertNotNull("missing output: expected " + outputLine, outputLine);
                 Assert.assertEquals(expectedLine, outputLine);
             }
 
