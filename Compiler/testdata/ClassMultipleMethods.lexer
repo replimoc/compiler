@@ -1,0 +1,95 @@
+class
+identifier multipleMethods
+{
+public
+int
+identifier method1
+(
+)
+{
+}
+public
+boolean
+identifier method1
+(
+)
+{
+}
+public
+void
+identifier method1
+(
+)
+{
+}
+public
+identifier SomeType
+identifier method1
+(
+)
+{
+}
+public
+int
+identifier method2
+(
+int
+identifier p
+)
+{
+}
+public
+int
+identifier method2
+(
+boolean
+identifier p
+)
+{
+}
+public
+int
+identifier method2
+(
+void
+identifier p
+)
+{
+}
+public
+int
+identifier method2
+(
+identifier SomeType
+identifier p
+)
+{
+}
+public
+int
+identifier method3
+(
+int
+identifier p
+,
+boolean
+identifier p2
+,
+void
+identifier p3
+,
+identifier Type
+identifier p4
+)
+{
+}
+public
+int
+identifier method4
+(
+)
+{
+;
+}
+}
+EOF

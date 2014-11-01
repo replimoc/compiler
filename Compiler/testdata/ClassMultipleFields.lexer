@@ -1,0 +1,21 @@
+class
+identifier multipleFields
+{
+public
+int
+identifier member
+;
+public
+boolean
+identifier member
+;
+public
+void
+identifier member2
+;
+public
+identifier SomeType
+identifier member3
+;
+}
+EOF

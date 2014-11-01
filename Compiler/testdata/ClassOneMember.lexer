@@ -1,0 +1,36 @@
+class
+identifier fieldMember
+{
+public
+int
+identifier member
+;
+}
+class
+identifier methodMember
+{
+public
+boolean
+identifier method
+(
+)
+{
+}
+}
+class
+identifier mainMethod
+{
+public
+static
+void
+identifier mainMethod
+(
+identifier String
+[
+]
+identifier args
+)
+{
+}
+}
+EOF
