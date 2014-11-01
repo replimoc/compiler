@@ -44,9 +44,9 @@ public class LexerIntegersTest {
 		Token tok1 = lexer.getNextToken();
 		Token tok2 = lexer.getNextToken();
 		Assert.assertEquals(TokenType.INTEGER, tok1.getType());
-		Assert.assertEquals("0", tok1.getValue().getValue());
+		Assert.assertEquals("0", tok1.getSymbol().getValue());
 		Assert.assertEquals(TokenType.INTEGER, tok2.getType());
-		Assert.assertEquals("1234", tok2.getValue().getValue());
+		Assert.assertEquals("1234", tok2.getSymbol().getValue());
 	}
 
 	@Test
@@ -62,7 +62,7 @@ public class LexerIntegersTest {
 			Token eof = lexer.getNextToken();
 
 			Assert.assertEquals(TokenType.INTEGER, literalToken.getType());
-			Assert.assertEquals(literal, literalToken.getValue().getValue());
+			Assert.assertEquals(literal, literalToken.getSymbol().getValue());
 
 			Assert.assertEquals(TokenType.EOF, eof.getType());
 		}
@@ -78,7 +78,7 @@ public class LexerIntegersTest {
 			Assert.assertEquals(TokenType.SUBTRACT, minusToken.getType());
 			Assert.assertEquals(TokenType.INTEGER, literalToken.getType());
 			// TODO check javadoc for substring
-			Assert.assertEquals(literal.substring(1, literal.length()), literalToken.getValue().getValue());
+			Assert.assertEquals(literal.substring(1, literal.length()), literalToken.getSymbol().getValue());
 			Assert.assertEquals(TokenType.EOF, eof.getType());
 		}
 	}
