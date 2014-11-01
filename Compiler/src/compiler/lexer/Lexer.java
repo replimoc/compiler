@@ -9,11 +9,11 @@ import compiler.Symbol;
 
 public class Lexer {
 	private int c;
-	private IReader reader;
+	private IPositionalCharacterSource reader;
 	private StringTable stringTable;
 
 	public Lexer(BufferedInputStream bufferedInputStream, StringTable stringTable) throws IOException {
-		this.reader = new Reader(bufferedInputStream);
+		this.reader = new PositionalCharacterSource(bufferedInputStream);
 		this.stringTable = stringTable;
 		initStringTable(stringTable);
 		nextChar();
@@ -346,21 +346,21 @@ public class Lexer {
 		}
 	}
 
-	/*
-	 * Reader for reading buffered input stream.
+	/**
+	 * Character source for reading characters while keeping treack of their position
 	 */
-	private interface IReader {
+	private interface IPositionalCharacterSource {
 		public int getChar() throws IOException;
 
 		public Position getPosition();
 	}
 
-	private class Reader implements IReader {
+	private class PositionalCharacterSource implements IPositionalCharacterSource {
 		private BufferedInputStream bufferedInputStream;
 		private int line = 1;
 		private int character = 0;
 
-		public Reader(BufferedInputStream bufferedInputStream) {
+		public PositionalCharacterSource(BufferedInputStream bufferedInputStream) {
 			this.bufferedInputStream = bufferedInputStream;
 		}
 
