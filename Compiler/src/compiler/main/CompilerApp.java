@@ -1,8 +1,8 @@
 package compiler.main;
 
-import java.io.BufferedInputStream;
+import java.io.BufferedReader;
 import java.io.File;
-import java.io.FileInputStream;
+import java.io.FileReader;
 import java.io.IOException;
 
 import org.apache.commons.cli.BasicParser;
@@ -54,7 +54,7 @@ public class CompilerApp {
 	}
 
 	private static void executeLexerTest(File file) throws IOException {
-		Lexer lexer = new Lexer(new BufferedInputStream(new FileInputStream(file)), new StringTable());
+		Lexer lexer = new Lexer(new BufferedReader(new FileReader(file)), new StringTable());
 
 		Token token;
 		do {

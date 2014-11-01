@@ -1,7 +1,7 @@
 package compiler.lexer;
 
-import java.io.BufferedInputStream;
 import java.io.IOException;
+import java.io.Reader;
 
 import compiler.StringTable;
 import compiler.StringTable.Entry;
@@ -12,8 +12,8 @@ public class Lexer {
 	private IPositionalCharacterSource reader;
 	private StringTable stringTable;
 
-	public Lexer(BufferedInputStream bufferedInputStream, StringTable stringTable) throws IOException {
-		this.reader = new PositionalCharacterSource(bufferedInputStream);
+	public Lexer(Reader reader, StringTable stringTable) throws IOException {
+		this.reader = new PositionalCharacterSource(reader);
 		this.stringTable = stringTable;
 		initStringTable(stringTable);
 		nextChar();
@@ -356,17 +356,17 @@ public class Lexer {
 	}
 
 	private class PositionalCharacterSource implements IPositionalCharacterSource {
-		private BufferedInputStream bufferedInputStream;
+		private Reader reader;
 		private int line = 1;
 		private int character = 0;
 
-		public PositionalCharacterSource(BufferedInputStream bufferedInputStream) {
-			this.bufferedInputStream = bufferedInputStream;
+		public PositionalCharacterSource(Reader reader) {
+			this.reader = reader;
 		}
 
 		@Override
 		public int getChar() throws IOException {
-			c = bufferedInputStream.read();
+			c = reader.read();
 			if (c == '\n' || c == '\r') {
 				line++;
 				character = 0;

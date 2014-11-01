@@ -3,30 +3,20 @@ package compiler.lexer;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
 
-import java.io.BufferedInputStream;
-import java.io.ByteArrayInputStream;
 import java.io.IOException;
-import java.nio.charset.StandardCharsets;
 
-import org.junit.Before;
 import org.junit.Test;
 
-import compiler.StringTable;
 import compiler.Symbol;
 import compiler.utils.PrivateMethodCaller;
+import compiler.utils.TestUtils;
 
 public class LexerTest {
-	private StringTable stringTable;
 	private final PrivateMethodCaller caller = new PrivateMethodCaller(Lexer.class);;
-
-	@Before
-	public void setUp() throws Exception {
-		stringTable = new StringTable();
-	}
 
 	@Test
 	public void testToken() throws IOException {
-		Lexer lexer = new Lexer(getBufferedInputStream(""), stringTable);
+		Lexer lexer = TestUtils.initLexer("");
 		assertEquals(TokenType.AND, ((Token) caller.call("token", lexer, TokenType.AND)).getType());
 		assertEquals(TokenType.ASSIGN, ((Token) caller.call("token", lexer, TokenType.ASSIGN)).getType());
 		assertEquals(TokenType.ABSTRACT, ((Token) caller.call("token", lexer, TokenType.ABSTRACT)).getType());
@@ -46,7 +36,7 @@ public class LexerTest {
 
 	@Test
 	public void testTokenStringTable() throws IOException {
-		Lexer lexer = new Lexer(getBufferedInputStream(""), stringTable);
+		Lexer lexer = TestUtils.initLexer("");
 
 		String testString = "testString";
 		Token t1 = caller.call("tokenStringTable", lexer, TokenType.BREAK, testString);
@@ -60,7 +50,7 @@ public class LexerTest {
 
 	@Test
 	public void testTokenError() throws IOException {
-		Lexer lexer = new Lexer(getBufferedInputStream(""), stringTable);
+		Lexer lexer = TestUtils.initLexer("");
 
 		String testString = "test error string";
 		Token t1 = caller.call("tokenError", lexer, testString);
@@ -99,15 +89,10 @@ public class LexerTest {
 	}
 
 	private void testMethodAgainstArray(final String input, final String method, final boolean bools[]) throws IOException {
-		Lexer lexer = new Lexer(getBufferedInputStream(input), stringTable);
+		Lexer lexer = TestUtils.initLexer(input);
 		for (boolean b : bools) {
 			assertEquals(b, caller.call(method, lexer));
 			caller.call("nextChar", lexer);
 		}
-	}
-
-	private BufferedInputStream getBufferedInputStream(String empty) {
-		return new BufferedInputStream(new ByteArrayInputStream(
-				empty.getBytes(StandardCharsets.US_ASCII)));
 	}
 }

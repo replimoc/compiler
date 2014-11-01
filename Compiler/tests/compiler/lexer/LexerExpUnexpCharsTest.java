@@ -1,35 +1,23 @@
 package compiler.lexer;
 
-import java.io.BufferedInputStream;
-import java.io.ByteArrayInputStream;
 import java.io.IOException;
-import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.List;
 
 import org.junit.Assert;
-import org.junit.Before;
 import org.junit.Test;
 
-import compiler.StringTable;
+import compiler.utils.TestUtils;
 
 public class LexerExpUnexpCharsTest {
-
-	private StringTable stringTable;
-
-	@Before
-	public void setUp() throws Exception {
-		stringTable = new StringTable();
-	}
 
 	@Test
 	public void test0till32Chars() {
 		for (int i = 0; i <= 32; i++) {
 			String inputStr = Character.toString((char) i);
-			BufferedInputStream is = getBufferedInputStream(inputStr);
 
 			try {
-				Lexer lexer = new Lexer(is, stringTable);
+				Lexer lexer = TestUtils.initLexer(inputStr);
 
 				// allowed empty chars
 				if (i == 9 || i == 10 || i == 13 || i == 32) {
@@ -60,9 +48,8 @@ public class LexerExpUnexpCharsTest {
 	public void test33till127Chars() {
 		for (int i = 33; i <= 127; i++) {
 			String inputStr = Character.toString((char) i);
-			BufferedInputStream is = getBufferedInputStream(inputStr);
 			try {
-				Lexer lexer = new Lexer(is, stringTable);
+				Lexer lexer = TestUtils.initLexer(inputStr);
 
 				// allowed chars
 				if (i == 33) {
@@ -163,7 +150,7 @@ public class LexerExpUnexpCharsTest {
 					Token tok = lexer.getNextToken();
 					Assert.assertEquals(TokenType.BINARYCOMPLEMENT,
 							tok.getType());
-				// not allowed
+					// not allowed
 				} else {
 					Token tok = lexer.getNextToken();
 
@@ -183,7 +170,7 @@ public class LexerExpUnexpCharsTest {
 			}
 		}
 	}
-	
+
 	@Test
 	public void testUnexpCharAfterEmptyChars() {
 		try {
@@ -207,39 +194,39 @@ public class LexerExpUnexpCharsTest {
 			inputStr = "import$";
 			tokens = lexString(inputStr);
 			testUnexpCharAfterExpToken(tokens, TokenType.IMPORT);
-			
+
 			inputStr = "!$";
 			tokens = lexString(inputStr);
 			testUnexpCharAfterExpToken(tokens, TokenType.LOGICALNOT);
-			
+
 			inputStr = "!=  $";
 			tokens = lexString(inputStr);
 			testUnexpCharAfterExpToken(tokens, TokenType.NOTEQUAL);
-			
+
 			inputStr = "!= \n $";
 			tokens = lexString(inputStr);
 			testUnexpCharAfterExpToken(tokens, TokenType.NOTEQUAL);
-			
+
 			inputStr = "_$";
 			tokens = lexString(inputStr);
 			testUnexpCharAfterExpToken(tokens, TokenType.IDENTIFIER);
-			
+
 			inputStr = "_abc$";
 			tokens = lexString(inputStr);
 			testUnexpCharAfterExpToken(tokens, TokenType.IDENTIFIER);
-			
+
 			inputStr = "abc_a3df$";
 			tokens = lexString(inputStr);
 			testUnexpCharAfterExpToken(tokens, TokenType.IDENTIFIER);
-			
+
 			inputStr = "abc3a3df$";
 			tokens = lexString(inputStr);
 			testUnexpCharAfterExpToken(tokens, TokenType.IDENTIFIER);
-			
+
 			inputStr = "42$";
 			tokens = lexString(inputStr);
 			testUnexpCharAfterExpToken(tokens, TokenType.INTEGER);
-			
+
 			inputStr = "0$";
 			tokens = lexString(inputStr);
 			testUnexpCharAfterExpToken(tokens, TokenType.INTEGER);
@@ -250,12 +237,11 @@ public class LexerExpUnexpCharsTest {
 	}
 
 	private List<Token> lexString(String input) throws IOException {
-		BufferedInputStream is = getBufferedInputStream(input);
-		Lexer lexer = new Lexer(is, stringTable);
+		Lexer lexer = TestUtils.initLexer(input);
 
 		List<Token> result = new ArrayList<Token>();
 		Token tok = null;
-		while(true) {
+		while (true) {
 			tok = lexer.getNextToken();
 			if (tok.getType() == TokenType.EOF) {
 				break;
@@ -264,15 +250,10 @@ public class LexerExpUnexpCharsTest {
 		}
 		return result;
 	}
-	
+
 	private void testUnexpCharAfterExpToken(List<Token> tokens, TokenType expTok) {
 		Assert.assertEquals(2, tokens.size());
 		Assert.assertEquals(expTok, tokens.get(0).getType());
 		Assert.assertEquals(TokenType.ERROR, tokens.get(1).getType());
-	}
-
-	private BufferedInputStream getBufferedInputStream(String empty) {
-		return new BufferedInputStream(new ByteArrayInputStream(
-				empty.getBytes(StandardCharsets.US_ASCII)));
 	}
 }
