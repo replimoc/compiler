@@ -1,15 +1,11 @@
 package compiler.lexer;
 
-import java.io.BufferedInputStream;
-import java.io.ByteArrayInputStream;
 import java.io.IOException;
-import java.nio.charset.StandardCharsets;
 
 import org.junit.Assert;
-import org.junit.Before;
 import org.junit.Test;
 
-import compiler.StringTable;
+import compiler.utils.TestUtils;
 
 /**
  * Test for correct "lexing" of integer literals
@@ -17,13 +13,6 @@ import compiler.StringTable;
  * @author effenok
  */
 public class LexerIntegersTest {
-
-	private StringTable stringTable;
-
-	@Before
-	public void setUp() throws Exception {
-		stringTable = new StringTable();
-	}
 
 	@Test
 	public void testDigits() throws Exception {
@@ -40,7 +29,7 @@ public class LexerIntegersTest {
 	@Test
 	public void testNoNulls() throws Exception {
 		String literal = "01234";
-		Lexer lexer = initLexer(literal);
+		Lexer lexer = TestUtils.initLexer(literal);
 		Token tok1 = lexer.getNextToken();
 		Token tok2 = lexer.getNextToken();
 		Assert.assertEquals(TokenType.INTEGER, tok1.getType());
@@ -57,7 +46,7 @@ public class LexerIntegersTest {
 
 	private void testIntegerLiterals(String[] literals) throws IOException {
 		for (String literal : literals) {
-			Lexer lexer = initLexer(literal);
+			Lexer lexer = TestUtils.initLexer(literal);
 			Token literalToken = lexer.getNextToken();
 			Token eof = lexer.getNextToken();
 
@@ -70,7 +59,7 @@ public class LexerIntegersTest {
 
 	private void testNegativeIntegerLiterals(String[] literals) throws IOException {
 		for (String literal : literals) {
-			Lexer lexer = initLexer(literal);
+			Lexer lexer = TestUtils.initLexer(literal);
 			Token minusToken = lexer.getNextToken();
 			Token literalToken = lexer.getNextToken();
 			Token eof = lexer.getNextToken();
@@ -83,9 +72,4 @@ public class LexerIntegersTest {
 		}
 	}
 
-	private Lexer initLexer(String program) throws IOException {
-		BufferedInputStream is =
-				new BufferedInputStream(new ByteArrayInputStream(program.getBytes(StandardCharsets.US_ASCII)));
-		return new Lexer(is, stringTable);
-	}
 }

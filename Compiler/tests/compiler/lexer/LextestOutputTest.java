@@ -1,6 +1,5 @@
 package compiler.lexer;
 
-import java.io.BufferedInputStream;
 import java.io.BufferedReader;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.FileSystems;
@@ -17,7 +16,7 @@ import java.util.List;
 import org.junit.Assert;
 import org.junit.Test;
 
-import compiler.StringTable;
+import compiler.utils.TestUtils;
 
 /**
  * Test case for correct output of compiler with --lextest option
@@ -84,9 +83,8 @@ public class LextestOutputTest {
 	private static void testSourceFile(Path sourceFile, Path lexFile) throws Exception {
 		// read expected output
 		BufferedReader expectedOutput = Files.newBufferedReader(lexFile, StandardCharsets.US_ASCII);
-		BufferedInputStream sourceIs = new BufferedInputStream(Files.newInputStream(sourceFile));
 
-		Lexer lexer = new Lexer(sourceIs, new StringTable());
+		Lexer lexer = TestUtils.initLexer(sourceFile);
 
 		// compare expected output and actual output line by line
 		String expectedLine;
