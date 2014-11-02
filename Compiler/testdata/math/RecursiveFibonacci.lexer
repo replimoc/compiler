@@ -1,0 +1,73 @@
+class
+identifier RecursiveFibonacci
+{
+public
+static
+void
+identifier main
+(
+identifier String
+identifier args
+[
+]
+)
+{
+identifier RecursiveFibonacci
+identifier fibunacci
+=
+new
+identifier RecursiveFibonacci
+(
+)
+;
+identifier System
+.
+identifier out
+.
+identifier println
+(
+identifier fibunacci
+.
+identifier recursiveFib
+(
+integer literal 10
+)
+)
+;
+}
+int
+identifier recursiveFib
+(
+int
+identifier n
+)
+{
+if
+(
+identifier n
+<=
+integer literal 2
+)
+{
+return
+integer literal 1
+;
+}
+return
+identifier recursiveFib
+(
+identifier n
+-
+integer literal 1
+)
++
+identifier recursiveFib
+(
+identifier n
+-
+integer literal 2
+)
+;
+}
+}
+EOF

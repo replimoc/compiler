@@ -1,0 +1,117 @@
+class
+identifier IterativeFibonacci
+{
+public
+static
+void
+identifier main
+(
+identifier String
+identifier args
+[
+]
+)
+{
+identifier IterativeFibonacci
+identifier fibunacci
+=
+new
+identifier IterativeFibonacci
+(
+)
+;
+identifier System
+.
+identifier out
+.
+identifier println
+(
+identifier fibunacci
+.
+identifier iterativeFib
+(
+integer literal 44
+)
+)
+;
+}
+int
+identifier iterativeFib
+(
+int
+identifier n
+)
+{
+int
+[
+]
+identifier fibs
+=
+new
+int
+[
+identifier n
++
+integer literal 1
+]
+;
+identifier fibs
+[
+integer literal 0
+]
+=
+integer literal 0
+;
+identifier fibs
+[
+integer literal 1
+]
+=
+integer literal 1
+;
+for
+(
+int
+identifier i
+=
+integer literal 2
+;
+identifier i
+<
+identifier n
++
+integer literal 1
+;
+identifier i
+++
+)
+{
+identifier fibs
+[
+identifier i
+]
+=
+identifier fibs
+[
+identifier i
+-
+integer literal 1
+]
++
+identifier fibs
+[
+identifier i
+-
+integer literal 2
+]
+;
+}
+return
+identifier fibs
+[
+identifier n
+]
+;
+}
+}
+EOF
