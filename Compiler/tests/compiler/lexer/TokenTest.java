@@ -20,12 +20,21 @@ public class TokenTest {
 	}
 
 	@Test
-	public void testgetTokenString() {
+	public void testGetTokenString() {
 		assertEquals("abstract", new Token(TokenType.ABSTRACT, new Position(2, 4)).getTokenString());
 		assertEquals("identifier main", new Token(TokenType.IDENTIFIER, null, new Symbol("main")).getTokenString());
 		assertEquals("integer literal 2342342", new Token(TokenType.INTEGER, null, new Symbol("2342342")).getTokenString());
 		assertEquals("error you idiot screwed it up", new Token(TokenType.ERROR, null,
 				new Symbol("you idiot screwed it up")).getTokenString());
 		assertEquals("==", new Token(TokenType.EQUAL, null).getTokenString());
+	}
+
+	@Test
+	public void testGetTokenPosition() {
+		Position expectedPosition = new Position(2, 4);
+		Token token = new Token(TokenType.ABSTRACT, expectedPosition);
+		Position position = token.getPosition();
+		assertEquals(expectedPosition.getLine(), position.getLine());
+		assertEquals(expectedPosition.getCharacter(), position.getCharacter());
 	}
 }
