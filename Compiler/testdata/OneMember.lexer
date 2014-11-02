@@ -1,5 +1,5 @@
 class
-identifier fieldMember
+identifier FieldMember
 {
 public
 int
@@ -7,7 +7,7 @@ identifier member
 ;
 }
 class
-identifier methodMember
+identifier MethodMember
 {
 public
 boolean
@@ -18,12 +18,12 @@ identifier method
 }
 }
 class
-identifier mainMethod
+identifier MainMethod
 {
 public
 static
 void
-identifier mainMethod
+identifier main
 (
 identifier String
 [

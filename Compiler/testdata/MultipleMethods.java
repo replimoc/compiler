@@ -1,4 +1,4 @@
-class multipleMethods {
+class MultipleMethods {
   public int method1 ( ) { }
   public boolean method1 ( ) { }
   public void method1 ( ) { }

@@ -1,4 +1,4 @@
-class multipleFields {
+class MultipleFields {
   public int member;
   public boolean member;
   public void member2;
