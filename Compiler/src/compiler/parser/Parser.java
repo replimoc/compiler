@@ -34,12 +34,91 @@ public class Parser {
 		}
 	}
 
-	private void parseClassDeclaration() {
-
+	private void parseClassDeclaration() throws IOException, ParserException {
+		switch (token.getType()) {
+		case CLASS:
+			token = lexer.getNextToken();
+			if (token.getType() != TokenType.IDENTIFIER) {
+				throw new ParserException(token);
+			}
+			if (token.getType() != TokenType.LCURLYBRACKET) {
+				throw new ParserException(token);
+			}
+			parseClassMember();
+			if (token.getType() != TokenType.RCURLYBRACKET) {
+				throw new ParserException(token);
+			}
+		default:
+			throw new ParserException(token);
+		}
 	}
 
-	private void parseClassMember() {
-		// check grammar
+	private void parseClassMember() throws ParserException, IOException {
+		switch (token.getType()) {
+		case PUBLIC:
+			token = lexer.getNextToken();
+			if (token.getType() == TokenType.INT || token.getType() == TokenType.BOOLEAN || token.getType() == TokenType.VOID || token.getType() == TokenType.IDENTIFIER) {
+				token = lexer.getNextToken();
+				if (token.getType() == TokenType.IDENTIFIER) {
+					token = lexer.getNextToken();
+					if (token.getType() == TokenType.SEMICOLON) {
+						// accept
+					} else if (token.getType() == TokenType.LP) {
+						token = lexer.getNextToken();
+						parseParameters();
+						token = lexer.getNextToken();
+						if (token.getType() != TokenType.RP) {
+							throw new ParserException(token);
+						}
+						token = lexer.getNextToken();
+						parseBlock();
+					} else {
+						throw new ParserException(token);
+					}
+				} else {
+					throw new ParserException(token);
+				}
+			} else if (token.getType() == TokenType.STATIC) {
+				token = lexer.getNextToken();
+				if (token.getType() != TokenType.VOID) {
+					throw new ParserException(token);
+				}
+				token = lexer.getNextToken();
+				if (token.getType() != TokenType.IDENTIFIER) {
+					throw new ParserException(token);
+				}
+				token = lexer.getNextToken();
+				if (token.getType() != TokenType.LP) {
+					throw new ParserException(token);
+				}
+				token = lexer.getNextToken();
+				if (token.getType() != TokenType.IDENTIFIER || token.getTokenString().equals("String") == false) {
+					throw new ParserException(token);
+				}
+				token = lexer.getNextToken();
+				if (token.getType() != TokenType.LSQUAREBRACKET) {
+					throw new ParserException(token);
+				}
+				token = lexer.getNextToken();
+				if (token.getType() != TokenType.RSQUAREBRACKET) {
+					throw new ParserException(token);
+				}
+				token = lexer.getNextToken();
+				if (token.getType() != TokenType.IDENTIFIER) {
+					throw new ParserException(token);
+				}
+				token = lexer.getNextToken();
+				if (token.getType() != TokenType.RP) {
+					throw new ParserException(token);
+				}
+				token = lexer.getNextToken();
+				parseBlock();
+			} else {
+				throw new ParserException(token);
+			}
+		default: 
+			throw new ParserException(token);
+		}
 	}
 
 	private void parseField() {
@@ -54,20 +133,47 @@ public class Parser {
 		// check grammar
 	}
 
-	private void parseParameters() {
-		// check grammar
+	private void parseParameters() throws IOException, ParserException {
+		parseParameter();
+		token = lexer.getNextToken();
+		if (token.getType() == TokenType.COMMA) {
+			token = lexer.getNextToken();
+			parseParameters();
+		}
+		// else accept
 	}
 
-	private void parseParameter() {
-		// check grammar
+	private void parseParameter() throws ParserException, IOException {
+		parseType();
+		token = lexer.getNextToken();
+		if (token.getType() != TokenType.IDENTIFIER) {
+			throw new ParserException(token);
+		}
 	}
 
-	private void parseType() {
-		// remove left recursion
+	private void parseType() throws IOException, ParserException {
+		parseBasicType();
+		token = lexer.getNextToken();
+		while (token.getType() == TokenType.LSQUAREBRACKET) {
+			token = lexer.getNextToken();
+			if (token.getType() != TokenType.RSQUAREBRACKET) {
+				throw new ParserException(token);
+			}
+			token = lexer.getNextToken();
+		}
 	}
 
-	private void parseBasicType() {
-
+	private void parseBasicType() throws IOException, ParserException {
+		switch(token.getType()) {
+		case INT :
+		case BOOLEAN :
+		case VOID :
+		case IDENTIFIER :
+			token = lexer.getNextToken();
+			break;
+		default : 
+			throw new ParserException(token);
+		}
 	}
 
 	private void parseStatement() {
@@ -250,7 +356,8 @@ public class Parser {
 
 		@Override
 		public String toString() {
-			return "Line: " + unexpectedToken.getPosition().getLine() + ". Unexpected token '" + unexpectedToken.getTokenString()
+			return "Line: " + unexpectedToken.getPosition().getLine()
+					+ ". Unexpected token '" + unexpectedToken.getTokenString()
 					+ "' at character: "
 					+ unexpectedToken.getPosition().getCharacter();
 		}
