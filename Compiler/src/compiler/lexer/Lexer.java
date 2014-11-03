@@ -26,23 +26,25 @@ public class Lexer {
 			return null;
 		}
 
-		while (isWhitespace()) {
-			nextChar();
-		}
+		do {
+			while (isWhitespace()) {
+				nextChar();
+			}
 
-		if (c == -1) { // Character is EOF
-			t = token(TokenType.EOF);
-			this.reader = null;
-		} else if (isAZaz_()) {
-			t = lexIdentifier();
-		} else if (is19()) {
-			t = lexIntegerLiteral();
-		} else if (c == '0') {
-			t = tokenStringTable(TokenType.INTEGER, "0");
-			nextChar();
-		} else {
-			t = lexOperatorAndComment();
-		}
+			if (c == -1) { // Character is EOF
+				t = token(TokenType.EOF);
+				this.reader = null;
+			} else if (isAZaz_()) {
+				t = lexIdentifier();
+			} else if (is19()) {
+				t = lexIntegerLiteral();
+			} else if (c == '0') {
+				t = tokenStringTable(TokenType.INTEGER, "0");
+				nextChar();
+			} else {
+				t = lexOperatorAndComment();
+			}
+		} while (t == null);
 		return t;
 	}
 
@@ -139,7 +141,7 @@ public class Lexer {
 			if (c == '*') {
 				t = lexComment();
 				if (t == null) {
-					t = getNextToken();
+					return t;
 				}
 			} else if (c == '=') { // /=
 				nextChar();
