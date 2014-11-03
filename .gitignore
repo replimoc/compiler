@@ -6,3 +6,4 @@ bin
 /doc/*.bak
 /doc/*.mdr
 /Compiler/target
+/Tests

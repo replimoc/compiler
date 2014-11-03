@@ -1,5 +1,5 @@
 class
-identifier multipleFields
+identifier MultipleFields
 {
 public
 int

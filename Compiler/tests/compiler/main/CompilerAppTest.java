@@ -1,18 +1,42 @@
 package compiler.main;
 
+import static org.junit.Assert.assertEquals;
+
 import java.io.IOException;
 
 import org.junit.Test;
 
+import compiler.utils.PrivateMethodCaller;
+
 public class CompilerAppTest {
+	private final PrivateMethodCaller methodCaller = new PrivateMethodCaller(CompilerApp.class);
 
 	@Test
 	public void testHelp() throws IOException {
-		CompilerApp.main(new String[] { "--help" });
+		assertEquals(0, callExecute("--help"));
+	}
+
+	@Test
+	public void testSupplyNoOption() throws IOException {
+		assertEquals(1, callExecute());
 	}
 
 	@Test
 	public void testLextest() throws IOException {
-		CompilerApp.main(new String[] { "--lextest", "./testdata/EmptyMain.java" });
+		assertEquals(0, callExecute("--lextest", "./testdata/EmptyMain.java"));
+	}
+
+	@Test
+	public void testLextestUnknownFile() throws IOException {
+		assertEquals(1, callExecute("--lextest", "./testdata/NONEXISTING_FILE.java"));
+	}
+
+	@Test
+	public void testUnknownOption() throws IOException {
+		assertEquals(1, callExecute("--unknown"));
+	}
+
+	private int callExecute(String... args) {
+		return methodCaller.call("execute", null, new Object[] { args });
 	}
 }
