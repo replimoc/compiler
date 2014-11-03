@@ -116,10 +116,11 @@ public class Lexer {
 
 	private Token lexComment() throws IOException {
 		Token t = null;
+		nextChar();
 		do {
-			do {
+			while (c != '*' && c != -1) {
 				nextChar();
-			} while (c != '*' && c != -1);
+			}
 			nextChar();
 		} while (c != '/' && c != -1);
 
