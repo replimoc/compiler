@@ -17,12 +17,12 @@ public class Parser {
 		this.lexer = lexer;
 	}
 
-	public void parse() throws IOException {
+	public void parse() throws IOException, ParserException {
 		token = lexer.getNextToken();
 		parseProgram();
 	}
 
-	private void parseProgram() throws IOException {
+	private void parseProgram() throws IOException, ParserException {
 		while (token.getType() == TokenType.CLASS) {
 			parseClassDeclaration();
 		}
@@ -41,12 +41,18 @@ public class Parser {
 			if (token.getType() != TokenType.IDENTIFIER) {
 				throw new ParserException(token);
 			}
+			token = lexer.getNextToken();
 			if (token.getType() != TokenType.LCURLYBRACKET) {
 				throw new ParserException(token);
 			}
-			parseClassMember();
-			if (token.getType() != TokenType.RCURLYBRACKET) {
-				throw new ParserException(token);
+			token = lexer.getNextToken();
+			
+			if (token.getType() == TokenType.RCURLYBRACKET) {
+				token = lexer.getNextToken();
+				break;
+			} else {
+				parseClassMember();
+				break;
 			}
 		default:
 			throw new ParserException(token);
@@ -57,27 +63,33 @@ public class Parser {
 		switch (token.getType()) {
 		case PUBLIC:
 			token = lexer.getNextToken();
+			// Type
 			if (token.getType() == TokenType.INT || token.getType() == TokenType.BOOLEAN || token.getType() == TokenType.VOID || token.getType() == TokenType.IDENTIFIER) {
 				token = lexer.getNextToken();
+				// IDENT
 				if (token.getType() == TokenType.IDENTIFIER) {
 					token = lexer.getNextToken();
 					if (token.getType() == TokenType.SEMICOLON) {
 						// accept
+						token = lexer.getNextToken();
+						break;
 					} else if (token.getType() == TokenType.LP) {
 						token = lexer.getNextToken();
-						parseParameters();
-						token = lexer.getNextToken();
-						if (token.getType() != TokenType.RP) {
-							throw new ParserException(token);
+						
+						if (token.getType() == TokenType.RP) {
+							token = lexer.getNextToken();
+							break;
+						} else {
+							parseParameters();
+							if (token.getType() != TokenType.RP){
+								throw new ParserException(token);
+							}
 						}
-						token = lexer.getNextToken();
 						parseBlock();
-					} else {
-						throw new ParserException(token);
+						break;
 					}
-				} else {
-					throw new ParserException(token);
 				}
+			// static
 			} else if (token.getType() == TokenType.STATIC) {
 				token = lexer.getNextToken();
 				if (token.getType() != TokenType.VOID) {
@@ -92,7 +104,7 @@ public class Parser {
 					throw new ParserException(token);
 				}
 				token = lexer.getNextToken();
-				if (token.getType() != TokenType.IDENTIFIER || token.getTokenString().equals("String") == false) {
+				if (token.getType() != TokenType.IDENTIFIER || token.getSymbol().getValue().equals("String") == false) {
 					throw new ParserException(token);
 				}
 				token = lexer.getNextToken();
@@ -113,8 +125,7 @@ public class Parser {
 				}
 				token = lexer.getNextToken();
 				parseBlock();
-			} else {
-				throw new ParserException(token);
+				break;
 			}
 		default: 
 			throw new ParserException(token);
@@ -135,7 +146,6 @@ public class Parser {
 
 	private void parseParameters() throws IOException, ParserException {
 		parseParameter();
-		token = lexer.getNextToken();
 		if (token.getType() == TokenType.COMMA) {
 			token = lexer.getNextToken();
 			parseParameters();
@@ -145,15 +155,14 @@ public class Parser {
 
 	private void parseParameter() throws ParserException, IOException {
 		parseType();
-		token = lexer.getNextToken();
 		if (token.getType() != TokenType.IDENTIFIER) {
 			throw new ParserException(token);
 		}
+		token = lexer.getNextToken();
 	}
 
 	private void parseType() throws IOException, ParserException {
 		parseBasicType();
-		token = lexer.getNextToken();
 		while (token.getType() == TokenType.LSQUAREBRACKET) {
 			token = lexer.getNextToken();
 			if (token.getType() != TokenType.RSQUAREBRACKET) {
@@ -347,7 +356,7 @@ public class Parser {
 		}
 	}
 
-	private class ParserException extends Exception {
+	public class ParserException extends Exception {
 		private final Token unexpectedToken;
 
 		private ParserException(Token t) {

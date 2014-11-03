@@ -10,6 +10,7 @@ import org.junit.Ignore;
 
 import compiler.StringTable;
 import compiler.lexer.Lexer;
+import compiler.parser.Parser;
 
 /**
  * Utils class containing utility methods required by the tests.
@@ -35,4 +36,8 @@ public class TestUtils {
 		return initLexer(sourceFile, new StringTable());
 	}
 
+	public static Parser initParser(String program) throws IOException {
+		Lexer lex = new Lexer(new StringReader(program), new StringTable());
+		return new Parser(lex);
+	} 
 }
