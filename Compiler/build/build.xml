@@ -27,7 +27,7 @@
 
 
 
-	<target name="clean-build" depends="clean" description="compile the source">
+	<target name="clean-build" depends="clean" description="clean and compile the source">
 		<!-- Compile the java code from ${src} into ${bin} -->
 		<mkdir dir="${bin}" />
 		<javac srcdir="${src}" destdir="${bin}" includeantruntime="false">
@@ -39,7 +39,7 @@
 
 	<target name="clean" description="clean up">
 		<delete dir="${bin}" />
-		<delete dir="${target}" />
+		<delete file="${jarLocation}" />
 	</target>
 
 
