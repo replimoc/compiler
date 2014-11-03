@@ -1,2 +1,2 @@
 #!/bin/bash
-java -jar $(dirname $0)/Compiler.jar $@
+java -jar "$(dirname "$0")/Compiler.jar" $@
