@@ -85,6 +85,7 @@ public class Parser {
 							if (token.getType() != TokenType.RP) {
 								throw new ParserException(token);
 							}
+							token = lexer.getNextToken();
 						}
 						parseBlock();
 						break;
