@@ -23,25 +23,14 @@ public class Parser {
 	}
 
 	private void parseProgram() throws IOException, ParserException {
+		// ClassDeclaration
 		while (token.getType() == TokenType.CLASS) {
-			parseClassDeclaration();
-		}
-
-		if (token.getType() == TokenType.EOF) {
-			return;
-		} else {
-			// throw new ParserException(t);
-		}
-	}
-
-	private void parseClassDeclaration() throws IOException, ParserException {
-		switch (token.getType()) {
-		case CLASS:
 			token = lexer.getNextToken();
 			if (token.getType() != TokenType.IDENTIFIER) {
 				throw new ParserException(token);
 			}
 			token = lexer.getNextToken();
+			
 			if (token.getType() != TokenType.LCURLYBRACKET) {
 				throw new ParserException(token);
 			}
@@ -49,15 +38,28 @@ public class Parser {
 
 			if (token.getType() == TokenType.RCURLYBRACKET) {
 				token = lexer.getNextToken();
-				break;
+				continue;
 			} else {
 				parseClassMember();
-				break;
+				if (token.getType() != TokenType.RCURLYBRACKET) {
+					throw new ParserException(token);
+				}
+				token = lexer.getNextToken();
+				
+				continue;
 			}
-		default:
+		}
+		
+		// No ClassDeclaration
+		if (token.getType() == TokenType.EOF) {
+			return;
+		} else {
 			throw new ParserException(token);
 		}
 	}
+
+	/*private void parseClassDeclaration() throws IOException, ParserException {
+	}*/
 
 	private void parseClassMember() throws ParserException, IOException {
 		switch (token.getType()) {
@@ -79,7 +81,6 @@ public class Parser {
 
 						if (token.getType() == TokenType.RP) {
 							token = lexer.getNextToken();
-							break;
 						} else {
 							parseParameters();
 							if (token.getType() != TokenType.RP) {
@@ -196,7 +197,11 @@ public class Parser {
 			throw new ParserException(token);
 		}
 		token = lexer.getNextToken();
-		parseBlockStatement();
+		
+		while (token.getType() != TokenType.RCURLYBRACKET) {
+			parseBlockStatement();
+		}
+		
 		if (token.getType() != TokenType.RCURLYBRACKET) {
 			throw new ParserException(token);
 		}
