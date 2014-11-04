@@ -1,6 +1,7 @@
 package compiler.lexer;
 
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
 
 import java.io.IOException;
@@ -13,6 +14,30 @@ import compiler.utils.TestUtils;
 
 public class LexerTest {
 	private final PrivateMethodCaller caller = new PrivateMethodCaller(Lexer.class);;
+
+	@Test
+	public void getLookAheadTest() throws IOException {
+		Lexer lexer = TestUtils.initLexer("<= ; --");
+		assertEquals(TokenType.LESSEQUAL, lexer.getLookAhead().getType());
+		assertEquals(TokenType.LESSEQUAL, lexer.getNextToken().getType());
+		assertEquals(TokenType.SEMICOLON, lexer.getLookAhead().getType());
+		assertEquals(TokenType.SEMICOLON, lexer.getNextToken().getType());
+		assertEquals(TokenType.DECREMENT, lexer.getLookAhead().getType());
+		assertEquals(TokenType.DECREMENT, lexer.getLookAhead().getType());
+		assertEquals(TokenType.DECREMENT, lexer.getNextToken().getType());
+		assertEquals(TokenType.EOF, lexer.getLookAhead().getType());
+		assertEquals(TokenType.EOF, lexer.getNextToken().getType());
+		assertNull(lexer.getLookAhead());
+
+		lexer = TestUtils.initLexer("<= ; --");
+		assertEquals(TokenType.LESSEQUAL, lexer.getNextToken().getType());
+		assertEquals(TokenType.SEMICOLON, lexer.getLookAhead().getType());
+		assertEquals(TokenType.SEMICOLON, lexer.getNextToken().getType());
+		assertEquals(TokenType.DECREMENT, lexer.getNextToken().getType());
+		assertEquals(TokenType.EOF, lexer.getLookAhead().getType());
+		assertEquals(TokenType.EOF, lexer.getNextToken().getType());
+		assertNull(lexer.getLookAhead());
+	}
 
 	@Test
 	public void testToken() throws IOException {

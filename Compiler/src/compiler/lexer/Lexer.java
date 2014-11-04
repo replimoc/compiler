@@ -11,6 +11,7 @@ public class Lexer {
 	private int c;
 	private IPositionalCharacterSource reader;
 	private StringTable stringTable;
+	private Token lookAhead = null;
 
 	public Lexer(Reader reader, StringTable stringTable) throws IOException {
 		this.reader = new PositionalCharacterSource(reader);
@@ -20,6 +21,22 @@ public class Lexer {
 	}
 
 	public Token getNextToken() throws IOException {
+		if (lookAhead != null) {
+			Token result = lookAhead;
+			lookAhead = null;
+			return result;
+		}
+		return readNextToken();
+	}
+
+	public Token getLookAhead() throws IOException {
+		if (lookAhead == null) {
+			lookAhead = readNextToken();
+		}
+		return lookAhead;
+	}
+
+	private Token readNextToken() throws IOException {
 		Token t = null;
 
 		if (this.reader == null) {
