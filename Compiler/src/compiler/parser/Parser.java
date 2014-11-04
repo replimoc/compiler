@@ -13,12 +13,12 @@ public class Parser {
 	 */
 	private Token token;
 
-	public Parser(Lexer lexer) {
+	public Parser(Lexer lexer) throws IOException {
 		this.lexer = lexer;
+		token = lexer.getNextToken();
 	}
 
 	public void parse() throws IOException, ParserException {
-		token = lexer.getNextToken();
 		parseProgram();
 	}
 
@@ -430,12 +430,11 @@ public class Parser {
 			token = lexer.getNextToken();
 			if (token.getType() == TokenType.LP) {
 				parseArguments();
-			} else {
-				throw new ParserException(token);
 			}
+			// assume "PrimaryIdent -> IDENT" when another token than '(' is read
 			break;
 		default:
-			// epsilon
+			throw new ParserException(token);
 		}
 	}
 
@@ -521,6 +520,14 @@ public class Parser {
 
 		@Override
 		public String toString() {
+			return "Line: " + unexpectedToken.getPosition().getLine()
+					+ ". Unexpected token '" + unexpectedToken.getTokenString()
+					+ "' at character: "
+					+ unexpectedToken.getPosition().getCharacter();
+		}
+
+		@Override
+		public String getMessage() {
 			return "Line: " + unexpectedToken.getPosition().getLine()
 					+ ". Unexpected token '" + unexpectedToken.getTokenString()
 					+ "' at character: "
