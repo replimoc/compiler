@@ -16,7 +16,7 @@ public class LexerTest {
 	private final PrivateMethodCaller caller = new PrivateMethodCaller(Lexer.class);;
 
 	@Test
-	public void getLookAheadTest() throws IOException {
+	public void testGetLookAhead() throws IOException {
 		Lexer lexer = TestUtils.initLexer("<= ; --");
 		assertEquals(TokenType.LESSEQUAL, lexer.getLookAhead().getType());
 		assertEquals(TokenType.LESSEQUAL, lexer.getNextToken().getType());

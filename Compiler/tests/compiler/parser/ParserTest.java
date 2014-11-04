@@ -44,11 +44,25 @@ public class ParserTest {
 		parser = TestUtils.initParser("class Class { public void function(int paramA, void paramB, int[] paramC, int[][] paramD) {} }");
 		parser.parse();
 
+		parser = TestUtils.initParser("class Class { public void function() { {} } }");
+		parser.parse();
+
+		parser = TestUtils.initParser("class Class { public void function() { ; ; {} } }");
+		parser.parse();
+
+		/*
+		 * parser = TestUtils.initParser("class Class { public void function() { if () {} } }"); parser.parse(); parser =
+		 * TestUtils.initParser("class Class { public void function() { while () {} } }"); parser.parse(); parser =
+		 * TestUtils.initParser("class Class { public void function() { return; } }"); parser.parse(); parser =
+		 * TestUtils.initParser("class Class { public void function() { int asdf = ; } }"); parser.parse();
+		 */
+
 		assertTrue(true);
 	}
 
 	@Test
 	public void testParseArrayAccess() throws IOException {
+		// TODO: add test cases once Expression is implemented
 
 		/*
 		 * try { Parser parser = TestUtils.initParser("[]"); caller.call("parseArrayAccess", parser);
