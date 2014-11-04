@@ -23,6 +23,12 @@ public class Parser {
 		parseProgram();
 	}
 
+	/**
+	 * Program -> epsilon | class IDENT { ClassMember' } Program
+	 * 
+	 * @throws IOException
+	 * @throws ParserException
+	 */
 	private void parseProgram() throws IOException, ParserException {
 		// ClassDeclaration*
 		while (token.getType() == TokenType.CLASS) {
@@ -52,33 +58,38 @@ public class Parser {
 			}
 		}
 
-		// No ClassDeclaration
-		if (token.getType() == TokenType.EOF) {
-			return;
-		} else {
+		// No ClassDeclaration => Epsilon
+		if (token.getType() != TokenType.EOF) {
 			throw new ParserException(token);
 		}
 	}
 
+	/**
+	 * ClassMember' -> public MainMethod' | public Type IDENT ; | public Type IDENT ( Parameters? ) Block
+	 * MainMethod' -> static void IDENT ( String [ ] IDENT ) Block
+	 * 
+	 * @throws ParserException
+	 * @throws IOException
+	 */
 	private void parseClassMember() throws ParserException, IOException {
 		switch (token.getType()) {
 		case PUBLIC:
 			token = lexer.getNextToken();
-
+			// Type
 			if (token.getType() == TokenType.INT
 					|| token.getType() == TokenType.BOOLEAN
 					|| token.getType() == TokenType.VOID
 					|| token.getType() == TokenType.IDENTIFIER) {
 				token = lexer.getNextToken();
-
+				
 				if (token.getType() == TokenType.IDENTIFIER) {
 					token = lexer.getNextToken();
-					// Field
+					// public Type IDENT ;
 					if (token.getType() == TokenType.SEMICOLON) {
 						// accept
 						token = lexer.getNextToken();
 						break;
-						// Method
+					// public Type IDENT ( Parameters? ) Block
 					} else if (token.getType() == TokenType.LP) {
 						token = lexer.getNextToken();
 
@@ -95,7 +106,7 @@ public class Parser {
 						break;
 					}
 				}
-				// MainMethod
+			// MainMethod' -> static void IDENT ( String [ ] IDENT ) Block
 			} else if (token.getType() == TokenType.STATIC) {
 				token = lexer.getNextToken();
 				if (token.getType() != TokenType.VOID) {
@@ -139,15 +150,26 @@ public class Parser {
 		}
 	}
 
+	/**
+	 * Parameters -> Parameter (, Parameters)?
+	 * 
+	 * @throws IOException
+	 * @throws ParserException
+	 */
 	private void parseParameters() throws IOException, ParserException {
 		parseParameter();
 		if (token.getType() == TokenType.COMMA) {
 			token = lexer.getNextToken();
 			parseParameters();
 		}
-		// else accept
 	}
 
+	/**
+	 * Parameter -> Type IDENT
+	 * 
+	 * @throws ParserException
+	 * @throws IOException
+	 */
 	private void parseParameter() throws ParserException, IOException {
 		parseType();
 		if (token.getType() != TokenType.IDENTIFIER) {
@@ -156,6 +178,12 @@ public class Parser {
 		token = lexer.getNextToken();
 	}
 
+	/**
+	 * Type -> Basictype ([])
+	 * 
+	 * @throws IOException
+	 * @throws ParserException
+	 */
 	private void parseType() throws IOException, ParserException {
 		switch (token.getType()) {
 		case INT:
@@ -178,6 +206,12 @@ public class Parser {
 		}
 	}
 
+	/**
+	 * Statement -> Block | EmptyStatement | IfStatement | ExpressionStatement | WhileStatement | ReturnStatement
+	 * 
+	 * @throws IOException
+	 * @throws ParserException
+	 */
 	private void parseStatement() throws IOException, ParserException {
 		switch (token.getType()) {
 		// block
@@ -200,12 +234,18 @@ public class Parser {
 		case RETURN:
 			parseReturnStatement();
 			break;
-		// expression
+		// expression: propagate error recognition to parseExpressionStatement
 		default :
 			parseExpressionStatement();
 		}
 	}
 
+	/**
+	 * Block -> { BlockStatement* }
+	 * 
+	 * @throws ParserException
+	 * @throws IOException
+	 */
 	private void parseBlock() throws ParserException, IOException {
 		if (token.getType() != TokenType.LCURLYBRACKET) {
 			throw new ParserException(token);
@@ -222,42 +262,41 @@ public class Parser {
 		token = lexer.getNextToken();
 	}
 
+	/**
+	 * BlockStatement -> Block | EmptyStatement | IfStatement | ExpressionStatement | WhileStatement | ReturnStatement | LocalVariableDeclarationStatement
+	 * 
+	 * @throws ParserException
+	 * @throws IOException
+	 */
 	private void parseBlockStatement() throws ParserException, IOException {
 		switch (token.getType()) {
 		// block
 		case LCURLYBRACKET:
-			// token = lexer.getNextToken();
 			parseBlock();
 			break;
 		// empty statement
 		case SEMICOLON:
-			// token = lexer.getNextToken();
 			parseEmptyStatement();
 			break;
 		// if statement
 		case IF:
-			// token = lexer.getNextToken();
 			parseIfStatement();
 			break;
 		// while statement
 		case WHILE:
-			// token = lexer.getNextToken();
 			parseWhileStatement();
 			break;
 		// return statement
 		case RETURN:
-			// token = lexer.getNextToken();
 			parseReturnStatement();
 			break;
-		// expression or local bla
+		// ExpressionStatement or LocalVariableDeclarationStatement
 		case INT:
 		case BOOLEAN:
 		case VOID:
-			// token = lexer.getNextToken();
 			parseLocalVariableDeclarationStatement();
 			break;
 		case IDENTIFIER:
-			// token = lexer.getNextToken();
 			if (lexer.getLookAhead().getType() == TokenType.IDENTIFIER) {
 				parseLocalVariableDeclarationStatement();
 				break;
@@ -271,6 +310,12 @@ public class Parser {
 		}
 	}
 
+	/**
+	 * LocalVariableDeclarationStatement -> Type IDENT (= Expression)? ;
+	 * 
+	 * @throws IOException
+	 * @throws ParserException
+	 */
 	private void parseLocalVariableDeclarationStatement() throws IOException,
 			ParserException {
 		parseType();
@@ -278,12 +323,25 @@ public class Parser {
 			throw new ParserException(token);
 		}
 		token = lexer.getNextToken();
+		
 		if (token.getType() == TokenType.EQUAL) {
 			token = lexer.getNextToken();
 			parseExpression();
 		}
+		token = lexer.getNextToken();
+		
+		if (token.getType() != TokenType.SEMICOLON) {
+			throw new ParserException(token);
+		}
+		token = lexer.getNextToken();
 	}
 
+	/**
+	 * EmptyStatement -> ;
+	 * 
+	 * @throws ParserException
+	 * @throws IOException
+	 */
 	private void parseEmptyStatement() throws ParserException, IOException {
 		if (token.getType() != TokenType.SEMICOLON) {
 			throw new ParserException(token);
@@ -291,60 +349,98 @@ public class Parser {
 		token = lexer.getNextToken();
 	}
 
+	/**
+	 * WhileStatement-> while ( Expression ) Statement
+	 * 
+	 * @throws ParserException
+	 * @throws IOException
+	 */
 	private void parseWhileStatement() throws ParserException, IOException {
 		if (token.getType() != TokenType.WHILE) {
 			throw new ParserException(token);
 		}
 		token = lexer.getNextToken();
+		
 		if (token.getType() != TokenType.LP) {
 			throw new ParserException(token);
 		}
-		parseExpression();
 		token = lexer.getNextToken();
+		
+		parseExpression();
+		
 		if (token.getType() != TokenType.RP) {
 			throw new ParserException(token);
 		}
 		token = lexer.getNextToken();
+		
 		parseStatement();
 	}
 
+	/**
+	 * IfStatement -> if ( Expression ) Statement (else Statement)?
+	 * 
+	 * @throws ParserException
+	 * @throws IOException
+	 */
 	private void parseIfStatement() throws ParserException, IOException {
 		if (token.getType() != TokenType.IF) {
 			throw new ParserException(token);
 		}
 		token = lexer.getNextToken();
+		
 		if (token.getType() != TokenType.LP) {
 			throw new ParserException(token);
 		}
-		parseExpression();
 		token = lexer.getNextToken();
+		
+		parseExpression();
+		
 		if (token.getType() != TokenType.RP) {
 			throw new ParserException(token);
 		}
 		token = lexer.getNextToken();
+		
 		parseStatement();
+		
 		if (token.getType() == TokenType.ELSE) {
 			token = lexer.getNextToken();
 			parseStatement();
 		}
 	}
 
+	/**
+	 * ExpressionStatement -> Expression ;
+	 * 
+	 * @throws IOException
+	 * @throws ParserException
+	 */
 	private void parseExpressionStatement() throws IOException, ParserException {
 		parseExpression();
-		token = lexer.getNextToken();
+		
 		if (token.getType() != TokenType.SEMICOLON) {
 			throw new ParserException(token);
 		}
+		token = lexer.getNextToken();
 	}
 
+	/**
+	 * ReturnStatement -> return Expression? ;
+	 * 
+	 * @throws ParserException
+	 * @throws IOException
+	 */
 	private void parseReturnStatement() throws ParserException, IOException {
 		if (token.getType() != TokenType.RETURN) {
 			throw new ParserException(token);
 		}
 		token = lexer.getNextToken();
+		
+		//parseExpression();
+		
 		if (token.getType() != TokenType.SEMICOLON) {
 			throw new ParserException(token);
 		}
+		token = lexer.getNextToken();
 	}
 
 	private void parseExpression() {
