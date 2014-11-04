@@ -133,7 +133,7 @@ public class Parser {
 		}
 	}
 
-	private void parseField() {
+	/*private void parseField() {
 		// check grammar
 	}
 
@@ -143,7 +143,7 @@ public class Parser {
 
 	private void parseMainMethod() {
 		// check grammar
-	}
+	}*/
 
 	private void parseParameters() throws IOException, ParserException {
 		parseParameter();
