@@ -7,7 +7,6 @@ import java.io.IOException;
 
 import org.junit.Test;
 
-import compiler.parser.Parser.ParserException;
 import compiler.utils.PrivateMethodCaller;
 import compiler.utils.TestUtils;
 

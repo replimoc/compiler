@@ -7,7 +7,7 @@ import compiler.StringTable;
 import compiler.StringTable.Entry;
 import compiler.Symbol;
 
-public class Lexer {
+public class Lexer implements TokenSuppliable {
 	private int c;
 	private IPositionalCharacterSource reader;
 	private StringTable stringTable;
@@ -20,6 +20,7 @@ public class Lexer {
 		nextChar();
 	}
 
+	@Override
 	public Token getNextToken() throws IOException {
 		if (lookAhead != null) {
 			Token result = lookAhead;
@@ -29,6 +30,7 @@ public class Lexer {
 		return readNextToken();
 	}
 
+	@Override
 	public Token getLookAhead() throws IOException {
 		if (lookAhead == null) {
 			lookAhead = readNextToken();
