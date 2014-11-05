@@ -31,6 +31,9 @@ public class ParserTest {
 		parser = TestUtils.initParser("class Class { public static void main ( String [] args ) {} }");
 		parser.parse();
 
+		parser = TestUtils.initParser("class EmptyMain { \n\n\n /*** \n * cmt! \n * @param args \n */ \n public static void main ( String [] args ) { \n} \n\n }");
+		parser.parse();
+
 		parser = TestUtils.initParser("class Class { public void function() {} }");
 		parser.parse();
 

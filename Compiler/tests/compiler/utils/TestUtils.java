@@ -39,5 +39,10 @@ public class TestUtils {
 	public static Parser initParser(String program) throws IOException {
 		Lexer lex = new Lexer(new StringReader(program), new StringTable());
 		return new Parser(lex);
-	} 
+	}
+
+    public static Parser initParser(Path sourceFile) throws IOException {
+		Lexer lex = new Lexer(Files.newBufferedReader(sourceFile), new StringTable());
+		return new Parser(lex);
+	}
 }

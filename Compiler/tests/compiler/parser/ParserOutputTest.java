@@ -16,14 +16,14 @@ import java.util.List;
  */
 public class ParserOutputTest {
 
-    public static class LexTester extends SimpleFileVisitor<Path> {
+    public static class ParseTester extends SimpleFileVisitor<Path> {
         private static final String PARSER_EXTENSION = ".parser";
         private static final String JAVA_EXTENSION = ".java";
 
         private final PathMatcher matcher;
         private List<Path> failedTestsList = new ArrayList<>();
 
-        public LexTester() {
+        public ParseTester() {
             matcher = FileSystems.getDefault().getPathMatcher("glob:*" + PARSER_EXTENSION);
         }
 
@@ -31,8 +31,8 @@ public class ParserOutputTest {
         public FileVisitResult visitFile(Path file, BasicFileAttributes attrs) {
             Path name = file.getFileName();
             if (name != null && matcher.matches(name)) {
-                String lexFilename = name.toString();
-                String sourceFilename = lexFilename.replace(PARSER_EXTENSION, JAVA_EXTENSION);
+                String parseFilename = name.toString();
+                String sourceFilename = parseFilename.replace(PARSER_EXTENSION, JAVA_EXTENSION);
 
                 Path sourceFilePath = file.getParent().resolve(sourceFilename);
 
@@ -66,15 +66,15 @@ public class ParserOutputTest {
     @Test
     public void testParserFiles() throws Exception {
         Path testDir = Paths.get("testdata");
-        LexTester lexTester = new LexTester();
-        Files.walkFileTree(testDir, lexTester);
-        lexTester.checkForFailedTests();
+        ParseTester parserTester = new ParseTester();
+        Files.walkFileTree(testDir, parserTester);
+        parserTester.checkForFailedTests();
     }
 
     private static void testSourceFile(Path sourceFile, Path parserFile) throws Exception {
         // read expected output
         List<String> expectedOutput = Files.readAllLines(parserFile);
-        Parser parser = TestUtils.initParser(sourceFile.toString());
+        Parser parser = TestUtils.initParser(sourceFile);
 
         boolean isGrammarValid = false;
 
