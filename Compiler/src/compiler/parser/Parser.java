@@ -446,8 +446,7 @@ public class Parser {
 	}
 
 	private void parseExpression() throws IOException, ParserException {
-		// Comment the following line in to activate the precedence climbing.
-		// parseExpression(0);
+		parseExpression(0);
 	}
 
 	private String parseExpression(int minPrecedence) throws IOException, ParserException {
