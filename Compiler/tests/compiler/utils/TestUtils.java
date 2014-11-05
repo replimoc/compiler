@@ -10,6 +10,7 @@ import org.junit.Ignore;
 
 import compiler.StringTable;
 import compiler.lexer.Lexer;
+import compiler.lexer.TokenType;
 import compiler.parser.Parser;
 
 /**
@@ -39,5 +40,16 @@ public class TestUtils {
 	public static Parser initParser(String program) throws IOException {
 		Lexer lex = new Lexer(new StringReader(program), new StringTable());
 		return new Parser(lex);
-	} 
+	}
+
+	/**
+	 * Creates a parser and provides it the exact list of tokens given as parameter.
+	 * 
+	 * @param types
+	 * @return
+	 * @throws IOException
+	 */
+	public static Parser initParser(TokenType... types) throws IOException {
+		return new Parser(new FixedTokensSupplier(types));
+	}
 }
