@@ -25,6 +25,14 @@ class Oo {
 
         int minus_zero = -0;
 
+        new basic_type[42][][][15];
+
+        !null * -false;
+
+        c = a - -b;
+
+        this[15] = 1;
+
         /* at this point my fantasy has expired (please don't copy this comment */
     }
 }

@@ -11,7 +11,11 @@ public class ParserException extends Exception {
 		unexpectedToken = t;
 	}
 
-	@Override
+    public Token getUnexpectedToken() {
+        return unexpectedToken;
+    }
+
+    @Override
 	public String toString() {
 		return "Error in line: " + unexpectedToken.getPosition().getLine() + ". Unexpected token '" + unexpectedToken.getTokenString()
 				+ "' at character: " + unexpectedToken.getPosition().getCharacter();
