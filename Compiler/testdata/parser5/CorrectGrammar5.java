@@ -21,6 +21,10 @@ class Oo {
         (null) || (!null) = (5 + 5) = (5*5) = 123;
         int a = b = c = d = e = f = g;
 
+        x[null][true][!false] = m1(expr1, expr2, (a = b) == 0 || 1, new Ident());
+
+        int minus_zero = -0;
+
         /* at this point my fantasy has expired (please don't copy this comment */
     }
 }
