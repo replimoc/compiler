@@ -19,37 +19,37 @@ public class ParseNewExpressionTest {
 
 	@Test
 	public void testWithArray() throws IOException {
-		Parser parser = TestUtils.initParser("test [42]");
+		Parser parser = TestUtils.initParser("test [42];");
 		caller.call("parseNewExpression", parser);
 	}
 
 	@Test
 	public void testWithArray2dim() throws IOException {
-		Parser parser = TestUtils.initParser("test [true][]");
+		Parser parser = TestUtils.initParser("test [true][];");
 		caller.call("parseNewExpression", parser);
 	}
 
 	@Test
 	public void testWithArrayAssignment() throws IOException {
-		Parser parser = TestUtils.initParser("test [null=null][][][]");
+		Parser parser = TestUtils.initParser("test [null=null][][][];");
 		caller.call("parseNewExpression", parser);
 	}
 
 	@Test
 	public void testWithInt() throws IOException {
-		Parser parser = TestUtils.initParser("int [this][]");
+		Parser parser = TestUtils.initParser("int [this][];");
 		caller.call("parseNewExpression", parser);
 	}
 
 	@Test
 	public void testWithBool() throws IOException {
-		Parser parser = TestUtils.initParser("boolean [fancyexpression=42][]");
+		Parser parser = TestUtils.initParser("boolean [fancyexpression=42][];");
 		caller.call("parseNewExpression", parser);
 	}
 
 	@Test
 	public void testWithVoid() throws IOException {
-		Parser parser = TestUtils.initParser("void [main][]");
+		Parser parser = TestUtils.initParser("void [main][];");
 		caller.call("parseNewExpression", parser);
 	}
 
@@ -65,16 +65,9 @@ public class ParseNewExpressionTest {
 		caller.call("parseNewExpression", parser);
 	}
 
-	@Test(expected = RuntimeException.class)
-	public void testInvalidExpressionInArray3dim() throws IOException {
-		Parser parser = TestUtils.initParser("test [false][][)]");
-		caller.call("parseNewExpression", parser);
-	}
-
-	@Test(expected = RuntimeException.class)
-	public void testInvalidExpressionInArray2dim() throws IOException {
-		Parser parser = TestUtils.initParser(TokenType.IDENTIFIER, TokenType.LSQUAREBRACKET, TokenType.TRUE, TokenType.RSQUAREBRACKET,
-				TokenType.LSQUAREBRACKET, TokenType.INTEGER, TokenType.RSQUAREBRACKET);
+	@Test
+	public void testExpressionInArray3dim() throws IOException {
+		Parser parser = TestUtils.initParser("test [false][][true]");
 		caller.call("parseNewExpression", parser);
 	}
 
