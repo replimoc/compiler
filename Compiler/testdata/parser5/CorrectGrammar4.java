@@ -1,0 +1,36 @@
+/**
+ * test array initialization and so on
+ */
+
+class Test {
+
+    public static void main ( String[] args)
+    {
+        int len = 42;
+        int[] x;
+        int[] y = new int[len];
+
+        int j = 0;
+        while (j < len)
+        {
+            y[j] = j * j % j;
+            j++;
+        }
+
+        int dimm = 3;
+
+        int[][] E = new int[dimm][];
+
+        int j = 0; int k = 0;
+        while (j < dimm)
+        {
+            E[j] = new int[dimm];
+
+            while (k < dimm)
+            {
+                if ( k == j) { E[j][k] = 1;} else {E[j][k] = 0;}
+            }
+
+        }
+    }
+}
