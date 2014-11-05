@@ -2,6 +2,7 @@ package compiler.parser;
 
 import java.io.IOException;
 
+import compiler.lexer.OperationType;
 import compiler.lexer.Token;
 import compiler.lexer.TokenSuppliable;
 import compiler.lexer.TokenType;
@@ -444,8 +445,75 @@ public class Parser {
 		token = tokenSupplier.getNextToken();
 	}
 
-	private void parseExpression() {
-		// precedence climbing
+	private void parseExpression() throws IOException, ParserException {
+		parseExpression(0);
+	}
+
+	private String parseExpression(int minPrecedence) throws IOException, ParserException {
+		String result = "_"; // This should assign the next line
+		parseUnaryExpression();
+
+		while (token != null && token.getType().getOperationType() == OperationType.BINARY &&
+				token.getType().getPrecedence() >= minPrecedence) {
+			Token operationToken = token;
+			TokenType operationTokenType = operationToken.getType();
+			token = tokenSupplier.getNextToken();
+
+			int precedence = operationTokenType.getPrecedence();
+			if (operationTokenType.isLeftAssociative()) {
+				precedence++;
+			}
+
+			String rhs = parseExpression(precedence);
+
+			switch (operationTokenType) {
+			case NOTEQUAL:
+				result = "(" + result + "!=" + rhs + ")";
+				break;
+			case MULTIPLY:
+				result = "(" + result + "*" + rhs + ")";
+				break;
+			case ADD:
+				result = "(" + result + "+" + rhs + ")";
+				break;
+			case SUBTRACT:
+				result = "(" + result + "-" + rhs + ")";
+				break;
+			case DIVIDE:
+				result = "(" + result + "/" + rhs + ")";
+				break;
+			case LESSEQUAL:
+				result = "(" + result + "<=" + rhs + ")";
+				break;
+			case LESS:
+				result = "(" + result + "<" + rhs + ")";
+				break;
+			case EQUAL:
+				result = "(" + result + "==" + rhs + ")";
+				break;
+			case ASSIGN:
+				result = "(" + result + "=" + rhs + ")";
+				break;
+			case GREATEREQUAL:
+				result = "(" + result + ">=" + rhs + ")";
+				break;
+			case GREATER:
+				result = "(" + result + ">" + rhs + ")";
+				break;
+			case MODULO:
+				result = "(" + result + "%" + rhs + ")";
+				break;
+			case LOGICALAND:
+				result = "(" + result + "&&" + rhs + ")";
+				break;
+			case LOGICALOR:
+				result = "(" + result + "||" + rhs + ")";
+				break;
+			default:
+				throw new ParserException(operationToken);
+			}
+		}
+		return result;
 	}
 
 	/**
@@ -549,8 +617,9 @@ public class Parser {
 	 * MethodInvocationFieldAccess' -> ( Arguments ) | epsilon
 	 * 
 	 * @throws IOException
+	 * @throws ParserException
 	 */
-	private void parseMethodInvocation() throws IOException {
+	private void parseMethodInvocation() throws IOException, ParserException {
 		switch (token.getType()) {
 		case LP:
 			// method invocation
@@ -588,8 +657,9 @@ public class Parser {
 	 * Arguments -> (Expression (, Expression)*)?
 	 * 
 	 * @throws IOException
+	 * @throws ParserException
 	 */
-	private void parseArguments() throws IOException {
+	private void parseArguments() throws IOException, ParserException {
 		switch (token.getType()) {
 		case LOGICALNOT:
 		case SUBTRACT:

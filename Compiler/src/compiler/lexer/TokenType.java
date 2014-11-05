@@ -10,69 +10,69 @@ package compiler.lexer;
 public enum TokenType {
 
 	/* special tokens */
-	ERROR("error"),
-	EOF("EOF"),
-	IDENTIFIER("identifier"),
-	INTEGER("integer"),
+	ERROR("error", OperationType.UNDEFINED),
+	EOF("EOF", OperationType.UNDEFINED),
+	IDENTIFIER("identifier", OperationType.UNDEFINED),
+	INTEGER("integer", OperationType.UNDEFINED),
 
 	/* key words */
-	ABSTRACT("abstract", true),
-	ASSERT("assert", true),
-	BOOLEAN("boolean", true),
-	BREAK("break", true),
-	BYTE("byte", true),
-	CASE("case", true),
-	CATCH("catch", true),
-	CHAR("char", true),
-	CLASS("class", true),
-	CONST("const", true),
-	CONTINUE("continue", true),
-	DEFAULT("default", true),
-	DOUBLE("double", true),
-	DO("do", true),
-	ELSE("else", true),
-	ENUM("enum", true),
-	EXTENDS("extends", true),
-	FALSE("false", true),
-	FINALLY("finally", true),
-	FINAL("final", true),
-	FLOAT("float", true),
-	FOR("for", true),
-	GOTO("goto", true),
-	IF("if", true),
-	IMPLEMENTS("implements", true),
-	IMPORT("import", true),
-	INSTANCEOF("instanceof", true),
-	INTERFACE("interface", true),
-	INT("int", true),
-	LONG("long", true),
-	NATIVE("native", true),
-	NEW("new", true),
-	NULL("null", true),
-	PACKAGE("package", true),
-	PRIVATE("private", true),
-	PROTECTED("protected", true),
-	PUBLIC("public", true),
-	RETURN("return", true),
-	SHORT("short", true),
-	STATIC("static", true),
-	STRICTFP("strictfp", true),
-	SUPER("super", true),
-	SWITCH("switch", true),
-	SYNCHRONIZED("synchronized", true),
-	THIS("this", true),
-	THROWS("throws", true),
-	THROW("throw", true),
-	TRANSIENT("transient", true),
-	TRUE("true", true),
-	TRY("try", true),
-	VOID("void", true),
-	VOLATILE("volatile", true),
-	WHILE("while", true),
+	ABSTRACT("abstract", OperationType.KEYWORD),
+	ASSERT("assert", OperationType.KEYWORD),
+	BOOLEAN("boolean", OperationType.KEYWORD),
+	BREAK("break", OperationType.KEYWORD),
+	BYTE("byte", OperationType.KEYWORD),
+	CASE("case", OperationType.KEYWORD),
+	CATCH("catch", OperationType.KEYWORD),
+	CHAR("char", OperationType.KEYWORD),
+	CLASS("class", OperationType.KEYWORD),
+	CONST("const", OperationType.KEYWORD),
+	CONTINUE("continue", OperationType.KEYWORD),
+	DEFAULT("default", OperationType.KEYWORD),
+	DOUBLE("double", OperationType.KEYWORD),
+	DO("do", OperationType.KEYWORD),
+	ELSE("else", OperationType.KEYWORD),
+	ENUM("enum", OperationType.KEYWORD),
+	EXTENDS("extends", OperationType.KEYWORD),
+	FALSE("false", OperationType.KEYWORD),
+	FINALLY("finally", OperationType.KEYWORD),
+	FINAL("final", OperationType.KEYWORD),
+	FLOAT("float", OperationType.KEYWORD),
+	FOR("for", OperationType.KEYWORD),
+	GOTO("goto", OperationType.KEYWORD),
+	IF("if", OperationType.KEYWORD),
+	IMPLEMENTS("implements", OperationType.KEYWORD),
+	IMPORT("import", OperationType.KEYWORD),
+	INSTANCEOF("instanceof", OperationType.KEYWORD),
+	INTERFACE("interface", OperationType.KEYWORD),
+	INT("int", OperationType.KEYWORD),
+	LONG("long", OperationType.KEYWORD),
+	NATIVE("native", OperationType.KEYWORD),
+	NEW("new", OperationType.KEYWORD),
+	NULL("null", OperationType.KEYWORD),
+	PACKAGE("package", OperationType.KEYWORD),
+	PRIVATE("private", OperationType.KEYWORD),
+	PROTECTED("protected", OperationType.KEYWORD),
+	PUBLIC("public", OperationType.KEYWORD),
+	RETURN("return", OperationType.KEYWORD),
+	SHORT("short", OperationType.KEYWORD),
+	STATIC("static", OperationType.KEYWORD),
+	STRICTFP("strictfp", OperationType.KEYWORD),
+	SUPER("super", OperationType.KEYWORD),
+	SWITCH("switch", OperationType.KEYWORD),
+	SYNCHRONIZED("synchronized", OperationType.KEYWORD),
+	THIS("this", OperationType.KEYWORD),
+	THROWS("throws", OperationType.KEYWORD),
+	THROW("throw", OperationType.KEYWORD),
+	TRANSIENT("transient", OperationType.KEYWORD),
+	TRUE("true", OperationType.KEYWORD),
+	TRY("try", OperationType.KEYWORD),
+	VOID("void", OperationType.KEYWORD),
+	VOLATILE("volatile", OperationType.KEYWORD),
+	WHILE("while", OperationType.KEYWORD),
 
 	/* operators */
 	/** Not equal: != */
-	NOTEQUAL("!="),
+	NOTEQUAL("!=", OperationType.BINARY, 4, true),
 	/** Logical not: ! */
 	LOGICALNOT("!"),
 	/** Left parenthesis: ( */
@@ -82,13 +82,13 @@ public enum TokenType {
 	/** Multiply and assign: *= */
 	MULTIPLYASSIGN("*="),
 	/** Multiply: * */
-	MULTIPLY("*"),
+	MULTIPLY("*", OperationType.BINARY, 7, true),
 	/** Increment: ++ */
 	INCREMENT("++"),
 	/** Add and assign: += */
 	ADDASSIGN("+="),
 	/** Add: + */
-	ADD("+"),
+	ADD("+", OperationType.BINARY, 6, true),
 	/** Comma: , */
 	COMMA(","),
 	/** Subtract and assign: -= */
@@ -96,13 +96,13 @@ public enum TokenType {
 	/** Decrement: -- */
 	DECREMENT("--"),
 	/** Subtract: - */
-	SUBTRACT("-"),
+	SUBTRACT("-", OperationType.BINARY, 6, true),
 	/** Point: . */
 	POINT("."),
 	/** Divide and assign: /= */
 	DIVIDEASSIGN("/="),
 	/** Divide: / */
-	DIVIDE("/"),
+	DIVIDE("/", OperationType.BINARY, 7, true),
 	/** Colon: : */
 	COLON(":"),
 	/** Semicolon: ; */
@@ -112,15 +112,15 @@ public enum TokenType {
 	/** Left shift: << */
 	LS("<<"),
 	/** Less than or equal: <= */
-	LESSEQUAL("<="),
+	LESSEQUAL("<=", OperationType.BINARY, 5, true),
 	/** Less than: < */
-	LESS("<"),
+	LESS("<", OperationType.BINARY, 5, true),
 	/** Equal: == */
-	EQUAL("=="),
+	EQUAL("==", OperationType.BINARY, 4, true),
 	/** Assign: = */
-	ASSIGN("="),
+	ASSIGN("=", OperationType.BINARY, 1, false),
 	/** Greater than or equal: >= */
-	GREATEREQUAL(">="),
+	GREATEREQUAL(">=", OperationType.BINARY, 5, true),
 	/** Right shift and assign: >>= */
 	RSASSIGN(">>="),
 	/** Right shift with zero fill and assign: >>>= */
@@ -130,7 +130,7 @@ public enum TokenType {
 	/** Right shift: >> */
 	RS(">>"),
 	/** Greater than: > */
-	GREATER(">"),
+	GREATER(">", OperationType.BINARY, 5, true),
 	/**
 	 * Conditional: ?
 	 * <p>
@@ -140,11 +140,11 @@ public enum TokenType {
 	/** Modulo and assign: %= */
 	MODULOASSIGN("%="),
 	/** Modulo: % */
-	MODULO("%"),
+	MODULO("%", OperationType.BINARY, 7, true),
 	/** And and assign: &= */
 	ANDASSIGN("&="),
 	/** Logical and: && */
-	LOGICALAND("&&"),
+	LOGICALAND("&&", OperationType.BINARY, 3, true),
 	/** And: & */
 	AND("&"),
 	/** Left square bracket: [ */
@@ -164,22 +164,37 @@ public enum TokenType {
 	/** Inclusive or and assign: |= */
 	INCLUSIVEORASSIGN("|="),
 	/** Logical or: || */
-	LOGICALOR("||"),
+	LOGICALOR("||", OperationType.BINARY, 2, true),
 	/** Inclusive or: | */
 	INCLUSIVEOR("|");
 
 	private final String string;
-	private final boolean keyword;
+	private final OperationType operationType;
+	private final int precedence;
+	private final boolean leftAssociative;
+
+	/**
+	 * Constructor. Sets the token specific string and the given keyword, it also specifies the precidence of an operator.
+	 * 
+	 * @param string
+	 * @param operationType
+	 * @param precendence
+	 */
+	TokenType(String string, OperationType operationType, int precedence, boolean leftAssociative) {
+		this.string = string;
+		this.operationType = operationType;
+		this.precedence = precedence;
+		this.leftAssociative = leftAssociative;
+	}
 
 	/**
 	 * Constructor. Sets the token specific string and the given keyword.
 	 * 
 	 * @param string
-	 * @param keyword
+	 * @param operationType
 	 */
-	TokenType(String string, boolean keyword) {
-		this.string = string;
-		this.keyword = keyword;
+	TokenType(String string, OperationType operationType) {
+		this(string, operationType, -1, true);
 	}
 
 	/**
@@ -188,7 +203,7 @@ public enum TokenType {
 	 * @param string
 	 */
 	TokenType(String string) {
-		this(string, false);
+		this(string, OperationType.UNDEFINED);
 	}
 
 	/**
@@ -201,11 +216,33 @@ public enum TokenType {
 	}
 
 	/**
+	 * Return the type of an token.
+	 * 
+	 * @return
+	 */
+	public OperationType getOperationType() {
+		return operationType;
+	}
+
+	/**
 	 * Returns true if the token is a keyword. False otherwise.
 	 * 
 	 * @return
 	 */
 	public boolean isKeyword() {
-		return keyword;
+		return operationType == OperationType.KEYWORD;
+	}
+
+	/**
+	 * Returns the precedence of an token.
+	 * 
+	 * @return
+	 */
+	public int getPrecedence() {
+		return precedence;
+	}
+
+	public boolean isLeftAssociative() {
+		return leftAssociative;
 	}
 }
