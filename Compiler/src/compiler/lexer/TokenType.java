@@ -72,7 +72,7 @@ public enum TokenType {
 
 	/* operators */
 	/** Not equal: != */
-	NOTEQUAL("!=", OperationType.BINARY, 3, true),
+	NOTEQUAL("!=", OperationType.BINARY, 4, true),
 	/** Logical not: ! */
 	LOGICALNOT("!"),
 	/** Left parenthesis: ( */
@@ -82,13 +82,13 @@ public enum TokenType {
 	/** Multiply and assign: *= */
 	MULTIPLYASSIGN("*="),
 	/** Multiply: * */
-	MULTIPLY("*", OperationType.BINARY, 1, true),
+	MULTIPLY("*", OperationType.BINARY, 7, true),
 	/** Increment: ++ */
 	INCREMENT("++"),
 	/** Add and assign: += */
 	ADDASSIGN("+="),
 	/** Add: + */
-	ADD("+", OperationType.BINARY, 2, true),
+	ADD("+", OperationType.BINARY, 6, true),
 	/** Comma: , */
 	COMMA(","),
 	/** Subtract and assign: -= */
@@ -96,13 +96,13 @@ public enum TokenType {
 	/** Decrement: -- */
 	DECREMENT("--"),
 	/** Subtract: - */
-	SUBTRACT("-", OperationType.BINARY, 2, true),
+	SUBTRACT("-", OperationType.BINARY, 6, true),
 	/** Point: . */
 	POINT("."),
 	/** Divide and assign: /= */
 	DIVIDEASSIGN("/="),
 	/** Divide: / */
-	DIVIDE("/", OperationType.BINARY, 1, true),
+	DIVIDE("/", OperationType.BINARY, 7, true),
 	/** Colon: : */
 	COLON(":"),
 	/** Semicolon: ; */
@@ -112,15 +112,15 @@ public enum TokenType {
 	/** Left shift: << */
 	LS("<<"),
 	/** Less than or equal: <= */
-	LESSEQUAL("<=", OperationType.BINARY, 3, true),
+	LESSEQUAL("<=", OperationType.BINARY, 5, true),
 	/** Less than: < */
-	LESS("<", OperationType.BINARY, 3, true),
+	LESS("<", OperationType.BINARY, 5, true),
 	/** Equal: == */
 	EQUAL("==", OperationType.BINARY, 4, true),
 	/** Assign: = */
-	ASSIGN("=", OperationType.BINARY, 5, false),
+	ASSIGN("=", OperationType.BINARY, 1, false),
 	/** Greater than or equal: >= */
-	GREATEREQUAL(">=", OperationType.BINARY, 3, true),
+	GREATEREQUAL(">=", OperationType.BINARY, 5, true),
 	/** Right shift and assign: >>= */
 	RSASSIGN(">>="),
 	/** Right shift with zero fill and assign: >>>= */
@@ -130,7 +130,7 @@ public enum TokenType {
 	/** Right shift: >> */
 	RS(">>"),
 	/** Greater than: > */
-	GREATER(">", OperationType.BINARY, 3, true),
+	GREATER(">", OperationType.BINARY, 5, true),
 	/**
 	 * Conditional: ?
 	 * <p>
@@ -140,11 +140,11 @@ public enum TokenType {
 	/** Modulo and assign: %= */
 	MODULOASSIGN("%="),
 	/** Modulo: % */
-	MODULO("%", OperationType.BINARY, 1, true),
+	MODULO("%", OperationType.BINARY, 7, true),
 	/** And and assign: &= */
 	ANDASSIGN("&="),
 	/** Logical and: && */
-	LOGICALAND("&&", OperationType.BINARY, 4, true),
+	LOGICALAND("&&", OperationType.BINARY, 3, true),
 	/** And: & */
 	AND("&"),
 	/** Left square bracket: [ */
@@ -164,7 +164,7 @@ public enum TokenType {
 	/** Inclusive or and assign: |= */
 	INCLUSIVEORASSIGN("|="),
 	/** Logical or: || */
-	LOGICALOR("||", OperationType.BINARY, 3, true),
+	LOGICALOR("||", OperationType.BINARY, 2, true),
 	/** Inclusive or: | */
 	INCLUSIVEOR("|");
 
