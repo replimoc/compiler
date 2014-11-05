@@ -53,8 +53,8 @@ public class TestUtils {
 		return new Parser(new FixedTokensSupplier(types));
 	}
 
-    public static Parser initParser(Path sourceFile) throws IOException {
-		Lexer lex = new Lexer(Files.newBufferedReader(sourceFile), new StringTable());
+	public static Parser initParser(Path sourceFile) throws IOException {
+		Lexer lex = new Lexer(Files.newBufferedReader(sourceFile, StandardCharsets.US_ASCII), new StringTable());
 		return new Parser(lex);
 	}
 }

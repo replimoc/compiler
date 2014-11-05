@@ -6,6 +6,7 @@ import org.junit.Test;
 
 import java.nio.file.*;
 import java.nio.file.attribute.BasicFileAttributes;
+import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -73,7 +74,7 @@ public class ParserOutputTest {
 
     private static void testSourceFile(Path sourceFile, Path parserFile) throws Exception {
         // read expected output
-        List<String> expectedOutput = Files.readAllLines(parserFile);
+        List<String> expectedOutput = Files.readAllLines(parserFile, StandardCharsets.US_ASCII);
         Parser parser = TestUtils.initParser(sourceFile);
 
         boolean isGrammarValid = false;
