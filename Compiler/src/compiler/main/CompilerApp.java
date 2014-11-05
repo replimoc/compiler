@@ -16,6 +16,8 @@ import compiler.StringTable;
 import compiler.lexer.Lexer;
 import compiler.lexer.Token;
 import compiler.lexer.TokenType;
+import compiler.parser.Parser;
+import compiler.parser.ParserException;
 
 public class CompilerApp {
 
@@ -34,6 +36,7 @@ public class CompilerApp {
 		CommandLineParser parser = new BasicParser();
 		try {
 			CommandLine cmd = parser.parse(options, args);
+
 			if (cmd.hasOption("help"))
 			{
 				printHelp(options);
@@ -42,11 +45,29 @@ public class CompilerApp {
 
 			if (cmd.hasOption(LEXTEST)) {
 				File file = new File(cmd.getOptionValue(LEXTEST));
-				if (file.exists()) {
-					executeLexerTest(file);
-					return 0;
-				} else {
-					System.err.println("File " + file + " does not exist.");
+				try {
+					if (file.exists()) {
+						executeLexerTest(file);
+						return 0;
+					} else {
+						System.err.println("File " + file + " does not exist.");
+					}
+				} catch (IOException e) {
+					System.err.println("Cannot access file " + file);
+				}
+			}
+
+			String[] remainingArgs = cmd.getArgs();
+			if (remainingArgs.length == 1) {
+				File file = new File(remainingArgs[0]);
+				try {
+					if (file.exists()) {
+						return executeParsing(file);
+					} else {
+						System.err.println("File " + file + " does not exist.");
+					}
+				} catch (IOException e) {
+					System.err.println("Cannot access file " + file);
 				}
 			}
 		} catch (ParseException e) {
@@ -56,6 +77,19 @@ public class CompilerApp {
 		}
 		printHelp(options);
 		return 1;
+	}
+
+	private static int executeParsing(File file) throws IOException {
+		Lexer lexer = new Lexer(new BufferedReader(new FileReader(file)), new StringTable());
+		Parser parser = new Parser(lexer);
+
+		try {
+			parser.parse();
+			return 0;
+		} catch (ParserException e) {
+			System.err.println(e.getMessage());
+			return 1;
+		}
 	}
 
 	private static void executeLexerTest(File file) throws IOException {
@@ -70,6 +104,6 @@ public class CompilerApp {
 
 	private static void printHelp(Options options) {
 		HelpFormatter formatter = new HelpFormatter();
-		formatter.printHelp("compiler", options);
+		formatter.printHelp("compiler [options] [file]", options);
 	}
 }

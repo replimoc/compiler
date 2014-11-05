@@ -13,10 +13,8 @@ public class ParserException extends Exception {
 
 	@Override
 	public String toString() {
-		return "Line: " + unexpectedToken.getPosition().getLine()
-				+ ". Unexpected token '" + unexpectedToken.getTokenString()
-				+ "' at character: "
-				+ unexpectedToken.getPosition().getCharacter();
+		return "Error in line: " + unexpectedToken.getPosition().getLine() + ". Unexpected token '" + unexpectedToken.getTokenString()
+				+ "' at character: " + unexpectedToken.getPosition().getCharacter();
 	}
 
 	@Override

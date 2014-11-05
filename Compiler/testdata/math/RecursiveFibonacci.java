@@ -1,6 +1,6 @@
 class RecursiveFibonacci {
 
-	public static void main(String args[]) {
+	public static void main(String[] args) {
 		RecursiveFibonacci fibunacci = new RecursiveFibonacci();
 		System.out.println(fibunacci.recursiveFib(10));
 	}

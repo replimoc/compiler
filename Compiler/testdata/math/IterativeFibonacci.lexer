@@ -7,9 +7,9 @@ void
 identifier main
 (
 identifier String
-identifier args
 [
 ]
+identifier args
 )
 {
 identifier IterativeFibonacci
@@ -83,7 +83,10 @@ identifier n
 integer literal 1
 ;
 identifier i
-++
+=
+identifier i
++
+integer literal 1
 )
 {
 identifier fibs
