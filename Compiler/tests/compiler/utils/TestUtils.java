@@ -52,7 +52,6 @@ public class TestUtils {
 	public static Parser initParser(TokenType... types) throws IOException {
 		return new Parser(new FixedTokensSupplier(types));
 	}
-	}
 
     public static Parser initParser(Path sourceFile) throws IOException {
 		Lexer lex = new Lexer(Files.newBufferedReader(sourceFile), new StringTable());
