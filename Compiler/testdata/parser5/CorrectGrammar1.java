@@ -76,7 +76,7 @@ class Parameters {
     public void i_accept_a_lot_of_params(int a, int[] vec, int[][] A, int[][][] cube) {}
 
     public void i_accept_no_params(void a,void b,void c) {
-        a + b - c + (++d) - (x--);
+        a + b - c + (d) - (-x);
         return;
     }
 

@@ -37,6 +37,13 @@ class Loops {
 
         if (true) {} else if (false) else if (true_or_false()) {{}};
 
+        /* if - chain */
+        if (true) if (true) if (false) if (true) if ((null)) if (true) ;
+
+        /* while - chain */
+        while(1) while(1) while(1) while(1) { while(1) while(1) while(1) while(1); }
+
+        /* random blocks and empty statements*/
         /* the author is boooooooooored */
 
         {
