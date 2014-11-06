@@ -14,7 +14,7 @@ class Test {
         while (j < len)
         {
             y[j] = j * j % j;
-            j++;
+            j = j + 1;
         }
 
         int dimm = 3;

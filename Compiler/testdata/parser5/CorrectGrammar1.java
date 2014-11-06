@@ -19,7 +19,7 @@ class Cl1 {
     public Cl1 Cl1()
     {
         this.clazzy = null;
-        Arrays arrays = new Arrays();
+        /*Arrays arrays = new Arrays();*/
         this.list = arrays.getList(100);
         this.matrix = arrays.getMatrix(100);
         this.cube = arrays.getCube(100);
@@ -87,7 +87,7 @@ class Parameters {
         boolean b = three_four_five[0] && three_four_five[1];
         boolean c = !three_four_five[3];
 
-        boolean d = (a && b) || (c && !b) || (~(a || c));
+        boolean d = (a && b) || (c && !b) || ((a || c));
 
         boolean b_true = true;
         boolean b_false = false;

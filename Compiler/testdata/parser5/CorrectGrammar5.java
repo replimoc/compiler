@@ -12,11 +12,11 @@ class Oo {
         void[][][][][][][][][][][][][][][][] x;
 
         /* the first one is semantically correct */
-        identifier.m1().m2(42).m3(42,24).identifier[].identifier[][][];
-        true.m1().m2(42).m3(42,24).identifier[].identifier[][][];
-        5.m1().m2(42).m3(42,24).identifier[].identifier[][][];
+        identifier.m1().m2(42).m3(42,24).identifier[24+44].identifier[x][y][zZ];
+        true.m1().m2(42).m3(42,24).identifier[a < b + c].identifier[(((null)))][false][true || false < false];
+        5.m1().m2(42).m3(42,24).identifier[a+b%c%12345].identifier[new int[x]][new integer()][1];
 
-        new identifier().ident[].ident;
+        new identifier().ident[c==c==c!=c].ident;
 
         (null) || (!null) = (5 + 5) = (5*5) = 123;
         int a = b = c = d = e = f = g;
