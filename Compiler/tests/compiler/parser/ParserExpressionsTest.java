@@ -243,6 +243,42 @@ public class ParserExpressionsTest {
         parser.parse();
     }
 
+    @Test
+    public void testEqualityExpression() throws Exception {
+        Parser parser;
+
+        parser = TestUtils.initParser(createTestString("a == b;"));
+        parser.parse();
+        parser = TestUtils.initParser(createTestString("a != b;"));
+        parser.parse();
+        parser = TestUtils.initParser(createTestString("-a != !b;"));
+        parser.parse();
+        parser = TestUtils.initParser(createTestString("!a[!a == -b] + b[!b != !a];"));
+        parser.parse();
+        parser = TestUtils.initParser(createTestString("this != that;"));
+        parser.parse();
+        parser = TestUtils.initParser(createTestString("f(x) != this.f(x)[123] == a + b + new f() != this[f(x)];"));
+        parser.parse();
+    }
+
+    @Test
+    public void testAssignmentExpression() throws Exception {
+        Parser parser;
+
+        parser = TestUtils.initParser(createTestString("a = b;"));
+        parser.parse();
+        parser = TestUtils.initParser(createTestString("int a = new b();"));
+        parser.parse();
+        parser = TestUtils.initParser(createTestString("int[]a = new int[b][][][x];"));
+        parser.parse();
+        parser = TestUtils.initParser(createTestString("false[true] = null = null = false[false][new void[x]];"));
+        parser.parse();
+        parser = TestUtils.initParser(createTestString("a = b && c;"));
+        parser.parse();
+        parser = TestUtils.initParser(createTestString("a = (b = c) = ((((( d = e= f) != 1 ) = d == 5) = (a || b) = (a - b) = -c ));"));
+        parser.parse();
+    }
+
     private static String createTestString(String test) {
 
         String program = preamble + test + end;
