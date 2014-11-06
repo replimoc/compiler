@@ -439,8 +439,8 @@ public class Parser {
 		token = tokenSupplier.getNextToken();
 
 		if (token.getType() != TokenType.SEMICOLON) {
-            parseExpression();
-        }
+			parseExpression();
+		}
 
 		if (token.getType() != TokenType.SEMICOLON) {
 			throw new ParserException(token);
@@ -606,7 +606,7 @@ public class Parser {
 			token = tokenSupplier.getNextToken();
 			if (token.getType() == TokenType.IDENTIFIER) {
 				token = tokenSupplier.getNextToken();
-				parseMethodInvocation();
+				parseMethodInvocationFieldAccess();
 			} else {
 				throw new ParserException(token);
 			}
@@ -621,7 +621,7 @@ public class Parser {
 	 * @throws IOException
 	 * @throws ParserException
 	 */
-	private void parseMethodInvocation() throws IOException, ParserException {
+	private void parseMethodInvocationFieldAccess() throws IOException, ParserException {
 		switch (token.getType()) {
 		case LP:
 			// method invocation
@@ -632,7 +632,6 @@ public class Parser {
 			token = tokenSupplier.getNextToken();
 			break;
 		default:
-			break;
 		}
 	}
 
@@ -682,8 +681,9 @@ public class Parser {
 				parseExpression();
 			}
 			break;
+		// no expression
+		case RP:
 		default:
-			break;
 		}
 	}
 
@@ -807,25 +807,18 @@ public class Parser {
 			parseExpression();
 			if (token.getType() == TokenType.RSQUAREBRACKET) {
 				token = tokenSupplier.getNextToken();
-				while (true) {
-					switch (token.getType()) {
-					case LSQUAREBRACKET:
-						Token lookahead = tokenSupplier.getLookAhead();
-						if (lookahead.getType() == TokenType.RSQUAREBRACKET) {
-							// read both
-							token = tokenSupplier.getNextToken();
-							token = tokenSupplier.getNextToken();
-						} else {
-							// read [, but not part of NewArrayExpression
-							// could be [Expression]ArrayAccess
-							// [Expression][Expression]
-							return;
-						}
-						break;
-					default:
+				while (token.getType() == TokenType.LSQUAREBRACKET) {
+					Token lookahead = tokenSupplier.getLookAhead();
+					if (lookahead.getType() == TokenType.RSQUAREBRACKET) {
+						// read both
+						token = tokenSupplier.getNextToken();
+						token = tokenSupplier.getNextToken();
+					} else {
+						// read [, but not part of NewArrayExpression
+						// could be [Expression]ArrayAccess
+						// [Expression][Expression]
 						return;
 					}
-
 				}
 			} else {
 				throw new ParserException(token);
