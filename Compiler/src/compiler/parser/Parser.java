@@ -328,7 +328,7 @@ public class Parser {
 		}
 		token = tokenSupplier.getNextToken();
 
-		if (token.getType() == TokenType.EQUAL) {
+		if (token.getType() == TokenType.ASSIGN) {
 			token = tokenSupplier.getNextToken();
 			parseExpression();
 		}
