@@ -48,13 +48,13 @@ public class ParsePrimaryExpressionTest {
 
 	@Test
 	public void testArray() throws IOException {
-		Parser parser = TestUtils.initParser("new int[17][]");
+		Parser parser = TestUtils.initParser("new int[17][];");
 		caller.call("parsePrimaryExpression", parser);
 	}
 
 	@Test
 	public void testArrayWithOr() throws IOException {
-		Parser parser = TestUtils.initParser("new int[true || false][]");
+		Parser parser = TestUtils.initParser("new int[true||false][];");
 		caller.call("parsePrimaryExpression", parser);
 	}
 
@@ -85,12 +85,6 @@ public class ParsePrimaryExpressionTest {
 	@Test(expected = RuntimeException.class)
 	public void testInvalidArray() throws IOException {
 		Parser parser = TestUtils.initParser("new int[[]]");
-		caller.call("parsePrimaryExpression", parser);
-	}
-
-	@Test(expected = RuntimeException.class)
-	public void testInvalidArray2() throws IOException {
-		Parser parser = TestUtils.initParser("new void[true][18]");
 		caller.call("parsePrimaryExpression", parser);
 	}
 

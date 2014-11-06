@@ -542,7 +542,6 @@ public class Parser {
 		default:
 			throw new ParserException(token);
 		}
-
 	}
 
 	/**
@@ -625,9 +624,12 @@ public class Parser {
 			// method invocation
 			token = tokenSupplier.getNextToken();
 			parseArguments();
+			if (token.getType() != TokenType.RP)
+				throw new ParserException(token);
+			token = tokenSupplier.getNextToken();
 			break;
 		default:
-			// field access
+			break;
 		}
 	}
 
@@ -661,6 +663,7 @@ public class Parser {
 	 */
 	private void parseArguments() throws IOException, ParserException {
 		switch (token.getType()) {
+		case LP:
 		case LOGICALNOT:
 		case SUBTRACT:
 		case NULL:
@@ -669,7 +672,6 @@ public class Parser {
 		case INTEGER:
 		case THIS:
 		case IDENTIFIER:
-		case LP:
 		case NEW:
 			parseExpression();
 			while (token.getType() == TokenType.COMMA) {
@@ -678,7 +680,7 @@ public class Parser {
 			}
 			break;
 		default:
-			// allowed
+			break;
 		}
 	}
 
@@ -701,7 +703,11 @@ public class Parser {
 			parsePrimaryExpressionIdent();
 			break;
 		case LP:
+			token = tokenSupplier.getNextToken();
 			parseExpression();
+			if (token.getType() != TokenType.RP)
+				throw new ParserException(token);
+			token = tokenSupplier.getNextToken();
 			break;
 		case NEW:
 			token = tokenSupplier.getNextToken();
@@ -724,7 +730,14 @@ public class Parser {
 		case IDENTIFIER:
 			token = tokenSupplier.getNextToken();
 			if (token.getType() == TokenType.LP) {
+				token = tokenSupplier.getNextToken();
 				parseArguments();
+				if (token.getType() == TokenType.RP) {
+					token = tokenSupplier.getNextToken();
+					return;
+				} else {
+					throw new ParserException(token);
+				}
 			}
 			// assume "PrimaryIdent -> IDENT" when another token than '(' is
 			// read
@@ -791,15 +804,26 @@ public class Parser {
 			parseExpression();
 			if (token.getType() == TokenType.RSQUAREBRACKET) {
 				token = tokenSupplier.getNextToken();
-				while (token.getType() == TokenType.LSQUAREBRACKET) {
-					token = tokenSupplier.getNextToken();
-					if (token.getType() == TokenType.RSQUAREBRACKET) {
-						token = tokenSupplier.getNextToken();
-					} else {
-						throw new ParserException(token);
+				while (true) {
+					switch (token.getType()) {
+					case LSQUAREBRACKET:
+						Token lookahead = tokenSupplier.getLookAhead();
+						if (lookahead.getType() == TokenType.RSQUAREBRACKET) {
+							// read both
+							token = tokenSupplier.getNextToken();
+							token = tokenSupplier.getNextToken();
+						} else {
+							// read [, but not part of NewArrayExpression
+							// could be [Expression]ArrayAccess
+							// [Expression][Expression]
+							return;
+						}
+						break;
+					default:
+						return;
 					}
+
 				}
-				return;
 			} else {
 				throw new ParserException(token);
 			}
