@@ -91,6 +91,9 @@ public class ParserTest {
 
 		parser = TestUtils.initParser("class Class { public void function() { ; ; {} } }");
 		parser.parse();
+		
+		parser = TestUtils.initParser("class Class { public void asdf; public asdf asfd; }");
+		parser.parse();
 
 		/*
 		 * parser = TestUtils.initParser("class Class { public void function() { if () {} } }"); parser.parse(); parser =

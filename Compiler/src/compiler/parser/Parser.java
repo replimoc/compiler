@@ -49,7 +49,9 @@ public class Parser {
 				token = tokenSupplier.getNextToken();
 				continue;
 			} else {
-				parseClassMember();
+				while (token.getType() == TokenType.PUBLIC) {
+					parseClassMember();
+				}
 				if (token.getType() != TokenType.RCURLYBRACKET) {
 					throw new ParserException(token);
 				}
