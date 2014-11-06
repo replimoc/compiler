@@ -91,4 +91,16 @@ public class ParseNewExpressionTest {
 		caller.call("parseNewExpression", parser);
 	}
 
+	@Test(expected = RuntimeException.class)
+	public void testInvalidExprEnd() throws IOException {
+		Parser parser = TestUtils.initParser("int[42)");
+		caller.call("parseNewExpression", parser);
+	}
+
+	@Test(expected = RuntimeException.class)
+	public void testInvalidNewExprBegin() throws IOException {
+		Parser parser = TestUtils.initParser("[42)");
+		caller.call("parseNewExpression", parser);
+	}
+
 }

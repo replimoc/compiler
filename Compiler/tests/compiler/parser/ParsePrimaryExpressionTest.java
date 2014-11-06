@@ -35,6 +35,30 @@ public class ParsePrimaryExpressionTest {
 	}
 
 	@Test
+	public void testIdent2() throws IOException {
+		Parser parser = TestUtils.initParser("(test)");
+		caller.call("parsePrimaryExpression", parser);
+	}
+
+	@Test
+	public void testIdentWithArguments() throws IOException {
+		Parser parser = TestUtils.initParser("test()");
+		caller.call("parsePrimaryExpression", parser);
+	}
+
+	@Test(expected = RuntimeException.class)
+	public void testInvalidIdentWithArguments() throws IOException {
+		Parser parser = TestUtils.initParser("test(");
+		caller.call("parsePrimaryExpression", parser);
+	}
+
+	@Test(expected = RuntimeException.class)
+	public void testIdentWithMissingBracket() throws IOException {
+		Parser parser = TestUtils.initParser("(test");
+		caller.call("parsePrimaryExpression", parser);
+	}
+
+	@Test
 	public void testInt() throws IOException {
 		Parser parser = TestUtils.initParser("42");
 		caller.call("parsePrimaryExpression", parser);

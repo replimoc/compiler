@@ -48,4 +48,16 @@ public class ParsePostfixOpTest {
 		caller.call("parsePostfixOp", parser);
 	}
 
+	@Test(expected = RuntimeException.class)
+	public void testInvalidField() throws IOException {
+		Parser parser = TestUtils.initParser(".*");
+		caller.call("parsePostfixOp", parser);
+	}
+
+	@Test(expected = RuntimeException.class)
+	public void testInvalidBegin() throws IOException {
+		Parser parser = TestUtils.initParser("*");
+		caller.call("parsePostfixOp", parser);
+	}
+
 }
