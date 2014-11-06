@@ -438,7 +438,7 @@ public class Parser {
 		}
 		token = tokenSupplier.getNextToken();
 
-		// parseExpression();
+		parseExpression();
 
 		if (token.getType() != TokenType.SEMICOLON) {
 			throw new ParserException(token);
