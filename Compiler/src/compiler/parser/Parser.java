@@ -83,7 +83,7 @@ public class Parser {
 					|| token.getType() == TokenType.BOOLEAN
 					|| token.getType() == TokenType.VOID
 					|| token.getType() == TokenType.IDENTIFIER) {
-				token = tokenSupplier.getNextToken();
+				parseType();
 
 				if (token.getType() == TokenType.IDENTIFIER) {
 					token = tokenSupplier.getNextToken();
@@ -332,7 +332,6 @@ public class Parser {
 			token = tokenSupplier.getNextToken();
 			parseExpression();
 		}
-		token = tokenSupplier.getNextToken();
 
 		if (token.getType() != TokenType.SEMICOLON) {
 			throw new ParserException(token);

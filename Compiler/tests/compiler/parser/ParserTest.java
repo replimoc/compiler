@@ -94,7 +94,13 @@ public class ParserTest {
 		
 		parser = TestUtils.initParser("class Class { public void asdf; public asdf asfd; }");
 		parser.parse();
-
+		
+		parser = TestUtils.initParser("class Loops {public static void main ( String[] args){int a; int b; int c; int d;}}");
+		parser.parse();
+		
+		parser = TestUtils.initParser("class Class { public int[] list; }");
+		parser.parse();
+		
 		/*
 		 * parser = TestUtils.initParser("class Class { public void function() { if () {} } }"); parser.parse(); parser =
 		 * TestUtils.initParser("class Class { public void function() { while () {} } }"); parser.parse(); parser =
