@@ -7,7 +7,7 @@ import org.junit.Test;
 import compiler.utils.PrivateMethodCaller;
 import compiler.utils.TestUtils;
 
-public class ParseArrayAccess {
+public class ParseArrayAccessTest {
 	private final PrivateMethodCaller caller = new PrivateMethodCaller(Parser.class);;
 
 	// ArrayAccess -> [ Expression ]
