@@ -49,7 +49,9 @@ public class Parser {
 				token = tokenSupplier.getNextToken();
 				continue;
 			} else {
-				parseClassMember();
+				while (token.getType() == TokenType.PUBLIC) {
+					parseClassMember();
+				}
 				if (token.getType() != TokenType.RCURLYBRACKET) {
 					throw new ParserException(token);
 				}
@@ -81,7 +83,7 @@ public class Parser {
 					|| token.getType() == TokenType.BOOLEAN
 					|| token.getType() == TokenType.VOID
 					|| token.getType() == TokenType.IDENTIFIER) {
-				token = tokenSupplier.getNextToken();
+				parseType();
 
 				if (token.getType() == TokenType.IDENTIFIER) {
 					token = tokenSupplier.getNextToken();
@@ -326,11 +328,10 @@ public class Parser {
 		}
 		token = tokenSupplier.getNextToken();
 
-		if (token.getType() == TokenType.EQUAL) {
+		if (token.getType() == TokenType.ASSIGN) {
 			token = tokenSupplier.getNextToken();
 			parseExpression();
 		}
-		token = tokenSupplier.getNextToken();
 
 		if (token.getType() != TokenType.SEMICOLON) {
 			throw new ParserException(token);
@@ -437,7 +438,9 @@ public class Parser {
 		}
 		token = tokenSupplier.getNextToken();
 
-		// parseExpression();
+		if (token.getType() != TokenType.SEMICOLON) {
+            parseExpression();
+        }
 
 		if (token.getType() != TokenType.SEMICOLON) {
 			throw new ParserException(token);

@@ -15,14 +15,14 @@ class Loops {
             ;
             if ( a % 2 == 0 )
             {
-                b++;
+                b = b+1;
             }
             else
             {
-                c--;
+                c = c-1;
             }
 
-            a+=3;
+            a = a + 3;
         }
 
         while ( (a = read(c)) != 0 )
@@ -30,12 +30,12 @@ class Loops {
             d = a - abs(a);
         }
 
-        if ((d > 0) || (c < 0) || (++x < --y))
+        if ((d > 0) || (c < 0) || x < y)
         {
             return 1;
         }
 
-        if (true) {} else if (false) else if (true_or_false()) {{}};
+        if (true) {} else if (false) {} else {} if (true_or_false()) {{}};
 
         /* if - chain */
         if (true) if (true) if (false) if (true) if ((null)) if (true) ;

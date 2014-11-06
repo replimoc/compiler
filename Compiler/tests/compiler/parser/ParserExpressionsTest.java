@@ -48,6 +48,8 @@ public class ParserExpressionsTest {
         parser.parse();
         parser = TestUtils.initParser(createTestString("new ident[42];"));
         parser.parse();
+        parser = TestUtils.initParser(createTestString("new int[42][42][42];"));
+        parser.parse();
     }
 
     @Test
@@ -63,16 +65,7 @@ public class ParserExpressionsTest {
         }
 
         try {
-            parser = TestUtils.initParser(createTestString("new int[42][42][42];"));
-            parser.parse();
-            Assert.fail();
-        } catch (ParserException e) {
-            Assert.assertEquals(TokenType.INTEGER, e.getUnexpectedToken().getType());
-            Assert.assertEquals(17, e.getUnexpectedToken().getPosition().getCharacter());
-        }
-
-        try {
-            parser = TestUtils.initParser(createTestString("new int(42);"));
+            parser = TestUtils.initParser(createTestString("new integer(42);"));
             parser.parse();
             Assert.fail();
         } catch (ParserException e) {
@@ -95,38 +88,38 @@ public class ParserExpressionsTest {
 
         // method invocation
 
-        parser = TestUtils.initParser(createTestString("null.callme()"));
+        parser = TestUtils.initParser(createTestString("null.callme();"));
         parser.parse();
 
-        parser = TestUtils.initParser(createTestString("identifier.callme(18)"));
+        parser = TestUtils.initParser(createTestString("identifier.callme(18);"));
         parser.parse();
 
-        parser = TestUtils.initParser(createTestString("false.callme(true, true, true, false)"));
+        parser = TestUtils.initParser(createTestString("false.callme(true, true, true, false);"));
         parser.parse();
 
         parser = TestUtils.initParser(createTestString("true.callmenot(callme(18));"));
         parser.parse();
 
-        parser = TestUtils.initParser(createTestString("(15.callme().callme().callme().callme().callme(callme())"));
+        parser = TestUtils.initParser(createTestString("(15.callme().callme().callme().callme().callme(callme()));"));
         parser.parse();
 
         // field access
 
-        parser = TestUtils.initParser(createTestString("this.field"));
+        parser = TestUtils.initParser(createTestString("this.field;"));
         parser.parse();
 
-        parser = TestUtils.initParser(createTestString("(this).field.field.field.method().field"));
+        parser = TestUtils.initParser(createTestString("(this).field.field.field.method().field;"));
         parser.parse();
 
         // array access
 
-        parser = TestUtils.initParser(createTestString("new basic_type[42][][][15][14]"));
+        parser = TestUtils.initParser(createTestString("new basic_type[42][][][15][14];"));
         parser.parse();
 
-        parser = TestUtils.initParser(createTestString("val[14][15][16][17]"));
+        parser = TestUtils.initParser(createTestString("val[14][15][16][17];"));
         parser.parse();
 
-        parser = TestUtils.initParser(createTestString("this.callme.callme()[1][2].callme.callme(this)"));
+        parser = TestUtils.initParser(createTestString("this.callme.callme()[1][2].callme.callme(this);"));
         parser.parse();
     }
 
@@ -143,7 +136,7 @@ public class ParserExpressionsTest {
         parser = TestUtils.initParser(createTestString("!new integer();"));
         parser.parse();
 
-        parser = TestUtils.initParser(createTestString("!new array[][];"));
+        parser = TestUtils.initParser(createTestString("!new array[15][];"));
         parser.parse();
 
         parser = TestUtils.initParser(createTestString("-new integer();"));
@@ -152,10 +145,10 @@ public class ParserExpressionsTest {
         parser = TestUtils.initParser(createTestString("-false;"));
         parser.parse();
 
-        parser = TestUtils.initParser(createTestString("!val[14][15][16][17]"));
+        parser = TestUtils.initParser(createTestString("!val[14][15][16][17];"));
         parser.parse();
 
-        parser = TestUtils.initParser(createTestString("-this.callme.callme()[1][2].callme.callme(this)"));
+        parser = TestUtils.initParser(createTestString("-this.callme.callme()[1][2].callme.callme(this);"));
         parser.parse();
     }
 
@@ -177,13 +170,13 @@ public class ParserExpressionsTest {
         parser = TestUtils.initParser(createTestString("!null * -false;"));
         parser.parse();
 
-        parser = TestUtils.initParser(createTestString("!null.callme() * -null.callme * true * false * true[][][].callme();"));
+        parser = TestUtils.initParser(createTestString("!null.callme() * -null.callme * true * false * true[null][false][true[12]].callme();"));
         parser.parse();
 
         parser = TestUtils.initParser(createTestString("!null % false % (false) / this / this.x;"));
         parser.parse();
 
-        parser = TestUtils.initParser(createTestString("new integer() % - new integer().getVlaue()"));
+        parser = TestUtils.initParser(createTestString("new integer() % - new integer().getVlaue();"));
         parser.parse();
     }
 
@@ -212,7 +205,7 @@ public class ParserExpressionsTest {
         parser = TestUtils.initParser(createTestString("true * false + null % null - (a + b + c -d - -e);"));
         parser.parse();
 
-        parser = TestUtils.initParser(createTestString("this[x] + this.y[];"));
+        parser = TestUtils.initParser(createTestString("this[x] + this.y[x];"));
         parser.parse();
     }
 
@@ -242,11 +235,47 @@ public class ParserExpressionsTest {
         parser.parse();
         parser = TestUtils.initParser(createTestString("this < that;"));
         parser.parse();
-        parser = TestUtils.initParser(createTestString("this.a >= this[];"));
+        parser = TestUtils.initParser(createTestString("this.a >= this[this.a];"));
         parser.parse();
         parser = TestUtils.initParser(createTestString("a + b < c < this.x < that.y >= new integer() < new int[123] + new int[123] - x >= -x;"));
         parser.parse();
         parser = TestUtils.initParser(createTestString("!a < -b * -c - d;"));
+        parser.parse();
+    }
+
+    @Test
+    public void testEqualityExpression() throws Exception {
+        Parser parser;
+
+        parser = TestUtils.initParser(createTestString("a == b;"));
+        parser.parse();
+        parser = TestUtils.initParser(createTestString("a != b;"));
+        parser.parse();
+        parser = TestUtils.initParser(createTestString("-a != !b;"));
+        parser.parse();
+        parser = TestUtils.initParser(createTestString("!a[!a == -b] + b[!b != !a];"));
+        parser.parse();
+        parser = TestUtils.initParser(createTestString("this != that;"));
+        parser.parse();
+        parser = TestUtils.initParser(createTestString("f(x) != this.f(x)[123] == a + b + new f() != this[f(x)];"));
+        parser.parse();
+    }
+
+    @Test
+    public void testAssignmentExpression() throws Exception {
+        Parser parser;
+
+        parser = TestUtils.initParser(createTestString("a = b;"));
+        parser.parse();
+        parser = TestUtils.initParser(createTestString("int a = new b();"));
+        parser.parse();
+        parser = TestUtils.initParser(createTestString("int[]a = new int[b][][][x];"));
+        parser.parse();
+        parser = TestUtils.initParser(createTestString("false[true] = null = null = false[false][new void[x]];"));
+        parser.parse();
+        parser = TestUtils.initParser(createTestString("a = b && c;"));
+        parser.parse();
+        parser = TestUtils.initParser(createTestString("a = (b = c) = ((((( d = e= f) != 1 ) = d == 5) = (a || b) = (a - b) = -c ));"));
         parser.parse();
     }
 
