@@ -5,7 +5,7 @@ class RecursiveFibonacci {
 		System.out.println(fibunacci.recursiveFib(10));
 	}
 
-	int recursiveFib(int n) {
+	public int recursiveFib(int n) {
 		if (n <= 2) {
 			return 1;
 		}
