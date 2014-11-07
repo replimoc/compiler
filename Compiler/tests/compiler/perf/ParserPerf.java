@@ -83,7 +83,7 @@ public class ParserPerf {
 
 
     public static void main(String[] args) throws IOException, ParserException {
-        Path path = Paths.get("testdata/parser5/CorrectGrammar1.java");
+        Path path = Paths.get("testdata/parser5/PerformanceGrammar.java");
         int repeat = 1000  ;
         int numMeasures = 100;
 
