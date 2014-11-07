@@ -42,8 +42,17 @@ public class Lexer implements TokenSuppliable {
 	public Token getLookAhead() throws IOException {
 		if (lookAhead == null) {
 			lookAhead = readNextToken();
-			return lookAhead;
-		} else if (lookAhead2 == null) {
+		}
+		return lookAhead;
+	}
+
+	@Override
+	public Token get2LookAhead() throws IOException {
+		if (lookAhead == null) {
+			lookAhead = readNextToken();
+		}
+
+		if (lookAhead2 == null) {
 			lookAhead2 = readNextToken();
 		}
 		return lookAhead2;
@@ -414,4 +423,5 @@ public class Lexer implements TokenSuppliable {
 			return new Position(line, character);
 		}
 	}
+
 }

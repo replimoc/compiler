@@ -23,9 +23,9 @@ public class LexerTest {
 		assertEquals(TokenType.SEMICOLON, lexer.getLookAhead().getType());
 		assertEquals(TokenType.SEMICOLON, lexer.getNextToken().getType());
 		assertEquals(TokenType.DECREMENT, lexer.getLookAhead().getType());
-		assertEquals(TokenType.EOF, lexer.getLookAhead().getType());
+		assertEquals(TokenType.EOF, lexer.get2LookAhead().getType());
 		assertEquals(TokenType.DECREMENT, lexer.getNextToken().getType());
-		assertEquals(null, lexer.getLookAhead());
+		assertEquals(null, lexer.get2LookAhead());
 		assertEquals(TokenType.EOF, lexer.getNextToken().getType());
 		assertNull(lexer.getLookAhead());
 

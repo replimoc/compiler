@@ -12,4 +12,6 @@ public interface TokenSuppliable {
 	Token getNextToken() throws IOException;
 
 	Token getLookAhead() throws IOException;
+
+	Token get2LookAhead() throws IOException;
 }
