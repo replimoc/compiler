@@ -35,6 +35,7 @@ integer literal 10
 )
 ;
 }
+public
 int
 identifier recursiveFib
 (

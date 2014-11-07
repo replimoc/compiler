@@ -10,8 +10,15 @@ import compiler.Symbol;
 public class Lexer implements TokenSuppliable {
 	private int c;
 	private IPositionalCharacterSource reader;
-	private StringTable stringTable;
+	private final StringTable stringTable;
+	/**
+	 * First token look ahead.
+	 */
 	private Token lookAhead = null;
+	/**
+	 * Second token look ahead.
+	 */
+	private Token lookAhead2 = null;
 
 	public Lexer(Reader reader, StringTable stringTable) throws IOException {
 		this.reader = new PositionalCharacterSource(reader);
@@ -24,7 +31,8 @@ public class Lexer implements TokenSuppliable {
 	public Token getNextToken() throws IOException {
 		if (lookAhead != null) {
 			Token result = lookAhead;
-			lookAhead = null;
+			lookAhead = lookAhead2;
+			lookAhead2 = null;
 			return result;
 		}
 		return readNextToken();
@@ -34,8 +42,11 @@ public class Lexer implements TokenSuppliable {
 	public Token getLookAhead() throws IOException {
 		if (lookAhead == null) {
 			lookAhead = readNextToken();
+			return lookAhead;
+		} else if (lookAhead2 == null) {
+			lookAhead2 = readNextToken();
 		}
-		return lookAhead;
+		return lookAhead2;
 	}
 
 	private Token readNextToken() throws IOException {
@@ -378,7 +389,7 @@ public class Lexer implements TokenSuppliable {
 	}
 
 	private class PositionalCharacterSource implements IPositionalCharacterSource {
-		private Reader reader;
+		private final Reader reader;
 		private int line = 1;
 		private int character = 0;
 

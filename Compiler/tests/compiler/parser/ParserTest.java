@@ -7,12 +7,9 @@ import java.io.IOException;
 import org.junit.Test;
 
 import compiler.lexer.TokenType;
-import compiler.utils.PrivateMethodCaller;
 import compiler.utils.TestUtils;
 
 public class ParserTest {
-
-	private final PrivateMethodCaller caller = new PrivateMethodCaller(Parser.class);;
 
 	private void parseWithEof(TokenType... tokens) throws IOException, ParserException {
 		TokenType[] tokensEof = new TokenType[tokens.length + 1];

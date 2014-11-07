@@ -301,9 +301,17 @@ public class Parser {
 			parseLocalVariableDeclarationStatement();
 			break;
 		case IDENTIFIER:
-			if (tokenSupplier.getLookAhead().getType() == TokenType.IDENTIFIER) {
+			// get 2 tokens look ahead
+			Token lookAhead = tokenSupplier.getLookAhead();
+			if (lookAhead.getType() == TokenType.IDENTIFIER) {
 				parseLocalVariableDeclarationStatement();
 				break;
+			} else if (lookAhead.getType() == TokenType.LSQUAREBRACKET) {
+				if (tokenSupplier.getLookAhead().getType() == TokenType.RSQUAREBRACKET) {
+					parseLocalVariableDeclarationStatement();
+					break;
+				}
+				// expression: fall through to outer default case
 			}
 		default:
 			parseExpression();

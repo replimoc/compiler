@@ -35,6 +35,7 @@ integer literal 44
 )
 ;
 }
+public
 int
 identifier iterativeFib
 (
@@ -69,22 +70,16 @@ integer literal 1
 =
 integer literal 1
 ;
-for
-(
 int
 identifier i
 =
 integer literal 2
 ;
+while
+(
 identifier i
 <
 identifier n
-+
-integer literal 1
-;
-identifier i
-=
-identifier i
 +
 integer literal 1
 )
@@ -107,6 +102,12 @@ identifier i
 -
 integer literal 2
 ]
+;
+identifier i
+=
+identifier i
++
+integer literal 1
 ;
 }
 return
