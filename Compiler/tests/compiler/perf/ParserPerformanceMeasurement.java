@@ -30,7 +30,7 @@ public class ParserPerformanceMeasurement {
 	}
 
 	public static void main(String[] args) throws IOException, ParserException {
-		Path path = Paths.get("testdata/parser5/CorrectGrammar1.java");
+		Path path = Paths.get("testdata/parser5/PerformanceGrammar.java");
 		int tokenRepeats = 10000;
 		int numMeasures = 20;
 
