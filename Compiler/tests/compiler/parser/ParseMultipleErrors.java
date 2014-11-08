@@ -49,8 +49,20 @@ public class ParseMultipleErrors {
 	}
 
 	@Test
+	public void testEOFInWhile() throws IOException {
+		Parser parser = TestUtils.initParser("class Test {\n\tpublic void test() {\n\t\twhile(42)");
+		assertFalse(parser.parse() == 0);
+	}
+
+	@Test
 	public void testWrongIf() throws IOException {
 		Parser parser = TestUtils.initParser(createTestString("if(true)test++ if(42)return;if(true) return;if(false) 42 else 17;"));
+		assertFalse(parser.parse() == 0);
+	}
+
+	@Test
+	public void testEOFInIf() throws IOException {
+		Parser parser = TestUtils.initParser("class Test {\n\tpublic void test() {\n\t\tif(true)");
 		assertFalse(parser.parse() == 0);
 	}
 
@@ -61,8 +73,20 @@ public class ParseMultipleErrors {
 	}
 
 	@Test
+	public void testEOFInReturn() throws IOException {
+		Parser parser = TestUtils.initParser("class Test {\n\tpublic void test() {\n\t\treturn");
+		assertFalse(parser.parse() == 0);
+	}
+
+	@Test
 	public void testWrongExpression() throws IOException {
 		Parser parser = TestUtils.initParser(createTestString("44>>=19;17;13;42++;test;"));
+		assertFalse(parser.parse() == 0);
+	}
+
+	@Test
+	public void testEOFInExpression() throws IOException {
+		Parser parser = TestUtils.initParser("class Test {\n\tpublic void test() {\n\t\t42");
 		assertFalse(parser.parse() == 0);
 	}
 
@@ -73,14 +97,32 @@ public class ParseMultipleErrors {
 	}
 
 	@Test
+	public void testEOFInBlock() throws IOException {
+		Parser parser = TestUtils.initParser("class Test {\n\tpublic void test() {\n\t\twhile(true){");
+		assertFalse(parser.parse() == 0);
+	}
+
+	@Test
 	public void testWrongLocalDeclStatement() throws IOException {
 		Parser parser = TestUtils.initParser(createTestString("test test=42++;while(true)return;return[];"));
 		assertFalse(parser.parse() == 0);
 	}
 
 	@Test
+	public void testEOFInLDS() throws IOException {
+		Parser parser = TestUtils.initParser("class Test {\n\tpublic void test() {\n\t\ttest test=");
+		assertFalse(parser.parse() == 0);
+	}
+
+	@Test
 	public void testWrongLocalDeclStatement2() throws IOException {
 		Parser parser = TestUtils.initParser(createTestString("test[] invalid=42++;while(true)return;return[];"));
+		assertFalse(parser.parse() == 0);
+	}
+
+	@Test
+	public void testEOFInLDS2() throws IOException {
+		Parser parser = TestUtils.initParser("class Test {\n\tpublic void test() {\n\t\ttest[] invalid=");
 		assertFalse(parser.parse() == 0);
 	}
 

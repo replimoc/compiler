@@ -78,7 +78,7 @@ public class Parser {
 							token = tokenSupplier.getNextToken();
 					}
 				}
-				// throw another error in case our previous error handling consumed the last }
+				// throw another error in case our previous error handling consumed the last } or ;
 				if (token.getType() == TokenType.EOF) {
 					throw new ParserException(token, TokenType.RCURLYBRACKET);
 				}
@@ -312,8 +312,12 @@ public class Parser {
 			} catch (ParserException e) {
 				errorsDetected++;
 				System.err.println(e);
-				while (token.getType() != TokenType.RCURLYBRACKET) {
+				while (token.getType() != TokenType.RCURLYBRACKET && token.getType() != TokenType.EOF) {
 					token = tokenSupplier.getNextToken();
+				}
+				// throw another error in case our previous error handling consumed the last }
+				if (token.getType() == TokenType.EOF) {
+					throw new ParserException(token, TokenType.RCURLYBRACKET);
 				}
 				token = tokenSupplier.getNextToken();
 			}
@@ -332,6 +336,10 @@ public class Parser {
 				while (token.getType() != TokenType.SEMICOLON && token.getType() != TokenType.RCURLYBRACKET && token.getType() != TokenType.EOF) {
 					token = tokenSupplier.getNextToken();
 				}
+				// throw another error in case our previous error handling consumed the last } or ;
+				if (token.getType() == TokenType.EOF) {
+					throw new ParserException(token, TokenType.RCURLYBRACKET);
+				}
 				token = tokenSupplier.getNextToken();
 			}
 			break;
@@ -345,6 +353,10 @@ public class Parser {
 				while (token.getType() != TokenType.SEMICOLON && token.getType() != TokenType.RCURLYBRACKET && token.getType() != TokenType.EOF) {
 					token = tokenSupplier.getNextToken();
 				}
+				// throw another error in case our previous error handling consumed the last } or ;
+				if (token.getType() == TokenType.EOF) {
+					throw new ParserException(token, TokenType.RCURLYBRACKET);
+				}
 				token = tokenSupplier.getNextToken();
 			}
 			break;
@@ -357,6 +369,10 @@ public class Parser {
 				System.err.println(e);
 				while (token.getType() != TokenType.SEMICOLON && token.getType() != TokenType.EOF) {
 					token = tokenSupplier.getNextToken();
+				}
+				// throw another error in case our previous error handling consumed the last ;
+				if (token.getType() == TokenType.EOF) {
+					throw new ParserException(token, TokenType.RCURLYBRACKET);
 				}
 				token = tokenSupplier.getNextToken();
 			}
@@ -379,6 +395,10 @@ public class Parser {
 					while (token.getType() != TokenType.SEMICOLON && token.getType() != TokenType.EOF) {
 						token = tokenSupplier.getNextToken();
 					}
+					// throw another error in case our previous error handling consumed the last ;
+					if (token.getType() == TokenType.EOF) {
+						throw new ParserException(token, TokenType.RCURLYBRACKET);
+					}
 					token = tokenSupplier.getNextToken();
 				}
 				break;
@@ -391,6 +411,10 @@ public class Parser {
 						System.err.println(e);
 						while (token.getType() != TokenType.SEMICOLON && token.getType() != TokenType.EOF) {
 							token = tokenSupplier.getNextToken();
+						}
+						// throw another error in case our previous error handling consumed the last ;
+						if (token.getType() == TokenType.EOF) {
+							throw new ParserException(token, TokenType.RCURLYBRACKET);
 						}
 						token = tokenSupplier.getNextToken();
 					}
