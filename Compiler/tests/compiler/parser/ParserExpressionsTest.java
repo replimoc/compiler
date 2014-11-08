@@ -5,7 +5,6 @@ import java.io.IOException;
 import org.junit.Assert;
 import org.junit.Test;
 
-import compiler.lexer.TokenType;
 import compiler.utils.TestUtils;
 
 /**
@@ -62,49 +61,24 @@ public class ParserExpressionsTest {
 		parser = TestUtils.initParser(createTestString("while(42) return;"));
 		parser.parse();
 
-		try {
-			parser = TestUtils.initParser(createTestString("while(42)return"));
-			parser.parse();
-		} catch (ParserException e) {
-			Assert.assertEquals(TokenType.RCURLYBRACKET, e.getUnexpectedToken().getType());
-		}
-
-		try {
-			parser = TestUtils.initParser(createTestString("while(42)ident"));
-			parser.parse();
-		} catch (ParserException e) {
-			Assert.assertEquals(TokenType.RCURLYBRACKET, e.getUnexpectedToken().getType());
-		}
+		parser = TestUtils.initParser(createTestString("while(42)return"));
+		Assert.assertFalse(parser.parse() == 0);
+		parser = TestUtils.initParser(createTestString("while(42)ident"));
+		Assert.assertFalse(parser.parse() == 0);
 	}
 
 	@Test
 	public void testWrongPrimaryExpression() throws Exception {
 		Parser parser;
 
-		try {
-			parser = TestUtils.initParser(createTestString("void;"));
-			parser.parse();
-			Assert.fail();
-		} catch (ParserException e) {
-			Assert.assertEquals(TokenType.SEMICOLON, e.getUnexpectedToken().getType());
-		}
+		parser = TestUtils.initParser(createTestString("void;"));
+		Assert.assertFalse(parser.parse() == 0);
 
-		try {
-			parser = TestUtils.initParser(createTestString("new integer(42);"));
-			parser.parse();
-			Assert.fail();
-		} catch (ParserException e) {
-			Assert.assertEquals(TokenType.INTEGER, e.getUnexpectedToken().getType());
-		}
+		parser = TestUtils.initParser(createTestString("new integer(42);"));
+		Assert.assertFalse(parser.parse() == 0);
 
-		try {
-			parser = TestUtils.initParser(createTestString("015;"));
-			parser.parse();
-			Assert.fail();
-		} catch (ParserException e) {
-			Assert.assertEquals(TokenType.INTEGER, e.getUnexpectedToken().getType());
-			Assert.assertEquals("15", e.getUnexpectedToken().getSymbol().getValue());
-		}
+		parser = TestUtils.initParser(createTestString("015;"));
+		Assert.assertFalse(parser.parse() == 0);
 	}
 
 	@Test

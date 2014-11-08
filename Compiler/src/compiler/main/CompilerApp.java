@@ -17,7 +17,6 @@ import compiler.lexer.Lexer;
 import compiler.lexer.Token;
 import compiler.lexer.TokenType;
 import compiler.parser.Parser;
-import compiler.parser.ParserException;
 
 public class CompilerApp {
 
@@ -83,13 +82,10 @@ public class CompilerApp {
 		Lexer lexer = new Lexer(new BufferedReader(new FileReader(file)), new StringTable());
 		Parser parser = new Parser(lexer);
 
-		try {
-			parser.parse();
+		// if successful return 0
+		if (parser.parse() == 0)
 			return 0;
-		} catch (ParserException e) {
-			System.err.println(e.getMessage());
-			return 1;
-		}
+		return 1;
 	}
 
 	private static void executeLexerTest(File file) throws IOException {
