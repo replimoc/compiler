@@ -18,24 +18,37 @@ public class FixedTokensSupplier implements TokenSuppliable {
 		}
 	}
 
+	public FixedTokensSupplier(Token[] tokens) {
+		this.tokens = tokens;
+	}
+
 	@Override
 	public Token getNextToken() throws IOException {
-		if (index >= tokens.length) {
-			return null;
-		}
-
-		Token next = tokens[index];
+		Token next = getToken(0);
 		index++;
 		return next;
 	}
 
 	@Override
 	public Token getLookAhead() throws IOException {
-		if (index + 1 >= tokens.length) {
-			return null;
-		}
+		return getToken(0);
+	}
 
-		return tokens[index + 1];
+	@Override
+	public Token get2LookAhead() throws IOException {
+		return getToken(1);
+	}
+
+	private Token getToken(int offset) {
+		if (index + offset >= tokens.length) {
+			return null;
+		} else {
+			return tokens[index + offset];
+		}
+	}
+
+	public void reset() {
+		index = 0;
 	}
 
 }

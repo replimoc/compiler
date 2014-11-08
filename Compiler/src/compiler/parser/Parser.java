@@ -383,7 +383,7 @@ public class Parser {
 				}
 				break;
 			} else if (lookAhead.getType() == TokenType.LSQUAREBRACKET) {
-				if (tokenSupplier.getLookAhead().getType() == TokenType.RSQUAREBRACKET) {
+				if (tokenSupplier.get2LookAhead().getType() == TokenType.RSQUAREBRACKET) {
 					try {
 						parseLocalVariableDeclarationStatement();
 					} catch (ParserException e) {
