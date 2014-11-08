@@ -1,4 +1,4 @@
-package compiler;
+package compiler.performance;
 
 import java.io.IOException;
 import java.nio.file.Paths;
