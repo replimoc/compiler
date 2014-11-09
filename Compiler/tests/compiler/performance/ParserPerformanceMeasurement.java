@@ -38,7 +38,7 @@ public class ParserPerformanceMeasurement {
 		FixedTokensSupplier tokenSupplier = initTokenSupplier(path, tokenRepeats);
 
 		// warm up system to reduce variations, which are enormous in first runs.
-		for (int j = 0; j < 5; j++)
+		for (int j = 0; j < 10; j++)
 		{
 			tokenSupplier.reset();
 			measureParser(tokenSupplier);
@@ -54,6 +54,7 @@ public class ParserPerformanceMeasurement {
 
 		System.out.println("results for " + path + "(repeat " + tokenRepeats + " times)");
 		System.out.printf("\t mean(ms) = %.3f\n", stats.getMean());
+		System.out.printf("\t  avg(ms) = %.3f\n", stats.getSum() / stats.getN());
 		System.out.println("\t  min(ms) = " + stats.getMin());
 		System.out.printf("\tstdev(ms) = %.3f\n", stats.getStandardDeviation());
 		System.out.println("\t  max(ms) = " + stats.getMax());
