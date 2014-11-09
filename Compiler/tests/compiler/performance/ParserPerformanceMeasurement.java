@@ -9,7 +9,6 @@ import org.apache.commons.math3.stat.descriptive.DescriptiveStatistics;
 
 import compiler.lexer.Lexer;
 import compiler.lexer.Token;
-import compiler.lexer.TokenSuppliable;
 import compiler.lexer.TokenType;
 import compiler.parser.Parser;
 import compiler.parser.ParserException;
@@ -19,47 +18,34 @@ import compiler.utils.TestUtils;
 /**
  * TODO document me
  */
-public class ParserPerformanceMeasurement {
+public class ParserPerformanceMeasurement implements Measurable {
+	private static final int TOKEN_REPEATS = 10000;
+	private static final int NUMBER_OF_MEASUREMENTS = 20;
+	private static final int NUMBER_OF_WARMUPS = 10;
 
-	public static long measureParser(TokenSuppliable tokenSupplier) throws IOException, ParserException {
+	private final FixedTokensSupplier tokenSupplier;
+
+	public ParserPerformanceMeasurement(Path path, int tokenRepeats) throws IOException {
+		tokenSupplier = initTokenSupplier(path, tokenRepeats);
+	}
+
+	public static void main(String[] args) throws Exception {
+		final Path path = Paths.get("testdata/parser5/PerformanceGrammar.java");
+
+		ParserPerformanceMeasurement measurable = new ParserPerformanceMeasurement(path, TOKEN_REPEATS);
+		DescriptiveStatistics stats = PerformanceUtils.executeMeasurements(measurable, NUMBER_OF_MEASUREMENTS, NUMBER_OF_WARMUPS);
+
+		PerformanceUtils.printStats(path + "(repeated " + TOKEN_REPEATS + " times)", stats);
+	}
+
+	@Override
+	public long measure() throws IOException, ParserException {
+		tokenSupplier.reset();
 		Parser parser = new Parser(tokenSupplier);
 
 		long startTime = System.currentTimeMillis();
 		parser.parse();
 		return System.currentTimeMillis() - startTime;
-	}
-
-	public static void main(String[] args) throws IOException, ParserException {
-		Path path = Paths.get("testdata/parser5/PerformanceGrammar.java");
-		int tokenRepeats = 10000;
-		int numMeasures = 20;
-
-		DescriptiveStatistics stats = new DescriptiveStatistics();
-		FixedTokensSupplier tokenSupplier = initTokenSupplier(path, tokenRepeats);
-
-		// warm up system to reduce variations, which are enormous in first runs.
-		for (int j = 0; j < 10; j++)
-		{
-			tokenSupplier.reset();
-			measureParser(tokenSupplier);
-		}
-
-		// execute actuall measurement
-		for (int j = 0; j < numMeasures; j++)
-		{
-			tokenSupplier.reset();
-			long measuredTime = measureParser(tokenSupplier);
-			stats.addValue(measuredTime);
-		}
-
-		System.out.println("results for " + path + "(repeat " + tokenRepeats + " times)");
-		System.out.printf("\t mean(ms) = %.3f\n", stats.getMean());
-		System.out.printf("\t  avg(ms) = %.3f\n", stats.getSum() / stats.getN());
-		System.out.println("\t  min(ms) = " + stats.getMin());
-		System.out.printf("\tstdev(ms) = %.3f\n", stats.getStandardDeviation());
-		System.out.println("\t  max(ms) = " + stats.getMax());
-		System.out.printf("\t stdev(%%) = %.2f\n", stats.getStandardDeviation() / stats.getMean() * 100);
-
 	}
 
 	private static FixedTokensSupplier initTokenSupplier(Path path, int tokenRepeats) throws IOException {
