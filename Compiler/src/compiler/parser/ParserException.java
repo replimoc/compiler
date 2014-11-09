@@ -6,31 +6,34 @@ import compiler.lexer.TokenType;
 public class ParserException extends Exception {
 	private static final long serialVersionUID = -5282537953189117934L;
 
-	private final Token unexpectedToken;
-	private final TokenType expectedToken;
+	private final Token invalidToken;
+	private final TokenType expectedTokenType;
 
-	ParserException(Token t, TokenType expected) {
-		unexpectedToken = t;
-		this.expectedToken = expected;
+	protected ParserException(Token invalidToken, TokenType expectedTokenType) {
+		this.invalidToken = invalidToken;
+		this.expectedTokenType = expectedTokenType;
 	}
 
-	ParserException(Token t) {
-		unexpectedToken = t;
-		expectedToken = null;
+	protected ParserException(Token invalidToken) {
+		this(invalidToken, null);
 	}
 
-	public Token getUnexpectedToken() {
-		return unexpectedToken;
+	public TokenType getExpectedTokenType() {
+		return expectedTokenType;
+	}
+
+	public Token getInvalidToken() {
+		return invalidToken;
 	}
 
 	@Override
 	public String toString() {
-		if (expectedToken != null) {
-			return "Error in line: " + unexpectedToken.getPosition().getLine() + ". Unexpected token '" + unexpectedToken.getTokenString()
-					+ "' at character: " + unexpectedToken.getPosition().getCharacter() + ". Expected token: '" + expectedToken.getString() + "'";
+		if (expectedTokenType != null) {
+			return "Error in line: " + invalidToken.getPosition().getLine() + ". Unexpected token '" + invalidToken.getTokenString()
+					+ "' at character: " + invalidToken.getPosition().getCharacter() + ". Expected token: '" + expectedTokenType.getString() + "'";
 		} else {
-			return "Error in line: " + unexpectedToken.getPosition().getLine() + ". Unexpected token '" + unexpectedToken.getTokenString()
-					+ "' at character: " + unexpectedToken.getPosition().getCharacter();
+			return "Error in line: " + invalidToken.getPosition().getLine() + ". Unexpected token '" + invalidToken.getTokenString()
+					+ "' at character: " + invalidToken.getPosition().getCharacter();
 		}
 	}
 
@@ -38,4 +41,5 @@ public class ParserException extends Exception {
 	public String getMessage() {
 		return toString();
 	}
+
 }

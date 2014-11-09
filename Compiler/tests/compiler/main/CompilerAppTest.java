@@ -17,8 +17,13 @@ public class CompilerAppTest {
 	}
 
 	@Test
-	public void testSupplyNoOption() throws IOException {
+	public void testNoOption() throws IOException {
 		assertEquals(1, callExecute());
+	}
+
+	@Test
+	public void testUnknownOption() throws IOException {
+		assertEquals(1, callExecute("--unknown"));
 	}
 
 	@Test
@@ -32,8 +37,18 @@ public class CompilerAppTest {
 	}
 
 	@Test
-	public void testUnknownOption() throws IOException {
-		assertEquals(1, callExecute("--unknown"));
+	public void testParseUnknownFile() throws IOException {
+		assertEquals(1, callExecute("./testdata/NONEXISTING_FILE.java"));
+	}
+
+	@Test
+	public void testParseFile() throws IOException {
+		assertEquals(0, callExecute("./testdata/parser5/CorrectGrammar5.java"));
+	}
+
+	@Test
+	public void testParseInvalidFile() throws IOException {
+		assertEquals(1, callExecute("./testdata/parser5/MissingCommaInParameterList.java"));
 	}
 
 	private int callExecute(String... args) {

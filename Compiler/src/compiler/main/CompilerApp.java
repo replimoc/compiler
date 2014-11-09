@@ -18,9 +18,15 @@ import compiler.lexer.Token;
 import compiler.lexer.TokenType;
 import compiler.parser.Parser;
 
-public class CompilerApp {
+public final class CompilerApp {
 
 	private static final String LEXTEST = "lextest";
+
+	/**
+	 * Private constructor, as no objects of this class shall be created.
+	 */
+	private CompilerApp() {
+	}
 
 	public static void main(String args[]) {
 		int exitCode = execute(args);
@@ -45,14 +51,10 @@ public class CompilerApp {
 			if (cmd.hasOption(LEXTEST)) {
 				File file = new File(cmd.getOptionValue(LEXTEST));
 				try {
-					if (file.exists()) {
-						executeLexerTest(file);
-						return 0;
-					} else {
-						System.err.println("File " + file + " does not exist.");
-					}
+					executeLexerTest(file);
+					return 0;
 				} catch (IOException e) {
-					System.err.println("Cannot access file " + file);
+					System.err.println("Error accessing file " + file + ": " + e.getMessage());
 				}
 			}
 
@@ -60,13 +62,9 @@ public class CompilerApp {
 			if (remainingArgs.length == 1) {
 				File file = new File(remainingArgs[0]);
 				try {
-					if (file.exists()) {
-						return executeParsing(file);
-					} else {
-						System.err.println("File " + file + " does not exist.");
-					}
+					return executeParsing(file);
 				} catch (IOException e) {
-					System.err.println("Cannot access file " + file);
+					System.err.println("Error access file " + file + ": " + e.getMessage());
 				}
 			}
 		} catch (ParseException e) {
@@ -85,7 +83,8 @@ public class CompilerApp {
 		// if successful return 0
 		if (parser.parse() == 0)
 			return 0;
-		return 1;
+		else
+			return 1;
 	}
 
 	private static void executeLexerTest(File file) throws IOException {

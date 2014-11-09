@@ -1,6 +1,9 @@
 package compiler.lexer;
 
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertNotEquals;
+import static org.junit.Assert.assertTrue;
 
 import org.junit.Test;
 
@@ -36,5 +39,70 @@ public class TokenTest {
 		Position position = token.getPosition();
 		assertEquals(expectedPosition.getLine(), position.getLine());
 		assertEquals(expectedPosition.getCharacter(), position.getCharacter());
+	}
+
+	@Test
+	public void testHashCode() {
+		Token t11 = new Token(TokenType.ABSTRACT, new Position(1, 1));
+		Token t12 = new Token(TokenType.ABSTRACT, new Position(1, 1));
+		Token t13 = new Token(TokenType.ABSTRACT, null);
+		Token t14 = new Token(TokenType.ABSTRACT, null, new Symbol("s"));
+		Token t15 = new Token(TokenType.ABSTRACT, null, new Symbol("t"));
+		Token t2 = new Token(TokenType.EQUAL, null);
+		Token tNull = new Token(null, null);
+
+		assertEquals(t11.hashCode(), t11.hashCode());
+		assertEquals(t11.hashCode(), t12.hashCode());
+		assertNotEquals(t13.hashCode(), t12.hashCode());
+		assertNotEquals(t13.hashCode(), t14.hashCode());
+		assertNotEquals(t13.hashCode(), t15.hashCode());
+		assertNotEquals(t11.hashCode(), t2.hashCode());
+		assertNotEquals(t11.hashCode(), t2.hashCode());
+		assertNotEquals(tNull.hashCode(), t2.hashCode());
+	}
+
+	@Test
+	public void testEquals() {
+		Token s11 = new Token(TokenType.ABSTRACT, null);
+		Token s12 = new Token(TokenType.ABSTRACT, null);
+		Token s2 = new Token(TokenType.EQUAL, null);
+
+		assertEquals(s11, s11);
+		assertEquals(s11, s12);
+		assertNotEquals(s11, s2);
+		assertNotEquals(s11, s2);
+	}
+
+	@Test
+	public void testEqualsCornerCasesTokenType() {
+		Token t = new Token(TokenType.PACKAGE, null);
+
+		assertFalse(t.equals(null));
+		assertFalse(t.equals("test"));
+		assertFalse(t.equals(new Token(null, null)));
+		assertTrue(new Token(null, null).equals(new Token(null, null)));
+		assertFalse(new Token(null, null).equals(t));
+	}
+
+	@Test
+	public void testEqualsCornerCasesPosition() {
+		Token t = new Token(null, new Position(1, 2));
+
+		assertFalse(t.equals(null));
+		assertFalse(t.equals("test"));
+		assertFalse(t.equals(new Token(null, null)));
+		assertTrue(new Token(null, null).equals(new Token(null, null)));
+		assertFalse(new Token(null, null).equals(t));
+	}
+
+	@Test
+	public void testEqualsCornerCasesSymbol() {
+		Token t = new Token(null, null, new Symbol("s"));
+
+		assertFalse(t.equals(null));
+		assertFalse(t.equals("test"));
+		assertFalse(t.equals(new Token(null, null)));
+		assertTrue(new Token(null, null).equals(new Token(null, null)));
+		assertFalse(new Token(null, null).equals(t));
 	}
 }

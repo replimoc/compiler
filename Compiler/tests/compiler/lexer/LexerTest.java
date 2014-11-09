@@ -40,6 +40,32 @@ public class LexerTest {
 	}
 
 	@Test
+	public void testGet2LookAhead() throws IOException {
+		Lexer lexer = TestUtils.initLexer("<= ; --");
+		assertEquals(TokenType.SEMICOLON, lexer.get2LookAhead().getType());
+		assertEquals(TokenType.LESSEQUAL, lexer.getNextToken().getType());
+		assertEquals(TokenType.DECREMENT, lexer.get2LookAhead().getType());
+		assertEquals(TokenType.DECREMENT, lexer.get2LookAhead().getType());
+		assertEquals(TokenType.SEMICOLON, lexer.getNextToken().getType());
+		assertEquals(TokenType.EOF, lexer.get2LookAhead().getType());
+		assertEquals(TokenType.DECREMENT, lexer.getNextToken().getType());
+		assertNull(lexer.get2LookAhead());
+		assertEquals(TokenType.EOF, lexer.getNextToken().getType());
+		assertNull(lexer.get2LookAhead());
+
+		lexer = TestUtils.initLexer("<= ; --");
+		assertEquals(TokenType.LESSEQUAL, lexer.getNextToken().getType());
+		assertEquals(TokenType.DECREMENT, lexer.get2LookAhead().getType());
+		assertEquals(TokenType.SEMICOLON, lexer.getNextToken().getType());
+		assertEquals(TokenType.EOF, lexer.get2LookAhead().getType());
+		assertEquals(TokenType.EOF, lexer.get2LookAhead().getType());
+		assertEquals(TokenType.DECREMENT, lexer.getNextToken().getType());
+		assertNull(lexer.get2LookAhead());
+		assertEquals(TokenType.EOF, lexer.getNextToken().getType());
+		assertNull(lexer.getLookAhead());
+	}
+
+	@Test
 	public void testToken() throws IOException {
 		Lexer lexer = TestUtils.initLexer("");
 		assertEquals(TokenType.AND, ((Token) caller.call("token", lexer, TokenType.AND)).getType());
