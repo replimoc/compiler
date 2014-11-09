@@ -29,9 +29,16 @@ public class ParserTest {
 	}
 
 	@Test
-	public void testParseWrongClassDeclarationStart() throws IOException, ParserException {
+	public void testParseOnlyIntToken() throws IOException, ParserException {
 		int errors = parseWithEof(TokenType.INT);
 		assertEquals(1, errors);
+	}
+
+	@Test
+	public void testParseCurlyBracketClassName() throws IOException, ParserException {
+		int errors = parseWithEof(TokenType.CLASS, TokenType.RCURLYBRACKET, TokenType.LCURLYBRACKET,
+				TokenType.RCURLYBRACKET);
+		assertEquals(2, errors);
 	}
 
 	@Test

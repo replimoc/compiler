@@ -167,8 +167,7 @@ public class Parser {
 					throw new ParserException(token, TokenType.LP);
 				}
 				token = tokenSupplier.getNextToken();
-				if (token.getType() != TokenType.IDENTIFIER
-						|| token.getSymbol().getValue().equals("String") == false) {
+				if (token.getType() != TokenType.IDENTIFIER || !token.getSymbol().getValue().equals("String")) {
 					throw new ParserException(token, TokenType.IDENTIFIER);
 				}
 				token = tokenSupplier.getNextToken();

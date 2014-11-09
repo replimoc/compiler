@@ -80,6 +80,7 @@ public class ParserOutputTest {
 	}
 
 	private static void testSourceFile(Path sourceFile, Path parserFile) throws Exception {
+		System.out.println("Testing parsing of " + sourceFile);
 		// read expected output
 		List<String> expectedOutput = Files.readAllLines(parserFile, StandardCharsets.US_ASCII);
 		Parser parser = TestUtils.initParser(sourceFile);
