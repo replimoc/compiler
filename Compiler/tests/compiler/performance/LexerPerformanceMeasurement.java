@@ -3,16 +3,14 @@ package compiler.performance;
 import java.io.IOException;
 import java.nio.file.Paths;
 
-import org.junit.Test;
-
 import compiler.lexer.Lexer;
 import compiler.lexer.Token;
 import compiler.lexer.TokenType;
 import compiler.utils.TestUtils;
 
-public class SpeedTests {
-	@Test
-	public void testLexAllTokensSpeed() throws IOException {
+public class LexerPerformanceMeasurement {
+
+	public static void main(String args[]) throws IOException {
 		long startInit = System.currentTimeMillis();
 		Lexer lexer = TestUtils.initLexer(Paths.get("./testdata/speedtests/AllTokensSpeed.java"));
 
