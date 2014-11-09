@@ -5,6 +5,6 @@
 class Error {
     public void method()
     {
-        while(true)  {}
+        while()  {}
     }
 }
