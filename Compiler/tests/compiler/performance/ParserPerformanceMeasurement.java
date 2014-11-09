@@ -35,7 +35,7 @@ public class ParserPerformanceMeasurement implements Measurable {
 		ParserPerformanceMeasurement measurable = new ParserPerformanceMeasurement(path, TOKEN_REPEATS);
 		DescriptiveStatistics stats = PerformanceUtils.executeMeasurements(measurable, NUMBER_OF_MEASUREMENTS, NUMBER_OF_WARMUPS);
 
-		PerformanceUtils.printStats(path + "(repeated " + TOKEN_REPEATS + " times)", stats);
+		PerformanceUtils.printStats(path + " (repeated " + TOKEN_REPEATS + " times)", stats);
 	}
 
 	@Override
@@ -43,9 +43,9 @@ public class ParserPerformanceMeasurement implements Measurable {
 		tokenSupplier.reset();
 		Parser parser = new Parser(tokenSupplier);
 
-		long startTime = System.currentTimeMillis();
+		long start = System.currentTimeMillis();
 		parser.parse();
-		return System.currentTimeMillis() - startTime;
+		return System.currentTimeMillis() - start;
 	}
 
 	private static FixedTokensSupplier initTokenSupplier(Path path, int tokenRepeats) throws IOException {

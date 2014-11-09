@@ -31,7 +31,7 @@ public class LexerPerformanceMeasurement implements Measurable {
 		LexerPerformanceMeasurement measurable = new LexerPerformanceMeasurement(path, INPUT_FILE_REPEATS);
 		DescriptiveStatistics stats = PerformanceUtils.executeMeasurements(measurable, NUMBER_OF_MEASUREMENTS, NUMBER_OF_WARUMUPS);
 
-		PerformanceUtils.printStats("lexing " + path + "(repeat " + INPUT_FILE_REPEATS + " times)", stats);
+		PerformanceUtils.printStats("lexing " + path + " (repeated " + INPUT_FILE_REPEATS + " times)", stats);
 	}
 
 	private static String repeatInput(Path path, int numberOfInputRepeats) throws IOException {
@@ -50,13 +50,13 @@ public class LexerPerformanceMeasurement implements Measurable {
 		StringReader reader = new StringReader(toLex);
 		Lexer lexer = new Lexer(reader, new StringTable());
 
-		long startLexing = System.currentTimeMillis();
+		long start = System.currentTimeMillis();
 
 		Token token;
 		do {
 			token = lexer.getNextToken();
 		} while (token.getType() != TokenType.EOF);
 
-		return System.currentTimeMillis() - startLexing;
+		return System.currentTimeMillis() - start;
 	}
 }
