@@ -49,6 +49,52 @@ public class ParseMultipleErrors {
 	}
 
 	@Test
+	public void testWrongClasses() throws Exception {
+		System.out
+				.println("class Test (\n\tpublic int valid;\n\tpublic boolean[] valid;\n\tpublic [];\n\tpublic void valid;\t\n}");
+		Parser parser = TestUtils.initParser("class Test (\n\tpublic int valid;\n\tpublic boolean[] valid;\n\tpublic [];\n\tpublic void valid;\t\n}"
+				+ createTestString("public int test;public boolean[] main; public []; public void valid;"));
+		assertFalse(parser.parse() == 0);
+	}
+
+	@Test
+	public void testWrongClasses2() throws Exception {
+		System.out
+				.println("class Test (\n\tpublic int valid;\n\tpublic boolean[] valid;\n\tpublic [];\n\tpublic void valid;\t\n}");
+		System.out
+				.println("Test (\n\tpublic int valid;\n\tpublic boolean[] valid;\n\tpublic [];\n\tpublic void valid;\t\n}");
+		Parser parser = TestUtils.initParser("class Test (\n\tpublic int valid;\n\tpublic boolean[] valid;\n\tpublic [];\n\tpublic void valid;\t\n}"
+				+ "Test (\n\tpublic int valid;\n\tpublic boolean[] valid;\n\tpublic [];\n\tpublic void valid;\t\n}");
+		assertFalse(parser.parse() == 0);
+	}
+
+	@Test
+	public void testWrongClasses3() throws Exception {
+		System.out
+				.println("class Test (\n\tpublic int valid;\n\tpublic boolean[] valid;\n\tpublic [];\n\tpublic void valid;\t\n}");
+		System.out
+				.println("Test (\n\tpublic int valid;\n\tpublic boolean[] valid;\n\tpublic [];\n\tpublic void valid;\t\n}");
+		System.out
+				.println("class Test {\n\tpublic int valid;\n\tpublic boolean[] valid;\n\tpublic [];\n\tpublic void valid;\t\n}");
+		Parser parser = TestUtils.initParser("class Test (\n\tpublic int valid;\n\tpublic boolean[] valid;\n\tpublic [];\n\tpublic void valid;\t\n}"
+				+ "Test (\n\tpublic int valid;\n\tpublic boolean[] valid;\n\tpublic [];\n\tpublic void valid;\t\n}"
+				+ "class Test {\n\tpublic int valid;\n\tpublic boolean[] valid;\n\tpublic [];\n\tpublic void valid;\t\n}");
+		assertFalse(parser.parse() == 0);
+	}
+
+	@Test
+	public void testEOFInClasses() throws Exception {
+		Parser parser = TestUtils.initParser("class Test");
+		assertFalse(parser.parse() == 0);
+	}
+
+	@Test
+	public void testEOFInClasses2() throws Exception {
+		Parser parser = TestUtils.initParser("class Test{");
+		assertFalse(parser.parse() == 0);
+	}
+
+	@Test
 	public void testEOFInWhile() throws IOException {
 		Parser parser = TestUtils.initParser("class Test {\n\tpublic void test() {\n\t\twhile(42)");
 		assertFalse(parser.parse() == 0);
