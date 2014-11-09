@@ -12,7 +12,12 @@ import org.apache.commons.math3.stat.descriptive.DescriptiveStatistics;
 
 public class IOPerformanceMeasurement implements Measurable {
 
-	private static final int INPUT_FILE_REPEATS = 30000;
+	// private static final Path TESTFILE = Paths.get("./testdata/AllTokens.java");
+	// private static final int INPUT_FILE_REPEATS = 30000;
+
+	private static final Path TESTFILE = Paths.get("testdata/parser5/PerformanceGrammar.java");
+	private static final int INPUT_FILE_REPEATS = 10000;
+
 	private static final int NUMBER_OF_MEASUREMENTS = 20;
 	private static final int NUMBER_OF_WARUMUPS = 10;
 
@@ -25,12 +30,10 @@ public class IOPerformanceMeasurement implements Measurable {
 	}
 
 	public static void main(String args[]) throws Exception {
-		Path path = Paths.get("./testdata/AllTokens.java");
-
-		IOPerformanceMeasurement measurable = new IOPerformanceMeasurement(path, INPUT_FILE_REPEATS);
+		IOPerformanceMeasurement measurable = new IOPerformanceMeasurement(TESTFILE, INPUT_FILE_REPEATS);
 		DescriptiveStatistics stats = PerformanceUtils.executeMeasurements(measurable, NUMBER_OF_MEASUREMENTS, NUMBER_OF_WARUMUPS);
 
-		PerformanceUtils.printStats("iotest " + path + " (repeated " + INPUT_FILE_REPEATS + " times)", stats);
+		PerformanceUtils.printStats("iotest " + TESTFILE + " (repeated " + INPUT_FILE_REPEATS + " times)", stats);
 	}
 
 	private static void createRepeatedInputFile(Path inputFile, int numberOfInputRepeats, Path outputFile) throws IOException {

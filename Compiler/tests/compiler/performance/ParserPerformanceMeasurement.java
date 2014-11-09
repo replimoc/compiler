@@ -19,6 +19,7 @@ import compiler.utils.TestUtils;
  * TODO document me
  */
 public class ParserPerformanceMeasurement implements Measurable {
+	private static final Path TESTFILE = Paths.get("testdata/parser5/PerformanceGrammar.java");
 	private static final int TOKEN_REPEATS = 10000;
 	private static final int NUMBER_OF_MEASUREMENTS = 20;
 	private static final int NUMBER_OF_WARMUPS = 10;
@@ -30,12 +31,10 @@ public class ParserPerformanceMeasurement implements Measurable {
 	}
 
 	public static void main(String[] args) throws Exception {
-		final Path path = Paths.get("testdata/parser5/PerformanceGrammar.java");
-
-		ParserPerformanceMeasurement measurable = new ParserPerformanceMeasurement(path, TOKEN_REPEATS);
+		ParserPerformanceMeasurement measurable = new ParserPerformanceMeasurement(TESTFILE, TOKEN_REPEATS);
 		DescriptiveStatistics stats = PerformanceUtils.executeMeasurements(measurable, NUMBER_OF_MEASUREMENTS, NUMBER_OF_WARMUPS);
 
-		PerformanceUtils.printStats(path + " (repeated " + TOKEN_REPEATS + " times)", stats);
+		PerformanceUtils.printStats("parsing tokens of " + TESTFILE + " (repeated " + TOKEN_REPEATS + " times)", stats);
 	}
 
 	@Override

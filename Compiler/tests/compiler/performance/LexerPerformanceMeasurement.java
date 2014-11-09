@@ -15,7 +15,12 @@ import compiler.lexer.TokenType;
 
 public class LexerPerformanceMeasurement implements Measurable {
 
-	private static final int INPUT_FILE_REPEATS = 30000;
+	// private static final Path TESTFILE = Paths.get("./testdata/AllTokens.java");
+	// private static final int INPUT_FILE_REPEATS = 30000;
+
+	private static final Path TESTFILE = Paths.get("testdata/parser5/PerformanceGrammar.java");
+	private static final int INPUT_FILE_REPEATS = 10000;
+
 	private static final int NUMBER_OF_MEASUREMENTS = 20;
 	private static final int NUMBER_OF_WARUMUPS = 10;
 
@@ -26,12 +31,10 @@ public class LexerPerformanceMeasurement implements Measurable {
 	}
 
 	public static void main(String args[]) throws Exception {
-		Path path = Paths.get("./testdata/AllTokens.java");
-
-		LexerPerformanceMeasurement measurable = new LexerPerformanceMeasurement(path, INPUT_FILE_REPEATS);
+		LexerPerformanceMeasurement measurable = new LexerPerformanceMeasurement(TESTFILE, INPUT_FILE_REPEATS);
 		DescriptiveStatistics stats = PerformanceUtils.executeMeasurements(measurable, NUMBER_OF_MEASUREMENTS, NUMBER_OF_WARUMUPS);
 
-		PerformanceUtils.printStats("lexing " + path + " (repeated " + INPUT_FILE_REPEATS + " times)", stats);
+		PerformanceUtils.printStats("lexing " + TESTFILE + " (repeated " + INPUT_FILE_REPEATS + " times)", stats);
 	}
 
 	private static String repeatInput(Path path, int numberOfInputRepeats) throws IOException {
