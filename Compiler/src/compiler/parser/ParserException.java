@@ -1,5 +1,6 @@
 package compiler.parser;
 
+import compiler.lexer.Position;
 import compiler.lexer.Token;
 import compiler.lexer.TokenType;
 
@@ -28,13 +29,14 @@ public class ParserException extends Exception {
 
 	@Override
 	public String toString() {
-		if (expectedTokenType != null) {
-			return "Error in line: " + invalidToken.getPosition().getLine() + ". Unexpected token '" + invalidToken.getTokenString()
-					+ "' at character: " + invalidToken.getPosition().getCharacter() + ". Expected token: '" + expectedTokenType.getString() + "'";
-		} else {
-			return "Error in line: " + invalidToken.getPosition().getLine() + ". Unexpected token '" + invalidToken.getTokenString()
-					+ "' at character: " + invalidToken.getPosition().getCharacter();
-		}
+		String expectedTokenTypeString = expectedTokenType == null ? "unknown" : expectedTokenType.getString();
+		Position position = invalidToken == null ? null : invalidToken.getPosition();
+		int line = position == null ? -1 : position.getLine();
+		int character = position == null ? -1 : position.getCharacter();
+		String tokenString = invalidToken == null ? "unknown" : invalidToken.getTokenString();
+
+		return "Error in line: " + line + ". Unexpected token '" + tokenString + "' at character: " + character + ". Expected token: '"
+				+ expectedTokenTypeString + "'";
 	}
 
 	@Override

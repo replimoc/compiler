@@ -1,5 +1,6 @@
 package compiler.parser;
 
+import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
 
 import java.io.IOException;
@@ -11,7 +12,7 @@ import compiler.utils.TestUtils;
 
 public class ParserTest {
 
-	private void parseWithEof(TokenType... tokens) throws IOException, ParserException {
+	private int parseWithEof(TokenType... tokens) throws IOException, ParserException {
 		TokenType[] tokensEof = new TokenType[tokens.length + 1];
 		for (int i = 0; i < tokens.length; i++) {
 			tokensEof[i] = tokens[i];
@@ -19,12 +20,18 @@ public class ParserTest {
 		tokensEof[tokens.length] = TokenType.EOF;
 
 		Parser parser = TestUtils.initParser(tokensEof);
-		parser.parse();
+		return parser.parse();
 	}
 
 	@Test
 	public void testParseEmptyFile() throws IOException, ParserException {
 		parseWithEof();
+	}
+
+	@Test
+	public void testParseWrongClassDeclarationStart() throws IOException, ParserException {
+		int errors = parseWithEof(TokenType.INT);
+		assertEquals(1, errors);
 	}
 
 	@Test
@@ -88,19 +95,19 @@ public class ParserTest {
 
 		parser = TestUtils.initParser("class Class { public void function() { ; ; {} } }");
 		parser.parse();
-		
+
 		parser = TestUtils.initParser("class Class { public void asdf; public asdf asfd; }");
 		parser.parse();
-		
+
 		parser = TestUtils.initParser("class Loops {public static void main ( String[] args){int a; int b; int c; int d;}}");
 		parser.parse();
-		
+
 		parser = TestUtils.initParser("class Class { public int[] list; }");
 		parser.parse();
-		
+
 		parser = TestUtils.initParser("class Class { public static void main (String[] args) { int[] asdf = 0; } }");
 		parser.parse();
-		
+
 		/*
 		 * parser = TestUtils.initParser("class Class { public void function() { if () {} } }"); parser.parse(); parser =
 		 * TestUtils.initParser("class Class { public void function() { while () {} } }"); parser.parse(); parser =
