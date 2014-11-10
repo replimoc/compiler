@@ -2,7 +2,7 @@ package compiler.ast.statement.binary;
 
 import compiler.ast.statement.Expression;
 
-public class BinaryExpression {
+public class BinaryExpression extends Expression {
 	private final Expression operand1;
 	private final Expression operand2;
 
