@@ -1,5 +1,6 @@
 package compiler.ast.statement;
 
+import compiler.ast.AstVisitor;
 import compiler.ast.statement.type.Type;
 import compiler.lexer.Position;
 
@@ -19,5 +20,9 @@ public class NewArrayExpression extends Expression {
 
 	public Expression getFirstDimension() {
 		return firstDimension;
+	}
+
+	public void accept(AstVisitor visitor) {
+		visitor.visit(this);
 	}
 }

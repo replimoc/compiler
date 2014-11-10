@@ -1,6 +1,7 @@
 package compiler.ast.statement;
 
 import compiler.Symbol;
+import compiler.ast.AstVisitor;
 import compiler.lexer.Position;
 
 public class VariableAccessExpression extends Expression {
@@ -13,5 +14,9 @@ public class VariableAccessExpression extends Expression {
 
 	public Symbol getIdentifier() {
 		return identifier;
+	}
+
+	public void accept(AstVisitor visitor) {
+		visitor.visit(this);
 	}
 }

@@ -1,5 +1,6 @@
 package compiler.ast.statement;
 
+import compiler.ast.AstVisitor;
 import compiler.lexer.Position;
 
 public class MethodInvocationExpression extends Expression {
@@ -21,4 +22,7 @@ public class MethodInvocationExpression extends Expression {
 		return parameters;
 	}
 
+	public void accept(AstVisitor visitor) {
+		visitor.visit(this);
+	}
 }

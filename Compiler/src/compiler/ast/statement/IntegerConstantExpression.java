@@ -1,5 +1,6 @@
 package compiler.ast.statement;
 
+import compiler.ast.AstVisitor;
 import compiler.lexer.Position;
 
 public class IntegerConstantExpression extends Expression {
@@ -12,5 +13,9 @@ public class IntegerConstantExpression extends Expression {
 
 	public String getIntegerLiteral() {
 		return literal;
+	}
+
+	public void accept(AstVisitor visitor) {
+		visitor.visit(this);
 	}
 }

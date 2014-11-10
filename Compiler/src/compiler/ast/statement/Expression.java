@@ -1,5 +1,6 @@
 package compiler.ast.statement;
 
+import compiler.ast.AstVisitor;
 import compiler.lexer.Position;
 
 public abstract class Expression extends Statement {
@@ -8,4 +9,5 @@ public abstract class Expression extends Statement {
 		super(position);
 	}
 
+	public abstract void accept(AstVisitor visitor);
 }

@@ -1,5 +1,6 @@
 package compiler.ast.statement.binary;
 
+import compiler.ast.AstVisitor;
 import compiler.ast.statement.Expression;
 import compiler.lexer.Position;
 
@@ -9,4 +10,7 @@ public class NonEqualityExpression extends BinaryExpression {
 		super(position, operand1, operand2);
 	}
 
+	public void accept(AstVisitor visitor) {
+		visitor.visit(this);
+	}
 }
