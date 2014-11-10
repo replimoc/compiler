@@ -19,6 +19,7 @@ import compiler.ast.statement.binary.MuliplicationExpression;
 import compiler.ast.statement.binary.NonEqualityExpression;
 import compiler.ast.statement.binary.SubtractionExpression;
 import compiler.lexer.OperationType;
+import compiler.lexer.Position;
 import compiler.lexer.Token;
 import compiler.lexer.TokenSuppliable;
 import compiler.lexer.TokenType;
@@ -641,48 +642,50 @@ public class Parser {
 
 			Expression rhs = parseExpression(precedence);
 
+			Position position = token != null ? token.getPosition() : null;
+
 			switch (operationTokenType) {
 			case NOTEQUAL:
-				result = new NonEqualityExpression(result, rhs);
+				result = new NonEqualityExpression(position, result, rhs);
 				break;
 			case MULTIPLY:
-				result = new MuliplicationExpression(result, rhs);
+				result = new MuliplicationExpression(position, result, rhs);
 				break;
 			case ADD:
-				result = new AdditionExpression(result, rhs);
+				result = new AdditionExpression(position, result, rhs);
 				break;
 			case SUBTRACT:
-				result = new SubtractionExpression(result, rhs);
+				result = new SubtractionExpression(position, result, rhs);
 				break;
 			case DIVIDE:
-				result = new DivisionExpression(result, rhs);
+				result = new DivisionExpression(position, result, rhs);
 				break;
 			case LESSEQUAL:
-				result = new LessThanEqualExpression(result, rhs);
+				result = new LessThanEqualExpression(position, result, rhs);
 				break;
 			case LESS:
-				result = new LessThanExpression(result, rhs);
+				result = new LessThanExpression(position, result, rhs);
 				break;
 			case EQUAL:
-				result = new EqualityExpression(result, rhs);
+				result = new EqualityExpression(position, result, rhs);
 				break;
 			case ASSIGN:
-				result = new AssignmentExpression(result, rhs);
+				result = new AssignmentExpression(position, result, rhs);
 				break;
 			case GREATEREQUAL:
-				result = new GreaterThanEqualExpression(result, rhs);
+				result = new GreaterThanEqualExpression(position, result, rhs);
 				break;
 			case GREATER:
-				result = new GreaterThanExpression(result, rhs);
+				result = new GreaterThanExpression(position, result, rhs);
 				break;
 			case MODULO:
-				result = new ModuloExpression(result, rhs);
+				result = new ModuloExpression(position, result, rhs);
 				break;
 			case LOGICALAND:
-				result = new LogicalAndExpression(result, rhs);
+				result = new LogicalAndExpression(position, result, rhs);
 				break;
 			case LOGICALOR:
-				result = new LogicalOrExpression(result, rhs);
+				result = new LogicalOrExpression(position, result, rhs);
 				break;
 			default:
 				throw new ParserException(operationToken);
@@ -719,7 +722,7 @@ public class Parser {
 		default:
 			throw new ParserException(token);
 		}
-		return new VariableAccessExpression(null); // FIXME This should be another value;
+		return new VariableAccessExpression(token.getPosition(), null); // FIXME This should be another value;
 	}
 
 	/**
