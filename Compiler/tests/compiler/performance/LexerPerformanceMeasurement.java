@@ -21,8 +21,8 @@ public class LexerPerformanceMeasurement implements Measurable {
 	private static final Path TESTFILE = Paths.get("testdata/parser5/PerformanceGrammar.java");
 	private static final int INPUT_FILE_REPEATS = 10000;
 
-	private static final int NUMBER_OF_MEASUREMENTS = 20;
-	private static final int NUMBER_OF_WARUMUPS = 10;
+	private static final int NUMBER_OF_MEASUREMENTS = 15;
+	private static final int NUMBER_OF_WARUMUPS = 3;
 
 	private final String toLex;
 

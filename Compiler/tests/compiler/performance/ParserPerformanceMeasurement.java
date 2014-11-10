@@ -16,13 +16,15 @@ import compiler.utils.FixedTokensSupplier;
 import compiler.utils.TestUtils;
 
 /**
- * TODO document me
+ * This class measures the time required to parse a token test set, which is created by repeating the tokens of a test input file.
+ * 
+ * @author Andreas Eberle
  */
 public class ParserPerformanceMeasurement implements Measurable {
 	private static final Path TESTFILE = Paths.get("testdata/parser5/PerformanceGrammar.java");
 	private static final int TOKEN_REPEATS = 10000;
-	private static final int NUMBER_OF_MEASUREMENTS = 20;
-	private static final int NUMBER_OF_WARMUPS = 10;
+	private static final int NUMBER_OF_MEASUREMENTS = 15;
+	private static final int NUMBER_OF_WARMUPS = 3;
 
 	private final FixedTokensSupplier tokenSupplier;
 

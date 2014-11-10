@@ -2,7 +2,6 @@ package compiler.performance;
 
 import java.io.BufferedReader;
 import java.io.IOException;
-import java.io.OutputStream;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -18,15 +17,13 @@ public class IOPerformanceMeasurement implements Measurable {
 	private static final Path TESTFILE = Paths.get("testdata/parser5/PerformanceGrammar.java");
 	private static final int INPUT_FILE_REPEATS = 10000;
 
-	private static final int NUMBER_OF_MEASUREMENTS = 20;
-	private static final int NUMBER_OF_WARUMUPS = 10;
+	private static final int NUMBER_OF_MEASUREMENTS = 15;
+	private static final int NUMBER_OF_WARUMUPS = 3;
 
 	private Path testFile;
 
 	public IOPerformanceMeasurement(Path path, int numberOfInputRepeats) throws IOException {
-		testFile = Files.createTempFile("io-speedtest", ".tmp");
-
-		createRepeatedInputFile(path, numberOfInputRepeats, testFile);
+		testFile = PerformanceUtils.createRepeatedInputFile(path, numberOfInputRepeats);
 	}
 
 	public static void main(String args[]) throws Exception {
@@ -34,16 +31,6 @@ public class IOPerformanceMeasurement implements Measurable {
 		DescriptiveStatistics stats = PerformanceUtils.executeMeasurements(measurable, NUMBER_OF_MEASUREMENTS, NUMBER_OF_WARUMUPS);
 
 		PerformanceUtils.printStats("iotest " + TESTFILE + " (repeated " + INPUT_FILE_REPEATS + " times)", stats);
-	}
-
-	private static void createRepeatedInputFile(Path inputFile, int numberOfInputRepeats, Path outputFile) throws IOException {
-		byte[] inputBytes = Files.readAllBytes(inputFile);
-
-		OutputStream out = Files.newOutputStream(outputFile);
-		for (int i = 0; i < numberOfInputRepeats; i++) {
-			out.write(inputBytes);
-		}
-		out.close();
 	}
 
 	@Override
