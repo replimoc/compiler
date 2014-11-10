@@ -3,7 +3,7 @@ package compiler.ast.statement.binary;
 import compiler.ast.statement.Expression;
 import compiler.lexer.Position;
 
-public class BinaryExpression extends Expression {
+public abstract class BinaryExpression extends Expression {
 	private final Expression operand1;
 	private final Expression operand2;
 
