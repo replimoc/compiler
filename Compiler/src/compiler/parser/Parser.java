@@ -2,6 +2,22 @@ package compiler.parser;
 
 import java.io.IOException;
 
+import compiler.ast.statement.Expression;
+import compiler.ast.statement.VariableAccessExpression;
+import compiler.ast.statement.binary.AdditionExpression;
+import compiler.ast.statement.binary.AssignmentExpression;
+import compiler.ast.statement.binary.DivisionExpression;
+import compiler.ast.statement.binary.EqualityExpression;
+import compiler.ast.statement.binary.GreaterThanEqualExpression;
+import compiler.ast.statement.binary.GreaterThanExpression;
+import compiler.ast.statement.binary.LessThanEqualExpression;
+import compiler.ast.statement.binary.LessThanExpression;
+import compiler.ast.statement.binary.LogicalAndExpression;
+import compiler.ast.statement.binary.LogicalOrExpression;
+import compiler.ast.statement.binary.ModuloExpression;
+import compiler.ast.statement.binary.MuliplicationExpression;
+import compiler.ast.statement.binary.NonEqualityExpression;
+import compiler.ast.statement.binary.SubtractionExpression;
 import compiler.lexer.OperationType;
 import compiler.lexer.Token;
 import compiler.lexer.TokenSuppliable;
@@ -586,13 +602,31 @@ public class Parser {
 		token = tokenSupplier.getNextToken();
 	}
 
-	private void parseExpression() throws IOException, ParserException {
-		parseExpression(0);
+	/**
+	 * Parse an expression with precedence climbing. Initialize with default precedence 0. This method look up in the token type, if the token is an
+	 * binary operation and parse left and right an unaryExpression.
+	 * 
+	 * @author Valentin Zickner
+	 * @return Parsed Expression
+	 * @throws IOException
+	 * @throws ParserException
+	 */
+	private Expression parseExpression() throws IOException, ParserException {
+		return parseExpression(0);
 	}
 
-	private String parseExpression(int minPrecedence) throws IOException, ParserException {
-		String result = "_"; // This should assign the next line
-		parseUnaryExpression();
+	/**
+	 * Work method for precedence climbing, use the parseExpression() method.
+	 * 
+	 * @author Valentin Zickner
+	 * @param minPrecedence
+	 *            Minimal precedence to parse.
+	 * @return Parsed Expression
+	 * @throws IOException
+	 * @throws ParserException
+	 */
+	private Expression parseExpression(int minPrecedence) throws IOException, ParserException {
+		Expression result = parseUnaryExpression();
 
 		while (token != null && token.getType().getOperationType() == OperationType.BINARY &&
 				token.getType().getPrecedence() >= minPrecedence) {
@@ -605,50 +639,50 @@ public class Parser {
 				precedence++;
 			}
 
-			String rhs = parseExpression(precedence);
+			Expression rhs = parseExpression(precedence);
 
 			switch (operationTokenType) {
 			case NOTEQUAL:
-				result = "(" + result + "!=" + rhs + ")";
+				result = new NonEqualityExpression(result, rhs);
 				break;
 			case MULTIPLY:
-				result = "(" + result + "*" + rhs + ")";
+				result = new MuliplicationExpression(result, rhs);
 				break;
 			case ADD:
-				result = "(" + result + "+" + rhs + ")";
+				result = new AdditionExpression(result, rhs);
 				break;
 			case SUBTRACT:
-				result = "(" + result + "-" + rhs + ")";
+				result = new SubtractionExpression(result, rhs);
 				break;
 			case DIVIDE:
-				result = "(" + result + "/" + rhs + ")";
+				result = new DivisionExpression(result, rhs);
 				break;
 			case LESSEQUAL:
-				result = "(" + result + "<=" + rhs + ")";
+				result = new LessThanEqualExpression(result, rhs);
 				break;
 			case LESS:
-				result = "(" + result + "<" + rhs + ")";
+				result = new LessThanExpression(result, rhs);
 				break;
 			case EQUAL:
-				result = "(" + result + "==" + rhs + ")";
+				result = new EqualityExpression(result, rhs);
 				break;
 			case ASSIGN:
-				result = "(" + result + "=" + rhs + ")";
+				result = new AssignmentExpression(result, rhs);
 				break;
 			case GREATEREQUAL:
-				result = "(" + result + ">=" + rhs + ")";
+				result = new GreaterThanEqualExpression(result, rhs);
 				break;
 			case GREATER:
-				result = "(" + result + ">" + rhs + ")";
+				result = new GreaterThanExpression(result, rhs);
 				break;
 			case MODULO:
-				result = "(" + result + "%" + rhs + ")";
+				result = new ModuloExpression(result, rhs);
 				break;
 			case LOGICALAND:
-				result = "(" + result + "&&" + rhs + ")";
+				result = new LogicalAndExpression(result, rhs);
 				break;
 			case LOGICALOR:
-				result = "(" + result + "||" + rhs + ")";
+				result = new LogicalOrExpression(result, rhs);
 				break;
 			default:
 				throw new ParserException(operationToken);
@@ -660,10 +694,12 @@ public class Parser {
 	/**
 	 * UnaryExpression -> PostfixExpression | (! | -) UnaryExpression
 	 * 
+	 * @return
+	 * 
 	 * @throws IOException
 	 * @throws ParserException
 	 */
-	private void parseUnaryExpression() throws IOException, ParserException {
+	private Expression parseUnaryExpression() throws IOException, ParserException {
 		switch (token.getType()) {
 		case NULL:
 		case FALSE:
@@ -683,6 +719,7 @@ public class Parser {
 		default:
 			throw new ParserException(token);
 		}
+		return new VariableAccessExpression(null); // FIXME This should be another value;
 	}
 
 	/**
