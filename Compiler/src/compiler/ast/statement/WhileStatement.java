@@ -1,12 +1,14 @@
 package compiler.ast.statement;
 
 import compiler.ast.Block;
+import compiler.lexer.Position;
 
 public class WhileStatement extends Statement {
 	private final Expression condition;
 	private final Block body;
 
-	public WhileStatement(Expression condition, Block body) {
+	public WhileStatement(Position position, Expression condition, Block body) {
+		super(position);
 		this.condition = condition;
 		this.body = body;
 	}

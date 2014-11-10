@@ -1,12 +1,14 @@
 package compiler.ast.statement;
 
 import compiler.ast.statement.type.Type;
+import compiler.lexer.Position;
 
 public class NewArrayExpression extends Expression {
 	private final Type type;
 	private final Expression firstDimension;
 
-	public NewArrayExpression(Type type, Expression firstDimension) {
+	public NewArrayExpression(Position position, Type type, Expression firstDimension) {
+		super(position);
 		this.type = type;
 		this.firstDimension = firstDimension;
 	}

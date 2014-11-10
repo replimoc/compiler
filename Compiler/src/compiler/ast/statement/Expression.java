@@ -1,5 +1,11 @@
 package compiler.ast.statement;
 
-public class Expression extends Statement {
+import compiler.lexer.Position;
+
+public abstract class Expression extends Statement {
+
+	public Expression(Position position) {
+		super(position);
+	}
 
 }

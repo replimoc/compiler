@@ -1,11 +1,12 @@
 package compiler.ast.statement.binary;
 
 import compiler.ast.statement.Expression;
+import compiler.lexer.Position;
 
 public class LessThanEqualExpression extends BinaryExpression {
 
-	public LessThanEqualExpression(Expression operand1, Expression operand2) {
-		super(operand1, operand2);
+	public LessThanEqualExpression(Position position, Expression operand1, Expression operand2) {
+		super(position, operand1, operand2);
 	}
 
 }

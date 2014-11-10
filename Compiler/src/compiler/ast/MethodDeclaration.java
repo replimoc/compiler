@@ -5,16 +5,18 @@ import java.util.List;
 
 import compiler.Symbol;
 import compiler.ast.statement.type.Type;
+import compiler.lexer.Position;
 
 public class MethodDeclaration extends ClassMember {
 
 	private final Type returnType;
 	private final List<ParameterDefinition> parameters = new ArrayList<ParameterDefinition>();
-	private final Block block = new Block();
+	private final Block block;
 
-	public MethodDeclaration(Type returnType, Symbol identifier) {
-		super(identifier);
+	public MethodDeclaration(Position position, Type returnType, Symbol identifier, Block block) {
+		super(position, identifier);
 		this.returnType = returnType;
+		this.block = block;
 	}
 
 	public void addParameter(ParameterDefinition parameter) {

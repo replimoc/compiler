@@ -1,10 +1,14 @@
 package compiler.ast.statement.type;
 
-public class Type {
+import compiler.ast.AstNode;
+import compiler.lexer.Position;
+
+public class Type extends AstNode {
 
 	private final BasicType basicType;
 
-	public Type(BasicType basicType) {
+	public Type(Position position, BasicType basicType) {
+		super(position);
 		this.basicType = basicType;
 	}
 

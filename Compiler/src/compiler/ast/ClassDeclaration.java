@@ -4,12 +4,14 @@ import java.util.ArrayList;
 import java.util.List;
 
 import compiler.Symbol;
+import compiler.lexer.Position;
 
-public class ClassDeclaration {
+public class ClassDeclaration extends AstNode {
 	private final Symbol identifier;
 	private final List<ClassMember> members = new ArrayList<ClassMember>();
 
-	public ClassDeclaration(Symbol identifier) {
+	public ClassDeclaration(Position position, Symbol identifier) {
+		super(position);
 		this.identifier = identifier;
 	}
 
