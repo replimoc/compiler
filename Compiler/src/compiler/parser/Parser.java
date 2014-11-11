@@ -143,9 +143,7 @@ public class Parser {
 	 * @throws ParserException
 	 * @throws IOException
 	 */
-	private ClassMember parseClassMember() throws ParserException, IOException {
-		Token firstToken = token;
-		
+	private ClassMember parseClassMember() throws ParserException, IOException {		
 		switch (token.getType()) {
 		case PUBLIC:
 			token = tokenSupplier.getNextToken();
@@ -156,6 +154,7 @@ public class Parser {
 					|| token.getType() == TokenType.IDENTIFIER) {
 				Type type = parseType();
 
+				Token firstToken = token;
 				if (token.getType() == TokenType.IDENTIFIER) {
 					token = tokenSupplier.getNextToken();
 					// public Type IDENT ;
@@ -166,7 +165,7 @@ public class Parser {
 						// public Type IDENT ( Parameters? ) Block
 					} else if (token.getType() == TokenType.LP) {
 						token = tokenSupplier.getNextToken();
-						MethodDeclaration methDecl = new MethodDeclaration(token.getPosition(), token.getSymbol(), type);
+						MethodDeclaration methDecl = new MethodDeclaration(firstToken.getPosition(), firstToken.getSymbol(), type);
 
 						if (token.getType() == TokenType.RP) {
 							token = tokenSupplier.getNextToken();
@@ -196,6 +195,7 @@ public class Parser {
 				if (token.getType() != TokenType.IDENTIFIER) {
 					throw new ParserException(token, TokenType.IDENTIFIER);
 				}
+				Token firstToken = token;
 				token = tokenSupplier.getNextToken();
 				if (token.getType() != TokenType.LP) {
 					throw new ParserException(token, TokenType.LP);
