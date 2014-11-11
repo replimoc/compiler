@@ -13,7 +13,7 @@ import compiler.ast.statement.MethodInvocationExpression;
 import compiler.ast.statement.NewArrayExpression;
 import compiler.ast.statement.NewObjectExpression;
 import compiler.ast.statement.NullExpression;
-import compiler.ast.statement.StringLiteral;
+import compiler.ast.statement.Identifier;
 import compiler.ast.statement.ThisExpression;
 import compiler.ast.statement.VariableAccessExpression;
 import compiler.ast.statement.WhileStatement;
@@ -85,7 +85,7 @@ public interface AstVisitor {
 
 	public void visit(ReturnStatement returnStatement);
 
-	public void visit(StringLiteral literal);
+	public void visit(Identifier literal);
 
 	public void visit(ThisExpression thisExpression);
 
