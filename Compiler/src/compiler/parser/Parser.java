@@ -895,6 +895,7 @@ public class Parser {
 	 */
 	private Expression parsePrimaryExpression() throws IOException, ParserException {
 		Position pos = token.getPosition();
+		Symbol symbol = token.getSymbol();
 		switch (token.getType()) {
 		case FALSE:
 			token = tokenSupplier.getNextToken();
@@ -904,7 +905,7 @@ public class Parser {
 			return new BooleanConstantExpression(pos, true);
 		case INTEGER:
 			token = tokenSupplier.getNextToken();
-			return new IntegerConstantExpression(pos, token.getSymbol().getValue());
+			return new IntegerConstantExpression(pos, symbol.getValue());
 		case NULL:
 			token = tokenSupplier.getNextToken();
 			return new NullExpression(pos);
@@ -948,9 +949,9 @@ public class Parser {
 					token = tokenSupplier.getNextToken();
 					// no access object
 					return new MethodInvocationExpression(pos, null, symbol, args);
+				} else {
+					throw new ParserException(token, TokenType.RP);
 				}
-			} else {
-				throw new ParserException(token, TokenType.RP);
 			}
 			// assume "PrimaryIdent -> IDENT" when another token than '(' is
 			// read
