@@ -4,6 +4,7 @@ import java.util.ArrayList;
 import java.util.List;
 
 import compiler.Symbol;
+import compiler.ast.visitor.AstVisitor;
 import compiler.lexer.Position;
 
 public class ClassDeclaration extends AstNode {
@@ -25,5 +26,10 @@ public class ClassDeclaration extends AstNode {
 
 	public List<ClassMember> getMembers() {
 		return members;
+	}
+
+	@Override
+	public void accept(AstVisitor visitor) {
+		visitor.visit(this);
 	}
 }

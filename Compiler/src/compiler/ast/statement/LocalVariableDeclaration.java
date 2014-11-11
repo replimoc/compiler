@@ -2,6 +2,7 @@ package compiler.ast.statement;
 
 import compiler.Symbol;
 import compiler.ast.statement.type.Type;
+import compiler.ast.visitor.AstVisitor;
 import compiler.lexer.Position;
 
 public class LocalVariableDeclaration extends Statement {
@@ -30,5 +31,10 @@ public class LocalVariableDeclaration extends Statement {
 
 	public Expression getExpression() {
 		return expression;
+	}
+
+	@Override
+	public void accept(AstVisitor visitor) {
+		visitor.visit(this);
 	}
 }

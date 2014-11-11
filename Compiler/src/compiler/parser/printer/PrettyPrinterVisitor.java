@@ -1,8 +1,15 @@
 package compiler.parser.printer;
 
+import compiler.ast.Block;
+import compiler.ast.ClassDeclaration;
+import compiler.ast.ClassMember;
+import compiler.ast.ParameterDefinition;
 import compiler.ast.statement.ArrayAccessExpression;
 import compiler.ast.statement.BooleanConstantExpression;
+import compiler.ast.statement.Expression;
+import compiler.ast.statement.IfStatement;
 import compiler.ast.statement.IntegerConstantExpression;
+import compiler.ast.statement.LocalVariableDeclaration;
 import compiler.ast.statement.MethodInvocationExpression;
 import compiler.ast.statement.NewArrayExpression;
 import compiler.ast.statement.NewObjectExpression;
@@ -10,6 +17,7 @@ import compiler.ast.statement.NullExpression;
 import compiler.ast.statement.StringLiteral;
 import compiler.ast.statement.ThisExpression;
 import compiler.ast.statement.VariableAccessExpression;
+import compiler.ast.statement.WhileStatement;
 import compiler.ast.statement.binary.AdditionExpression;
 import compiler.ast.statement.binary.AssignmentExpression;
 import compiler.ast.statement.binary.BinaryExpression;
@@ -25,6 +33,7 @@ import compiler.ast.statement.binary.ModuloExpression;
 import compiler.ast.statement.binary.MuliplicationExpression;
 import compiler.ast.statement.binary.NonEqualityExpression;
 import compiler.ast.statement.binary.SubtractionExpression;
+import compiler.ast.statement.type.Type;
 import compiler.ast.statement.unary.LogicalNotExpression;
 import compiler.ast.statement.unary.NegateExpression;
 import compiler.ast.statement.unary.ReturnStatement;
@@ -132,56 +141,84 @@ public class PrettyPrinterVisitor implements AstVisitor {
 
 	@Override
 	public void visit(BooleanConstantExpression booleanConstantExpression) {
-		// TODO Auto-generated method stub
-
+		outputString += booleanConstantExpression.isValue();
 	}
 
 	@Override
 	public void visit(IntegerConstantExpression integerConstantExpression) {
-		// TODO Auto-generated method stub
-
+		outputString += integerConstantExpression.getIntegerLiteral();
 	}
 
 	@Override
 	public void visit(MethodInvocationExpression methodInvocationExpression) {
-		// TODO Auto-generated method stub
+		outputString += "(";
+		methodInvocationExpression.getMethodExpression().accept(this);
+		outputString += ")." + methodInvocationExpression.getMethodIdent() + "(";
+		Expression[] args = methodInvocationExpression.getParameters();
 
+		// print args
+		if (args != null && args.length > 0) {
+			int i = 0;
+			args[i++].accept(this);
+			while (i < args.length) {
+				outputString += ", ";
+				args[i++].accept(this);
+			}
+		}
+
+		outputString += ")";
 	}
 
 	@Override
 	public void visit(NewArrayExpression newArrayExpression) {
-		// TODO Auto-generated method stub
+		// TODO: right format!
+		outputString += "(new ";
+		newArrayExpression.getType().accept(this);
+		outputString += ") [" + newArrayExpression.getFirstDimension() + "]";
+		int dim = newArrayExpression.getDimensions();
 
+		// print ([])*
+		for (int i = 0; i < dim; i++) {
+			outputString += "[]";
+		}
 	}
 
 	@Override
 	public void visit(NewObjectExpression newObjectExpression) {
-		// TODO Auto-generated method stub
-
+		// TODO: right format!
+		outputString += "(new " + newObjectExpression.getIdentifier() + "())";
 	}
 
 	@Override
 	public void visit(VariableAccessExpression variableAccessExpression) {
 		// outputString += variableAccessExpression.getIdentifier().getValue();
-		outputString += "_"; // FIXME This should be the real identifier
+		// outputString += "_"; // FIXME This should be the real identifier
+		// TODO: right format!
+		outputString += "";
+		variableAccessExpression.getExpression().accept(this);
+		outputString += "." + variableAccessExpression.getFieldIdentifier().getValue() + ")";
 	}
 
 	@Override
 	public void visit(ArrayAccessExpression arrayAccessExpression) {
-		// TODO Auto-generated method stub
-
+		// TODO: right format!
+		outputString += "(";
+		arrayAccessExpression.getArrayExpression().accept(this);
+		outputString += "[";
+		arrayAccessExpression.getIndexExpression().accept(this);
+		outputString += "])";
 	}
 
 	@Override
 	public void visit(LogicalNotExpression logicalNotExpression) {
-		// TODO Auto-generated method stub
-
+		outputString += "!";
+		logicalNotExpression.getOperand().accept(this);
 	}
 
 	@Override
 	public void visit(NegateExpression negateExpression) {
-		// TODO Auto-generated method stub
-
+		outputString += "-";
+		negateExpression.getOperand().accept(this);
 	}
 
 	@Override
@@ -192,18 +229,80 @@ public class PrettyPrinterVisitor implements AstVisitor {
 
 	@Override
 	public void visit(StringLiteral literal) {
-		// TODO Auto-generated method stub
-
+		outputString += literal.getSymbol().getValue();
 	}
 
 	@Override
 	public void visit(ThisExpression thisExpression) {
+		outputString += "this";
+	}
+
+	@Override
+	public void visit(NullExpression nullExpression) {
+		outputString += "null";
+	}
+
+	@Override
+	public void visit(Type type) {
+		String typeString;
+		switch (type.getBasicType()) {
+		case INT:
+			typeString = "int";
+			break;
+		case VOID:
+			typeString = "void";
+			break;
+		case BOOLEAN:
+			typeString = "boolean";
+			break;
+		case CLASS:
+			typeString = "class";
+			break;
+		default:
+			typeString = "array";
+			break;
+		}
+		outputString += typeString;
+	}
+
+	@Override
+	public void visit(Block block) {
 		// TODO Auto-generated method stub
 
 	}
 
 	@Override
-	public void visit(NullExpression nullExpression) {
+	public void visit(ClassMember classMember) {
+		// TODO Auto-generated method stub
+
+	}
+
+	@Override
+	public void visit(ClassDeclaration classDeclaration) {
+		// TODO Auto-generated method stub
+
+	}
+
+	@Override
+	public void visit(IfStatement ifStatement) {
+		// TODO Auto-generated method stub
+
+	}
+
+	@Override
+	public void visit(WhileStatement whileStatement) {
+		// TODO Auto-generated method stub
+
+	}
+
+	@Override
+	public void visit(LocalVariableDeclaration localVariableDeclaration) {
+		// TODO Auto-generated method stub
+
+	}
+
+	@Override
+	public void visit(ParameterDefinition parameterDefinition) {
 		// TODO Auto-generated method stub
 
 	}

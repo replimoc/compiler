@@ -1,8 +1,14 @@
 package compiler.ast.visitor;
 
+import compiler.ast.Block;
+import compiler.ast.ClassDeclaration;
+import compiler.ast.ClassMember;
+import compiler.ast.ParameterDefinition;
 import compiler.ast.statement.ArrayAccessExpression;
 import compiler.ast.statement.BooleanConstantExpression;
+import compiler.ast.statement.IfStatement;
 import compiler.ast.statement.IntegerConstantExpression;
+import compiler.ast.statement.LocalVariableDeclaration;
 import compiler.ast.statement.MethodInvocationExpression;
 import compiler.ast.statement.NewArrayExpression;
 import compiler.ast.statement.NewObjectExpression;
@@ -10,6 +16,7 @@ import compiler.ast.statement.NullExpression;
 import compiler.ast.statement.StringLiteral;
 import compiler.ast.statement.ThisExpression;
 import compiler.ast.statement.VariableAccessExpression;
+import compiler.ast.statement.WhileStatement;
 import compiler.ast.statement.binary.AdditionExpression;
 import compiler.ast.statement.binary.AssignmentExpression;
 import compiler.ast.statement.binary.DivisionExpression;
@@ -24,6 +31,7 @@ import compiler.ast.statement.binary.ModuloExpression;
 import compiler.ast.statement.binary.MuliplicationExpression;
 import compiler.ast.statement.binary.NonEqualityExpression;
 import compiler.ast.statement.binary.SubtractionExpression;
+import compiler.ast.statement.type.Type;
 import compiler.ast.statement.unary.LogicalNotExpression;
 import compiler.ast.statement.unary.NegateExpression;
 import compiler.ast.statement.unary.ReturnStatement;
@@ -82,5 +90,21 @@ public interface AstVisitor {
 	public void visit(ThisExpression thisExpression);
 
 	public void visit(NullExpression nullExpression);
+
+	public void visit(Type type);
+
+	public void visit(Block block);
+
+	public void visit(ClassMember classMember);
+
+	public void visit(ClassDeclaration classDeclaration);
+
+	public void visit(IfStatement ifStatement);
+
+	public void visit(WhileStatement whileStatement);
+
+	public void visit(LocalVariableDeclaration localVariableDeclaration);
+
+	public void visit(ParameterDefinition parameterDefinition);
 
 }

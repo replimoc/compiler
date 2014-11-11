@@ -1,6 +1,7 @@
 package compiler.ast;
 
 import compiler.Symbol;
+import compiler.ast.visitor.AstVisitor;
 import compiler.lexer.Position;
 
 public class ClassMember extends AstNode {
@@ -13,5 +14,10 @@ public class ClassMember extends AstNode {
 
 	public Symbol getIdentifier() {
 		return identifier;
+	}
+
+	@Override
+	public void accept(AstVisitor visitor) {
+		visitor.visit(this);
 	}
 }

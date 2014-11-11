@@ -1,6 +1,7 @@
 package compiler.ast.statement;
 
 import compiler.ast.Block;
+import compiler.ast.visitor.AstVisitor;
 import compiler.lexer.Position;
 
 public class WhileStatement extends Statement {
@@ -19,6 +20,11 @@ public class WhileStatement extends Statement {
 
 	public Block getBody() {
 		return body;
+	}
+
+	@Override
+	public void accept(AstVisitor visitor) {
+		visitor.visit(this);
 	}
 
 }

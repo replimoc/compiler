@@ -1,8 +1,9 @@
 package compiler.ast;
 
+import compiler.ast.visitor.AstVisitor;
 import compiler.lexer.Position;
 
-public class AstNode {
+public abstract class AstNode {
 
 	private final Position position;
 
@@ -13,4 +14,6 @@ public class AstNode {
 	public Position getPosition() {
 		return position;
 	}
+
+	public abstract void accept(AstVisitor visitor);
 }
