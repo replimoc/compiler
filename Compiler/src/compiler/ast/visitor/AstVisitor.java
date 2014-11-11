@@ -3,10 +3,12 @@ package compiler.ast.visitor;
 import compiler.ast.statement.ArrayAccessExpression;
 import compiler.ast.statement.BooleanConstantExpression;
 import compiler.ast.statement.IntegerConstantExpression;
-import compiler.ast.statement.Literal;
 import compiler.ast.statement.MethodInvocationExpression;
 import compiler.ast.statement.NewArrayExpression;
 import compiler.ast.statement.NewObjectExpression;
+import compiler.ast.statement.NullExpression;
+import compiler.ast.statement.StringLiteral;
+import compiler.ast.statement.ThisExpression;
 import compiler.ast.statement.VariableAccessExpression;
 import compiler.ast.statement.binary.AdditionExpression;
 import compiler.ast.statement.binary.AssignmentExpression;
@@ -75,6 +77,10 @@ public interface AstVisitor {
 
 	public void visit(ReturnStatement returnStatement);
 
-	public void visit(Literal literal);
+	public void visit(StringLiteral literal);
+
+	public void visit(ThisExpression thisExpression);
+
+	public void visit(NullExpression nullExpression);
 
 }

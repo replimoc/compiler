@@ -3,10 +3,12 @@ package compiler.parser.printer;
 import compiler.ast.statement.ArrayAccessExpression;
 import compiler.ast.statement.BooleanConstantExpression;
 import compiler.ast.statement.IntegerConstantExpression;
-import compiler.ast.statement.Literal;
 import compiler.ast.statement.MethodInvocationExpression;
 import compiler.ast.statement.NewArrayExpression;
 import compiler.ast.statement.NewObjectExpression;
+import compiler.ast.statement.NullExpression;
+import compiler.ast.statement.StringLiteral;
+import compiler.ast.statement.ThisExpression;
 import compiler.ast.statement.VariableAccessExpression;
 import compiler.ast.statement.binary.AdditionExpression;
 import compiler.ast.statement.binary.AssignmentExpression;
@@ -189,7 +191,19 @@ public class PrettyPrinterVisitor implements AstVisitor {
 	}
 
 	@Override
-	public void visit(Literal literal) {
+	public void visit(StringLiteral literal) {
+		// TODO Auto-generated method stub
+
+	}
+
+	@Override
+	public void visit(ThisExpression thisExpression) {
+		// TODO Auto-generated method stub
+
+	}
+
+	@Override
+	public void visit(NullExpression nullExpression) {
 		// TODO Auto-generated method stub
 
 	}

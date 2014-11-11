@@ -9,10 +9,12 @@ import compiler.ast.statement.ArrayAccessExpression;
 import compiler.ast.statement.BooleanConstantExpression;
 import compiler.ast.statement.Expression;
 import compiler.ast.statement.IntegerConstantExpression;
-import compiler.ast.statement.Literal;
 import compiler.ast.statement.MethodInvocationExpression;
 import compiler.ast.statement.NewArrayExpression;
 import compiler.ast.statement.NewObjectExpression;
+import compiler.ast.statement.NullExpression;
+import compiler.ast.statement.StringLiteral;
+import compiler.ast.statement.ThisExpression;
 import compiler.ast.statement.VariableAccessExpression;
 import compiler.ast.statement.binary.AdditionExpression;
 import compiler.ast.statement.binary.AssignmentExpression;
@@ -892,19 +894,23 @@ public class Parser {
 	 * @throws ParserException
 	 */
 	private Expression parsePrimaryExpression() throws IOException, ParserException {
+		Position pos = token.getPosition();
 		switch (token.getType()) {
 		case FALSE:
-			return new BooleanConstantExpression(token.getPosition(), false);
-		case TRUE:
-			return new BooleanConstantExpression(token.getPosition(), true);
-		case INTEGER:
-			return new IntegerConstantExpression(token.getPosition(), token.getSymbol().getValue());
-		case NULL:
-		case THIS:
-			Position pos = token.getPosition();
-			Symbol symbol = token.getSymbol();
 			token = tokenSupplier.getNextToken();
-			return new Literal(pos, symbol);
+			return new BooleanConstantExpression(pos, false);
+		case TRUE:
+			token = tokenSupplier.getNextToken();
+			return new BooleanConstantExpression(pos, true);
+		case INTEGER:
+			token = tokenSupplier.getNextToken();
+			return new IntegerConstantExpression(pos, token.getSymbol().getValue());
+		case NULL:
+			token = tokenSupplier.getNextToken();
+			return new NullExpression(pos);
+		case THIS:
+			token = tokenSupplier.getNextToken();
+			return new ThisExpression(pos);
 		case IDENTIFIER:
 			return parsePrimaryExpressionIdent();
 		case LP:
@@ -948,7 +954,7 @@ public class Parser {
 			}
 			// assume "PrimaryIdent -> IDENT" when another token than '(' is
 			// read
-			return new Literal(pos, symbol);
+			return new StringLiteral(pos, symbol);
 		default:
 			throw new ParserException(token, TokenType.IDENTIFIER);
 		}
