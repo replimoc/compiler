@@ -2,6 +2,7 @@ package compiler.utils;
 
 import java.io.IOException;
 
+import compiler.Symbol;
 import compiler.lexer.Token;
 import compiler.lexer.TokenSuppliable;
 import compiler.lexer.TokenType;
@@ -14,7 +15,7 @@ public class FixedTokensSupplier implements TokenSuppliable {
 	public FixedTokensSupplier(TokenType... types) {
 		this.tokens = new Token[types.length];
 		for (int i = 0; i < types.length; i++) {
-			this.tokens[i] = new Token(types[i], null);
+			this.tokens[i] = new Token(types[i], null, new Symbol("_")); // create dummy symbol for output
 		}
 	}
 
