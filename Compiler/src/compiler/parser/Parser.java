@@ -5,6 +5,7 @@ import java.io.IOException;
 import compiler.ast.Block;
 import compiler.ast.ClassDeclaration;
 import compiler.ast.ClassMember;
+import compiler.ast.FieldDeclaration;
 import compiler.ast.MethodDeclaration;
 import compiler.ast.ParameterDefinition;
 import compiler.ast.Program;
@@ -74,12 +75,12 @@ public class Parser {
 				if (token.getType() != TokenType.CLASS) {
 					throw new ParserException(token, TokenType.CLASS);
 				}
-				ClassDeclaration classDecl = new ClassDeclaration(token.getPosition(), token.getSymbol());
 				token = tokenSupplier.getNextToken();
 
 				if (token.getType() != TokenType.IDENTIFIER) {
 					throw new ParserException(token, TokenType.IDENTIFIER);
 				}
+				ClassDeclaration classDecl = new ClassDeclaration(token.getPosition(), token.getSymbol());
 				token = tokenSupplier.getNextToken();
 
 				if (token.getType() != TokenType.LCURLYBRACKET) {
@@ -161,7 +162,7 @@ public class Parser {
 					if (token.getType() == TokenType.SEMICOLON) {
 						// accept
 						token = tokenSupplier.getNextToken();
-						return new ClassMember(firstToken.getPosition(), firstToken.getSymbol(), type);
+						return new FieldDeclaration(firstToken.getPosition(), type, firstToken.getSymbol());
 						// public Type IDENT ( Parameters? ) Block
 					} else if (token.getType() == TokenType.LP) {
 						token = tokenSupplier.getNextToken();

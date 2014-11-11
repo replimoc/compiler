@@ -6,19 +6,13 @@ import compiler.lexer.Position;
 
 public class ClassMember extends AstNode {
 	private final Symbol identifier;
-	private final Type type;
 
-	public ClassMember(Position position, Symbol identifier, Type type) {
+	public ClassMember(Position position, Symbol identifier) {
 		super(position);
 		this.identifier = identifier;
-		this.type = type;
 	}
 
 	public Symbol getIdentifier() {
 		return identifier;
-	}
-	
-	public Type getType() {
-		return type;
 	}
 }

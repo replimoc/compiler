@@ -14,12 +14,12 @@ public class MethodDeclaration extends ClassMember {
 	private Block block;
 
 	public MethodDeclaration(Position position, Symbol identifier, Type returnType) {
-		super(position, identifier, returnType);
+		super(position, identifier);
 		this.returnType = returnType;
 	}
 	
 	public MethodDeclaration(Position position, Symbol identifier, Type returnType, Block block) {
-		super(position, identifier, returnType);
+		super(position, identifier);
 		this.returnType = returnType;
 	}
 
