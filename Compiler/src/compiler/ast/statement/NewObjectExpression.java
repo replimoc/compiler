@@ -1,25 +1,25 @@
 package compiler.ast.statement;
 
 import compiler.Symbol;
+import compiler.ast.visitor.AstVisitor;
 import compiler.lexer.Position;
 
 public class NewObjectExpression extends Expression {
 
 	private final Symbol identifier;
-	private final Expression[] parameters;
 
-	public NewObjectExpression(Position position, Symbol identifier, Expression[] parameters) {
+	public NewObjectExpression(Position position, Symbol identifier) {
 		super(position);
 		this.identifier = identifier;
-		this.parameters = parameters;
 	}
 
 	public Symbol getIdentifier() {
 		return identifier;
 	}
 
-	public Expression[] getParameters() {
-		return parameters;
+	@Override
+	public void accept(AstVisitor visitor) {
+		visitor.visit(this);
 	}
 
 }

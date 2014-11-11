@@ -8,7 +8,9 @@ import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
 
+import compiler.ast.statement.Expression;
 import compiler.lexer.TokenType;
+import compiler.parser.printer.PrettyPrinter;
 import compiler.utils.PrivateMethodCaller;
 import compiler.utils.TestUtils;
 
@@ -111,7 +113,7 @@ public class PrecedenceClimbingTest {
 	}
 
 	private String callParseExpression(Parser parser) {
-		return privateMethodCaller.call("parseExpression", parser, new Class<?>[] { int.class }, new Object[] { 0 });
+		return PrettyPrinter.get((Expression) privateMethodCaller.call("parseExpression", parser, new Class<?>[] { int.class }, new Object[] { 0 }));
 	}
 
 }
