@@ -6,6 +6,7 @@ import org.junit.BeforeClass;
 import org.junit.Test;
 
 import compiler.ast.statement.Expression;
+import compiler.ast.visitor.AstVisitor;
 import compiler.lexer.Position;
 import compiler.utils.PrivateMethodCaller;
 import compiler.utils.TestUtils;
@@ -76,6 +77,10 @@ public class ParsePostfixOpTest {
 	private static class DummyExpression extends Expression {
 		public DummyExpression(Position position) {
 			super(position);
+		}
+
+		@Override
+		public void accept(AstVisitor visitor) {
 		}
 	}
 

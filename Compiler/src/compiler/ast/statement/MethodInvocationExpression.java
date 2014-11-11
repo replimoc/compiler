@@ -1,6 +1,7 @@
 package compiler.ast.statement;
 
 import compiler.Symbol;
+import compiler.ast.visitor.AstVisitor;
 import compiler.lexer.Position;
 
 public class MethodInvocationExpression extends Expression {
@@ -28,4 +29,8 @@ public class MethodInvocationExpression extends Expression {
 		return parameters;
 	}
 
+	@Override
+	public void accept(AstVisitor visitor) {
+		visitor.visit(this);
+	}
 }

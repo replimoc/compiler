@@ -1,5 +1,6 @@
 package compiler.ast.statement;
 
+import compiler.ast.visitor.AstVisitor;
 import compiler.lexer.Position;
 
 public class ArrayAccessExpression extends Expression {
@@ -18,6 +19,11 @@ public class ArrayAccessExpression extends Expression {
 
 	public Expression getIndexExpression() {
 		return indexExpression;
+	}
+
+	@Override
+	public void accept(AstVisitor visitor) {
+		visitor.visit(this);
 	}
 
 }

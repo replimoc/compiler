@@ -1,6 +1,7 @@
 package compiler.ast.statement;
 
 import compiler.Symbol;
+import compiler.ast.visitor.AstVisitor;
 import compiler.lexer.Position;
 
 public class NewObjectExpression extends Expression {
@@ -15,4 +16,10 @@ public class NewObjectExpression extends Expression {
 	public Symbol getIdentifier() {
 		return identifier;
 	}
+
+	@Override
+	public void accept(AstVisitor visitor) {
+		visitor.visit(this);
+	}
+
 }

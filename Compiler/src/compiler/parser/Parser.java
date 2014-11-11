@@ -12,6 +12,20 @@ import compiler.ast.statement.MethodInvocationExpression;
 import compiler.ast.statement.NewArrayExpression;
 import compiler.ast.statement.NewObjectExpression;
 import compiler.ast.statement.VariableAccessExpression;
+import compiler.ast.statement.binary.AdditionExpression;
+import compiler.ast.statement.binary.AssignmentExpression;
+import compiler.ast.statement.binary.DivisionExpression;
+import compiler.ast.statement.binary.EqualityExpression;
+import compiler.ast.statement.binary.GreaterThanEqualExpression;
+import compiler.ast.statement.binary.GreaterThanExpression;
+import compiler.ast.statement.binary.LessThanEqualExpression;
+import compiler.ast.statement.binary.LessThanExpression;
+import compiler.ast.statement.binary.LogicalAndExpression;
+import compiler.ast.statement.binary.LogicalOrExpression;
+import compiler.ast.statement.binary.ModuloExpression;
+import compiler.ast.statement.binary.MuliplicationExpression;
+import compiler.ast.statement.binary.NonEqualityExpression;
+import compiler.ast.statement.binary.SubtractionExpression;
 import compiler.ast.statement.type.BasicType;
 import compiler.ast.statement.type.ClassType;
 import compiler.ast.statement.type.Type;
@@ -602,15 +616,31 @@ public class Parser {
 		token = tokenSupplier.getNextToken();
 	}
 
+	/**
+	 * Parse an expression with precedence climbing. Initialize with default precedence 0. This method look up in the token type, if the token is an
+	 * binary operation and parse left and right an unaryExpression.
+	 * 
+	 * @author Valentin Zickner
+	 * @return Parsed Expression
+	 * @throws IOException
+	 * @throws ParserException
+	 */
 	private Expression parseExpression() throws IOException, ParserException {
-		// FIXME:
-		parseExpression(0);
-		return null;
+		return parseExpression(0);
 	}
 
-	private String parseExpression(int minPrecedence) throws IOException, ParserException {
-		String result = "_"; // This should assign the next line
-		parseUnaryExpression();
+	/**
+	 * Work method for precedence climbing, use the parseExpression() method.
+	 * 
+	 * @author Valentin Zickner
+	 * @param minPrecedence
+	 *            Minimal precedence to parse.
+	 * @return Parsed Expression
+	 * @throws IOException
+	 * @throws ParserException
+	 */
+	private Expression parseExpression(int minPrecedence) throws IOException, ParserException {
+		Expression result = parseUnaryExpression();
 
 		while (token != null && token.getType().getOperationType() == OperationType.BINARY &&
 				token.getType().getPrecedence() >= minPrecedence) {
@@ -623,50 +653,52 @@ public class Parser {
 				precedence++;
 			}
 
-			String rhs = parseExpression(precedence);
+			Expression rhs = parseExpression(precedence);
+
+			Position position = token != null ? token.getPosition() : null;
 
 			switch (operationTokenType) {
 			case NOTEQUAL:
-				result = "(" + result + "!=" + rhs + ")";
+				result = new NonEqualityExpression(position, result, rhs);
 				break;
 			case MULTIPLY:
-				result = "(" + result + "*" + rhs + ")";
+				result = new MuliplicationExpression(position, result, rhs);
 				break;
 			case ADD:
-				result = "(" + result + "+" + rhs + ")";
+				result = new AdditionExpression(position, result, rhs);
 				break;
 			case SUBTRACT:
-				result = "(" + result + "-" + rhs + ")";
+				result = new SubtractionExpression(position, result, rhs);
 				break;
 			case DIVIDE:
-				result = "(" + result + "/" + rhs + ")";
+				result = new DivisionExpression(position, result, rhs);
 				break;
 			case LESSEQUAL:
-				result = "(" + result + "<=" + rhs + ")";
+				result = new LessThanEqualExpression(position, result, rhs);
 				break;
 			case LESS:
-				result = "(" + result + "<" + rhs + ")";
+				result = new LessThanExpression(position, result, rhs);
 				break;
 			case EQUAL:
-				result = "(" + result + "==" + rhs + ")";
+				result = new EqualityExpression(position, result, rhs);
 				break;
 			case ASSIGN:
-				result = "(" + result + "=" + rhs + ")";
+				result = new AssignmentExpression(position, result, rhs);
 				break;
 			case GREATEREQUAL:
-				result = "(" + result + ">=" + rhs + ")";
+				result = new GreaterThanEqualExpression(position, result, rhs);
 				break;
 			case GREATER:
-				result = "(" + result + ">" + rhs + ")";
+				result = new GreaterThanExpression(position, result, rhs);
 				break;
 			case MODULO:
-				result = "(" + result + "%" + rhs + ")";
+				result = new ModuloExpression(position, result, rhs);
 				break;
 			case LOGICALAND:
-				result = "(" + result + "&&" + rhs + ")";
+				result = new LogicalAndExpression(position, result, rhs);
 				break;
 			case LOGICALOR:
-				result = "(" + result + "||" + rhs + ")";
+				result = new LogicalOrExpression(position, result, rhs);
 				break;
 			default:
 				throw new ParserException(operationToken);
@@ -677,6 +709,8 @@ public class Parser {
 
 	/**
 	 * UnaryExpression -> PostfixExpression | (! | -) UnaryExpression
+	 * 
+	 * @return
 	 * 
 	 * @throws IOException
 	 * @throws ParserException

@@ -1,5 +1,6 @@
 package compiler.ast.statement;
 
+import compiler.ast.visitor.AstVisitor;
 import compiler.lexer.Position;
 
 public class BooleanConstantExpression extends Expression {
@@ -14,4 +15,7 @@ public class BooleanConstantExpression extends Expression {
 		return value;
 	}
 
+	public void accept(AstVisitor visitor) {
+		visitor.visit(this);
+	}
 }
