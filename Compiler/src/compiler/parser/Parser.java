@@ -6,7 +6,9 @@ import java.util.List;
 
 import compiler.Symbol;
 import compiler.ast.statement.ArrayAccessExpression;
+import compiler.ast.statement.BooleanConstantExpression;
 import compiler.ast.statement.Expression;
+import compiler.ast.statement.IntegerConstantExpression;
 import compiler.ast.statement.Literal;
 import compiler.ast.statement.MethodInvocationExpression;
 import compiler.ast.statement.NewArrayExpression;
@@ -776,7 +778,7 @@ public class Parser {
 	private Expression parsePostfixOp(Expression left) throws IOException, ParserException {
 		switch (token.getType()) {
 		case LSQUAREBRACKET:
-			return new ArrayAccessExpression(token.getPosition(), left, parseArrayAccess());
+			return new ArrayAccessExpression(left.getPosition(), left, parseArrayAccess());
 		case POINT:
 			return parsePostfixOpMethodField(left);
 		default:
@@ -813,26 +815,18 @@ public class Parser {
 	 * @throws IOException
 	 * @throws ParserException
 	 */
-	private Expression parseMethodInvocationFieldAccess(Expression expr, Symbol ident) throws IOException, ParserException {
-		Position pos;
+	private Expression parseMethodInvocationFieldAccess(Expression left, Symbol ident) throws IOException, ParserException {
 		switch (token.getType()) {
 		case LP:
 			// method invocation
-			pos = token.getPosition();
 			token = tokenSupplier.getNextToken();
-			List<Expression> args = parseArguments();
+			Expression[] args = parseArguments();
 			if (token.getType() != TokenType.RP)
 				throw new ParserException(token, TokenType.RP);
 			token = tokenSupplier.getNextToken();
-			if (args != null) {
-				Expression[] arrayArgs = new Expression[3]; // 3 should suffice for most cases
-				return new MethodInvocationExpression(pos, expr, ident, args.toArray(arrayArgs));
-			} else {
-				return new MethodInvocationExpression(pos, expr, ident, null);
-			}
+			return new MethodInvocationExpression(left.getPosition(), left, ident, args);
 		default:
-			pos = token.getPosition();
-			return new VariableAccessExpression(pos, expr, ident);
+			return new VariableAccessExpression(left.getPosition(), left, ident);
 		}
 	}
 
@@ -864,7 +858,7 @@ public class Parser {
 	 * @throws IOException
 	 * @throws ParserException
 	 */
-	private List<Expression> parseArguments() throws IOException, ParserException {
+	private Expression[] parseArguments() throws IOException, ParserException {
 		switch (token.getType()) {
 		case LP:
 		case LOGICALNOT:
@@ -882,7 +876,8 @@ public class Parser {
 				token = tokenSupplier.getNextToken();
 				args.add(parseExpression());
 			}
-			return args; // list of arguments
+			Expression[] argsArray = new Expression[args.size()];
+			return args.toArray(argsArray); // list of arguments
 			// no expression
 		case RP:
 		default:
@@ -898,10 +893,13 @@ public class Parser {
 	 */
 	private Expression parsePrimaryExpression() throws IOException, ParserException {
 		switch (token.getType()) {
-		case NULL:
 		case FALSE:
+			return new BooleanConstantExpression(token.getPosition(), false);
 		case TRUE:
+			return new BooleanConstantExpression(token.getPosition(), true);
 		case INTEGER:
+			return new IntegerConstantExpression(token.getPosition(), token.getSymbol().getValue());
+		case NULL:
 		case THIS:
 			Position pos = token.getPosition();
 			Symbol symbol = token.getSymbol();
@@ -939,20 +937,14 @@ public class Parser {
 			token = tokenSupplier.getNextToken();
 			if (token.getType() == TokenType.LP) {
 				token = tokenSupplier.getNextToken();
-				List<Expression> args = parseArguments();
+				Expression[] args = parseArguments();
 				if (token.getType() == TokenType.RP) {
 					token = tokenSupplier.getNextToken();
-					if (args != null) {
-						Expression[] arrayArgs = new Expression[3]; // 3 should suffice for most cases
-						// FIXME:
-						return new MethodInvocationExpression(pos, new Literal(pos, null), symbol, args.toArray(arrayArgs));
-					} else {
-						// FIXME:
-						return new MethodInvocationExpression(pos, new Literal(pos, null), symbol, null);
-					}
-				} else {
-					throw new ParserException(token, TokenType.RP);
+					// no access object
+					return new MethodInvocationExpression(pos, null, symbol, args);
 				}
+			} else {
+				throw new ParserException(token, TokenType.RP);
 			}
 			// assume "PrimaryIdent -> IDENT" when another token than '(' is
 			// read
@@ -1026,6 +1018,7 @@ public class Parser {
 			Position pos = token.getPosition();
 			token = tokenSupplier.getNextToken();
 			Expression expr = parseExpression();
+			int dim = 1;
 			if (token.getType() == TokenType.RSQUAREBRACKET) {
 				token = tokenSupplier.getNextToken();
 				while (token.getType() == TokenType.LSQUAREBRACKET) {
@@ -1034,8 +1027,7 @@ public class Parser {
 						// read both
 						token = tokenSupplier.getNextToken();
 						token = tokenSupplier.getNextToken();
-						// FIXME:
-						expr = new NewArrayExpression(pos, type, expr);
+						dim++;
 					} else {
 						// read [, but not part of NewArrayExpression
 						// could be [Expression]ArrayAccess
@@ -1043,7 +1035,7 @@ public class Parser {
 						break;
 					}
 				}
-				return expr;
+				return new NewArrayExpression(pos, type, expr, dim);
 			} else {
 				throw new ParserException(token, TokenType.RSQUAREBRACKET);
 			}

@@ -29,6 +29,14 @@ public class MethodInvocationExpression extends Expression {
 		return parameters;
 	}
 
+	public boolean isLocalMethod() {
+		return expr == null ? true : false;
+	}
+
+	public int numberOfArguments() {
+		return parameters == null ? 0 : parameters.length;
+	}
+
 	@Override
 	public void accept(AstVisitor visitor) {
 		visitor.visit(this);
