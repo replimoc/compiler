@@ -6,7 +6,7 @@ import java.util.List;
 import compiler.ast.statement.Statement;
 import compiler.lexer.Position;
 
-public class Block extends AstNode {
+public class Block extends Statement {
 
 	private final List<Statement> statements = new ArrayList<Statement>();
 
