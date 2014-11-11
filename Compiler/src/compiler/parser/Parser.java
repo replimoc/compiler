@@ -1,8 +1,24 @@
 package compiler.parser;
 
 import java.io.IOException;
+import java.util.ArrayList;
+import java.util.List;
 
+import compiler.Symbol;
+import compiler.ast.statement.ArrayAccessExpression;
+import compiler.ast.statement.Expression;
+import compiler.ast.statement.Literal;
+import compiler.ast.statement.MethodInvocationExpression;
+import compiler.ast.statement.NewArrayExpression;
+import compiler.ast.statement.NewObjectExpression;
+import compiler.ast.statement.VariableAccessExpression;
+import compiler.ast.statement.type.BasicType;
+import compiler.ast.statement.type.ClassType;
+import compiler.ast.statement.type.Type;
+import compiler.ast.statement.unary.LogicalNotExpression;
+import compiler.ast.statement.unary.NegateExpression;
 import compiler.lexer.OperationType;
+import compiler.lexer.Position;
 import compiler.lexer.Token;
 import compiler.lexer.TokenSuppliable;
 import compiler.lexer.TokenType;
@@ -586,8 +602,10 @@ public class Parser {
 		token = tokenSupplier.getNextToken();
 	}
 
-	private void parseExpression() throws IOException, ParserException {
+	private Expression parseExpression() throws IOException, ParserException {
+		// FIXME:
 		parseExpression(0);
+		return null;
 	}
 
 	private String parseExpression(int minPrecedence) throws IOException, ParserException {
@@ -663,7 +681,8 @@ public class Parser {
 	 * @throws IOException
 	 * @throws ParserException
 	 */
-	private void parseUnaryExpression() throws IOException, ParserException {
+	private Expression parseUnaryExpression() throws IOException, ParserException {
+		Position pos;
 		switch (token.getType()) {
 		case NULL:
 		case FALSE:
@@ -673,13 +692,15 @@ public class Parser {
 		case IDENTIFIER:
 		case LP:
 		case NEW:
-			parsePostfixExpression();
-			break;
+			return parsePostfixExpression();
 		case LOGICALNOT:
-		case SUBTRACT:
+			pos = token.getPosition();
 			token = tokenSupplier.getNextToken();
-			parseUnaryExpression();
-			break;
+			return new LogicalNotExpression(pos, parseUnaryExpression());
+		case SUBTRACT:
+			pos = token.getPosition();
+			token = tokenSupplier.getNextToken();
+			return new NegateExpression(pos, parseUnaryExpression());
 		default:
 			throw new ParserException(token);
 		}
@@ -691,7 +712,7 @@ public class Parser {
 	 * @throws IOException
 	 * @throws ParserException
 	 */
-	private void parsePostfixExpression() throws IOException, ParserException {
+	private Expression parsePostfixExpression() throws IOException, ParserException {
 		switch (token.getType()) {
 		case NULL:
 		case FALSE:
@@ -701,12 +722,12 @@ public class Parser {
 		case IDENTIFIER:
 		case LP:
 		case NEW:
-			parsePrimaryExpression();
+			Expression expr = parsePrimaryExpression();
 			while (token.getType() == TokenType.LSQUAREBRACKET
 					|| token.getType() == TokenType.POINT) {
-				parsePostfixOp();
+				expr = parsePostfixOp(expr);
 			}
-			break;
+			return expr;
 		default:
 			throw new ParserException(token);
 		}
@@ -718,14 +739,12 @@ public class Parser {
 	 * @throws IOException
 	 * @throws ParserException
 	 */
-	private void parsePostfixOp() throws IOException, ParserException {
+	private Expression parsePostfixOp(Expression left) throws IOException, ParserException {
 		switch (token.getType()) {
 		case LSQUAREBRACKET:
-			parseArrayAccess();
-			break;
+			return new ArrayAccessExpression(token.getPosition(), left, parseArrayAccess());
 		case POINT:
-			parsePostfixOpMethodField();
-			break;
+			return parsePostfixOpMethodField(left);
 		default:
 			throw new ParserException(token);
 		}
@@ -738,13 +757,14 @@ public class Parser {
 	 * @throws IOException
 	 * @throws ParserException
 	 */
-	private void parsePostfixOpMethodField() throws IOException,
+	private Expression parsePostfixOpMethodField(Expression left) throws IOException,
 			ParserException {
 		if (token.getType() == TokenType.POINT) {
 			token = tokenSupplier.getNextToken();
 			if (token.getType() == TokenType.IDENTIFIER) {
+				Symbol symbol = token.getSymbol(); // get ident symbol
 				token = tokenSupplier.getNextToken();
-				parseMethodInvocationFieldAccess();
+				return parseMethodInvocationFieldAccess(left, symbol);
 			} else {
 				throw new ParserException(token, TokenType.IDENTIFIER);
 			}
@@ -759,17 +779,26 @@ public class Parser {
 	 * @throws IOException
 	 * @throws ParserException
 	 */
-	private void parseMethodInvocationFieldAccess() throws IOException, ParserException {
+	private Expression parseMethodInvocationFieldAccess(Expression expr, Symbol ident) throws IOException, ParserException {
+		Position pos;
 		switch (token.getType()) {
 		case LP:
 			// method invocation
+			pos = token.getPosition();
 			token = tokenSupplier.getNextToken();
-			parseArguments();
+			List<Expression> args = parseArguments();
 			if (token.getType() != TokenType.RP)
 				throw new ParserException(token, TokenType.RP);
 			token = tokenSupplier.getNextToken();
-			break;
+			if (args != null) {
+				Expression[] arrayArgs = new Expression[3]; // 3 should suffice for most cases
+				return new MethodInvocationExpression(pos, expr, ident, args.toArray(arrayArgs));
+			} else {
+				return new MethodInvocationExpression(pos, expr, ident, null);
+			}
 		default:
+			pos = token.getPosition();
+			return new VariableAccessExpression(pos, expr, ident);
 		}
 	}
 
@@ -779,14 +808,14 @@ public class Parser {
 	 * @throws IOException
 	 * @throws ParserException
 	 */
-	private void parseArrayAccess() throws IOException, ParserException {
+	private Expression parseArrayAccess() throws IOException, ParserException {
 		switch (token.getType()) {
 		case LSQUAREBRACKET:
 			token = tokenSupplier.getNextToken();
-			parseExpression();
+			Expression expr = parseExpression();
 			if (token.getType() == TokenType.RSQUAREBRACKET) {
 				token = tokenSupplier.getNextToken();
-				break;
+				return expr;
 			} else {
 				throw new ParserException(token, TokenType.RSQUAREBRACKET);
 			}
@@ -801,7 +830,7 @@ public class Parser {
 	 * @throws IOException
 	 * @throws ParserException
 	 */
-	private void parseArguments() throws IOException, ParserException {
+	private List<Expression> parseArguments() throws IOException, ParserException {
 		switch (token.getType()) {
 		case LP:
 		case LOGICALNOT:
@@ -813,15 +842,17 @@ public class Parser {
 		case THIS:
 		case IDENTIFIER:
 		case NEW:
-			parseExpression();
+			List<Expression> args = new ArrayList<Expression>();
+			args.add(parseExpression());
 			while (token.getType() == TokenType.COMMA) {
 				token = tokenSupplier.getNextToken();
-				parseExpression();
+				args.add(parseExpression());
 			}
-			break;
-		// no expression
+			return args; // list of arguments
+			// no expression
 		case RP:
 		default:
+			return null; // no ast
 		}
 	}
 
@@ -831,29 +862,29 @@ public class Parser {
 	 * @throws IOException
 	 * @throws ParserException
 	 */
-	private void parsePrimaryExpression() throws IOException, ParserException {
+	private Expression parsePrimaryExpression() throws IOException, ParserException {
 		switch (token.getType()) {
 		case NULL:
 		case FALSE:
 		case TRUE:
 		case INTEGER:
 		case THIS:
+			Position pos = token.getPosition();
+			Symbol symbol = token.getSymbol();
 			token = tokenSupplier.getNextToken();
-			break;
+			return new Literal(pos, symbol);
 		case IDENTIFIER:
-			parsePrimaryExpressionIdent();
-			break;
+			return parsePrimaryExpressionIdent();
 		case LP:
 			token = tokenSupplier.getNextToken();
-			parseExpression();
+			Expression expr = parseExpression();
 			if (token.getType() != TokenType.RP)
 				throw new ParserException(token, TokenType.RP);
 			token = tokenSupplier.getNextToken();
-			break;
+			return expr;
 		case NEW:
 			token = tokenSupplier.getNextToken();
-			parseNewExpression();
-			break;
+			return parseNewExpression();
 		default:
 			throw new ParserException(token);
 		}
@@ -865,24 +896,33 @@ public class Parser {
 	 * @throws IOException
 	 * @throws ParserException
 	 */
-	private void parsePrimaryExpressionIdent() throws IOException,
+	private Expression parsePrimaryExpressionIdent() throws IOException,
 			ParserException {
 		switch (token.getType()) {
 		case IDENTIFIER:
+			Position pos = token.getPosition();
+			Symbol symbol = token.getSymbol();
 			token = tokenSupplier.getNextToken();
 			if (token.getType() == TokenType.LP) {
 				token = tokenSupplier.getNextToken();
-				parseArguments();
+				List<Expression> args = parseArguments();
 				if (token.getType() == TokenType.RP) {
 					token = tokenSupplier.getNextToken();
-					return;
+					if (args != null) {
+						Expression[] arrayArgs = new Expression[3]; // 3 should suffice for most cases
+						// FIXME:
+						return new MethodInvocationExpression(pos, new Literal(pos, null), symbol, args.toArray(arrayArgs));
+					} else {
+						// FIXME:
+						return new MethodInvocationExpression(pos, new Literal(pos, null), symbol, null);
+					}
 				} else {
 					throw new ParserException(token, TokenType.RP);
 				}
 			}
 			// assume "PrimaryIdent -> IDENT" when another token than '(' is
 			// read
-			break;
+			return new Literal(pos, symbol);
 		default:
 			throw new ParserException(token, TokenType.IDENTIFIER);
 		}
@@ -894,41 +934,49 @@ public class Parser {
 	 * @throws IOException
 	 * @throws ParserException
 	 */
-	private void parseNewExpression() throws IOException, ParserException {
+	private Expression parseNewExpression() throws IOException, ParserException {
+		Type type;
+		Position pos = token.getPosition();
 		switch (token.getType()) {
 		case IDENTIFIER:
 			// new object or new array
+			Symbol symbol = token.getSymbol();
 			token = tokenSupplier.getNextToken();
 			if (token.getType() == TokenType.LP) {
 				// new object
 				token = tokenSupplier.getNextToken();
 				if (token.getType() == TokenType.RP) {
 					token = tokenSupplier.getNextToken();
-					return;
+					return new NewObjectExpression(pos, symbol);
 				} else {
 					throw new ParserException(token, TokenType.RP);
 				}
 			} else if (token.getType() == TokenType.LSQUAREBRACKET) {
 				// new array
-				parseNewArrayExpressionHelp();
+				type = new ClassType(pos, symbol);
+				return parseNewArrayExpressionHelp(type);
 			} else {
 				throw new ParserException(token);
 			}
-			break;
 		case INT:
+			type = new Type(pos, BasicType.INT);
+			break;
 		case BOOLEAN:
+			type = new Type(pos, BasicType.BOOLEAN);
+			break;
 		case VOID:
-			// new array
-			token = tokenSupplier.getNextToken();
-			if (token.getType() == TokenType.LSQUAREBRACKET) {
-				// new array
-				parseNewArrayExpressionHelp();
-			} else {
-				throw new ParserException(token, TokenType.LSQUAREBRACKET);
-			}
+			type = new Type(pos, BasicType.VOID);
 			break;
 		default:
 			throw new ParserException(token);
+		}
+		// new array
+		token = tokenSupplier.getNextToken();
+		if (token.getType() == TokenType.LSQUAREBRACKET) {
+			// new array
+			return parseNewArrayExpressionHelp(type);
+		} else {
+			throw new ParserException(token, TokenType.LSQUAREBRACKET);
 		}
 	}
 
@@ -938,11 +986,12 @@ public class Parser {
 	 * @throws IOException
 	 * @throws ParserException
 	 */
-	private void parseNewArrayExpressionHelp() throws IOException,
+	private Expression parseNewArrayExpressionHelp(Type type) throws IOException,
 			ParserException {
 		if (token.getType() == TokenType.LSQUAREBRACKET) {
+			Position pos = token.getPosition();
 			token = tokenSupplier.getNextToken();
-			parseExpression();
+			Expression expr = parseExpression();
 			if (token.getType() == TokenType.RSQUAREBRACKET) {
 				token = tokenSupplier.getNextToken();
 				while (token.getType() == TokenType.LSQUAREBRACKET) {
@@ -951,13 +1000,16 @@ public class Parser {
 						// read both
 						token = tokenSupplier.getNextToken();
 						token = tokenSupplier.getNextToken();
+						// FIXME:
+						expr = new NewArrayExpression(pos, type, expr);
 					} else {
 						// read [, but not part of NewArrayExpression
 						// could be [Expression]ArrayAccess
 						// [Expression][Expression]
-						return;
+						break;
 					}
 				}
+				return expr;
 			} else {
 				throw new ParserException(token, TokenType.RSQUAREBRACKET);
 			}
