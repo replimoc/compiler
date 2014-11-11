@@ -151,9 +151,16 @@ public class PrettyPrinterVisitor implements AstVisitor {
 
 	@Override
 	public void visit(MethodInvocationExpression methodInvocationExpression) {
-		outputString += "(";
-		methodInvocationExpression.getMethodExpression().accept(this);
-		outputString += ")." + methodInvocationExpression.getMethodIdent() + "(";
+		// TODO: right format!
+		// outputString += "(";
+
+		// expr == null --> this.method()
+		// otherwise expr.ident()
+		if (!methodInvocationExpression.isLocalMethod()) {
+			methodInvocationExpression.getMethodExpression().accept(this);
+		}
+		// outputString += ")";
+		outputString += "." + methodInvocationExpression.getMethodIdent() + "(";
 		Expression[] args = methodInvocationExpression.getParameters();
 
 		// print args
