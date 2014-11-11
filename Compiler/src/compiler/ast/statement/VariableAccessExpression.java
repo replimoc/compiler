@@ -1,7 +1,7 @@
 package compiler.ast.statement;
 
 import compiler.Symbol;
-import compiler.ast.AstVisitor;
+import compiler.ast.visitor.AstVisitor;
 import compiler.lexer.Position;
 
 public class VariableAccessExpression extends Expression {

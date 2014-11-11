@@ -1,6 +1,5 @@
 package compiler.parser.printer;
 
-import compiler.ast.AstVisitor;
 import compiler.ast.statement.BooleanConstantExpression;
 import compiler.ast.statement.IntegerConstantExpression;
 import compiler.ast.statement.MethodInvocationExpression;
@@ -26,6 +25,7 @@ import compiler.ast.statement.binary.SubtractionExpression;
 import compiler.ast.statement.unary.LogicalNotExpression;
 import compiler.ast.statement.unary.NegateExpression;
 import compiler.ast.statement.unary.ReturnStatement;
+import compiler.ast.visitor.AstVisitor;
 import compiler.lexer.TokenType;
 
 public class PrettyPrinterVisitor implements AstVisitor {

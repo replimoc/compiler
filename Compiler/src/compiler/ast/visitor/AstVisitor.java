@@ -1,4 +1,4 @@
-package compiler.ast;
+package compiler.ast.visitor;
 
 import compiler.ast.statement.BooleanConstantExpression;
 import compiler.ast.statement.IntegerConstantExpression;
