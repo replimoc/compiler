@@ -4,9 +4,11 @@ import compiler.ast.Block;
 import compiler.ast.ClassDeclaration;
 import compiler.ast.ClassMember;
 import compiler.ast.ParameterDefinition;
+import compiler.ast.Program;
 import compiler.ast.statement.ArrayAccessExpression;
 import compiler.ast.statement.BooleanConstantExpression;
 import compiler.ast.statement.Expression;
+import compiler.ast.statement.Identifier;
 import compiler.ast.statement.IfStatement;
 import compiler.ast.statement.IntegerConstantExpression;
 import compiler.ast.statement.LocalVariableDeclaration;
@@ -14,7 +16,6 @@ import compiler.ast.statement.MethodInvocationExpression;
 import compiler.ast.statement.NewArrayExpression;
 import compiler.ast.statement.NewObjectExpression;
 import compiler.ast.statement.NullExpression;
-import compiler.ast.statement.Identifier;
 import compiler.ast.statement.ThisExpression;
 import compiler.ast.statement.VariableAccessExpression;
 import compiler.ast.statement.WhileStatement;
@@ -41,7 +42,7 @@ import compiler.ast.visitor.AstVisitor;
 import compiler.lexer.TokenType;
 
 public class PrettyPrinterVisitor implements AstVisitor {
-	private String outputString = "";
+	private String outputString = ""; // TODO: Change to StringBuffer
 
 	/**
 	 * Gets the result of the PrettyPrinterVisitor
@@ -310,6 +311,12 @@ public class PrettyPrinterVisitor implements AstVisitor {
 
 	@Override
 	public void visit(ParameterDefinition parameterDefinition) {
+		// TODO Auto-generated method stub
+
+	}
+
+	@Override
+	public void visit(Program program) {
 		// TODO Auto-generated method stub
 
 	}
