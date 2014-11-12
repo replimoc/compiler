@@ -41,7 +41,7 @@ import compiler.ast.visitor.AstVisitor;
 import compiler.lexer.TokenType;
 
 public class PrettyPrinterVisitor implements AstVisitor {
-	private String outputString = ""; // TODO: Change to StringBuffer
+	private StringBuffer stringBuffer = new StringBuffer();
 
 	/**
 	 * Gets the result of the PrettyPrinterVisitor
@@ -49,7 +49,7 @@ public class PrettyPrinterVisitor implements AstVisitor {
 	 * @return
 	 */
 	public String getOutputString() {
-		return this.outputString;
+		return this.stringBuffer.toString();
 	}
 
 	/**
@@ -62,11 +62,11 @@ public class PrettyPrinterVisitor implements AstVisitor {
 	 */
 	private void visit(BinaryExpression binaryExpression, TokenType tokenType) {
 		// TODO Show only brackets if it is necessary.
-		outputString += "(";
+		stringBuffer.append("(");
 		binaryExpression.getOperand1().accept(this);
-		outputString += tokenType.getString();
+		stringBuffer.append(tokenType.getString());
 		binaryExpression.getOperand2().accept(this);
-		outputString += ")";
+		stringBuffer.append(")");
 	}
 
 	@Override
@@ -141,12 +141,12 @@ public class PrettyPrinterVisitor implements AstVisitor {
 
 	@Override
 	public void visit(BooleanConstantExpression booleanConstantExpression) {
-		outputString += booleanConstantExpression.isValue();
+		stringBuffer.append(booleanConstantExpression.isValue());
 	}
 
 	@Override
 	public void visit(IntegerConstantExpression integerConstantExpression) {
-		outputString += integerConstantExpression.getIntegerLiteral();
+		stringBuffer.append(integerConstantExpression.getIntegerLiteral());
 	}
 
 	@Override
@@ -158,10 +158,10 @@ public class PrettyPrinterVisitor implements AstVisitor {
 		// otherwise expr.ident()
 		if (!methodInvocationExpression.isLocalMethod()) {
 			methodInvocationExpression.getMethodExpression().accept(this);
-			outputString += ".";
+			stringBuffer.append(".");
 		}
 		// outputString += ")";
-		outputString += methodInvocationExpression.getMethodIdent() + "(";
+		stringBuffer.append(methodInvocationExpression.getMethodIdent() + "(");
 		Expression[] args = methodInvocationExpression.getParameters();
 
 		// print args
@@ -169,35 +169,35 @@ public class PrettyPrinterVisitor implements AstVisitor {
 			int i = 0;
 			args[i++].accept(this);
 			while (i < args.length) {
-				outputString += ", ";
+				stringBuffer.append(", ");
 				args[i++].accept(this);
 			}
 		}
 
-		outputString += ")";
+		stringBuffer.append(")");
 	}
 
 	@Override
 	public void visit(NewArrayExpression newArrayExpression) {
 		// TODO: right format!
-		outputString += "(new ";
+		stringBuffer.append("(new ");
 		newArrayExpression.getType().accept(this);
-		outputString += "[";
+		stringBuffer.append("[");
 		newArrayExpression.getFirstDimension().accept(this);
-		outputString += "]";
+		stringBuffer.append("]");
 		int dim = newArrayExpression.getDimensions();
 
 		// print ([])*
 		for (int i = 1; i < dim; i++) {
-			outputString += "[]";
+			stringBuffer.append("[]");
 		}
-		outputString += ")";
+		stringBuffer.append(")");
 	}
 
 	@Override
 	public void visit(NewObjectExpression newObjectExpression) {
 		// TODO: right format!
-		outputString += "(new " + newObjectExpression.getIdentifier() + "())";
+		stringBuffer.append("(new " + newObjectExpression.getIdentifier() + "())");
 	}
 
 	@Override
@@ -206,32 +206,32 @@ public class PrettyPrinterVisitor implements AstVisitor {
 		// TODO: right format!
 		if (variableAccessExpression.getExpression() != null) {
 			variableAccessExpression.getExpression().accept(this);
-			outputString += ".";
-			outputString += variableAccessExpression.getFieldIdentifier().getValue();
+			stringBuffer.append(".");
+			stringBuffer.append(variableAccessExpression.getFieldIdentifier().getValue());
 		} else {
-			outputString += variableAccessExpression.getFieldIdentifier().getValue();
+			stringBuffer.append(variableAccessExpression.getFieldIdentifier().getValue());
 		}
 	}
 
 	@Override
 	public void visit(ArrayAccessExpression arrayAccessExpression) {
 		// TODO: right format!
-		outputString += "(";
+		stringBuffer.append("(");
 		arrayAccessExpression.getArrayExpression().accept(this);
-		outputString += "[";
+		stringBuffer.append("[");
 		arrayAccessExpression.getIndexExpression().accept(this);
-		outputString += "])";
+		stringBuffer.append("])");
 	}
 
 	@Override
 	public void visit(LogicalNotExpression logicalNotExpression) {
-		outputString += "!";
+		stringBuffer.append("!");
 		logicalNotExpression.getOperand().accept(this);
 	}
 
 	@Override
 	public void visit(NegateExpression negateExpression) {
-		outputString += "-";
+		stringBuffer.append("-");
 		negateExpression.getOperand().accept(this);
 	}
 
@@ -243,12 +243,12 @@ public class PrettyPrinterVisitor implements AstVisitor {
 
 	@Override
 	public void visit(ThisExpression thisExpression) {
-		outputString += "this";
+		stringBuffer.append("this");
 	}
 
 	@Override
 	public void visit(NullExpression nullExpression) {
-		outputString += "null";
+		stringBuffer.append("null");
 	}
 
 	@Override
@@ -273,7 +273,7 @@ public class PrettyPrinterVisitor implements AstVisitor {
 		default:
 			throw new IllegalArgumentException();
 		}
-		outputString += typeString;
+		stringBuffer.append(typeString);
 	}
 
 	@Override
