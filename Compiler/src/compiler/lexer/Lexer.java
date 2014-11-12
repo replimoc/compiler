@@ -9,7 +9,7 @@ import compiler.Symbol;
 
 public class Lexer implements TokenSuppliable {
 	private int c;
-	private IPositionalCharacterSource reader;
+	private PositionalCharacterSource reader;
 	private final StringTable stringTable;
 	/**
 	 * First token look ahead.
@@ -388,16 +388,7 @@ public class Lexer implements TokenSuppliable {
 		}
 	}
 
-	/**
-	 * Character source for reading characters while keeping treack of their position
-	 */
-	private interface IPositionalCharacterSource {
-		public int getChar() throws IOException;
-
-		public Position getPosition();
-	}
-
-	private class PositionalCharacterSource implements IPositionalCharacterSource {
+	private class PositionalCharacterSource {
 		private final Reader reader;
 		private int line = 1;
 		private int character = 0;
@@ -406,7 +397,6 @@ public class Lexer implements TokenSuppliable {
 			this.reader = reader;
 		}
 
-		@Override
 		public int getChar() throws IOException {
 			c = reader.read();
 			if (c == '\n' || c == '\r') {
@@ -418,7 +408,6 @@ public class Lexer implements TokenSuppliable {
 			return c;
 		}
 
-		@Override
 		public Position getPosition() {
 			return new Position(line, character);
 		}
