@@ -5,17 +5,28 @@ import java.util.ArrayList;
 import java.util.List;
 
 import compiler.Symbol;
+import compiler.ast.Block;
+import compiler.ast.ClassDeclaration;
+import compiler.ast.ClassMember;
+import compiler.ast.FieldDeclaration;
+import compiler.ast.MethodDeclaration;
+import compiler.ast.ParameterDefinition;
+import compiler.ast.Program;
 import compiler.ast.statement.ArrayAccessExpression;
 import compiler.ast.statement.BooleanConstantExpression;
 import compiler.ast.statement.Expression;
+import compiler.ast.statement.IfStatement;
 import compiler.ast.statement.IntegerConstantExpression;
+import compiler.ast.statement.LocalVariableDeclaration;
 import compiler.ast.statement.MethodInvocationExpression;
 import compiler.ast.statement.NewArrayExpression;
 import compiler.ast.statement.NewObjectExpression;
 import compiler.ast.statement.NullExpression;
 import compiler.ast.statement.Identifier;
+import compiler.ast.statement.Statement;
 import compiler.ast.statement.ThisExpression;
 import compiler.ast.statement.VariableAccessExpression;
+import compiler.ast.statement.WhileStatement;
 import compiler.ast.statement.binary.AdditionExpression;
 import compiler.ast.statement.binary.AssignmentExpression;
 import compiler.ast.statement.binary.DivisionExpression;
@@ -30,11 +41,13 @@ import compiler.ast.statement.binary.ModuloExpression;
 import compiler.ast.statement.binary.MuliplicationExpression;
 import compiler.ast.statement.binary.NonEqualityExpression;
 import compiler.ast.statement.binary.SubtractionExpression;
+import compiler.ast.statement.type.ArrayType;
 import compiler.ast.statement.type.BasicType;
 import compiler.ast.statement.type.ClassType;
 import compiler.ast.statement.type.Type;
 import compiler.ast.statement.unary.LogicalNotExpression;
 import compiler.ast.statement.unary.NegateExpression;
+import compiler.ast.statement.unary.ReturnStatement;
 import compiler.lexer.OperationType;
 import compiler.lexer.Position;
 import compiler.lexer.Token;
@@ -84,7 +97,7 @@ public class Parser {
 	 * @throws ParserException
 	 */
 	private Program parseProgram() throws IOException, ParserException {
-		Program program = new Program();
+		Program program = new Program(token.getPosition());
 		
 		// ClassDeclaration*
 		while (token.getType() != TokenType.EOF) {
