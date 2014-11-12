@@ -4,8 +4,10 @@ import compiler.ast.Block;
 import compiler.ast.ClassDeclaration;
 import compiler.ast.ClassMember;
 import compiler.ast.ParameterDefinition;
+import compiler.ast.Program;
 import compiler.ast.statement.ArrayAccessExpression;
 import compiler.ast.statement.BooleanConstantExpression;
+import compiler.ast.statement.Identifier;
 import compiler.ast.statement.IfStatement;
 import compiler.ast.statement.IntegerConstantExpression;
 import compiler.ast.statement.LocalVariableDeclaration;
@@ -13,7 +15,6 @@ import compiler.ast.statement.MethodInvocationExpression;
 import compiler.ast.statement.NewArrayExpression;
 import compiler.ast.statement.NewObjectExpression;
 import compiler.ast.statement.NullExpression;
-import compiler.ast.statement.Identifier;
 import compiler.ast.statement.ThisExpression;
 import compiler.ast.statement.VariableAccessExpression;
 import compiler.ast.statement.WhileStatement;
@@ -106,5 +107,7 @@ public interface AstVisitor {
 	public void visit(LocalVariableDeclaration localVariableDeclaration);
 
 	public void visit(ParameterDefinition parameterDefinition);
+
+	public void visit(Program program);
 
 }
