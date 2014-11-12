@@ -7,14 +7,14 @@ import compiler.lexer.Position;
 public class MethodInvocationExpression extends Expression {
 
 	private final Symbol methodIdent;
-	private final Expression expr;
+	private final Expression expression;
 	private final Expression[] parameters;
 
-	public MethodInvocationExpression(Position position, Expression expr, Symbol methodIdent, Expression[] parameters) {
+	public MethodInvocationExpression(Position position, Expression expression, Symbol methodIdent, Expression[] parameters) {
 		super(position);
 		this.methodIdent = methodIdent;
 		this.parameters = parameters;
-		this.expr = expr;
+		this.expression = expression;
 	}
 
 	public Symbol getMethodIdent() {
@@ -22,7 +22,7 @@ public class MethodInvocationExpression extends Expression {
 	}
 
 	public Expression getMethodExpression() {
-		return expr;
+		return expression;
 	}
 
 	public Expression[] getParameters() {
@@ -30,7 +30,7 @@ public class MethodInvocationExpression extends Expression {
 	}
 
 	public boolean isLocalMethod() {
-		return expr == null ? true : false;
+		return expression == null ? true : false;
 	}
 
 	public int numberOfArguments() {

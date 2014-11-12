@@ -182,13 +182,16 @@ public class PrettyPrinterVisitor implements AstVisitor {
 		// TODO: right format!
 		outputString += "(new ";
 		newArrayExpression.getType().accept(this);
-		outputString += ") [" + newArrayExpression.getFirstDimension() + "]";
+		outputString += "[";
+		newArrayExpression.getFirstDimension().accept(this);
+		outputString += "]";
 		int dim = newArrayExpression.getDimensions();
 
 		// print ([])*
-		for (int i = 0; i < dim; i++) {
+		for (int i = 1; i < dim; i++) {
 			outputString += "[]";
 		}
+		outputString += ")";
 	}
 
 	@Override
@@ -250,6 +253,9 @@ public class PrettyPrinterVisitor implements AstVisitor {
 
 	@Override
 	public void visit(Type type) {
+		while (type.getSubType() != null) {
+			type = type.getSubType();
+		}
 		String typeString;
 		switch (type.getBasicType()) {
 		case INT:
@@ -262,11 +268,10 @@ public class PrettyPrinterVisitor implements AstVisitor {
 			typeString = "boolean";
 			break;
 		case CLASS:
-			typeString = "class";
+			typeString = type.getIdentifier().getValue();
 			break;
 		default:
-			typeString = "array";
-			break;
+			throw new IllegalArgumentException();
 		}
 		outputString += typeString;
 	}

@@ -12,6 +12,7 @@ public class ClassType extends Type {
 		this.identifier = identifier;
 	}
 
+	@Override
 	public Symbol getIdentifier() {
 		return identifier;
 	}

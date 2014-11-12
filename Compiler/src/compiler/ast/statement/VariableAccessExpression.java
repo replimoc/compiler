@@ -5,17 +5,17 @@ import compiler.ast.visitor.AstVisitor;
 import compiler.lexer.Position;
 
 public class VariableAccessExpression extends Expression {
-	private final Expression expr;
+	private final Expression expressions;
 	private final Symbol fieldIdentifier;
 
-	public VariableAccessExpression(Position position, Expression expr, Symbol fieldIdentifier) {
+	public VariableAccessExpression(Position position, Expression expressions, Symbol fieldIdentifier) {
 		super(position);
-		this.expr = expr;
+		this.expressions = expressions;
 		this.fieldIdentifier = fieldIdentifier;
 	}
 
 	public Expression getExpression() {
-		return expr;
+		return expressions;
 	}
 
 	public Symbol getFieldIdentifier() {

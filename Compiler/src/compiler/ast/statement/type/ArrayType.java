@@ -1,5 +1,6 @@
 package compiler.ast.statement.type;
 
+import compiler.Symbol;
 import compiler.lexer.Position;
 
 public class ArrayType extends Type {
@@ -11,8 +12,18 @@ public class ArrayType extends Type {
 		this.subType = subType;
 	}
 
+	@Override
 	public Type getSubType() {
 		return subType;
+	}
+
+	@Override
+	public Symbol getIdentifier() {
+		Type tmpType = subType;
+		while (tmpType.getSubType() != null) {
+			tmpType = tmpType.getSubType();
+		}
+		return tmpType.getIdentifier();
 	}
 
 }
