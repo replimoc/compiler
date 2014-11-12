@@ -22,6 +22,7 @@ public class VariableAccessExpression extends Expression {
 		return fieldIdentifier;
 	}
 
+	@Override
 	public void accept(AstVisitor visitor) {
 		visitor.visit(this);
 	}

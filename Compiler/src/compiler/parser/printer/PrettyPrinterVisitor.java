@@ -8,7 +8,7 @@ import compiler.ast.Program;
 import compiler.ast.statement.ArrayAccessExpression;
 import compiler.ast.statement.BooleanConstantExpression;
 import compiler.ast.statement.Expression;
-import compiler.ast.statement.Identifier;
+import compiler.ast.statement.IdentifierExpression;
 import compiler.ast.statement.IfStatement;
 import compiler.ast.statement.IntegerConstantExpression;
 import compiler.ast.statement.LocalVariableDeclaration;
@@ -238,7 +238,7 @@ public class PrettyPrinterVisitor implements AstVisitor {
 	}
 
 	@Override
-	public void visit(Identifier literal) {
+	public void visit(IdentifierExpression literal) {
 		outputString += literal.getSymbol().getValue();
 	}
 

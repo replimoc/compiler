@@ -7,7 +7,7 @@ import compiler.ast.ParameterDefinition;
 import compiler.ast.Program;
 import compiler.ast.statement.ArrayAccessExpression;
 import compiler.ast.statement.BooleanConstantExpression;
-import compiler.ast.statement.Identifier;
+import compiler.ast.statement.IdentifierExpression;
 import compiler.ast.statement.IfStatement;
 import compiler.ast.statement.IntegerConstantExpression;
 import compiler.ast.statement.LocalVariableDeclaration;
@@ -86,8 +86,6 @@ public interface AstVisitor {
 
 	public void visit(ReturnStatement returnStatement);
 
-	public void visit(Identifier literal);
-
 	public void visit(ThisExpression thisExpression);
 
 	public void visit(NullExpression nullExpression);
@@ -109,5 +107,7 @@ public interface AstVisitor {
 	public void visit(ParameterDefinition parameterDefinition);
 
 	public void visit(Program program);
+
+	public void visit(IdentifierExpression identifierExpression);
 
 }
