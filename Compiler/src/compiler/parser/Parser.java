@@ -15,7 +15,6 @@ import compiler.ast.Program;
 import compiler.ast.statement.ArrayAccessExpression;
 import compiler.ast.statement.BooleanConstantExpression;
 import compiler.ast.statement.Expression;
-import compiler.ast.statement.IdentifierExpression;
 import compiler.ast.statement.IfStatement;
 import compiler.ast.statement.IntegerConstantExpression;
 import compiler.ast.statement.LocalVariableDeclaration;
@@ -1015,7 +1014,7 @@ public class Parser {
 			}
 			// assume "PrimaryIdent -> IDENT" when another token than '(' is
 			// read
-			return new IdentifierExpression(pos, symbol);
+			return new VariableAccessExpression(pos, null, symbol);
 		default:
 			throw new ParserException(token, TokenType.IDENTIFIER);
 		}

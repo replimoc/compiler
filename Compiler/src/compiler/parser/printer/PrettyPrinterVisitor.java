@@ -8,7 +8,6 @@ import compiler.ast.Program;
 import compiler.ast.statement.ArrayAccessExpression;
 import compiler.ast.statement.BooleanConstantExpression;
 import compiler.ast.statement.Expression;
-import compiler.ast.statement.IdentifierExpression;
 import compiler.ast.statement.IfStatement;
 import compiler.ast.statement.IntegerConstantExpression;
 import compiler.ast.statement.LocalVariableDeclaration;
@@ -205,8 +204,10 @@ public class PrettyPrinterVisitor implements AstVisitor {
 		if (variableAccessExpression.getExpression() != null) {
 			variableAccessExpression.getExpression().accept(this);
 			outputString += ".";
+			outputString += variableAccessExpression.getFieldIdentifier().getValue();
+		} else {
+			outputString += variableAccessExpression.getFieldIdentifier().getValue();
 		}
-		outputString += variableAccessExpression.getFieldIdentifier().getValue();
 	}
 
 	@Override
@@ -235,11 +236,6 @@ public class PrettyPrinterVisitor implements AstVisitor {
 	public void visit(ReturnStatement returnStatement) {
 		// TODO Auto-generated method stub
 
-	}
-
-	@Override
-	public void visit(IdentifierExpression literal) {
-		outputString += literal.getSymbol().getValue();
 	}
 
 	@Override
