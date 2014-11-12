@@ -159,9 +159,10 @@ public class PrettyPrinterVisitor implements AstVisitor {
 		// otherwise expr.ident()
 		if (!methodInvocationExpression.isLocalMethod()) {
 			methodInvocationExpression.getMethodExpression().accept(this);
+			outputString += ".";
 		}
 		// outputString += ")";
-		outputString += "." + methodInvocationExpression.getMethodIdent() + "(";
+		outputString += methodInvocationExpression.getMethodIdent() + "(";
 		Expression[] args = methodInvocationExpression.getParameters();
 
 		// print args
@@ -200,11 +201,12 @@ public class PrettyPrinterVisitor implements AstVisitor {
 	@Override
 	public void visit(VariableAccessExpression variableAccessExpression) {
 		// outputString += variableAccessExpression.getIdentifier().getValue();
-		// outputString += "_"; // FIXME This should be the real identifier
 		// TODO: right format!
-		outputString += "";
-		variableAccessExpression.getExpression().accept(this);
-		outputString += "." + variableAccessExpression.getFieldIdentifier().getValue() + ")";
+		if (variableAccessExpression.getExpression() != null) {
+			variableAccessExpression.getExpression().accept(this);
+			outputString += ".";
+		}
+		outputString += variableAccessExpression.getFieldIdentifier().getValue();
 	}
 
 	@Override
