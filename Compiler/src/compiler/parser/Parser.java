@@ -13,7 +13,7 @@ import compiler.ast.statement.MethodInvocationExpression;
 import compiler.ast.statement.NewArrayExpression;
 import compiler.ast.statement.NewObjectExpression;
 import compiler.ast.statement.NullExpression;
-import compiler.ast.statement.StringLiteral;
+import compiler.ast.statement.Identifier;
 import compiler.ast.statement.ThisExpression;
 import compiler.ast.statement.VariableAccessExpression;
 import compiler.ast.statement.binary.AdditionExpression;
@@ -955,7 +955,7 @@ public class Parser {
 			}
 			// assume "PrimaryIdent -> IDENT" when another token than '(' is
 			// read
-			return new StringLiteral(pos, symbol);
+			return new Identifier(pos, symbol);
 		default:
 			throw new ParserException(token, TokenType.IDENTIFIER);
 		}

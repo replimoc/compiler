@@ -4,6 +4,7 @@ import java.util.ArrayList;
 import java.util.List;
 
 import compiler.ast.statement.Statement;
+import compiler.ast.visitor.AstVisitor;
 import compiler.lexer.Position;
 
 public class Block extends Statement {
@@ -20,5 +21,10 @@ public class Block extends Statement {
 
 	public List<Statement> getStatements() {
 		return statements;
+	}
+
+	@Override
+	public void accept(AstVisitor visitor) {
+		visitor.visit(this);
 	}
 }

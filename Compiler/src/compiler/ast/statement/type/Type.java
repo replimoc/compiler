@@ -1,6 +1,7 @@
 package compiler.ast.statement.type;
 
 import compiler.ast.AstNode;
+import compiler.ast.visitor.AstVisitor;
 import compiler.lexer.Position;
 
 public class Type extends AstNode {
@@ -14,5 +15,10 @@ public class Type extends AstNode {
 
 	public BasicType getBasicType() {
 		return basicType;
+	}
+
+	@Override
+	public void accept(AstVisitor visitor) {
+		visitor.visit(this);
 	}
 }
