@@ -11,12 +11,16 @@ public class MethodDeclaration extends ClassMember {
 
 	private final Type returnType;
 	private final List<ParameterDefinition> parameters = new ArrayList<ParameterDefinition>();
-	private final Block block;
+	private Block block;
 
-	public MethodDeclaration(Position position, Type returnType, Symbol identifier, Block block) {
+	public MethodDeclaration(Position position, Symbol identifier, Type returnType) {
 		super(position, identifier);
 		this.returnType = returnType;
-		this.block = block;
+	}
+	
+	public MethodDeclaration(Position position, Symbol identifier, Type returnType, Block block) {
+		super(position, identifier);
+		this.returnType = returnType;
 	}
 
 	public void addParameter(ParameterDefinition parameter) {
@@ -33,5 +37,9 @@ public class MethodDeclaration extends ClassMember {
 
 	public Block getBlock() {
 		return block;
+	}
+	
+	public void setBlock(Block block) {
+		this.block = block;
 	}
 }
