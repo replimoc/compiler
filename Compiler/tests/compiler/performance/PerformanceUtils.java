@@ -20,6 +20,8 @@ public final class PerformanceUtils {
 
 		for (int i = 0; i < numRuns; i++)
 		{
+			Thread.sleep(1000);
+
 			final boolean warmup = i < numWarmup;
 
 			final long measuredTime = measurable.measure();

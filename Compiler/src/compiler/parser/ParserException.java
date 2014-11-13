@@ -4,7 +4,7 @@ import compiler.lexer.Position;
 import compiler.lexer.Token;
 import compiler.lexer.TokenType;
 
-public class ParserException extends Exception {
+class ParserException extends Exception {
 	private static final long serialVersionUID = -5282537953189117934L;
 
 	private final Token invalidToken;

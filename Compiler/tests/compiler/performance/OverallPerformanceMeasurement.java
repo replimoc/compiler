@@ -7,7 +7,7 @@ import java.nio.file.Paths;
 import org.apache.commons.math3.stat.descriptive.DescriptiveStatistics;
 
 import compiler.parser.Parser;
-import compiler.parser.ParserException;
+import compiler.parser.ParsingFailedException;
 import compiler.utils.TestUtils;
 
 /**
@@ -34,7 +34,7 @@ public class OverallPerformanceMeasurement implements Measurable {
 	}
 
 	@Override
-	public long measure() throws IOException, ParserException {
+	public long measure() throws IOException, ParsingFailedException {
 		Parser parser = new Parser(TestUtils.initLexer(source));
 
 		long start = System.currentTimeMillis();

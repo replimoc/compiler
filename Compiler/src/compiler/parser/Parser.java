@@ -76,19 +76,21 @@ public class Parser {
 	 * 
 	 * @return the number of errors detected.
 	 * @throws IOException
+	 * @throws ParsingFailedException
 	 */
-	public int parse() throws IOException {
+	public Program parse() throws IOException, ParsingFailedException {
 		try {
 			ast = parseProgram();
 		} catch (ParserException e) {
 			errorsDetected++;
 			System.err.println(e);
 		}
-		return errorsDetected;
-	}
 
-	public Program getAST() {
-		return ast;
+		if (errorsDetected == 0) {
+			return ast;
+		} else {
+			throw new ParsingFailedException(errorsDetected);
+		}
 	}
 
 	/**
