@@ -2,7 +2,6 @@ package compiler.parser;
 
 import java.io.IOException;
 
-import org.junit.Assert;
 import org.junit.Test;
 
 import compiler.utils.TestUtils;
@@ -53,32 +52,43 @@ public class ParserExpressionsTest {
 	}
 
 	@Test
-	public void testExpressionStatement() throws IOException, ParserException {
+	public void testExpressionStatement() throws IOException, ParsingFailedException {
 		Parser parser;
 
 		parser = TestUtils.initParser(createTestString("while(42)ident;"));
 		parser.parse();
 		parser = TestUtils.initParser(createTestString("while(42) return;"));
 		parser.parse();
-
-		parser = TestUtils.initParser(createTestString("while(42)return"));
-		Assert.assertFalse(parser.parse() == 0);
-		parser = TestUtils.initParser(createTestString("while(42)ident"));
-		Assert.assertFalse(parser.parse() == 0);
 	}
 
-	@Test
-	public void testWrongPrimaryExpression() throws Exception {
-		Parser parser;
+	@Test(expected = ParsingFailedException.class)
+	public void testExpressionStatement2() throws IOException, ParsingFailedException {
+		Parser parser = TestUtils.initParser(createTestString("while(42)return"));
+		parser.parse();
+	}
 
-		parser = TestUtils.initParser(createTestString("void;"));
-		Assert.assertFalse(parser.parse() == 0);
+	@Test(expected = ParsingFailedException.class)
+	public void testExpressionStatement3() throws IOException, ParsingFailedException {
+		Parser parser = TestUtils.initParser(createTestString("while(42)ident"));
+		parser.parse();
+	}
 
-		parser = TestUtils.initParser(createTestString("new integer(42);"));
-		Assert.assertFalse(parser.parse() == 0);
+	@Test(expected = ParsingFailedException.class)
+	public void testWrongPrimaryExpression1() throws Exception {
+		Parser parser = TestUtils.initParser(createTestString("void;"));
+		parser.parse();
+	}
 
-		parser = TestUtils.initParser(createTestString("015;"));
-		Assert.assertFalse(parser.parse() == 0);
+	@Test(expected = ParsingFailedException.class)
+	public void testWrongPrimaryExpression2() throws Exception {
+		Parser parser = TestUtils.initParser(createTestString("new integer(42);"));
+		parser.parse();
+	}
+
+	@Test(expected = ParsingFailedException.class)
+	public void testWrongPrimaryExpression3() throws Exception {
+		Parser parser = TestUtils.initParser(createTestString("015;"));
+		parser.parse();
 	}
 
 	@Test

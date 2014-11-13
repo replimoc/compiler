@@ -95,7 +95,13 @@ public class ParserOutputTest {
 			Assert.fail("Invalid content in " + parserFile + ", should contain 1 or 0");
 		}
 
-		int errors = parser.parse();
+		int errors = 0;
+		try {
+			parser.parse();
+		} catch (ParsingFailedException e) {
+			errors = e.getDetectedErrors();
+		}
+
 		if (!isGrammarValid && errors == 0)
 		{
 			Assert.fail("Parser successful on file " + sourceFile + " which is syntactically incorrect");

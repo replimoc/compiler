@@ -19,6 +19,7 @@ import compiler.lexer.Lexer;
 import compiler.lexer.Token;
 import compiler.lexer.TokenType;
 import compiler.parser.Parser;
+import compiler.parser.ParsingFailedException;
 import compiler.parser.printer.PrettyPrinter;
 
 public final class CompilerApp {
@@ -68,14 +69,16 @@ public final class CompilerApp {
 					// Execute Parser
 					Parser parser = new Parser(lexer);
 
-					AstNode astNode = null; // FIXME This shoud be the result of parse.
-
-					if (parser.parse() != 0) {
+					AstNode ast;
+					try {
+						ast = parser.parse();
+					} catch (ParsingFailedException e) {
+						System.err.println(e.toString());
 						return 1;
 					}
 
 					if (cmd.hasOption(PRETTY_PRINT_AST)) {
-						System.out.println(PrettyPrinter.get(astNode));
+						System.out.println(PrettyPrinter.get(ast));
 					}
 					return 0;
 				} catch (IOException e) {
