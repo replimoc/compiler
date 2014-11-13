@@ -1,17 +1,18 @@
 package compiler.ast.statement;
 
 import compiler.Symbol;
+import compiler.ast.statement.unary.PostfixExpression;
 import compiler.ast.visitor.AstVisitor;
 import compiler.lexer.Position;
 
-public class MethodInvocationExpression extends Expression {
+public class MethodInvocationExpression extends PostfixExpression {
 
 	private final Symbol methodIdent;
 	private final Expression expression;
 	private final Expression[] parameters;
 
 	public MethodInvocationExpression(Position position, Expression expression, Symbol methodIdent, Expression[] parameters) {
-		super(position);
+		super(position, expression);
 		this.methodIdent = methodIdent;
 		this.parameters = parameters;
 		this.expression = expression;

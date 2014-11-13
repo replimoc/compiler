@@ -1,10 +1,11 @@
 package compiler.ast.statement;
 
 import compiler.ast.statement.type.Type;
+import compiler.ast.statement.unary.PrimaryExpression;
 import compiler.ast.visitor.AstVisitor;
 import compiler.lexer.Position;
 
-public class NewArrayExpression extends Expression {
+public class NewArrayExpression extends PrimaryExpression {
 	private final Type type;
 	private final Expression firstDimension;
 

@@ -1,14 +1,15 @@
 package compiler.ast.statement;
 
+import compiler.ast.statement.unary.PostfixExpression;
 import compiler.ast.visitor.AstVisitor;
 import compiler.lexer.Position;
 
-public class ArrayAccessExpression extends Expression {
+public class ArrayAccessExpression extends PostfixExpression {
 	private final Expression arrayExpression;
 	private final Expression indexExpression;
 
 	public ArrayAccessExpression(Position position, Expression arrayExpression, Expression indexExpression) {
-		super(position);
+		super(position, arrayExpression);
 		this.arrayExpression = arrayExpression;
 		this.indexExpression = indexExpression;
 	}

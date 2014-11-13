@@ -1,21 +1,22 @@
 package compiler.ast.statement;
 
 import compiler.Symbol;
+import compiler.ast.statement.unary.PostfixExpression;
 import compiler.ast.visitor.AstVisitor;
 import compiler.lexer.Position;
 
-public class VariableAccessExpression extends Expression {
-	private final Expression expressions;
+public class VariableAccessExpression extends PostfixExpression {
+	private final Expression expression;
 	private final Symbol fieldIdentifier;
 
-	public VariableAccessExpression(Position position, Expression expressions, Symbol fieldIdentifier) {
-		super(position);
-		this.expressions = expressions;
+	public VariableAccessExpression(Position position, Expression expression, Symbol fieldIdentifier) {
+		super(position, expression);
+		this.expression = expression;
 		this.fieldIdentifier = fieldIdentifier;
 	}
 
 	public Expression getExpression() {
-		return expressions;
+		return expression;
 	}
 
 	public Symbol getFieldIdentifier() {

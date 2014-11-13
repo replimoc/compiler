@@ -1,9 +1,10 @@
 package compiler.ast.statement;
 
+import compiler.ast.statement.unary.PrimaryExpression;
 import compiler.ast.visitor.AstVisitor;
 import compiler.lexer.Position;
 
-public class NullExpression extends Expression {
+public class NullExpression extends PrimaryExpression {
 
 	public NullExpression(Position position) {
 		super(position);

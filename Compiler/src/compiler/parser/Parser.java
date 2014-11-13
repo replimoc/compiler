@@ -46,6 +46,8 @@ import compiler.ast.statement.type.ClassType;
 import compiler.ast.statement.type.Type;
 import compiler.ast.statement.unary.LogicalNotExpression;
 import compiler.ast.statement.unary.NegateExpression;
+import compiler.ast.statement.unary.PostfixExpression;
+import compiler.ast.statement.unary.PrimaryExpression;
 import compiler.ast.statement.unary.ReturnStatement;
 import compiler.lexer.OperationType;
 import compiler.lexer.Position;
@@ -836,7 +838,7 @@ public class Parser {
 	 * @throws IOException
 	 * @throws ParserException
 	 */
-	private Expression parsePostfixOp(Expression leftExpression) throws IOException, ParserException {
+	private PostfixExpression parsePostfixOp(Expression leftExpression) throws IOException, ParserException {
 		switch (token.getType()) {
 		case LSQUAREBRACKET:
 			return new ArrayAccessExpression(leftExpression.getPosition(), leftExpression, parseArrayAccess());
@@ -854,7 +856,7 @@ public class Parser {
 	 * @throws IOException
 	 * @throws ParserException
 	 */
-	private Expression parsePostfixOpMethodField(Expression leftExpression) throws IOException,
+	private PostfixExpression parsePostfixOpMethodField(Expression leftExpression) throws IOException,
 			ParserException {
 		if (token.getType() == TokenType.POINT) {
 			token = tokenSupplier.getNextToken();
@@ -876,7 +878,7 @@ public class Parser {
 	 * @throws IOException
 	 * @throws ParserException
 	 */
-	private Expression parseMethodInvocationFieldAccess(Expression leftExpression, Symbol ident) throws IOException, ParserException {
+	private PostfixExpression parseMethodInvocationFieldAccess(Expression leftExpression, Symbol ident) throws IOException, ParserException {
 		switch (token.getType()) {
 		case LP:
 			// method invocation
@@ -994,7 +996,7 @@ public class Parser {
 	 * @throws IOException
 	 * @throws ParserException
 	 */
-	private Expression parsePrimaryExpressionIdent() throws IOException,
+	private PostfixExpression parsePrimaryExpressionIdent() throws IOException,
 			ParserException {
 		switch (token.getType()) {
 		case IDENTIFIER:
@@ -1026,7 +1028,7 @@ public class Parser {
 	 * @throws IOException
 	 * @throws ParserException
 	 */
-	private Expression parseNewExpression(Position pos) throws IOException, ParserException {
+	private PrimaryExpression parseNewExpression(Position pos) throws IOException, ParserException {
 		Type type;
 		switch (token.getType()) {
 		case IDENTIFIER:
