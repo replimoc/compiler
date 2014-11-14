@@ -7,6 +7,7 @@ import compiler.ast.FieldDeclaration;
 import compiler.ast.MethodDeclaration;
 import compiler.ast.ParameterDefinition;
 import compiler.ast.Program;
+import compiler.ast.StaticMethodDeclaration;
 import compiler.ast.statement.ArrayAccessExpression;
 import compiler.ast.statement.BlockBasedStatement;
 import compiler.ast.statement.BooleanConstantExpression;
@@ -404,8 +405,18 @@ public class PrettyPrinterVisitor implements AstVisitor {
 
 	@Override
 	public void visit(MethodDeclaration methodDeclaration) {
+		printMethodDeclaration(methodDeclaration, false);
+	}
+
+	@Override
+	public void visit(StaticMethodDeclaration staticMethodDeclaration) {
+		printMethodDeclaration(staticMethodDeclaration, true);
+	}
+
+	private void printMethodDeclaration(MethodDeclaration methodDeclaration, boolean isStatic) {
 		stringBuffer.append("public ");
-		// TODO: Is this an static method?
+		if (isStatic)
+			stringBuffer.append("static ");
 		methodDeclaration.getType().accept(this);
 		stringBuffer.append(" " + methodDeclaration.getIdentifier() + "() ");
 		if (methodDeclaration.getBlock() != null) {

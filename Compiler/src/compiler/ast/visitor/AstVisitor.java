@@ -6,6 +6,7 @@ import compiler.ast.FieldDeclaration;
 import compiler.ast.MethodDeclaration;
 import compiler.ast.ParameterDefinition;
 import compiler.ast.Program;
+import compiler.ast.StaticMethodDeclaration;
 import compiler.ast.statement.ArrayAccessExpression;
 import compiler.ast.statement.BooleanConstantExpression;
 import compiler.ast.statement.IfStatement;
@@ -109,5 +110,7 @@ public interface AstVisitor {
 	public void visit(MethodDeclaration methodDeclaration);
 
 	public void visit(FieldDeclaration fieldDeclaration);
+
+	public void visit(StaticMethodDeclaration staticMethodDeclaration);
 
 }
