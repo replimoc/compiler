@@ -63,7 +63,6 @@ public class Parser {
 	 */
 	private Token token;
 	private int errorsDetected;
-	private Program ast;
 
 	public Parser(TokenSuppliable tokenSupplier) throws IOException {
 		this.tokenSupplier = tokenSupplier;
@@ -79,6 +78,7 @@ public class Parser {
 	 * @throws ParsingFailedException
 	 */
 	public Program parse() throws IOException, ParsingFailedException {
+		Program ast = null;
 		try {
 			ast = parseProgram();
 		} catch (ParserException e) {
