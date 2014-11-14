@@ -216,16 +216,7 @@ public class PrettyPrinterVisitor implements AstVisitor {
 	public void visit(NewArrayExpression newArrayExpression) {
 		// TODO: right format!
 		stringBuffer.append("(new ");
-		newArrayExpression.getType().accept(this);
-		stringBuffer.append("[");
-		newArrayExpression.getFirstDimension().accept(this);
-		stringBuffer.append("]");
-		int dim = newArrayExpression.getDimensions();
-
-		// print ([])*
-		for (int i = 1; i < dim; i++) {
-			stringBuffer.append("[]");
-		}
+		visitNewArrayExpression(newArrayExpression.getType(), newArrayExpression.getFirstDimension());
 		stringBuffer.append(")");
 	}
 
@@ -311,8 +302,47 @@ public class PrettyPrinterVisitor implements AstVisitor {
 			throw new IllegalArgumentException();
 		}
 		stringBuffer.append(typeString);
-
 		for (int i = 0; i < dim; i++) {
+			stringBuffer.append("[]");
+		}
+	}
+
+	/**
+	 * Print the type and the expression for new array[expression]([])*
+	 * 
+	 * @param type
+	 * @param expr
+	 */
+	private void visitNewArrayExpression(Type type, Expression expr) {
+		int dim = 0;
+		while (type.getSubType() != null) {
+			type = type.getSubType();
+			dim++;
+		}
+		String typeString;
+		switch (type.getBasicType()) {
+		case INT:
+			typeString = "int";
+			break;
+		case VOID:
+			typeString = "void";
+			break;
+		case BOOLEAN:
+			typeString = "boolean";
+			break;
+		case CLASS:
+			typeString = type.getIdentifier().getValue();
+			break;
+		default:
+			throw new IllegalArgumentException();
+		}
+		stringBuffer.append(typeString);
+		if (dim > 0) {
+			stringBuffer.append("[");
+			expr.accept(this);
+			stringBuffer.append("]");
+		}
+		for (int i = 1; i < dim; i++) {
 			stringBuffer.append("[]");
 		}
 	}
