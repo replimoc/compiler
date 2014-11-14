@@ -29,14 +29,14 @@ public class PrecedenceClimbingTest {
 	@Test
 	public void testPlus() throws IOException {
 		Parser parser = TestUtils.initParser(TokenType.IDENTIFIER, TokenType.ADD, TokenType.IDENTIFIER, TokenType.EOF);
-		assertEquals("(_+_)", callParseExpression(parser));
+		assertEquals("_ + _", callParseExpression(parser));
 	}
 
 	@Test
 	public void testPlusLeftAssociative() throws IOException {
 		Parser parser = TestUtils.initParser(TokenType.IDENTIFIER, TokenType.ADD, TokenType.IDENTIFIER, TokenType.ADD, TokenType.IDENTIFIER,
 				TokenType.EOF);
-		assertEquals("((_+_)+_)", callParseExpression(parser));
+		assertEquals("((_ + _) + _)", callParseExpression(parser));
 	}
 
 	@Test
@@ -65,14 +65,14 @@ public class PrecedenceClimbingTest {
 	@Test
 	public void testAssign() throws IOException {
 		Parser parser = TestUtils.initParser(TokenType.IDENTIFIER, TokenType.ASSIGN, TokenType.IDENTIFIER, TokenType.EOF);
-		assertEquals("(_=_)", callParseExpression(parser));
+		assertEquals("_ = _", callParseExpression(parser));
 	}
 
 	@Test
 	public void testAssignRightAssociative() throws IOException {
 		Parser parser = TestUtils.initParser(TokenType.IDENTIFIER, TokenType.ASSIGN, TokenType.IDENTIFIER, TokenType.ASSIGN, TokenType.IDENTIFIER,
 				TokenType.EOF);
-		assertEquals("(_=(_=_))", callParseExpression(parser));
+		assertEquals("(_ = (_ = _))", callParseExpression(parser));
 	}
 
 	@Test

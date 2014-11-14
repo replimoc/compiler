@@ -47,8 +47,6 @@ import compiler.lexer.TokenType;
 public class PrettyPrinterVisitor implements AstVisitor {
 	private StringBuffer stringBuffer = new StringBuffer();
 
-	// FIXME: { } should have no line breaks!
-
 	private int tabStops = 0;
 
 	private void printTabs() {
@@ -81,7 +79,7 @@ public class PrettyPrinterVisitor implements AstVisitor {
 	private void visit(BinaryExpression binaryExpression, TokenType tokenType) {
 		// TODO Show only brackets if it is necessary.
 		binaryExpression.getOperand1().accept(this);
-		stringBuffer.append(tokenType.getString());
+		stringBuffer.append(" " + tokenType.getString() + " ");
 		binaryExpression.getOperand2().accept(this);
 	}
 
@@ -387,6 +385,7 @@ public class PrettyPrinterVisitor implements AstVisitor {
 	@Override
 	public void visit(MethodDeclaration methodDeclaration) {
 		stringBuffer.append("public ");
+		// TODO: Is this an static method?
 		methodDeclaration.getType().accept(this);
 		stringBuffer.append(" " + methodDeclaration.getIdentifier() + "() ");
 		if (methodDeclaration.getBlock() != null) {

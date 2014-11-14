@@ -53,85 +53,85 @@ public class PrettyPrinterVisitorTest {
 	@Test
 	public void testVisitAdditionExpression() {
 		visitor.visit(new AdditionExpression(position, variable, variable));
-		assertEquals("_+_", visitor.getOutputString());
+		assertEquals("_ + _", visitor.getOutputString());
 	}
 
 	@Test
 	public void testVisitAssignmentExpression() {
 		visitor.visit(new AdditionExpression(position, variable, variable));
-		assertEquals("_+_", visitor.getOutputString());
+		assertEquals("_ + _", visitor.getOutputString());
 	}
 
 	@Test
 	public void testVisitDivisionExpression() {
 		visitor.visit(new DivisionExpression(position, variable, variable));
-		assertEquals("_/_", visitor.getOutputString());
+		assertEquals("_ / _", visitor.getOutputString());
 	}
 
 	@Test
 	public void testVisitEqualityExpression() {
 		visitor.visit(new EqualityExpression(position, variable, variable));
-		assertEquals("_==_", visitor.getOutputString());
+		assertEquals("_ == _", visitor.getOutputString());
 	}
 
 	@Test
 	public void testVisitGreaterThanEqualExpression() {
 		visitor.visit(new GreaterThanEqualExpression(position, variable, variable));
-		assertEquals("_>=_", visitor.getOutputString());
+		assertEquals("_ >= _", visitor.getOutputString());
 	}
 
 	@Test
 	public void testVisitGreaterThanExpression() {
 		visitor.visit(new GreaterThanExpression(position, variable, variable));
-		assertEquals("_>_", visitor.getOutputString());
+		assertEquals("_ > _", visitor.getOutputString());
 	}
 
 	@Test
 	public void testVisitLessThanEqualExpression() {
 		visitor.visit(new LessThanEqualExpression(position, variable, variable));
-		assertEquals("_<=_", visitor.getOutputString());
+		assertEquals("_ <= _", visitor.getOutputString());
 	}
 
 	@Test
 	public void testVisitLessThanExpression() {
 		visitor.visit(new LessThanExpression(position, variable, variable));
-		assertEquals("_<_", visitor.getOutputString());
+		assertEquals("_ < _", visitor.getOutputString());
 	}
 
 	@Test
 	public void testVisitLogicalAndExpression() {
 		visitor.visit(new LogicalAndExpression(position, variable, variable));
-		assertEquals("_&&_", visitor.getOutputString());
+		assertEquals("_ && _", visitor.getOutputString());
 	}
 
 	@Test
 	public void testVisitLogicalOrExpression() {
 		visitor.visit(new LogicalOrExpression(position, variable, variable));
-		assertEquals("_||_", visitor.getOutputString());
+		assertEquals("_ || _", visitor.getOutputString());
 	}
 
 	@Test
 	public void testVisitModuloExpression() {
 		visitor.visit(new ModuloExpression(position, variable, variable));
-		assertEquals("_%_", visitor.getOutputString());
+		assertEquals("_ % _", visitor.getOutputString());
 	}
 
 	@Test
 	public void testVisitMuliplicationExpression() {
 		visitor.visit(new MuliplicationExpression(position, variable, variable));
-		assertEquals("_*_", visitor.getOutputString());
+		assertEquals("_ * _", visitor.getOutputString());
 	}
 
 	@Test
 	public void testVisitNonEqualityExpression() {
 		visitor.visit(new NonEqualityExpression(position, variable, variable));
-		assertEquals("_!=_", visitor.getOutputString());
+		assertEquals("_ != _", visitor.getOutputString());
 	}
 
 	@Test
 	public void testVisitSubtractionExpression() {
 		visitor.visit(new SubtractionExpression(position, variable, variable));
-		assertEquals("_-_", visitor.getOutputString());
+		assertEquals("_ - _", visitor.getOutputString());
 	}
 
 	@Test

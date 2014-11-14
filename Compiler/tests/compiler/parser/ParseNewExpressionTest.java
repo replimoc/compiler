@@ -61,7 +61,7 @@ public class ParseNewExpressionTest {
 	@Test
 	public void testWithBool() throws IOException {
 		Parser parser = TestUtils.initParser("boolean [fancyexpression=42][];");
-		assertEquals("(new boolean[fancyexpression=42][])", callNewArrayExpression(parser));
+		assertEquals("(new boolean[fancyexpression = 42][])", callNewArrayExpression(parser));
 	}
 
 	@Test
