@@ -13,7 +13,6 @@ import java.nio.file.attribute.BasicFileAttributes;
 import java.util.ArrayList;
 import java.util.List;
 
-import compiler.utils.TestFileVisitor;
 import org.junit.Assert;
 import org.junit.Test;
 
@@ -24,19 +23,64 @@ import compiler.utils.TestUtils;
  * <p/>
  * this test should be started from Compiler directory
  */
-public class LextestOutputTest implements TestFileVisitor.FileTester  {
+public class LextestOutputTest {
 
-    private static final String LEXER_EXTENSION = ".lexer";
+	public static class LexTester extends SimpleFileVisitor<Path> {
+		private static final String LEXER_EXTENSION = ".lexer";
+		private static final String JAVA_EXTENSION = ".java";
+
+		private final PathMatcher matcher;
+		private List<Path> failedTestsList = new ArrayList<>();
+
+		public LexTester() {
+			matcher = FileSystems.getDefault().getPathMatcher("glob:*" + LEXER_EXTENSION);
+		}
+
+		@Override
+		public FileVisitResult visitFile(Path file, BasicFileAttributes attrs) {
+			Path name = file.getFileName();
+			if (name != null && matcher.matches(name)) {
+				String lexFilename = name.toString();
+				String sourceFilename = lexFilename.replace(LEXER_EXTENSION, JAVA_EXTENSION);
+
+				Path sourceFilePath = file.getParent().resolve(sourceFilename);
+
+				if (!Files.exists(sourceFilePath)) {
+					Assert.fail("cannot find program to output " + sourceFilePath);
+				}
+
+				try {
+					testSourceFile(sourceFilePath, file);
+				} catch (Exception e) {
+					System.err.println("Test for file = " + file + " failed");
+					e.printStackTrace();
+					failedTestsList.add(file);
+				} catch (AssertionError e) {
+					System.err.println("Test for file = " + file + " failed");
+					e.printStackTrace();
+					failedTestsList.add(file);
+				}
+
+			}
+			return FileVisitResult.CONTINUE;
+		}
+
+		public void checkForFailedTests() {
+			if (failedTestsList.size() != 0) {
+				Assert.fail("Tests for " + failedTestsList.size() + " test(s) failed");
+			}
+		}
+	}
 
 	@Test
 	public void testLexerFiles() throws Exception {
 		Path testDir = Paths.get("testdata");
-        TestFileVisitor lexTester = new TestFileVisitor(LEXER_EXTENSION, this);
+		LexTester lexTester = new LexTester();
 		Files.walkFileTree(testDir, lexTester);
 		lexTester.checkForFailedTests();
 	}
 
-	public void testSourceFile(Path sourceFile, Path lexFile) throws Exception {
+	private static void testSourceFile(Path sourceFile, Path lexFile) throws Exception {
 		// read expected output
 		BufferedReader expectedOutput = Files.newBufferedReader(lexFile, StandardCharsets.US_ASCII);
 
