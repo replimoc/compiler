@@ -3,7 +3,7 @@ package compiler.ast.statement;
 import compiler.ast.visitor.AstVisitor;
 import compiler.lexer.Position;
 
-public class WhileStatement extends Statement {
+public class WhileStatement extends BlockBasedStatement {
 	private final Expression condition;
 	private final Statement body;
 

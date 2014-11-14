@@ -8,6 +8,7 @@ import compiler.ast.MethodDeclaration;
 import compiler.ast.ParameterDefinition;
 import compiler.ast.Program;
 import compiler.ast.statement.ArrayAccessExpression;
+import compiler.ast.statement.BlockBasedStatement;
 import compiler.ast.statement.BooleanConstantExpression;
 import compiler.ast.statement.Expression;
 import compiler.ast.statement.IfStatement;
@@ -301,13 +302,16 @@ public class PrettyPrinterVisitor implements AstVisitor {
 			for (Statement statement : block.getStatements()) {
 				printTabs();
 				statement.accept(this);
-				stringBuffer.append(";\n");
+				if (!(statement instanceof BlockBasedStatement)) {
+					stringBuffer.append(";\n");
+				}
 			}
 			tabStops--;
+			printTabs();
 		} else {
 			stringBuffer.append(" ");
 		}
-		stringBuffer.append("}\n");
+		stringBuffer.append("}");
 	}
 
 	@Override
@@ -322,7 +326,6 @@ public class PrettyPrinterVisitor implements AstVisitor {
 			for (ClassMember member : classDeclaration.getMembers()) {
 				printTabs();
 				member.accept(this);
-				stringBuffer.append("\n");
 			}
 			tabStops--;
 		} else {
@@ -333,7 +336,6 @@ public class PrettyPrinterVisitor implements AstVisitor {
 
 	@Override
 	public void visit(IfStatement ifStatement) {
-		printTabs();
 		stringBuffer.append("if (");
 		ifStatement.getCondition().accept(this);
 		stringBuffer.append(") ");
@@ -341,10 +343,10 @@ public class PrettyPrinterVisitor implements AstVisitor {
 
 		Statement falseCase = ifStatement.getFalseCase();
 		if (falseCase != null) { // TODO: Is that correct this way?
-			printTabs();
 			stringBuffer.append(" else ");
 			falseCase.accept(this);
 		}
+		stringBuffer.append("\n");
 	}
 
 	@Override
@@ -354,6 +356,7 @@ public class PrettyPrinterVisitor implements AstVisitor {
 		whileStatement.getCondition().accept(this);
 		stringBuffer.append(") ");
 		whileStatement.getBody().accept(this);
+		stringBuffer.append("\n");
 	}
 
 	@Override
@@ -388,6 +391,7 @@ public class PrettyPrinterVisitor implements AstVisitor {
 		stringBuffer.append(" " + methodDeclaration.getIdentifier() + "() ");
 		if (methodDeclaration.getBlock() != null) {
 			methodDeclaration.getBlock().accept(this);
+			stringBuffer.append("\n");
 		} else {
 			stringBuffer.append("{ }\n");
 		}
@@ -397,7 +401,7 @@ public class PrettyPrinterVisitor implements AstVisitor {
 	public void visit(FieldDeclaration fieldDeclaration) {
 		stringBuffer.append("public ");
 		fieldDeclaration.getType().accept(this);
-		stringBuffer.append(" " + fieldDeclaration.getIdentifier().getValue());
+		stringBuffer.append(" " + fieldDeclaration.getIdentifier().getValue() + ";\n");
 
 	}
 
