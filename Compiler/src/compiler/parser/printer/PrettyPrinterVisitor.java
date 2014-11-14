@@ -51,6 +51,7 @@ import compiler.lexer.TokenType;
 public class PrettyPrinterVisitor implements AstVisitor {
 	private StringBuffer stringBuffer = new StringBuffer();
 
+	private PrinterMode mode = PrinterMode.STANDARD;
 	private int precedence = 0;
 	private int tabStops = 0;
 
@@ -359,11 +360,13 @@ public class PrettyPrinterVisitor implements AstVisitor {
 			stringBuffer.append(" { }\n");
 			break;
 		case 1:
-			stringBuffer.append("\n");
-			tabStops++;
-			printStatement(statements.get(0));
-			tabStops--;
-			break;
+			if (mode == PrinterMode.IF_STATEMENT) {
+				stringBuffer.append("\n");
+				tabStops++;
+				printStatement(statements.get(0));
+				tabStops--;
+				break;
+			}
 		default:
 			stringBuffer.append(" {\n");
 			tabStops++;
@@ -410,6 +413,9 @@ public class PrettyPrinterVisitor implements AstVisitor {
 
 	@Override
 	public void visit(IfStatement ifStatement) {
+		PrinterMode oldMode = mode;
+		mode = PrinterMode.IF_STATEMENT;
+
 		stringBuffer.append("if (");
 		ifStatement.getCondition().accept(this);
 		stringBuffer.append(")");
@@ -438,6 +444,8 @@ public class PrettyPrinterVisitor implements AstVisitor {
 				falseCase.accept(this);
 			}
 		}
+
+		mode = oldMode;
 	}
 
 	@Override
