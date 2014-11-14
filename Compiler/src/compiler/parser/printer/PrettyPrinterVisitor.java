@@ -232,12 +232,12 @@ public class PrettyPrinterVisitor implements AstVisitor {
 
 	@Override
 	public void visit(VariableAccessExpression variableAccessExpression) {
-		// outputString += variableAccessExpression.getIdentifier().getValue();
-		// TODO: right format!
 		if (variableAccessExpression.getExpression() != null) {
+			stringBuffer.append("(");
 			variableAccessExpression.getExpression().accept(this);
 			stringBuffer.append(".");
 			stringBuffer.append(variableAccessExpression.getFieldIdentifier().getValue());
+			stringBuffer.append(")");
 		} else {
 			stringBuffer.append(variableAccessExpression.getFieldIdentifier().getValue());
 		}
