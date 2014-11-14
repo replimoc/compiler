@@ -3,6 +3,8 @@ package compiler.parser.printer;
 import compiler.ast.Block;
 import compiler.ast.ClassDeclaration;
 import compiler.ast.ClassMember;
+import compiler.ast.FieldDeclaration;
+import compiler.ast.MethodDeclaration;
 import compiler.ast.ParameterDefinition;
 import compiler.ast.Program;
 import compiler.ast.statement.ArrayAccessExpression;
@@ -15,6 +17,7 @@ import compiler.ast.statement.MethodInvocationExpression;
 import compiler.ast.statement.NewArrayExpression;
 import compiler.ast.statement.NewObjectExpression;
 import compiler.ast.statement.NullExpression;
+import compiler.ast.statement.Statement;
 import compiler.ast.statement.ThisExpression;
 import compiler.ast.statement.VariableAccessExpression;
 import compiler.ast.statement.WhileStatement;
@@ -43,6 +46,20 @@ import compiler.lexer.TokenType;
 public class PrettyPrinterVisitor implements AstVisitor {
 	private StringBuffer stringBuffer = new StringBuffer();
 
+	// FIXME: { } should have no line breaks!
+
+	private int tabStops = 0;
+
+	private void printTabs() {
+		for (int i = 0; i < tabStops; i++) {
+			stringBuffer.append("\t");
+		}
+	}
+
+	public void resetOutputStream() {
+		this.stringBuffer = new StringBuffer();
+	}
+
 	/**
 	 * Gets the result of the PrettyPrinterVisitor
 	 * 
@@ -62,11 +79,9 @@ public class PrettyPrinterVisitor implements AstVisitor {
 	 */
 	private void visit(BinaryExpression binaryExpression, TokenType tokenType) {
 		// TODO Show only brackets if it is necessary.
-		stringBuffer.append("(");
 		binaryExpression.getOperand1().accept(this);
 		stringBuffer.append(tokenType.getString());
 		binaryExpression.getOperand2().accept(this);
-		stringBuffer.append(")");
 	}
 
 	@Override
@@ -197,7 +212,7 @@ public class PrettyPrinterVisitor implements AstVisitor {
 	@Override
 	public void visit(NewObjectExpression newObjectExpression) {
 		// TODO: right format!
-		stringBuffer.append("(new " + newObjectExpression.getIdentifier() + "())");
+		stringBuffer.append("new " + newObjectExpression.getIdentifier() + "()");
 	}
 
 	@Override
@@ -216,11 +231,11 @@ public class PrettyPrinterVisitor implements AstVisitor {
 	@Override
 	public void visit(ArrayAccessExpression arrayAccessExpression) {
 		// TODO: right format!
-		stringBuffer.append("(");
+		// stringBuffer.append("(");
 		arrayAccessExpression.getArrayExpression().accept(this);
 		stringBuffer.append("[");
 		arrayAccessExpression.getIndexExpression().accept(this);
-		stringBuffer.append("])");
+		stringBuffer.append("]");
 	}
 
 	@Override
@@ -237,8 +252,8 @@ public class PrettyPrinterVisitor implements AstVisitor {
 
 	@Override
 	public void visit(ReturnStatement returnStatement) {
-		// TODO Auto-generated method stub
-
+		stringBuffer.append("return ");
+		returnStatement.getOperand().accept(this);
 	}
 
 	@Override
@@ -278,49 +293,107 @@ public class PrettyPrinterVisitor implements AstVisitor {
 
 	@Override
 	public void visit(Block block) {
-		// TODO Auto-generated method stub
+		stringBuffer.append("{");
+		if (block.getStatements() != null && block.getStatements().size() > 0) {
+			tabStops++;
+			stringBuffer.append("\n");
 
-	}
-
-	@Override
-	public void visit(ClassMember classMember) {
-		// TODO Auto-generated method stub
-
+			for (Statement statement : block.getStatements()) {
+				printTabs();
+				statement.accept(this);
+				stringBuffer.append(";\n");
+			}
+			tabStops--;
+		} else {
+			stringBuffer.append(" ");
+		}
+		stringBuffer.append("}\n");
 	}
 
 	@Override
 	public void visit(ClassDeclaration classDeclaration) {
-		// TODO Auto-generated method stub
+		stringBuffer.append("class " + classDeclaration.getIdentifier() + " {");
 
+		if (classDeclaration.getMembers() != null && classDeclaration.getMembers().size() > 0) {
+			stringBuffer.append("\n");
+			tabStops++;
+
+			// TODO: Sort ClassMembers
+			for (ClassMember member : classDeclaration.getMembers()) {
+				printTabs();
+				member.accept(this);
+				stringBuffer.append("\n");
+			}
+			tabStops--;
+		} else {
+			stringBuffer.append(" ");
+		}
+		stringBuffer.append("}\n");
 	}
 
 	@Override
 	public void visit(IfStatement ifStatement) {
-		// TODO Auto-generated method stub
+		printTabs();
+		stringBuffer.append("if (");
+		ifStatement.getCondition().accept(this);
+		stringBuffer.append(") ");
+		ifStatement.getTrueCase().accept(this);
 
+		Statement falseCase = ifStatement.getFalseCase();
+		if (falseCase != null) { // TODO: Is that correct this way?
+			printTabs();
+			stringBuffer.append(" else ");
+			falseCase.accept(this);
+		}
 	}
 
 	@Override
 	public void visit(WhileStatement whileStatement) {
-		// TODO Auto-generated method stub
-
+		printTabs();
+		stringBuffer.append("while (");
+		whileStatement.getCondition().accept(this);
+		stringBuffer.append(") ");
+		whileStatement.getBody().accept(this);
 	}
 
 	@Override
 	public void visit(LocalVariableDeclaration localVariableDeclaration) {
-		// TODO Auto-generated method stub
+		localVariableDeclaration.getType().accept(this);
+		stringBuffer.append(" " + localVariableDeclaration.getIdentifier());
+		Expression expression = localVariableDeclaration.getExpression();
 
+		if (expression != null) {
+			stringBuffer.append(" = ");
+			expression.accept(this);
+		}
 	}
 
 	@Override
 	public void visit(ParameterDefinition parameterDefinition) {
-		// TODO Auto-generated method stub
-
+		parameterDefinition.getType().accept(this);
+		stringBuffer.append(" " + parameterDefinition.getIdentifier());
 	}
 
 	@Override
 	public void visit(Program program) {
-		// TODO Auto-generated method stub
+		for (ClassDeclaration classDeclaration : program.getClasses()) {
+			classDeclaration.accept(this);
+		}
+	}
+
+	@Override
+	public void visit(MethodDeclaration methodDeclaration) {
+		stringBuffer.append("public ");
+		methodDeclaration.getType().accept(this);
+		stringBuffer.append(" " + methodDeclaration.getIdentifier() + "() ");
+		methodDeclaration.getBlock().accept(this);
+	}
+
+	@Override
+	public void visit(FieldDeclaration fieldDeclaration) {
+		stringBuffer.append("public ");
+		fieldDeclaration.getType().accept(this);
+		stringBuffer.append(" " + fieldDeclaration.getIdentifier().getValue());
 
 	}
 
