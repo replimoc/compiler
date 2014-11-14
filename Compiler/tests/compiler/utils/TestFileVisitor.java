@@ -51,7 +51,7 @@ public class TestFileVisitor extends SimpleFileVisitor<Path> {
 				}
 
 				fileTester.testSourceFile(sourceFilePath, file);
-			} catch (Exception e) {
+			} catch (Throwable e) {
 				System.err.println("Test for file = " + file + " failed");
 				e.printStackTrace();
 				failedTestsList.add(file);
