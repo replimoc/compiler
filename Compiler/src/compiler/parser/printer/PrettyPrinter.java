@@ -4,9 +4,9 @@ import compiler.ast.AstNode;
 
 public class PrettyPrinter {
 
-	public static String get(AstNode expression) {
+	public static String get(AstNode astNode) {
 		PrettyPrinterVisitor visitor = new PrettyPrinterVisitor();
-		expression.accept(visitor);
+		astNode.accept(visitor);
 		return visitor.getOutputString();
 	}
 }
