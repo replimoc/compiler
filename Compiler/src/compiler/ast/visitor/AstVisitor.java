@@ -2,7 +2,8 @@ package compiler.ast.visitor;
 
 import compiler.ast.Block;
 import compiler.ast.ClassDeclaration;
-import compiler.ast.ClassMember;
+import compiler.ast.FieldDeclaration;
+import compiler.ast.MethodDeclaration;
 import compiler.ast.ParameterDefinition;
 import compiler.ast.Program;
 import compiler.ast.statement.ArrayAccessExpression;
@@ -93,8 +94,6 @@ public interface AstVisitor {
 
 	public void visit(Block block);
 
-	public void visit(ClassMember classMember);
-
 	public void visit(ClassDeclaration classDeclaration);
 
 	public void visit(IfStatement ifStatement);
@@ -106,5 +105,9 @@ public interface AstVisitor {
 	public void visit(ParameterDefinition parameterDefinition);
 
 	public void visit(Program program);
+
+	public void visit(MethodDeclaration methodDeclaration);
+
+	public void visit(FieldDeclaration fieldDeclaration);
 
 }
