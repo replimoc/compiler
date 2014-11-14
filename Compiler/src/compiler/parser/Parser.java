@@ -63,6 +63,7 @@ public class Parser {
 	 */
 	private Token token;
 	private int errorsDetected;
+	private Program ast;
 
 	public Parser(TokenSuppliable tokenSupplier) throws IOException {
 		this.tokenSupplier = tokenSupplier;
@@ -78,7 +79,6 @@ public class Parser {
 	 * @throws ParsingFailedException
 	 */
 	public Program parse() throws IOException, ParsingFailedException {
-		Program ast = null;
 		try {
 			ast = parseProgram();
 		} catch (ParserException e) {
@@ -237,6 +237,9 @@ public class Parser {
 				if (token.getType() != TokenType.IDENTIFIER || !token.getSymbol().getValue().equals("String")) {
 					throw new ParserException(token, TokenType.IDENTIFIER);
 				}
+				Position pos = token.getPosition();
+				Symbol type = token.getSymbol();
+
 				token = tokenSupplier.getNextToken();
 				if (token.getType() != TokenType.LSQUAREBRACKET) {
 					throw new ParserException(token, TokenType.LSQUAREBRACKET);
@@ -249,13 +252,20 @@ public class Parser {
 				if (token.getType() != TokenType.IDENTIFIER) {
 					throw new ParserException(token, TokenType.IDENTIFIER);
 				}
+				Symbol ident = token.getSymbol();
+
 				token = tokenSupplier.getNextToken();
 				if (token.getType() != TokenType.RP) {
 					throw new ParserException(token, TokenType.RP);
 				}
 				token = tokenSupplier.getNextToken();
-				return new MethodDeclaration(firstToken.getPosition(), firstToken.getSymbol(), new Type(retType.getPosition(), BasicType.VOID),
+
+				ParameterDefinition param = new ParameterDefinition(pos, new ArrayType(pos, new ClassType(pos, type)), ident);
+				MethodDeclaration decl = new MethodDeclaration(firstToken.getPosition(), firstToken.getSymbol(), new Type(retType.getPosition(),
+						BasicType.VOID),
 						parseBlock());
+				decl.addParameter(param);
+				return decl;
 			}
 		default:
 			throw new ParserException(token, TokenType.PUBLIC);

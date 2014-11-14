@@ -288,8 +288,10 @@ public class PrettyPrinterVisitor implements AstVisitor {
 
 	@Override
 	public void visit(Type type) {
+		int dim = 0;
 		while (type.getSubType() != null) {
 			type = type.getSubType();
+			dim++;
 		}
 		String typeString;
 		switch (type.getBasicType()) {
@@ -309,6 +311,10 @@ public class PrettyPrinterVisitor implements AstVisitor {
 			throw new IllegalArgumentException();
 		}
 		stringBuffer.append(typeString);
+
+		for (int i = 0; i < dim; i++) {
+			stringBuffer.append("[]");
+		}
 	}
 
 	@Override
