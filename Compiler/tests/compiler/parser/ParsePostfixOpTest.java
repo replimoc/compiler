@@ -51,7 +51,7 @@ public class ParsePostfixOpTest {
 	@Test
 	public void testArrayAccess() throws IOException {
 		Parser parser = TestUtils.initParser("[42]");
-		assertEquals("([42])", callArrayAccessExpression(parser));
+		assertEquals("[42]", callArrayAccessExpression(parser));
 	}
 
 	@Test(expected = RuntimeException.class)

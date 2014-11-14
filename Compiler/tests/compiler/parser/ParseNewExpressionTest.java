@@ -49,8 +49,7 @@ public class ParseNewExpressionTest {
 	@Test
 	public void testWithArrayAssignment() throws IOException {
 		Parser parser = TestUtils.initParser("test [null=null][][][];");
-		// FIXME:
-		assertEquals("(new test[(null=null)][][][])", callNewArrayExpression(parser));
+		assertEquals("(new test[null = null][][][])", callNewArrayExpression(parser));
 	}
 
 	@Test
@@ -62,8 +61,7 @@ public class ParseNewExpressionTest {
 	@Test
 	public void testWithBool() throws IOException {
 		Parser parser = TestUtils.initParser("boolean [fancyexpression=42][];");
-		// FIXME:
-		assertEquals("(new boolean[(fancyexpression=42)][])", callNewArrayExpression(parser));
+		assertEquals("(new boolean[fancyexpression=42][])", callNewArrayExpression(parser));
 	}
 
 	@Test
