@@ -1,6 +1,6 @@
 package compiler.ast;
 
-import java.util.ArrayList;
+import java.util.LinkedList;
 import java.util.List;
 
 import compiler.ast.statement.Statement;
@@ -9,10 +9,15 @@ import compiler.lexer.Position;
 
 public class Block extends Statement {
 
-	private final List<Statement> statements = new ArrayList<Statement>();
+	private final List<Statement> statements = new LinkedList<Statement>();
 
 	public Block(Position position) {
 		super(position);
+	}
+
+	public Block(Statement statement) {
+		super(statement.getPosition());
+		statements.add(statement);
 	}
 
 	public void addStatement(Statement statement) {
@@ -26,5 +31,9 @@ public class Block extends Statement {
 	@Override
 	public void accept(AstVisitor visitor) {
 		visitor.visit(this);
+	}
+
+	public int getNumberOfStatements() {
+		return statements.size();
 	}
 }

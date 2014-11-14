@@ -241,11 +241,11 @@ public class PrettyPrinterVisitorTest {
 
 	@Test
 	public void testVisitIfStatement() {
-		visitor.visit(new IfStatement(position, variable, variable));
+		visitor.visit(new IfStatement(position, variable, new Block(variable)));
 		assertEquals("if (_) _\n", visitor.getOutputString());
 
 		visitor.resetOutputStream();
-		visitor.visit(new IfStatement(position, variable, variable, variable));
+		visitor.visit(new IfStatement(position, variable, new Block(variable), new Block(variable)));
 		assertEquals("if (_) _ else _\n", visitor.getOutputString());
 	}
 

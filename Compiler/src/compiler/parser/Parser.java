@@ -351,26 +351,27 @@ public class Parser {
 	 * @throws IOException
 	 * @throws ParserException
 	 */
-	private Statement parseStatement() throws IOException, ParserException {
+	private Block parseStatement() throws IOException, ParserException {
 		switch (token.getType()) {
 		// block
 		case LCURLYBRACKET:
 			return parseBlock();
 			// empty statement
 		case SEMICOLON:
-			return parseEmptyStatement();
+			parseEmptyStatement();
+			return new Block(token.getPosition());
 			// if statement
 		case IF:
-			return parseIfStatement();
+			return new Block(parseIfStatement());
 			// while statement
 		case WHILE:
-			return parseWhileStatement();
+			return new Block(parseWhileStatement());
 			// return statement
 		case RETURN:
-			return parseReturnStatement();
+			return new Block(parseReturnStatement());
 			// expression: propagate error recognition to parseExpressionStatement
 		default:
-			return parseExpressionStatement();
+			return new Block(parseExpressionStatement());
 		}
 	}
 
@@ -580,12 +581,11 @@ public class Parser {
 	 * @throws ParserException
 	 * @throws IOException
 	 */
-	private Statement parseEmptyStatement() throws ParserException, IOException {
+	private void parseEmptyStatement() throws ParserException, IOException {
 		if (token.getType() != TokenType.SEMICOLON) {
 			throw new ParserException(token, TokenType.SEMICOLON);
 		}
 		token = tokenSupplier.getNextToken();
-		return null;
 	}
 
 	/**
@@ -642,14 +642,15 @@ public class Parser {
 		}
 		token = tokenSupplier.getNextToken();
 
-		Statement trueStmt = parseStatement();
+		Block trueStmt = parseStatement();
 
 		if (token.getType() == TokenType.ELSE) {
 			token = tokenSupplier.getNextToken();
-			Statement falseStmt = parseStatement();
+			Block falseStmt = parseStatement();
 			return new IfStatement(firstToken.getPosition(), expr, trueStmt, falseStmt);
+		} else {
+			return new IfStatement(firstToken.getPosition(), expr, trueStmt);
 		}
-		return new IfStatement(firstToken.getPosition(), expr, trueStmt);
 	}
 
 	/**

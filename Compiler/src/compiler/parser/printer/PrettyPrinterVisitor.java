@@ -352,24 +352,38 @@ public class PrettyPrinterVisitor implements AstVisitor {
 
 	@Override
 	public void visit(Block block) {
-		stringBuffer.append("{");
-		if (block.getStatements() != null && block.getStatements().size() > 0) {
-			tabStops++;
-			stringBuffer.append("\n");
+		List<Statement> statements = block.getStatements();
 
-			for (Statement statement : block.getStatements()) {
-				printTabs();
-				statement.accept(this);
-				if (!(statement instanceof BlockBasedStatement)) {
-					stringBuffer.append(";\n");
-				}
+		switch (statements.size()) {
+		case 0:
+			stringBuffer.append(" { }\n");
+			break;
+		case 1:
+			stringBuffer.append("\n");
+			tabStops++;
+			printStatement(statements.get(0));
+			tabStops--;
+			break;
+		default:
+			stringBuffer.append(" {\n");
+			tabStops++;
+
+			for (Statement statement : statements) {
+				printStatement(statement);
 			}
 			tabStops--;
 			printTabs();
-		} else {
-			stringBuffer.append(" ");
+			stringBuffer.append("}");
 		}
-		stringBuffer.append("}");
+
+	}
+
+	private void printStatement(Statement statement) {
+		printTabs();
+		statement.accept(this);
+		if (!(statement instanceof BlockBasedStatement)) {
+			stringBuffer.append(";\n");
+		}
 	}
 
 	@Override
@@ -383,7 +397,6 @@ public class PrettyPrinterVisitor implements AstVisitor {
 			List<ClassMember> members = classDeclaration.getMembers();
 			Collections.sort(members);
 
-			// TODO: Sort ClassMembers
 			for (ClassMember member : members) {
 				printTabs();
 				member.accept(this);
@@ -399,15 +412,32 @@ public class PrettyPrinterVisitor implements AstVisitor {
 	public void visit(IfStatement ifStatement) {
 		stringBuffer.append("if (");
 		ifStatement.getCondition().accept(this);
-		stringBuffer.append(") ");
-		ifStatement.getTrueCase().accept(this);
+		stringBuffer.append(")");
 
-		Statement falseCase = ifStatement.getFalseCase();
+		Block trueCase = ifStatement.getTrueCase();
+		trueCase.accept(this);
+		int numberOfTrueStatements = trueCase.getNumberOfStatements();
+
+		Block falseCase = ifStatement.getFalseCase();
 		if (falseCase != null) { // TODO: Is that correct this way?
-			stringBuffer.append(" else ");
-			falseCase.accept(this);
+			List<Statement> falseStatements = falseCase.getStatements();
+
+			if (numberOfTrueStatements == 1) {
+				printTabs();
+			} else if (numberOfTrueStatements > 1) { // if true case was a block, add space
+				stringBuffer.append(" ");
+			}
+
+			// handle else if
+			if (falseStatements.size() == 1 && falseStatements.get(0) instanceof IfStatement) {
+				stringBuffer.append("else ");
+				falseStatements.get(0).accept(this);
+			} else { // handle normal else
+
+				stringBuffer.append("else");
+				falseCase.accept(this);
+			}
 		}
-		stringBuffer.append("\n");
 	}
 
 	@Override
@@ -415,7 +445,7 @@ public class PrettyPrinterVisitor implements AstVisitor {
 		printTabs();
 		stringBuffer.append("while (");
 		whileStatement.getCondition().accept(this);
-		stringBuffer.append(") ");
+		stringBuffer.append(")");
 		whileStatement.getBody().accept(this);
 		stringBuffer.append("\n");
 	}
@@ -469,7 +499,7 @@ public class PrettyPrinterVisitor implements AstVisitor {
 				stringBuffer.append(", ");
 			parameter.accept(this);
 		}
-		stringBuffer.append(") ");
+		stringBuffer.append(")");
 		if (methodDeclaration.getBlock() != null) {
 			methodDeclaration.getBlock().accept(this);
 			stringBuffer.append("\n");
