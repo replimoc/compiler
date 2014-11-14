@@ -1,5 +1,8 @@
 package compiler.parser.printer;
 
+import java.util.Collections;
+import java.util.List;
+
 import compiler.ast.Block;
 import compiler.ast.ClassDeclaration;
 import compiler.ast.ClassMember;
@@ -377,8 +380,11 @@ public class PrettyPrinterVisitor implements AstVisitor {
 			stringBuffer.append("\n");
 			tabStops++;
 
+			List<ClassMember> members = classDeclaration.getMembers();
+			Collections.sort(members);
+
 			// TODO: Sort ClassMembers
-			for (ClassMember member : classDeclaration.getMembers()) {
+			for (ClassMember member : members) {
 				printTabs();
 				member.accept(this);
 			}

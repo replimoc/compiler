@@ -21,4 +21,9 @@ public class FieldDeclaration extends ClassMember {
 	public void accept(AstVisitor visitor) {
 		visitor.visit(this);
 	}
+
+	@Override
+	protected int getSortPriority() {
+		return 1;
+	}
 }

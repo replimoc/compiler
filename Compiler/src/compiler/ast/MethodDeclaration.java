@@ -49,4 +49,9 @@ public class MethodDeclaration extends ClassMember {
 	public void accept(AstVisitor visitor) {
 		visitor.visit(this);
 	}
+
+	@Override
+	protected int getSortPriority() {
+		return 0;
+	}
 }
