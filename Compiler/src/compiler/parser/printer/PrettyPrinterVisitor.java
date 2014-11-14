@@ -418,7 +418,16 @@ public class PrettyPrinterVisitor implements AstVisitor {
 		if (isStatic)
 			stringBuffer.append("static ");
 		methodDeclaration.getType().accept(this);
-		stringBuffer.append(" " + methodDeclaration.getIdentifier() + "() ");
+		stringBuffer.append(" " + methodDeclaration.getIdentifier() + "(");
+		boolean first = true;
+		for (ParameterDefinition parameter : methodDeclaration.getParameters()) {
+			if (first)
+				first = false;
+			else
+				stringBuffer.append(", ");
+			parameter.accept(this);
+		}
+		stringBuffer.append(") ");
 		if (methodDeclaration.getBlock() != null) {
 			methodDeclaration.getBlock().accept(this);
 			stringBuffer.append("\n");
