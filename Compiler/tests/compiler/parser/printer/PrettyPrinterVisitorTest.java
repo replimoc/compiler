@@ -282,9 +282,20 @@ public class PrettyPrinterVisitorTest {
 	@Test
 	public void testVisitMethodDeclaration() {
 		MethodDeclaration methodDeclaration = new MethodDeclaration(position, new Symbol("_"), type);
-		methodDeclaration.setBlock(new Block(position));
 		visitor.visit(methodDeclaration);
 		assertEquals("public int _() { }\n", visitor.getOutputString());
+
+		visitor.resetOutputStream();
+		Block block = new Block(position);
+		methodDeclaration.setBlock(block);
+		visitor.visit(methodDeclaration);
+		assertEquals("public int _() { }\n", visitor.getOutputString());
+
+		visitor.resetOutputStream();
+		block.addStatement(variable);
+		visitor.visit(methodDeclaration);
+		assertEquals("public int _() {\n\t_;\n}\n", visitor.getOutputString());
+
 	}
 
 	@Test

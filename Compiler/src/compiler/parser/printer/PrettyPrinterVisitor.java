@@ -386,7 +386,11 @@ public class PrettyPrinterVisitor implements AstVisitor {
 		stringBuffer.append("public ");
 		methodDeclaration.getType().accept(this);
 		stringBuffer.append(" " + methodDeclaration.getIdentifier() + "() ");
-		methodDeclaration.getBlock().accept(this);
+		if (methodDeclaration.getBlock() != null) {
+			methodDeclaration.getBlock().accept(this);
+		} else {
+			stringBuffer.append("{ }\n");
+		}
 	}
 
 	@Override
