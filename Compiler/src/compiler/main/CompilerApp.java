@@ -25,7 +25,7 @@ import compiler.parser.printer.PrettyPrinter;
 public final class CompilerApp {
 
 	private static final String LEXTEST = "lextest";
-	private static final String PRETTY_PRINT_AST = "prettyprint";
+	private static final String PRETTY_PRINT_AST = "print-ast";
 
 	/**
 	 * Private constructor, as no objects of this class shall be created.
@@ -78,7 +78,7 @@ public final class CompilerApp {
 					}
 
 					if (cmd.hasOption(PRETTY_PRINT_AST)) {
-						System.out.println(PrettyPrinter.get(ast));
+						System.out.print(PrettyPrinter.get(ast));
 					}
 					return 0;
 				} catch (IOException e) {
