@@ -22,6 +22,7 @@ public class MethodDeclaration extends ClassMember {
 	public MethodDeclaration(Position position, Symbol identifier, Type returnType, Block block) {
 		super(position, identifier);
 		this.returnType = returnType;
+		this.block = block;
 	}
 
 	public void addParameter(ParameterDefinition parameter) {
