@@ -230,7 +230,7 @@ public class PrettyPrinterVisitorTest {
 		block.addStatement(variable);
 		block.addStatement(variable);
 		visitor.visit(block);
-		assertEquals("{\n\t_;\n\t_;\n\t_;\n}\n", visitor.getOutputString());
+		assertEquals("{\n\t_;\n\t_;\n\t_;\n}", visitor.getOutputString());
 	}
 
 	@Test
@@ -242,17 +242,17 @@ public class PrettyPrinterVisitorTest {
 	@Test
 	public void testVisitIfStatement() {
 		visitor.visit(new IfStatement(position, variable, variable));
-		assertEquals("if (_) _", visitor.getOutputString());
+		assertEquals("if (_) _\n", visitor.getOutputString());
 
 		visitor.resetOutputStream();
 		visitor.visit(new IfStatement(position, variable, variable, variable));
-		assertEquals("if (_) _ else _", visitor.getOutputString());
+		assertEquals("if (_) _ else _\n", visitor.getOutputString());
 	}
 
 	@Test
 	public void testVisitWhileStatement() {
 		visitor.visit(new WhileStatement(position, variable, variable));
-		assertEquals("while (_) _", visitor.getOutputString());
+		assertEquals("while (_) _\n", visitor.getOutputString());
 	}
 
 	@Test
@@ -301,6 +301,6 @@ public class PrettyPrinterVisitorTest {
 	@Test
 	public void testVisitFieldDeclaration() {
 		visitor.visit(new FieldDeclaration(position, type, new Symbol("_")));
-		assertEquals("public int _", visitor.getOutputString());
+		assertEquals("public int _;\n", visitor.getOutputString());
 	}
 }

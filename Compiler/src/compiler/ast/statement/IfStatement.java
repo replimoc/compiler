@@ -3,7 +3,7 @@ package compiler.ast.statement;
 import compiler.ast.visitor.AstVisitor;
 import compiler.lexer.Position;
 
-public class IfStatement extends Statement {
+public class IfStatement extends BlockBasedStatement {
 	private final Expression condition;
 	private final Statement trueCase;
 	private final Statement falseCase;
