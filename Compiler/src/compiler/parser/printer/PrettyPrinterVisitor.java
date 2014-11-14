@@ -47,6 +47,7 @@ import compiler.lexer.TokenType;
 public class PrettyPrinterVisitor implements AstVisitor {
 	private StringBuffer stringBuffer = new StringBuffer();
 
+	private int precedence = 0;
 	private int tabStops = 0;
 
 	private void printTabs() {
@@ -77,10 +78,29 @@ public class PrettyPrinterVisitor implements AstVisitor {
 	 *            Type of the token.
 	 */
 	private void visit(BinaryExpression binaryExpression, TokenType tokenType) {
-		// TODO Show only brackets if it is necessary.
+		int oldPrecedence = precedence;
+
+		precedence = tokenType.getPrecedence();
+		if (oldPrecedence > precedence) {
+			stringBuffer.append("(");
+		}
+		if (!tokenType.isLeftAssociative())
+			precedence++;
+
 		binaryExpression.getOperand1().accept(this);
 		stringBuffer.append(" " + tokenType.getString() + " ");
+
+		precedence += tokenType.isLeftAssociative() ? 1 : -1;
+
 		binaryExpression.getOperand2().accept(this);
+
+		if (tokenType.isLeftAssociative())
+			precedence--;
+
+		if (oldPrecedence > precedence) {
+			stringBuffer.append(")");
+		}
+		precedence = oldPrecedence;
 	}
 
 	@Override
