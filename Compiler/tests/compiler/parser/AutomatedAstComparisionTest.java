@@ -49,7 +49,7 @@ public class AutomatedAstComparisionTest implements TestFileVisitor.FileTester {
 
 			int line = 1;
 			for (String expectedLine : expectedOutput) {
-				assertEquals("Error in file: " + sourceFile + " in line: " + line, expectedLine, s.nextLine());
+				assertEquals("Error in file: " + sourceFile + " in line: " + line, s.nextLine(), expectedLine);
 				line++;
 			}
 			assertFalse(s.hasNext());
