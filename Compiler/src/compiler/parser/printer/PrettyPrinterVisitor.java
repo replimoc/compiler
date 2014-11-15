@@ -240,23 +240,45 @@ public class PrettyPrinterVisitor implements AstVisitor {
 
 	@Override
 	public void visit(ArrayAccessExpression arrayAccessExpression) {
-		// TODO: right format!
-		// stringBuffer.append("(");
+		if (precedence > 0) {
+			stringBuffer.append('(');
+		}
+
 		arrayAccessExpression.getArrayExpression().accept(this);
-		stringBuffer.append("[");
+		stringBuffer.append('[');
+
+		int oldPrecedence = precedence;
+		precedence = 0;
+
 		arrayAccessExpression.getIndexExpression().accept(this);
-		stringBuffer.append("]");
+		stringBuffer.append(']');
+
+		if (precedence > 0) {
+			stringBuffer.append(')');
+		}
+		precedence = oldPrecedence;
 	}
 
 	@Override
 	public void visit(LogicalNotExpression logicalNotExpression) {
-		stringBuffer.append("!");
+		if (precedence > 0) {
+			stringBuffer.append('(');
+		}
+		int oldPrecedence = precedence;
+		precedence = 10;
+
+		stringBuffer.append('!');
 		logicalNotExpression.getOperand().accept(this);
+
+		if (precedence > 0) {
+			stringBuffer.append(')');
+		}
+		precedence = oldPrecedence;
 	}
 
 	@Override
 	public void visit(NegateExpression negateExpression) {
-		stringBuffer.append("-");
+		stringBuffer.append('-');
 		negateExpression.getOperand().accept(this);
 	}
 

@@ -8,7 +8,7 @@ class HelloWorld
 	boolean b = true && (!false);
 	if (23+19+2 == (42+0)*1)
 		b = (0 < 1);
-		else if (!array[2+2]) {
+		else if (!!array[2+2]) {
 			int x = 0;
 			x = x+1;
 		}
