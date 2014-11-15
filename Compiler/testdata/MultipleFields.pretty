@@ -1,0 +1,6 @@
+class MultipleFields {
+	public boolean member;
+	public int member;
+	public SomeType member3;
+	public void member2;
+}
