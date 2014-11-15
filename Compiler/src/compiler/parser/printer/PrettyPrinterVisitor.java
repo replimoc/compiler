@@ -213,7 +213,6 @@ public class PrettyPrinterVisitor implements AstVisitor {
 
 	@Override
 	public void visit(NewArrayExpression newArrayExpression) {
-		// TODO: right format!
 		stringBuffer.append("(new ");
 		visitNewArrayExpression(newArrayExpression.getType(), newArrayExpression.getFirstDimension());
 		stringBuffer.append(")");
@@ -221,8 +220,7 @@ public class PrettyPrinterVisitor implements AstVisitor {
 
 	@Override
 	public void visit(NewObjectExpression newObjectExpression) {
-		// TODO: right format!
-		stringBuffer.append("new " + newObjectExpression.getIdentifier() + "()");
+		stringBuffer.append("(new " + newObjectExpression.getIdentifier() + "())");
 	}
 
 	@Override
@@ -253,10 +251,10 @@ public class PrettyPrinterVisitor implements AstVisitor {
 		arrayAccessExpression.getIndexExpression().accept(this);
 		stringBuffer.append(']');
 
+		precedence = oldPrecedence;
 		if (precedence > 0) {
 			stringBuffer.append(')');
 		}
-		precedence = oldPrecedence;
 	}
 
 	@Override
@@ -270,10 +268,10 @@ public class PrettyPrinterVisitor implements AstVisitor {
 		stringBuffer.append('!');
 		logicalNotExpression.getOperand().accept(this);
 
+		precedence = oldPrecedence;
 		if (precedence > 0) {
 			stringBuffer.append(')');
 		}
-		precedence = oldPrecedence;
 	}
 
 	@Override

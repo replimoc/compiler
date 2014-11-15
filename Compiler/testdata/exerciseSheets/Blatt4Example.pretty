@@ -12,7 +12,7 @@ class HelloWorld {
 			x = (x + 1);
 		} else
 			(new HelloWorld()).bar(42 + (0 * 1), -1);
-	}	
+	}
 	public boolean[] array;
 	public int c;
 }
