@@ -375,7 +375,7 @@ public class PrettyPrinterVisitor implements AstVisitor {
 			stringBuffer.append(" { }");
 			break;
 		case 1:
-			if (mode == PrinterMode.IF_STATEMENT) {
+			if (mode == PrinterMode.ENABLE_SINGLE_LINE_BLOCK) {
 				stringBuffer.append("\n");
 				tabStops++;
 				Statement statement = statements.get(0);
@@ -430,7 +430,7 @@ public class PrettyPrinterVisitor implements AstVisitor {
 	@Override
 	public void visit(IfStatement ifStatement) {
 		PrinterMode oldMode = mode;
-		mode = PrinterMode.IF_STATEMENT;
+		mode = PrinterMode.ENABLE_SINGLE_LINE_BLOCK;
 
 		stringBuffer.append("if (");
 		ifStatement.getCondition().accept(this);
@@ -468,11 +468,15 @@ public class PrettyPrinterVisitor implements AstVisitor {
 
 	@Override
 	public void visit(WhileStatement whileStatement) {
-		printTabs();
 		stringBuffer.append("while (");
 		whileStatement.getCondition().accept(this);
 		stringBuffer.append(")");
+
+		PrinterMode oldMode = mode;
+		mode = PrinterMode.ENABLE_SINGLE_LINE_BLOCK;
 		whileStatement.getBody().accept(this);
+		mode = oldMode;
+
 		stringBuffer.append("\n");
 	}
 

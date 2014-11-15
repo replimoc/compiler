@@ -30,4 +30,10 @@ class HelloWorld
 			new HelloWorld().bar = 1;
 		}
 	}
+	
+	public void foo2(int a, int b) {
+		int c = a;
+		while(c < b)
+			c = c+a;
+	}
 }

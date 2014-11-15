@@ -11,6 +11,11 @@ class HelloWorld {
 			((new HelloWorld()).bar) = 1;
 		}
 	}
+	public void foo2(int a, int b) {
+		int c = a;
+		while (c < b)
+			c = (c + a);
+	}
 	public static void main(String[] args) {
 		(System.out).println(43110 + 0);
 		(((System.out).foo).bar).println(43110 + 0);

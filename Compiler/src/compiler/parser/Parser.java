@@ -23,7 +23,6 @@ import compiler.ast.statement.MethodInvocationExpression;
 import compiler.ast.statement.NewArrayExpression;
 import compiler.ast.statement.NewObjectExpression;
 import compiler.ast.statement.NullExpression;
-import compiler.ast.statement.Statement;
 import compiler.ast.statement.ThisExpression;
 import compiler.ast.statement.VariableAccessExpression;
 import compiler.ast.statement.WhileStatement;
@@ -613,8 +612,8 @@ public class Parser {
 		}
 		token = tokenSupplier.getNextToken();
 
-		Statement stmt = parseStatement();
-		return new WhileStatement(firstToken.getPosition(), expr, stmt);
+		Block statement = parseStatement();
+		return new WhileStatement(firstToken.getPosition(), expr, statement);
 	}
 
 	/**
