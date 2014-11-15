@@ -200,12 +200,18 @@ public class PrettyPrinterVisitor implements AstVisitor {
 
 		// print arguments
 		if (args != null && args.length > 0) {
+			int oldPrecedence = precedence;
+
 			int i = 0;
+			precedence = 0;
 			args[i++].accept(this);
 			while (i < args.length) {
 				stringBuffer.append(", ");
+				precedence = 0;
 				args[i++].accept(this);
 			}
+
+			precedence = oldPrecedence;
 		}
 
 		stringBuffer.append(")");
@@ -521,9 +527,11 @@ public class PrettyPrinterVisitor implements AstVisitor {
 		stringBuffer.append("public ");
 		if (isStatic)
 			stringBuffer.append("static ");
+
 		methodDeclaration.getType().accept(this);
 		stringBuffer.append(" " + methodDeclaration.getIdentifier() + "(");
 		boolean first = true;
+
 		for (ParameterDefinition parameter : methodDeclaration.getParameters()) {
 			if (first)
 				first = false;
@@ -531,6 +539,7 @@ public class PrettyPrinterVisitor implements AstVisitor {
 				stringBuffer.append(", ");
 			parameter.accept(this);
 		}
+
 		stringBuffer.append(")");
 		if (methodDeclaration.getBlock() != null) {
 			methodDeclaration.getBlock().accept(this);
