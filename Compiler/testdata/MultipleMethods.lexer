@@ -3,71 +3,71 @@ identifier MultipleMethods
 {
 public
 int
-identifier method1
+identifier method2
 (
 )
 {
 }
 public
 boolean
-identifier method1
-(
-)
-{
-}
-public
-void
-identifier method1
-(
-)
-{
-}
-public
-identifier SomeType
-identifier method1
-(
-)
-{
-}
-public
-int
-identifier method2
-(
-int
-identifier p
-)
-{
-}
-public
-int
-identifier method2
-(
-boolean
-identifier p
-)
-{
-}
-public
-int
-identifier method2
-(
-void
-identifier p
-)
-{
-}
-public
-int
-identifier method2
-(
-identifier SomeType
-identifier p
-)
-{
-}
-public
-int
 identifier method3
+(
+)
+{
+}
+public
+void
+identifier method4
+(
+)
+{
+}
+public
+identifier SomeType
+identifier method1
+(
+)
+{
+}
+public
+int
+identifier method5
+(
+int
+identifier p
+)
+{
+}
+public
+int
+identifier method
+(
+boolean
+identifier p
+)
+{
+}
+public
+int
+identifier method12
+(
+void
+identifier p
+)
+{
+}
+public
+int
+identifier method112
+(
+identifier SomeType
+identifier p
+)
+{
+}
+public
+int
+identifier z
 (
 int
 identifier p
@@ -85,7 +85,7 @@ identifier p4
 }
 public
 int
-identifier method4
+identifier a
 (
 )
 {
