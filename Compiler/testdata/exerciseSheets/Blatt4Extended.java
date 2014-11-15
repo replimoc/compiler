@@ -20,4 +20,14 @@ class HelloWorld
 		}
 	}
 	public int bar(int a, int b) { return c = (a+b); }
+	
+	public void foo(int a, int b) { 
+		if (!array[2+2]) {
+			int x = 0;
+			x = x+1;
+		} else {
+			new HelloWorld().bar(42+0*1, -1);
+			new HelloWorld().bar = 1;
+		}
+	}
 }

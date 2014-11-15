@@ -374,13 +374,18 @@ public class PrettyPrinterVisitor implements AstVisitor {
 
 		switch (statements.size()) {
 		case 0:
-			stringBuffer.append(" { }\n");
+			stringBuffer.append(" { }");
 			break;
 		case 1:
 			if (mode == PrinterMode.IF_STATEMENT) {
 				stringBuffer.append("\n");
 				tabStops++;
-				printStatement(statements.get(0));
+				Statement statement = statements.get(0);
+				printTabs();
+				statement.accept(this);
+				if (!(statement instanceof BlockBasedStatement)) {
+					stringBuffer.append(";");
+				}
 				tabStops--;
 				break;
 			}
@@ -389,21 +394,17 @@ public class PrettyPrinterVisitor implements AstVisitor {
 			tabStops++;
 
 			for (Statement statement : statements) {
-				printStatement(statement);
+				printTabs();
+				statement.accept(this);
+				if (!(statement instanceof BlockBasedStatement)) {
+					stringBuffer.append(";\n");
+				}
 			}
 			tabStops--;
 			printTabs();
 			stringBuffer.append("}");
 		}
 
-	}
-
-	private void printStatement(Statement statement) {
-		printTabs();
-		statement.accept(this);
-		if (!(statement instanceof BlockBasedStatement)) {
-			stringBuffer.append(";\n");
-		}
 	}
 
 	@Override
@@ -435,7 +436,7 @@ public class PrettyPrinterVisitor implements AstVisitor {
 
 		stringBuffer.append("if (");
 		ifStatement.getCondition().accept(this);
-		stringBuffer.append(")");
+		stringBuffer.append(')');
 
 		Block trueCase = ifStatement.getTrueCase();
 		trueCase.accept(this);
@@ -446,19 +447,21 @@ public class PrettyPrinterVisitor implements AstVisitor {
 			List<Statement> falseStatements = falseCase.getStatements();
 
 			if (numberOfTrueStatements == 1) {
+				stringBuffer.append('\n');
 				printTabs();
 			} else if (numberOfTrueStatements > 1) { // if true case was a block, add space
-				stringBuffer.append(" ");
+				stringBuffer.append(' ');
 			}
 
 			// handle else if
 			if (falseStatements.size() == 1 && falseStatements.get(0) instanceof IfStatement) {
 				stringBuffer.append("else ");
 				falseStatements.get(0).accept(this);
-			} else { // handle normal else
 
+			} else { // handle normal else
 				stringBuffer.append("else");
 				falseCase.accept(this);
+				stringBuffer.append('\n');
 			}
 		}
 
