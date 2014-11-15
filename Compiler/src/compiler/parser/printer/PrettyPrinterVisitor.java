@@ -508,7 +508,10 @@ public class PrettyPrinterVisitor implements AstVisitor {
 
 	@Override
 	public void visit(Program program) {
-		for (ClassDeclaration classDeclaration : program.getClasses()) {
+		List<ClassDeclaration> classes = program.getClasses();
+		Collections.sort(classes);
+
+		for (ClassDeclaration classDeclaration : classes) {
 			classDeclaration.accept(this);
 		}
 	}
