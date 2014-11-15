@@ -288,8 +288,12 @@ public class PrettyPrinterVisitor implements AstVisitor {
 
 	@Override
 	public void visit(ReturnStatement returnStatement) {
-		stringBuffer.append("return ");
-		returnStatement.getOperand().accept(this);
+		if (returnStatement.getOperand() != null) {
+			stringBuffer.append("return ");
+			returnStatement.getOperand().accept(this);
+		} else {
+			stringBuffer.append("return");
+		}
 	}
 
 	@Override
