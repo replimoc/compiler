@@ -12,6 +12,7 @@ import compiler.ast.FieldDeclaration;
 import compiler.ast.MethodDeclaration;
 import compiler.ast.ParameterDefinition;
 import compiler.ast.Program;
+import compiler.ast.StaticMethodDeclaration;
 import compiler.ast.statement.ArrayAccessExpression;
 import compiler.ast.statement.BooleanConstantExpression;
 import compiler.ast.statement.Expression;
@@ -261,9 +262,8 @@ public class Parser {
 				token = tokenSupplier.getNextToken();
 
 				ParameterDefinition param = new ParameterDefinition(pos, new ArrayType(pos, new ClassType(pos, type)), ident);
-				MethodDeclaration decl = new MethodDeclaration(firstToken.getPosition(), firstToken.getSymbol(), new Type(retType.getPosition(),
-						BasicType.VOID),
-						parseBlock());
+				MethodDeclaration decl = new StaticMethodDeclaration(firstToken.getPosition(), firstToken.getSymbol(),
+						new Type(retType.getPosition(), BasicType.VOID), parseBlock());
 				decl.addParameter(param);
 				return decl;
 			}
