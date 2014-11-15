@@ -86,7 +86,7 @@ public class PrettyPrinterVisitor implements AstVisitor {
 		int oldPrecedence = precedence;
 
 		precedence = tokenType.getPrecedence();
-		if (oldPrecedence > precedence) {
+		if (oldPrecedence > 0) {
 			stringBuffer.append("(");
 		}
 		if (!tokenType.isLeftAssociative())
@@ -102,7 +102,7 @@ public class PrettyPrinterVisitor implements AstVisitor {
 		if (tokenType.isLeftAssociative())
 			precedence--;
 
-		if (oldPrecedence > precedence) {
+		if (oldPrecedence > 0) {
 			stringBuffer.append(")");
 		}
 		precedence = oldPrecedence;
