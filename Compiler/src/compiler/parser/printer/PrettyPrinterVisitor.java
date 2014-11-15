@@ -461,6 +461,8 @@ public class PrettyPrinterVisitor implements AstVisitor {
 				falseCase.accept(this);
 				stringBuffer.append('\n');
 			}
+		} else {
+			stringBuffer.append('\n');
 		}
 
 		mode = oldMode;
@@ -534,7 +536,7 @@ public class PrettyPrinterVisitor implements AstVisitor {
 			methodDeclaration.getBlock().accept(this);
 			stringBuffer.append("\n");
 		} else {
-			stringBuffer.append("{ }\n");
+			stringBuffer.append(" { }\n");
 		}
 	}
 
