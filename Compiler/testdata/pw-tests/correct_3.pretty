@@ -21,12 +21,12 @@ class Hello {
 class Main {
 	public static void foo(String[] bar) {
 		if (G = ((A == B) && (C != ((Y / Z) < H)))) {
-			WorldArray ws = (new World[A = ((B * 10) || (!C))][]);
+			WorldArray ws = new World[A = ((B * 10) || (!C))][];
 			while ((this.T) % 42)
-			{
-				ws[bar] = ((new Hello()).world);
-				ws.print();
-			}
+				{
+					ws[bar] = ((new Hello()).world);
+					ws.print();
+				}
 		}
 	}
 }

@@ -1,6 +1,6 @@
 class Arrays {
 	public int[][][] getCube() {
-		int[][][] cube = (new int[10][][]);
+		int[][][] cube = new int[10][][];
 		return cube;
 	}
 	public int getInt() {
@@ -12,23 +12,23 @@ class Arrays {
 		return x + (y * z);
 	}
 	public int[] getList(int len) {
-		int[] arr = (new int[len]);
+		int[] arr = new int[len];
 		int first = arr[0];
 		int last = arr[1];
 		return arr;
 	}
 	public int[][] getMatrix() {
-		int[] matrix = (new int[10][]);
+		int[] matrix = new int[10][];
 		return matrix;
 	}
 }
 class Cl1 {
 	public Cl1 Cl1() {
 		(this.clazzy) = null;
-		(this.list) = arrays.getList(100);
-		(this.matrix) = arrays.getMatrix(100);
-		(this.cube) = arrays.getCube(100);
-		(this.wtf) = this.Cl1();
+		(this.list) = (arrays.getList(100));
+		(this.matrix) = (arrays.getMatrix(100));
+		(this.cube) = (arrays.getCube(100));
+		(this.wtf) = (this.Cl1());
 	}
 	public Cl2 cl2;
 	public CLAZZ clazzy;
@@ -162,35 +162,35 @@ class LotsBlocks {
 			Type().asdf;
 		}
 		{
-			A[] a = (new A[3]);
-			A[] a = (new A[3]);
-			A[] a = (new A[3]);
-			A[] a = (new A[3]);
-			A[] a = (new A[3]);
-			A[] a = (new A[3]);
-			A[] a = (new A[3]);
-			A[] a = (new A[3]);
-			A[] a = (new A[3]);
-			A[] a = (new A[3]);
-			A[] a = (new A[3]);
-			A[] a = (new A[3]);
-			A[] a = (new A[3]);
-			A[] a = (new A[3]);
-			A[] a = (new A[3]);
-			A[] a = (new A[3]);
-			A[] a = (new A[3]);
-			A[] a = (new A[3]);
-			A[] a = (new A[3]);
-			A[] a = (new A[3]);
-			A[] a = (new A[3]);
-			A[] a = (new A[3]);
-			A[] a = (new A[3]);
-			A[] a = (new A[3]);
-			A[] a = (new A[3]);
-			A[] a = (new A[3]);
-			A[] a = (new A[3]);
-			A[] a = (new A[3]);
-			A[] a = (new A[3]);
+			A[] a = new A[3];
+			A[] a = new A[3];
+			A[] a = new A[3];
+			A[] a = new A[3];
+			A[] a = new A[3];
+			A[] a = new A[3];
+			A[] a = new A[3];
+			A[] a = new A[3];
+			A[] a = new A[3];
+			A[] a = new A[3];
+			A[] a = new A[3];
+			A[] a = new A[3];
+			A[] a = new A[3];
+			A[] a = new A[3];
+			A[] a = new A[3];
+			A[] a = new A[3];
+			A[] a = new A[3];
+			A[] a = new A[3];
+			A[] a = new A[3];
+			A[] a = new A[3];
+			A[] a = new A[3];
+			A[] a = new A[3];
+			A[] a = new A[3];
+			A[] a = new A[3];
+			A[] a = new A[3];
+			A[] a = new A[3];
+			A[] a = new A[3];
+			A[] a = new A[3];
+			A[] a = new A[3];
 		}
 		{
 			b[c] = 3;
@@ -260,7 +260,7 @@ class Parameters {
 		boolean b_false = false;
 	}
 	public void i_accept_no_params() {
-		Cl1 cl1 = (new Cl1());
+		Cl1 cl1 = new Cl1();
 		Cl1 cl2 = Parameters.i_accept_no_params(cl1, null);
 		return false;
 	}
