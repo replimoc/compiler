@@ -8,7 +8,7 @@ class HelloWorld
 	if (23+19 == (42+0)*1)
 		b = (0 < 1);
 		else if (!array[2+2]) {
-			int x = 0;
+			int x = 0;;
 			x = x+1;
 		} else {
 			new HelloWorld().bar(42+0*1, -1);
