@@ -16,20 +16,15 @@ class Loops {
 			d = (a - abs(a));
 		if (((d > 0) || (c < 0)) || (x < y))
 			return 1;
-		if (true) { }else if (false) { }else { }
+		if (true) { } else if (false) { } else { }
 		if (true_or_false())
-			 { };
+			{ };
 		if (true)
 			if (true)
 				if (false)
 					if (true)
 						if (null)
 							if (true) { }
-
-
-
-
-
 		while (1)
 			while (1)
 				while (1)
@@ -38,16 +33,9 @@ class Loops {
 							while (1)
 								while (1)
 									while (1) { }
-
-
-
-
-
-
-
-		 {
-			 {
-				 { };
+		{
+			{
+				{ };
 			};
 		};
 		oO;
