@@ -22,7 +22,7 @@ class HelloWorld
 	public int bar(int a, int b) { return c = (a+b); }
 	
 	public void foo(int a, int b) { 
-		if (!array[2+2]) {
+		if (!array[2+2][3][2]) {
 			int x = 0;
 			x = x+1;
 		} else {

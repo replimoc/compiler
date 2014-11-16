@@ -1,30 +1,30 @@
 class BowlingGame {
 	public boolean isSpare(int frameIndex) {
-		return ((rolls[frameIndex]) + (rolls[frameIndex + 1])) == 10;
+		return (rolls[frameIndex] + rolls[frameIndex + 1]) == 10;
 	}
 	public boolean isStrike(int frameIndex) {
-		return (rolls[frameIndex] == 10);
+		return rolls[frameIndex] == 10;
 	}
 	public void roll(int pins) {
-		currentRoll = currentRoll + 1;
+		currentRoll = (currentRoll + 1);
 		rolls[currentRoll] = pins;
 	}
 	public int score() {
 		int score = 0;
 		int frameIndex = 0;
 		int frame = 0;
-		while(frame < 10) {
+		while (frame < 10) {
 			if (isStrike(frameIndex)) {
-				score = score + 10 + strikeBonus(frameIndex);
-				frameIndex = frameIndex + 2;
+				score = ((score + 10) + strikeBonus(frameIndex));
+				frameIndex = (frameIndex + 2);
 			} else if (isSpare(frameIndex)) {
-				score = score + 10 + spareBonus(frameIndex);
-				frameIndex = frameIndex + 2;
+				score = ((score + 10) + spareBonus(frameIndex));
+				frameIndex = (frameIndex + 2);
 			} else {
-				score = score + sumOfBallsInFrame(frameIndex);
-				frameIndex = frameIndex + 2;
+				score = (score + sumOfBallsInFrame(frameIndex));
+				frameIndex = (frameIndex + 2);
 			}
-			frame = frame + 1;
+			frame = (frame + 1);
 		}
 		return score;
 	}
