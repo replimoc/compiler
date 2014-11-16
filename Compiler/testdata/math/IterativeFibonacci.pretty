@@ -1,6 +1,6 @@
 class IterativeFibonacci {
 	public int iterativeFib(int n) {
-		int[] fibs = (new int[n + 1]);
+		int[] fibs = new int[n + 1];
 		fibs[0] = 0;
 		fibs[1] = 1;
 		int i = 2;
@@ -11,7 +11,7 @@ class IterativeFibonacci {
 		return fibs[n];
 	}
 	public static void main(String[] args) {
-		IterativeFibonacci fibunacci = (new IterativeFibonacci());
+		IterativeFibonacci fibunacci = new IterativeFibonacci();
 		(System.out).println(fibunacci.iterativeFib(44));
 	}
 }

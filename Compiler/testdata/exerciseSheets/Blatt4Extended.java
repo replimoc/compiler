@@ -28,6 +28,7 @@ class HelloWorld
 		} else {
 			new HelloWorld().bar(42+0*1, -1);
 			new HelloWorld().bar = 1;
+			e = new HelloWorld();
 		}
 	}
 	

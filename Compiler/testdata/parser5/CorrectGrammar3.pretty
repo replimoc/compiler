@@ -4,7 +4,7 @@ class Loops {
 		int b;
 		int c;
 		int d;
-		a = -125;
+		a = (-125);
 		while (a < 10) {
 			if ((a % 2) == 0)
 				b = (b + 1);

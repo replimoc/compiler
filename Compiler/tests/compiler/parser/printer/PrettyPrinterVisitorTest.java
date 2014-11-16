@@ -172,13 +172,13 @@ public class PrettyPrinterVisitorTest {
 	@Test
 	public void testVisitNewObjectExpression() {
 		visitor.visit(new NewObjectExpression(position, new Symbol("_")));
-		assertEquals("(new _())", visitor.getOutputString());
+		assertEquals("new _()", visitor.getOutputString());
 	}
 
 	@Test
 	public void testVisitVariableAccessExpression() {
 		visitor.visit(new VariableAccessExpression(position, variable, new Symbol("-")));
-		assertEquals("(_.-)", visitor.getOutputString());
+		assertEquals("_.-", visitor.getOutputString());
 	}
 
 	@Test
@@ -230,7 +230,7 @@ public class PrettyPrinterVisitorTest {
 		block.addStatement(variable);
 		block.addStatement(variable);
 		visitor.visit(block);
-		assertEquals(" {\n\t_;\n\t_;\n\t_;\n}", visitor.getOutputString());
+		assertEquals("{\n\t_;\n\t_;\n\t_;\n}", visitor.getOutputString());
 	}
 
 	@Test
@@ -242,17 +242,17 @@ public class PrettyPrinterVisitorTest {
 	@Test
 	public void testVisitIfStatement() {
 		visitor.visit(new IfStatement(position, variable, new Block(variable)));
-		assertEquals("if (_)\n\t_;\n", visitor.getOutputString());
+		assertEquals("if (_)\n\t_;", visitor.getOutputString());
 
 		visitor.resetOutputStream();
 		visitor.visit(new IfStatement(position, variable, new Block(variable), new Block(variable)));
-		assertEquals("if (_)\n\t_;\nelse\n\t_;\n", visitor.getOutputString());
+		assertEquals("if (_)\n\t_;\nelse\n\t_;", visitor.getOutputString());
 	}
 
 	@Test
 	public void testVisitWhileStatement() {
 		visitor.visit(new WhileStatement(position, variable, new Block(variable)));
-		assertEquals("while (_)\n\t_;\n", visitor.getOutputString());
+		assertEquals("while (_)\n\t_;", visitor.getOutputString());
 	}
 
 	@Test

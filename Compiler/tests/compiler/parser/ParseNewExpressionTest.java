@@ -37,37 +37,37 @@ public class ParseNewExpressionTest {
 	@Test
 	public void testWithArray() throws IOException {
 		Parser parser = TestUtils.initParser("test [42];");
-		assertEquals("(new test[42])", callNewArrayExpression(parser));
+		assertEquals("new test[42]", callNewArrayExpression(parser));
 	}
 
 	@Test
 	public void testWithArray2dim() throws IOException {
 		Parser parser = TestUtils.initParser("test [true][];");
-		assertEquals("(new test[true][])", callNewArrayExpression(parser));
+		assertEquals("new test[true][]", callNewArrayExpression(parser));
 	}
 
 	@Test
 	public void testWithArrayAssignment() throws IOException {
 		Parser parser = TestUtils.initParser("test [null=null][][][];");
-		assertEquals("(new test[null = null][][][])", callNewArrayExpression(parser));
+		assertEquals("new test[null = null][][][]", callNewArrayExpression(parser));
 	}
 
 	@Test
 	public void testWithInt() throws IOException {
 		Parser parser = TestUtils.initParser("int [this][];");
-		assertEquals("(new int[this][])", callNewArrayExpression(parser));
+		assertEquals("new int[this][]", callNewArrayExpression(parser));
 	}
 
 	@Test
 	public void testWithBool() throws IOException {
 		Parser parser = TestUtils.initParser("boolean [fancyexpression=42][];");
-		assertEquals("(new boolean[fancyexpression = 42][])", callNewArrayExpression(parser));
+		assertEquals("new boolean[fancyexpression = 42][]", callNewArrayExpression(parser));
 	}
 
 	@Test
 	public void testWithVoid() throws IOException {
 		Parser parser = TestUtils.initParser("void [main][];");
-		assertEquals("(new void[main][])", callNewArrayExpression(parser));
+		assertEquals("new void[main][]", callNewArrayExpression(parser));
 	}
 
 	@Test(expected = RuntimeException.class)

@@ -6,7 +6,7 @@ class Expressions {
 		int d;
 		a = a;
 		a = (!a);
-		a = -a;
+		a = (-a);
 		a = (a * b);
 		a = (a / c);
 		a = (a % d);
