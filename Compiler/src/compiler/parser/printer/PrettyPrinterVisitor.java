@@ -57,7 +57,7 @@ public class PrettyPrinterVisitor implements AstVisitor {
 
 	private void printTabs() {
 		for (int i = 0; i < tabStops; i++) {
-			stringBuffer.append("\t");
+			stringBuffer.append('\t');
 		}
 	}
 
@@ -87,20 +87,22 @@ public class PrettyPrinterVisitor implements AstVisitor {
 
 		precedence = tokenType.getPrecedence();
 		if (oldPrecedence > 0) {
-			stringBuffer.append("(");
+			stringBuffer.append('(');
 		}
 		if (!tokenType.isLeftAssociative())
 			precedence++;
 
 		binaryExpression.getOperand1().accept(this);
-		stringBuffer.append(" " + tokenType.getString() + " ");
+		stringBuffer.append(' ');
+		stringBuffer.append(tokenType.getString());
+		stringBuffer.append(' ');
 
 		precedence += tokenType.isLeftAssociative() ? 1 : 0;
 
 		binaryExpression.getOperand2().accept(this);
 
 		if (oldPrecedence > 0) {
-			stringBuffer.append(")");
+			stringBuffer.append(')');
 		}
 		precedence = oldPrecedence;
 	}
@@ -195,7 +197,7 @@ public class PrettyPrinterVisitor implements AstVisitor {
 				stringBuffer.append('(');
 
 			methodInvocationExpression.getMethodExpression().accept(this);
-			stringBuffer.append(".");
+			stringBuffer.append('.');
 		}
 
 		stringBuffer.append(methodInvocationExpression.getMethodIdent());
@@ -216,7 +218,7 @@ public class PrettyPrinterVisitor implements AstVisitor {
 		}
 
 		precedence = oldPrecedence;
-		stringBuffer.append(")");
+		stringBuffer.append(')');
 
 		if (!methodInvocationExpression.isLocalMethod() && oldPrecedence > 0)
 			stringBuffer.append(')');
@@ -241,8 +243,9 @@ public class PrettyPrinterVisitor implements AstVisitor {
 		if (precedence > 0) {
 			stringBuffer.append('(');
 		}
-
-		stringBuffer.append("new " + newObjectExpression.getIdentifier() + "()");
+		stringBuffer.append("new ");
+		stringBuffer.append(newObjectExpression.getIdentifier());
+		stringBuffer.append("()");
 
 		if (precedence > 0) {
 			stringBuffer.append(')');
@@ -256,14 +259,14 @@ public class PrettyPrinterVisitor implements AstVisitor {
 			precedence = 1;
 
 			if (oldPrecedence > 0)
-				stringBuffer.append("(");
+				stringBuffer.append('(');
 
 			variableAccessExpression.getExpression().accept(this);
-			stringBuffer.append(".");
+			stringBuffer.append('.');
 			stringBuffer.append(variableAccessExpression.getFieldIdentifier().getValue());
 
 			if (oldPrecedence > 0)
-				stringBuffer.append(")");
+				stringBuffer.append(')');
 
 			precedence = oldPrecedence;
 		} else {
@@ -402,9 +405,9 @@ public class PrettyPrinterVisitor implements AstVisitor {
 		}
 		stringBuffer.append(typeString);
 		if (dim > 0) {
-			stringBuffer.append("[");
+			stringBuffer.append('[');
 			expr.accept(this);
-			stringBuffer.append("]");
+			stringBuffer.append(']');
 		}
 		for (int i = 1; i < dim; i++) {
 			stringBuffer.append("[]");
@@ -421,19 +424,19 @@ public class PrettyPrinterVisitor implements AstVisitor {
 			break;
 		case 1:
 			if (mode == PrinterMode.ENABLE_SINGLE_LINE_BLOCK) {
-				stringBuffer.append("\n");
+				stringBuffer.append('\n');
 				tabStops++;
 				printTabs();
 				Statement statement = statements.get(0);
 				statement.accept(this);
 				if (!(statement instanceof BlockBasedStatement) && !(statement instanceof Block)) {
-					stringBuffer.append(";");
+					stringBuffer.append(';');
 				}
 				tabStops--;
 				break;
 			}
 		default:
-			stringBuffer.append("{");
+			stringBuffer.append('{');
 			tabStops++;
 
 			for (Statement statement : statements) {
@@ -441,7 +444,7 @@ public class PrettyPrinterVisitor implements AstVisitor {
 				printTabs();
 				statement.accept(this);
 				if (!(statement instanceof BlockBasedStatement) && !(statement instanceof Block)) {
-					stringBuffer.append(";");
+					stringBuffer.append(';');
 				}
 			}
 			tabStops--;
@@ -453,10 +456,12 @@ public class PrettyPrinterVisitor implements AstVisitor {
 
 	@Override
 	public void visit(ClassDeclaration classDeclaration) {
-		stringBuffer.append("class " + classDeclaration.getIdentifier() + " {");
+		stringBuffer.append("class ");
+		stringBuffer.append(classDeclaration.getIdentifier());
+		stringBuffer.append(" {");
 
 		if (classDeclaration.getMembers() != null && classDeclaration.getMembers().size() > 0) {
-			stringBuffer.append("\n");
+			stringBuffer.append('\n');
 			tabStops++;
 
 			List<ClassMember> members = classDeclaration.getMembers();
@@ -468,7 +473,7 @@ public class PrettyPrinterVisitor implements AstVisitor {
 			}
 			tabStops--;
 		} else {
-			stringBuffer.append(" ");
+			stringBuffer.append(' ');
 		}
 		stringBuffer.append("}\n");
 	}
@@ -534,6 +539,7 @@ public class PrettyPrinterVisitor implements AstVisitor {
 
 		PrinterMode oldMode = mode;
 		mode = PrinterMode.ENABLE_SINGLE_LINE_BLOCK;
+
 		Block body = whileStatement.getBody();
 		printWhitespaceIfBlockNeedsCurlyBrackets(body);
 		body.accept(this);
@@ -557,7 +563,8 @@ public class PrettyPrinterVisitor implements AstVisitor {
 	@Override
 	public void visit(ParameterDefinition parameterDefinition) {
 		parameterDefinition.getType().accept(this);
-		stringBuffer.append(" " + parameterDefinition.getIdentifier());
+		stringBuffer.append(' ');
+		stringBuffer.append(parameterDefinition.getIdentifier());
 	}
 
 	@Override
@@ -586,7 +593,9 @@ public class PrettyPrinterVisitor implements AstVisitor {
 			stringBuffer.append("static ");
 
 		methodDeclaration.getType().accept(this);
-		stringBuffer.append(" " + methodDeclaration.getIdentifier() + "(");
+		stringBuffer.append(' ');
+		stringBuffer.append(methodDeclaration.getIdentifier());
+		stringBuffer.append('(');
 		boolean first = true;
 
 		for (ParameterDefinition parameter : methodDeclaration.getParameters()) {
@@ -597,12 +606,12 @@ public class PrettyPrinterVisitor implements AstVisitor {
 			parameter.accept(this);
 		}
 
-		stringBuffer.append(")");
+		stringBuffer.append(')');
 		Block block = methodDeclaration.getBlock();
 		if (block != null) {
 			printWhitespaceIfBlockNeedsCurlyBrackets(block);
 			block.accept(this);
-			stringBuffer.append("\n");
+			stringBuffer.append('\n');
 		} else {
 			stringBuffer.append(" { }\n");
 		}
@@ -612,8 +621,9 @@ public class PrettyPrinterVisitor implements AstVisitor {
 	public void visit(FieldDeclaration fieldDeclaration) {
 		stringBuffer.append("public ");
 		fieldDeclaration.getType().accept(this);
-		stringBuffer.append(" " + fieldDeclaration.getIdentifier().getValue() + ";\n");
-
+		stringBuffer.append(' ');
+		stringBuffer.append(fieldDeclaration.getIdentifier().getValue());
+		stringBuffer.append(";\n");
 	}
 
 }
