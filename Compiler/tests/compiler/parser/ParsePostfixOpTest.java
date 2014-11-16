@@ -89,6 +89,6 @@ public class ParsePostfixOpTest {
 	}
 
 	private String callArrayAccessExpression(Parser parser) {
-		return PrettyPrinter.get((ArrayAccessExpression) caller.call("parsePostfixOp", parser, parameterTypes, args));
+		return PrettyPrinter.prettyPrint((ArrayAccessExpression) caller.call("parsePostfixOp", parser, parameterTypes, args));
 	}
 }

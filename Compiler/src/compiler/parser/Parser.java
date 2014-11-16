@@ -956,7 +956,7 @@ public class Parser {
 			// no expression
 		case RP:
 		default:
-			return null; // no ast
+			return new Expression[0]; // no ast
 		}
 	}
 

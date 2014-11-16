@@ -78,7 +78,7 @@ public final class CompilerApp {
 					}
 
 					if (cmd.hasOption(PRETTY_PRINT_AST)) {
-						System.out.print(PrettyPrinter.get(ast));
+						System.out.print(PrettyPrinter.prettyPrint(ast));
 					}
 					return 0;
 				} catch (IOException e) {

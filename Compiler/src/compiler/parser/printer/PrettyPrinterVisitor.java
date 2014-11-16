@@ -205,7 +205,7 @@ public class PrettyPrinterVisitor implements AstVisitor {
 		Expression[] args = methodInvocationExpression.getParameters();
 
 		// print arguments
-		if (args != null && args.length > 0) {
+		if (args.length > 0) {
 			int i = 0;
 			precedence = 0;
 			args[i++].accept(this);
@@ -404,11 +404,11 @@ public class PrettyPrinterVisitor implements AstVisitor {
 			throw new IllegalArgumentException();
 		}
 		stringBuffer.append(typeString);
-		if (dim > 0) {
-			stringBuffer.append('[');
-			expr.accept(this);
-			stringBuffer.append(']');
-		}
+
+		stringBuffer.append('[');
+		expr.accept(this);
+		stringBuffer.append(']');
+
 		for (int i = 1; i < dim; i++) {
 			stringBuffer.append("[]");
 		}
@@ -460,7 +460,7 @@ public class PrettyPrinterVisitor implements AstVisitor {
 		stringBuffer.append(classDeclaration.getIdentifier());
 		stringBuffer.append(" {");
 
-		if (classDeclaration.getMembers() != null && classDeclaration.getMembers().size() > 0) {
+		if (classDeclaration.getMembers().size() > 0) {
 			stringBuffer.append('\n');
 			tabStops++;
 
@@ -499,7 +499,7 @@ public class PrettyPrinterVisitor implements AstVisitor {
 			if (numberOfTrueStatements <= 1) {
 				stringBuffer.append('\n');
 				printTabs();
-			} else if (numberOfTrueStatements > 1) { // if true case was a block, add space
+			} else { // if true case was a block, add space
 				stringBuffer.append(' ');
 			}
 

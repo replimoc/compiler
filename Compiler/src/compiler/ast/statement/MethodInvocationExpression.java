@@ -34,10 +34,6 @@ public class MethodInvocationExpression extends PostfixExpression {
 		return expression == null ? true : false;
 	}
 
-	public int numberOfArguments() {
-		return parameters == null ? 0 : parameters.length;
-	}
-
 	@Override
 	public void accept(AstVisitor visitor) {
 		visitor.visit(this);

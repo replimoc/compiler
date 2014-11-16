@@ -44,7 +44,7 @@ public class AutomatedAstComparisionTest implements TestFileVisitor.FileTester {
 		try {
 			AstNode ast = parser.parse();
 
-			String printedAst = PrettyPrinter.get(ast);
+			String printedAst = PrettyPrinter.prettyPrint(ast);
 			Scanner s = new Scanner(printedAst);
 
 			int line = 1;
