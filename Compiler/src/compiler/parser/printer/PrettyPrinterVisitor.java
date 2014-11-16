@@ -381,8 +381,8 @@ public class PrettyPrinterVisitor implements AstVisitor {
 			if (mode == PrinterMode.ENABLE_SINGLE_LINE_BLOCK) {
 				stringBuffer.append("\n");
 				tabStops++;
-				Statement statement = statements.get(0);
 				printTabs();
+				Statement statement = statements.get(0);
 				statement.accept(this);
 				if (!(statement instanceof BlockBasedStatement) && !(statement instanceof Block)) {
 					stringBuffer.append(";");
@@ -391,21 +391,21 @@ public class PrettyPrinterVisitor implements AstVisitor {
 				break;
 			}
 		default:
-			stringBuffer.append("{\n");
+			stringBuffer.append("{");
 			tabStops++;
 
 			for (Statement statement : statements) {
+				stringBuffer.append('\n');
 				printTabs();
 				statement.accept(this);
-				if (statement instanceof Block) {
-					stringBuffer.append("\n");
-				} else if (!(statement instanceof BlockBasedStatement)) {
-					stringBuffer.append(";\n");
+				if (!(statement instanceof BlockBasedStatement) && !(statement instanceof Block)) {
+					stringBuffer.append(";");
 				}
 			}
 			tabStops--;
+			stringBuffer.append('\n');
 			printTabs();
-			stringBuffer.append("}");
+			stringBuffer.append('}');
 		}
 	}
 
@@ -446,7 +446,7 @@ public class PrettyPrinterVisitor implements AstVisitor {
 		int numberOfTrueStatements = trueCase.getNumberOfStatements();
 
 		Block falseCase = ifStatement.getFalseCase();
-		if (falseCase != null) { // TODO: Is that correct this way?
+		if (falseCase != null) {
 			List<Statement> falseStatements = falseCase.getStatements();
 
 			if (numberOfTrueStatements <= 1) {
@@ -466,11 +466,7 @@ public class PrettyPrinterVisitor implements AstVisitor {
 				stringBuffer.append("else");
 				printWhitespaceIfBlockNeedsCurlyBrackets(falseCase);
 				falseCase.accept(this);
-				stringBuffer.append('\n');
 			}
-		} else {
-			if (oldMode != PrinterMode.ENABLE_SINGLE_LINE_BLOCK)
-				stringBuffer.append('\n');
 		}
 
 		mode = oldMode;
@@ -492,7 +488,7 @@ public class PrettyPrinterVisitor implements AstVisitor {
 	public void visit(WhileStatement whileStatement) {
 		stringBuffer.append("while (");
 		whileStatement.getCondition().accept(this);
-		stringBuffer.append(")");
+		stringBuffer.append(')');
 
 		PrinterMode oldMode = mode;
 		mode = PrinterMode.ENABLE_SINGLE_LINE_BLOCK;
@@ -500,16 +496,14 @@ public class PrettyPrinterVisitor implements AstVisitor {
 		printWhitespaceIfBlockNeedsCurlyBrackets(body);
 		body.accept(this);
 
-		if (oldMode != PrinterMode.ENABLE_SINGLE_LINE_BLOCK)
-			stringBuffer.append("\n");
-
 		mode = oldMode;
 	}
 
 	@Override
 	public void visit(LocalVariableDeclaration localVariableDeclaration) {
 		localVariableDeclaration.getType().accept(this);
-		stringBuffer.append(" " + localVariableDeclaration.getIdentifier());
+		stringBuffer.append(' ');
+		stringBuffer.append(localVariableDeclaration.getIdentifier());
 		Expression expression = localVariableDeclaration.getExpression();
 
 		if (expression != null) {
