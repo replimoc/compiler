@@ -375,7 +375,7 @@ public class PrettyPrinterVisitor implements AstVisitor {
 
 		switch (statements.size()) {
 		case 0:
-			stringBuffer.append(" { }");
+			stringBuffer.append("{ }");
 			break;
 		case 1:
 			if (mode == PrinterMode.ENABLE_SINGLE_LINE_BLOCK) {
@@ -384,20 +384,22 @@ public class PrettyPrinterVisitor implements AstVisitor {
 				Statement statement = statements.get(0);
 				printTabs();
 				statement.accept(this);
-				if (!(statement instanceof BlockBasedStatement)) {
+				if (!(statement instanceof BlockBasedStatement) && !(statement instanceof Block)) {
 					stringBuffer.append(";");
 				}
 				tabStops--;
 				break;
 			}
 		default:
-			stringBuffer.append(" {\n");
+			stringBuffer.append("{\n");
 			tabStops++;
 
 			for (Statement statement : statements) {
 				printTabs();
 				statement.accept(this);
-				if (!(statement instanceof BlockBasedStatement)) {
+				if (statement instanceof Block) {
+					stringBuffer.append("\n");
+				} else if (!(statement instanceof BlockBasedStatement)) {
 					stringBuffer.append(";\n");
 				}
 			}
@@ -405,7 +407,6 @@ public class PrettyPrinterVisitor implements AstVisitor {
 			printTabs();
 			stringBuffer.append("}");
 		}
-
 	}
 
 	@Override
@@ -440,6 +441,7 @@ public class PrettyPrinterVisitor implements AstVisitor {
 		stringBuffer.append(')');
 
 		Block trueCase = ifStatement.getTrueCase();
+		printWhitespaceIfBlockNeedsCurlyBrackets(trueCase);
 		trueCase.accept(this);
 		int numberOfTrueStatements = trueCase.getNumberOfStatements();
 
@@ -447,7 +449,7 @@ public class PrettyPrinterVisitor implements AstVisitor {
 		if (falseCase != null) { // TODO: Is that correct this way?
 			List<Statement> falseStatements = falseCase.getStatements();
 
-			if (numberOfTrueStatements == 1) {
+			if (numberOfTrueStatements <= 1) {
 				stringBuffer.append('\n');
 				printTabs();
 			} else if (numberOfTrueStatements > 1) { // if true case was a block, add space
@@ -456,19 +458,34 @@ public class PrettyPrinterVisitor implements AstVisitor {
 
 			// handle else if
 			if (falseStatements.size() == 1 && falseStatements.get(0) instanceof IfStatement) {
+
 				stringBuffer.append("else ");
 				falseStatements.get(0).accept(this);
 
 			} else { // handle normal else
 				stringBuffer.append("else");
+				printWhitespaceIfBlockNeedsCurlyBrackets(falseCase);
 				falseCase.accept(this);
 				stringBuffer.append('\n');
 			}
 		} else {
-			stringBuffer.append('\n');
+			if (oldMode != PrinterMode.ENABLE_SINGLE_LINE_BLOCK)
+				stringBuffer.append('\n');
 		}
 
 		mode = oldMode;
+	}
+
+	/**
+	 * Adds a whitespace if the following block uses curly brackets. This can be an empty block or a block with multiple lines or a block with only
+	 * one line printed as method body.
+	 * 
+	 * @param block
+	 */
+	private void printWhitespaceIfBlockNeedsCurlyBrackets(Block block) {
+		if (block.getNumberOfStatements() != 1 || mode != PrinterMode.ENABLE_SINGLE_LINE_BLOCK) {
+			stringBuffer.append(' ');
+		}
 	}
 
 	@Override
@@ -479,10 +496,14 @@ public class PrettyPrinterVisitor implements AstVisitor {
 
 		PrinterMode oldMode = mode;
 		mode = PrinterMode.ENABLE_SINGLE_LINE_BLOCK;
-		whileStatement.getBody().accept(this);
-		mode = oldMode;
+		Block body = whileStatement.getBody();
+		printWhitespaceIfBlockNeedsCurlyBrackets(body);
+		body.accept(this);
 
-		stringBuffer.append("\n");
+		if (oldMode != PrinterMode.ENABLE_SINGLE_LINE_BLOCK)
+			stringBuffer.append("\n");
+
+		mode = oldMode;
 	}
 
 	@Override
@@ -541,8 +562,10 @@ public class PrettyPrinterVisitor implements AstVisitor {
 		}
 
 		stringBuffer.append(")");
-		if (methodDeclaration.getBlock() != null) {
-			methodDeclaration.getBlock().accept(this);
+		Block block = methodDeclaration.getBlock();
+		if (block != null) {
+			printWhitespaceIfBlockNeedsCurlyBrackets(block);
+			block.accept(this);
 			stringBuffer.append("\n");
 		} else {
 			stringBuffer.append(" { }\n");
