@@ -1,7 +1,12 @@
 package compiler.semantic;
 
+import java.util.ArrayList;
+import java.util.List;
+
+import compiler.ast.AstNode;
 import compiler.ast.Block;
 import compiler.ast.ClassDeclaration;
+import compiler.ast.ClassMember;
 import compiler.ast.FieldDeclaration;
 import compiler.ast.MethodDeclaration;
 import compiler.ast.ParameterDefinition;
@@ -9,6 +14,7 @@ import compiler.ast.Program;
 import compiler.ast.StaticMethodDeclaration;
 import compiler.ast.statement.ArrayAccessExpression;
 import compiler.ast.statement.BooleanConstantExpression;
+import compiler.ast.statement.Expression;
 import compiler.ast.statement.IfStatement;
 import compiler.ast.statement.IntegerConstantExpression;
 import compiler.ast.statement.LocalVariableDeclaration;
@@ -16,11 +22,13 @@ import compiler.ast.statement.MethodInvocationExpression;
 import compiler.ast.statement.NewArrayExpression;
 import compiler.ast.statement.NewObjectExpression;
 import compiler.ast.statement.NullExpression;
+import compiler.ast.statement.Statement;
 import compiler.ast.statement.ThisExpression;
 import compiler.ast.statement.VariableAccessExpression;
 import compiler.ast.statement.WhileStatement;
 import compiler.ast.statement.binary.AdditionExpression;
 import compiler.ast.statement.binary.AssignmentExpression;
+import compiler.ast.statement.binary.BinaryExpression;
 import compiler.ast.statement.binary.DivisionExpression;
 import compiler.ast.statement.binary.EqualityExpression;
 import compiler.ast.statement.binary.GreaterThanEqualExpression;
@@ -33,18 +41,69 @@ import compiler.ast.statement.binary.ModuloExpression;
 import compiler.ast.statement.binary.MuliplicationExpression;
 import compiler.ast.statement.binary.NonEqualityExpression;
 import compiler.ast.statement.binary.SubtractionExpression;
+import compiler.ast.statement.type.BasicType;
 import compiler.ast.statement.type.Type;
 import compiler.ast.statement.unary.LogicalNotExpression;
 import compiler.ast.statement.unary.NegateExpression;
 import compiler.ast.statement.unary.ReturnStatement;
+import compiler.ast.statement.unary.UnaryExpression;
 import compiler.ast.visitor.AstVisitor;
 
 public class DeepCheckingVisitor implements AstVisitor {
 
+	private List<Exception> exceptions = new ArrayList<Exception>();
+
+	private void throwTypeError(AstNode astNode) {
+		exceptions.add(new TypeErrorException(astNode.getPosition()));
+	}
+
+	private void expectType(Type type, AstNode astNode) {
+		if (!astNode.getType().equals(type)) {
+			throwTypeError(astNode);
+		}
+	}
+
+	private void expectType(BasicType type, AstNode astNode) {
+		if (astNode.getType().getBasicType() != type ||
+				astNode.getType().getSubType() != null) {
+			throwTypeError(astNode);
+		}
+	}
+
+	private void setType(Type type, AstNode astNode) {
+		astNode.setType(type);
+	}
+
+	private void setType(BasicType basicType, AstNode astNode) {
+		setType(new Type(astNode.getPosition(), basicType), astNode);
+	}
+
+	private void checkBinaryOperandEquality(BinaryExpression binaryExpression) {
+		AstNode left = binaryExpression.getOperand1();
+		AstNode right = binaryExpression.getOperand2();
+		left.accept(this);
+		right.accept(this);
+		if (!left.getType().equals(right.getType())) {
+			throwTypeError(binaryExpression);
+		}
+	}
+
+	private void checkExpression(BinaryExpression binaryExpression, BasicType expected, BasicType result) {
+		checkBinaryOperandEquality(binaryExpression);
+		expectType(expected, binaryExpression.getOperand1());
+		setType(result, binaryExpression);
+	}
+
+	private void checkExpression(UnaryExpression unaryExpression, BasicType expected, BasicType result) {
+		AstNode operand = unaryExpression.getOperand();
+		operand.accept(this);
+		expectType(expected, operand);
+		setType(result, unaryExpression);
+	}
+
 	@Override
 	public void visit(AdditionExpression additionExpression) {
-		// TODO Auto-generated method stub
-
+		checkExpression(additionExpression, BasicType.INT, BasicType.INT);
 	}
 
 	@Override
@@ -55,86 +114,74 @@ public class DeepCheckingVisitor implements AstVisitor {
 
 	@Override
 	public void visit(DivisionExpression divisionExpression) {
-		// TODO Auto-generated method stub
-
+		checkExpression(divisionExpression, BasicType.INT, BasicType.INT);
 	}
 
 	@Override
 	public void visit(EqualityExpression equalityExpression) {
-		// TODO Auto-generated method stub
-
+		checkBinaryOperandEquality(equalityExpression);
+		setType(BasicType.BOOLEAN, equalityExpression);
 	}
 
 	@Override
 	public void visit(GreaterThanEqualExpression greaterThanEqualExpression) {
-		// TODO Auto-generated method stub
-
+		checkExpression(greaterThanEqualExpression, BasicType.INT, BasicType.BOOLEAN);
 	}
 
 	@Override
 	public void visit(GreaterThanExpression greaterThanExpression) {
-		// TODO Auto-generated method stub
-
+		checkExpression(greaterThanExpression, BasicType.INT, BasicType.BOOLEAN);
 	}
 
 	@Override
 	public void visit(LessThanEqualExpression lessThanEqualExpression) {
-		// TODO Auto-generated method stub
-
+		checkExpression(lessThanEqualExpression, BasicType.INT, BasicType.BOOLEAN);
 	}
 
 	@Override
 	public void visit(LessThanExpression lessThanExpression) {
-		// TODO Auto-generated method stub
-
+		checkExpression(lessThanExpression, BasicType.INT, BasicType.BOOLEAN);
 	}
 
 	@Override
 	public void visit(LogicalAndExpression logicalAndExpression) {
-		// TODO Auto-generated method stub
-
+		checkExpression(logicalAndExpression, BasicType.BOOLEAN, BasicType.BOOLEAN);
 	}
 
 	@Override
 	public void visit(LogicalOrExpression logicalOrExpression) {
-		// TODO Auto-generated method stub
-
+		checkExpression(logicalOrExpression, BasicType.BOOLEAN, BasicType.BOOLEAN);
 	}
 
 	@Override
 	public void visit(ModuloExpression moduloExpression) {
-		// TODO Auto-generated method stub
-
+		checkExpression(moduloExpression, BasicType.INT, BasicType.INT);
 	}
 
 	@Override
 	public void visit(MuliplicationExpression multiplicationExpression) {
-		// TODO Auto-generated method stub
-
+		checkExpression(multiplicationExpression, BasicType.INT, BasicType.INT);
 	}
 
 	@Override
 	public void visit(NonEqualityExpression nonEqualityExpression) {
-		// TODO Auto-generated method stub
-
+		checkBinaryOperandEquality(nonEqualityExpression);
+		setType(BasicType.BOOLEAN, nonEqualityExpression);
 	}
 
 	@Override
 	public void visit(SubtractionExpression substractionExpression) {
-		// TODO Auto-generated method stub
-
+		checkExpression(substractionExpression, BasicType.INT, BasicType.INT);
 	}
 
 	@Override
 	public void visit(BooleanConstantExpression booleanConstantExpression) {
-		// TODO Auto-generated method stub
-
+		setType(BasicType.BOOLEAN, booleanConstantExpression);
 	}
 
 	@Override
 	public void visit(IntegerConstantExpression integerConstantExpression) {
-		// TODO Auto-generated method stub
-
+		setType(BasicType.INT, integerConstantExpression);
 	}
 
 	@Override
@@ -169,14 +216,12 @@ public class DeepCheckingVisitor implements AstVisitor {
 
 	@Override
 	public void visit(LogicalNotExpression logicalNotExpression) {
-		// TODO Auto-generated method stub
-
+		checkExpression(logicalNotExpression, BasicType.BOOLEAN, BasicType.BOOLEAN);
 	}
 
 	@Override
 	public void visit(NegateExpression negateExpression) {
-		// TODO Auto-generated method stub
-
+		checkExpression(negateExpression, BasicType.INT, BasicType.INT);
 	}
 
 	@Override
@@ -199,38 +244,54 @@ public class DeepCheckingVisitor implements AstVisitor {
 
 	@Override
 	public void visit(Type type) {
-		// TODO Auto-generated method stub
-
+		type.setType(type);
 	}
 
 	@Override
 	public void visit(Block block) {
-		// TODO Auto-generated method stub
+		for (Statement statement : block.getStatements()) {
+			statement.accept(this);
+		}
 
 	}
 
 	@Override
 	public void visit(ClassDeclaration classDeclaration) {
-		// TODO Auto-generated method stub
-
+		for (ClassMember classMember : classDeclaration.getMembers()) {
+			classMember.accept(this);
+		}
 	}
 
 	@Override
 	public void visit(IfStatement ifStatement) {
-		// TODO Auto-generated method stub
+		AstNode condition = ifStatement.getCondition();
+		condition.accept(this);
+		expectType(BasicType.BOOLEAN, condition);
 
+		if (ifStatement.getTrueCase() != null) {
+			ifStatement.getTrueCase().accept(this);
+		}
+		if (ifStatement.getFalseCase() != null) {
+			ifStatement.getFalseCase().accept(this);
+		}
 	}
 
 	@Override
 	public void visit(WhileStatement whileStatement) {
-		// TODO Auto-generated method stub
+		AstNode condition = whileStatement.getCondition();
+		condition.accept(this);
+		expectType(BasicType.BOOLEAN, condition);
 
+		if (whileStatement.getBody() != null) {
+			whileStatement.getBody().accept(this);
+		}
 	}
 
 	@Override
 	public void visit(LocalVariableDeclaration localVariableDeclaration) {
-		// TODO Auto-generated method stub
-
+		Expression expression = localVariableDeclaration.getExpression();
+		expression.accept(this);
+		expectType(localVariableDeclaration.getType(), expression);
 	}
 
 	@Override
@@ -241,14 +302,14 @@ public class DeepCheckingVisitor implements AstVisitor {
 
 	@Override
 	public void visit(Program program) {
-		// TODO Auto-generated method stub
-
+		for (ClassDeclaration classDeclaration : program.getClasses()) {
+			classDeclaration.accept(this);
+		}
 	}
 
 	@Override
 	public void visit(MethodDeclaration methodDeclaration) {
-		// TODO Auto-generated method stub
-
+		visitMethodDeclaration(methodDeclaration);
 	}
 
 	@Override
@@ -259,8 +320,14 @@ public class DeepCheckingVisitor implements AstVisitor {
 
 	@Override
 	public void visit(StaticMethodDeclaration staticMethodDeclaration) {
-		// TODO Auto-generated method stub
-
+		visitMethodDeclaration(staticMethodDeclaration);
 	}
 
+	private void visitMethodDeclaration(MethodDeclaration methodDeclaration) {
+		for (ParameterDefinition parameterDefinition : methodDeclaration.getParameters()) {
+			parameterDefinition.accept(this);
+		}
+
+		methodDeclaration.getBlock().accept(this);
+	}
 }
