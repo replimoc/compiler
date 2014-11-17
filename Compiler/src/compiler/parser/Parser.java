@@ -1009,14 +1009,12 @@ public class Parser {
 	 * @throws IOException
 	 */
 	private void expectAndConsume(TokenType tokenType) throws ParserException, IOException {
-		if (token.getType() != tokenType) {
-			throw new ParserException(token, tokenType);
-		}
-		token = tokenSupplier.getNextToken();
+		expect(tokenType);
+		consume();
 	}
 
 	/**
-	 * Checks if the next token has not the given token type and then consumes the token.
+	 * Checks if the next token has the given token type and throws an exception.
 	 * 
 	 * @param tokenType
 	 * @throws ParserException
@@ -1027,7 +1025,7 @@ public class Parser {
 		if (token.getType() == tokenType) {
 			throw new ParserException(token, expected);
 		}
-		token = tokenSupplier.getNextToken();
+		consume();
 	}
 
 	/**
@@ -1039,9 +1037,31 @@ public class Parser {
 	 */
 	private boolean isTokenTypeAndConsume(TokenType tokenType) throws IOException {
 		if (token.getType() == tokenType) {
-			token = tokenSupplier.getNextToken();
+			consume();
 			return true;
 		}
 		return false;
+	}
+
+	/**
+	 * Consume the next token.
+	 * 
+	 * @throws IOException
+	 */
+	private void consume() throws IOException {
+		token = tokenSupplier.getNextToken();
+	}
+
+	/**
+	 * Checks if the next token has the given token type.
+	 * 
+	 * @param tokenType
+	 * @throws ParserException
+	 *             if the token type does not match
+	 */
+	private void expect(TokenType tokenType) throws ParserException {
+		if (token.getType() != tokenType) {
+			throw new ParserException(token, tokenType);
+		}
 	}
 }
