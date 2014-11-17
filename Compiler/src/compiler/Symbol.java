@@ -1,13 +1,15 @@
 package compiler;
 
+import compiler.ast.nameanalysis.Definition;
+import compiler.ast.nameanalysis.Scope;
+
 /**
  * Symbol represents a hashed String (see StringTable).
- * 
- * @author Aleksej Frank
- *
  */
 public class Symbol {
 	private String value;
+	private Scope defScope;
+	private Definition definition;
 
 	// definition
 
@@ -47,6 +49,19 @@ public class Symbol {
 		} else if (!value.equals(other.value))
 			return false;
 		return true;
+	}
+	
+	public void setDefintion(Scope scope, Definition definition) {
+		this.defScope = scope;
+		this.definition = definition;
+	}
+
+	public Scope getDefinitionScope() {
+		return defScope;
+	}
+	
+	public Definition getDefinition() {
+		return definition;
 	}
 
 }
