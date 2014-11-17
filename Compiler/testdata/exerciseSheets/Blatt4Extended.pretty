@@ -17,6 +17,11 @@ class HelloWorld {
 		while (c < b)
 			c = (c + a);
 	}
+	public void foundBug() {
+		if (true) {
+			int x;
+		}
+	}
 	public static void main(String[] args) {
 		(System.out).println(43110 + 0);
 		(((System.out).foo).bar).println(43110 + 0);

@@ -37,4 +37,11 @@ class HelloWorld
 		while(c < b)
 			c = c+a;
 	}
+	
+	public void foundBug(int a, int b) {
+		if(true) {
+			int x;
+		}
+	}
+		
 }
