@@ -33,4 +33,10 @@ public class SymbolTable {
 	public boolean isDefinedInCurrentScope(Symbol symbol) {
 		return symbol.getDefinitionScope() == currentScope;
 	}
+
+	public void leaveAllScopes() {
+		while (currentScope != null) {
+			leaveScope();
+		}
+	}
 }
