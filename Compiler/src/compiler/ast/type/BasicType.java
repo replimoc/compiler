@@ -1,4 +1,4 @@
-package compiler.ast.statement.type;
+package compiler.ast.type;
 
 public enum BasicType {
 	INT,

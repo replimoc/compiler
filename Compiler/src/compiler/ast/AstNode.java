@@ -1,6 +1,6 @@
 package compiler.ast;
 
-import compiler.ast.statement.type.Type;
+import compiler.ast.type.Type;
 import compiler.ast.visitor.AstVisitor;
 import compiler.lexer.Position;
 

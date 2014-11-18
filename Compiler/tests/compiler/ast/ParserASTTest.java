@@ -6,7 +6,7 @@ import java.io.IOException;
 
 import org.junit.Test;
 
-import compiler.ast.statement.type.ClassType;
+import compiler.ast.type.ClassType;
 import compiler.parser.Parser;
 import compiler.parser.ParsingFailedException;
 import compiler.utils.TestUtils;

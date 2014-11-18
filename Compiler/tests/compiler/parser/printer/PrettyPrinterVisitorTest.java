@@ -36,11 +36,11 @@ import compiler.ast.statement.binary.ModuloExpression;
 import compiler.ast.statement.binary.MuliplicationExpression;
 import compiler.ast.statement.binary.NonEqualityExpression;
 import compiler.ast.statement.binary.SubtractionExpression;
-import compiler.ast.statement.type.BasicType;
-import compiler.ast.statement.type.Type;
 import compiler.ast.statement.unary.LogicalNotExpression;
 import compiler.ast.statement.unary.NegateExpression;
 import compiler.ast.statement.unary.ReturnStatement;
+import compiler.ast.type.BasicType;
+import compiler.ast.type.Type;
 import compiler.lexer.Position;
 
 public class PrettyPrinterVisitorTest {

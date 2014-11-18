@@ -1,4 +1,4 @@
-package compiler.ast.statement.type;
+package compiler.ast.type;
 
 import compiler.Symbol;
 import compiler.lexer.Position;

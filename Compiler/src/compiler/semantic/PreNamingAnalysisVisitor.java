@@ -1,7 +1,11 @@
 package compiler.semantic;
 
+import java.util.HashMap;
+
+import compiler.Symbol;
 import compiler.ast.Block;
 import compiler.ast.ClassDeclaration;
+import compiler.ast.ClassMember;
 import compiler.ast.FieldDeclaration;
 import compiler.ast.MethodDeclaration;
 import compiler.ast.ParameterDefinition;
@@ -33,234 +37,176 @@ import compiler.ast.statement.binary.ModuloExpression;
 import compiler.ast.statement.binary.MuliplicationExpression;
 import compiler.ast.statement.binary.NonEqualityExpression;
 import compiler.ast.statement.binary.SubtractionExpression;
-import compiler.ast.statement.type.Type;
 import compiler.ast.statement.unary.LogicalNotExpression;
 import compiler.ast.statement.unary.NegateExpression;
 import compiler.ast.statement.unary.ReturnStatement;
+import compiler.ast.type.Type;
 import compiler.ast.visitor.AstVisitor;
+import compiler.semantic.symbolTable.SymbolTable;
 
 public class PreNamingAnalysisVisitor implements AstVisitor {
 
+	private HashMap<Symbol, SymbolTable> classTables = new HashMap<>();
+	private SymbolTable currentSymbolTable;
+
 	@Override
 	public void visit(AdditionExpression additionExpression) {
-		// TODO Auto-generated method stub
-
 	}
 
 	@Override
 	public void visit(AssignmentExpression assignmentExpression) {
-		// TODO Auto-generated method stub
-
 	}
 
 	@Override
 	public void visit(DivisionExpression divisionExpression) {
-		// TODO Auto-generated method stub
-
 	}
 
 	@Override
 	public void visit(EqualityExpression equalityExpression) {
-		// TODO Auto-generated method stub
-
 	}
 
 	@Override
 	public void visit(GreaterThanEqualExpression greaterThanEqualExpression) {
-		// TODO Auto-generated method stub
-
 	}
 
 	@Override
 	public void visit(GreaterThanExpression greaterThanExpression) {
-		// TODO Auto-generated method stub
-
 	}
 
 	@Override
 	public void visit(LessThanEqualExpression lessThanEqualExpression) {
-		// TODO Auto-generated method stub
-
 	}
 
 	@Override
 	public void visit(LessThanExpression lessThanExpression) {
-		// TODO Auto-generated method stub
-
 	}
 
 	@Override
 	public void visit(LogicalAndExpression logicalAndExpression) {
-		// TODO Auto-generated method stub
-
 	}
 
 	@Override
 	public void visit(LogicalOrExpression logicalOrExpression) {
-		// TODO Auto-generated method stub
-
 	}
 
 	@Override
 	public void visit(ModuloExpression moduloExpression) {
-		// TODO Auto-generated method stub
-
 	}
 
 	@Override
 	public void visit(MuliplicationExpression multiplicationExpression) {
-		// TODO Auto-generated method stub
-
 	}
 
 	@Override
 	public void visit(NonEqualityExpression nonEqualityExpression) {
-		// TODO Auto-generated method stub
-
 	}
 
 	@Override
 	public void visit(SubtractionExpression substractionExpression) {
-		// TODO Auto-generated method stub
-
 	}
 
 	@Override
 	public void visit(BooleanConstantExpression booleanConstantExpression) {
-		// TODO Auto-generated method stub
-
 	}
 
 	@Override
 	public void visit(IntegerConstantExpression integerConstantExpression) {
-		// TODO Auto-generated method stub
-
 	}
 
 	@Override
 	public void visit(MethodInvocationExpression methodInvocationExpression) {
-		// TODO Auto-generated method stub
-
 	}
 
 	@Override
 	public void visit(NewArrayExpression newArrayExpression) {
-		// TODO Auto-generated method stub
-
 	}
 
 	@Override
 	public void visit(NewObjectExpression newObjectExpression) {
-		// TODO Auto-generated method stub
-
 	}
 
 	@Override
 	public void visit(VariableAccessExpression variableAccessExpression) {
-		// TODO Auto-generated method stub
-
 	}
 
 	@Override
 	public void visit(ArrayAccessExpression arrayAccessExpression) {
-		// TODO Auto-generated method stub
-
 	}
 
 	@Override
 	public void visit(LogicalNotExpression logicalNotExpression) {
-		// TODO Auto-generated method stub
-
 	}
 
 	@Override
 	public void visit(NegateExpression negateExpression) {
-		// TODO Auto-generated method stub
-
 	}
 
 	@Override
 	public void visit(ReturnStatement returnStatement) {
-		// TODO Auto-generated method stub
-
 	}
 
 	@Override
 	public void visit(ThisExpression thisExpression) {
-		// TODO Auto-generated method stub
-
 	}
 
 	@Override
 	public void visit(NullExpression nullExpression) {
-		// TODO Auto-generated method stub
-
 	}
 
 	@Override
 	public void visit(Type type) {
-		// TODO Auto-generated method stub
-
 	}
 
 	@Override
 	public void visit(Block block) {
-		// TODO Auto-generated method stub
-
-	}
-
-	@Override
-	public void visit(ClassDeclaration classDeclaration) {
-		// TODO Auto-generated method stub
-
 	}
 
 	@Override
 	public void visit(IfStatement ifStatement) {
-		// TODO Auto-generated method stub
-
 	}
 
 	@Override
 	public void visit(WhileStatement whileStatement) {
-		// TODO Auto-generated method stub
-
 	}
 
 	@Override
 	public void visit(LocalVariableDeclaration localVariableDeclaration) {
-		// TODO Auto-generated method stub
-
 	}
 
 	@Override
 	public void visit(ParameterDefinition parameterDefinition) {
-		// TODO Auto-generated method stub
-
 	}
 
 	@Override
 	public void visit(Program program) {
-		// TODO Auto-generated method stub
+		for (ClassDeclaration curr : program.getClasses()) {
+			curr.accept(this);
+		}
+	}
 
+	@Override
+	public void visit(ClassDeclaration classDeclaration) {
+		currentSymbolTable = new SymbolTable();
+		currentSymbolTable.enterScope();
+
+		for (ClassMember curr : classDeclaration.getMembers()) {
+			curr.accept(this);
+		}
+
+		classTables.put(classDeclaration.getIdentifier(), currentSymbolTable);
+		currentSymbolTable = null;
 	}
 
 	@Override
 	public void visit(MethodDeclaration methodDeclaration) {
-		// TODO Auto-generated method stub
-
+		// methodDeclaration.get
 	}
 
 	@Override
 	public void visit(FieldDeclaration fieldDeclaration) {
-		// TODO Auto-generated method stub
-
 	}
 
 	@Override
 	public void visit(StaticMethodDeclaration staticMethodDeclaration) {
-		// TODO Auto-generated method stub
-
 	}
-
 }
