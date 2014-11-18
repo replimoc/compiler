@@ -39,6 +39,14 @@ public class ClassScope {
 		return symbolTable;
 	}
 
+	public int getNumberOfFields() {
+		return fields.size();
+	}
+
+	public int getNumberOfMethods() {
+		return methods.size();
+	}
+
 	public SymbolTable createClassSymbolTable() {
 		SymbolTable symbolTable = new SymbolTable();
 		symbolTable.enterScope();

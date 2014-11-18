@@ -66,6 +66,10 @@ public class PreNamingAnalysisVisitor implements AstVisitor {
 		return classScopes;
 	}
 
+	public List<Exception> getExceptions() {
+		return exceptions;
+	}
+
 	@Override
 	public void visit(Program program) {
 		for (ClassDeclaration curr : program.getClasses()) {
