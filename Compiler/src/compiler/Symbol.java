@@ -1,7 +1,7 @@
 package compiler;
 
-import compiler.ast.nameanalysis.Definition;
-import compiler.ast.nameanalysis.Scope;
+import compiler.nameanalysis.Definition;
+import compiler.nameanalysis.Scope;
 
 /**
  * Symbol represents a hashed String (see StringTable).

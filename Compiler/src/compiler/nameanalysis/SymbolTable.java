@@ -1,10 +1,10 @@
-package compiler.ast.nameanalysis;
+package compiler.nameanalysis;
 
 import java.util.Stack;
 
 import compiler.StringTable;
 import compiler.Symbol;
-import compiler.ast.nameanalysis.Scope;
+import compiler.nameanalysis.Scope;
 
 public class SymbolTable {
 
@@ -24,16 +24,14 @@ public class SymbolTable {
 	void leaveScope() {
 		while (changeStack.size() > currentScope.getOldChangeStackSize()) {
 			Change change = changeStack.pop();
+			change.getSymbol().setDefintion(change.getPrevScope(), change.getPrevDefinition());
 		}
 		currentScope = currentScope.getParentScope();
 	}
 	
 	void insert(Symbol symbol, Definition definition) {
-		
-	}
-	
-	Definition lookup(Symbol symbol) {
-		return null;
+		changeStack.push(new Change(symbol, symbol.getDefinition(), symbol.getDefinitionScope()));
+		symbol.setDefintion(currentScope, definition);
 	}
 	
 	boolean isDefinedInCurrentScope(Symbol symbol) {

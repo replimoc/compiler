@@ -1,8 +1,10 @@
-package compiler.ast.nameanalysis;
+package compiler.nameanalysis;
 
 public class Definition {
 
-	public Definition() {
-		
+	public String value;
+	
+	public Definition(String value) {
+		this.value = value;
 	}
 }

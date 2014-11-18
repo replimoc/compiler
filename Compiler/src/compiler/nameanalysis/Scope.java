@@ -1,4 +1,4 @@
-package compiler.ast.nameanalysis;
+package compiler.nameanalysis;
 
 public class Scope {
 
