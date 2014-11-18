@@ -1,26 +1,22 @@
-package compiler.nameanalysis;
+package compiler.semantic.symbolTable;
 
-import java.util.Stack;
+import java.util.LinkedList;
 
-import compiler.StringTable;
 import compiler.Symbol;
-import compiler.nameanalysis.Scope;
 
 public class SymbolTable {
 
-	private final StringTable stringTable;
-	private final Stack<Change> changeStack = new Stack<Change>();
+	private final LinkedList<Change> changeStack = new LinkedList<Change>();
 	private Scope currentScope;
-	
-	public SymbolTable(StringTable stringTable) {
-		this.stringTable = stringTable;
+
+	public SymbolTable() {
 		currentScope = null;
 	}
-	
+
 	void enterScope() {
 		currentScope = new Scope(currentScope, changeStack.size());
 	}
-	
+
 	void leaveScope() {
 		while (changeStack.size() > currentScope.getOldChangeStackSize()) {
 			Change change = changeStack.pop();
@@ -28,12 +24,12 @@ public class SymbolTable {
 		}
 		currentScope = currentScope.getParentScope();
 	}
-	
+
 	void insert(Symbol symbol, Definition definition) {
 		changeStack.push(new Change(symbol, symbol.getDefinition(), symbol.getDefinitionScope()));
 		symbol.setDefintion(currentScope, definition);
 	}
-	
+
 	boolean isDefinedInCurrentScope(Symbol symbol) {
 		return symbol.getDefinitionScope() == currentScope;
 	}

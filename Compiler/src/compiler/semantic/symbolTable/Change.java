@@ -1,4 +1,4 @@
-package compiler.nameanalysis;
+package compiler.semantic.symbolTable;
 
 import compiler.Symbol;
 

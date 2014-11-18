@@ -1,7 +1,7 @@
 package compiler;
 
-import compiler.nameanalysis.Definition;
-import compiler.nameanalysis.Scope;
+import compiler.semantic.symbolTable.Definition;
+import compiler.semantic.symbolTable.Scope;
 
 /**
  * Symbol represents a hashed String (see StringTable).

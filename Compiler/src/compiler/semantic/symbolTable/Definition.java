@@ -1,4 +1,4 @@
-package compiler.nameanalysis;
+package compiler.semantic.symbolTable;
 
 public class Definition {
 
