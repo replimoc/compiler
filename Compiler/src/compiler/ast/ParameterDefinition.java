@@ -17,6 +17,7 @@ public class ParameterDefinition extends AstNode {
 
 	}
 
+	@Override
 	public Type getType() {
 		return type;
 	}

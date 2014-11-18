@@ -48,6 +48,7 @@ import compiler.ast.statement.unary.UnaryExpression;
 import compiler.ast.type.BasicType;
 import compiler.ast.type.Type;
 import compiler.ast.visitor.AstVisitor;
+import compiler.semantic.exceptions.TypeErrorException;
 
 public class DeepCheckingVisitor implements AstVisitor {
 

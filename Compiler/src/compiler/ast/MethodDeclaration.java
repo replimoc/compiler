@@ -29,6 +29,7 @@ public class MethodDeclaration extends ClassMember {
 		parameters.add(parameter);
 	}
 
+	@Override
 	public Type getType() {
 		return returnType;
 	}

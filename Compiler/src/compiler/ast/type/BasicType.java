@@ -5,5 +5,7 @@ public enum BasicType {
 	BOOLEAN,
 	VOID,
 	CLASS,
-	ARRAY
+	ARRAY,
+	METHOD,
+	STRING_ARGS,
 }

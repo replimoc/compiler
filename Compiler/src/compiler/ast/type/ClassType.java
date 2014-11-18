@@ -16,5 +16,4 @@ public class ClassType extends Type {
 	public Symbol getIdentifier() {
 		return identifier;
 	}
-
 }
