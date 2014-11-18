@@ -44,7 +44,6 @@ import compiler.ast.statement.unary.LogicalNotExpression;
 import compiler.ast.statement.unary.NegateExpression;
 import compiler.ast.statement.unary.ReturnStatement;
 import compiler.ast.type.BasicType;
-import compiler.ast.type.MethodType;
 import compiler.ast.type.Type;
 import compiler.ast.visitor.AstVisitor;
 import compiler.lexer.Position;
@@ -52,15 +51,130 @@ import compiler.semantic.exceptions.NoMainFoundException;
 import compiler.semantic.exceptions.RedefinitionErrorException;
 import compiler.semantic.exceptions.TypeErrorException;
 import compiler.semantic.symbolTable.Definition;
-import compiler.semantic.symbolTable.SymbolTable;
+import compiler.semantic.symbolTable.MethodDefinition;
 
 public class PreNamingAnalysisVisitor implements AstVisitor {
 
-	private final HashMap<Symbol, SymbolTable> classTables = new HashMap<>();
-	private SymbolTable currentSymbolTable;
+	private final HashMap<Symbol, ClassScope> classScopes = new HashMap<>();
+	private HashMap<Symbol, Definition> currentFieldsMap;
+	private HashMap<Symbol, MethodDefinition> currentMethodsMap;
 
 	private boolean mainFound = false;
 	private List<Exception> exceptions = new ArrayList<Exception>();
+
+	public HashMap<Symbol, ClassScope> getClassScopes() {
+		return classScopes;
+	}
+
+	@Override
+	public void visit(Program program) {
+		for (ClassDeclaration curr : program.getClasses()) {
+			curr.accept(this);
+		}
+
+		if (!mainFound) {
+			exceptions.add(new NoMainFoundException());
+		}
+	}
+
+	@Override
+	public void visit(ClassDeclaration classDeclaration) {
+		currentFieldsMap = new HashMap<>();
+		currentMethodsMap = new HashMap<>();
+
+		for (ClassMember curr : classDeclaration.getMembers()) {
+			curr.accept(this);
+		}
+
+		getClassScopes().put(classDeclaration.getIdentifier(), new ClassScope(currentFieldsMap, currentMethodsMap));
+		currentFieldsMap = null;
+		currentMethodsMap = null;
+	}
+
+	@Override
+	public void visit(MethodDeclaration methodDeclaration) {
+		Symbol identifier = methodDeclaration.getIdentifier();
+		Type returnType = methodDeclaration.getType();
+		List<ParameterDefinition> parameters = methodDeclaration.getParameters();
+
+		Definition[] parameterDefinitions = new Definition[parameters.size()];
+
+		int i = 0;
+		for (ParameterDefinition currParameter : methodDeclaration.getParameters()) {
+			parameterDefinitions[i] = new Definition(currParameter.getIdentifier(), currParameter.getType());
+			i++;
+		}
+
+		MethodDefinition methodDefinition = new MethodDefinition(identifier, returnType, parameterDefinitions);
+
+		checkAndInsertDefinition(methodDefinition, methodDeclaration.getPosition());
+	}
+
+	@Override
+	public void visit(FieldDeclaration fieldDeclaration) {
+		checkAndInsertDefinition(new Definition(fieldDeclaration.getIdentifier(), fieldDeclaration.getType()), fieldDeclaration.getPosition());
+	}
+
+	@Override
+	public void visit(StaticMethodDeclaration staticMethodDeclaration) {
+		Type returnType = staticMethodDeclaration.getType();
+		if (returnType.getBasicType() != BasicType.VOID) {
+			throwTypeError(staticMethodDeclaration, "Invalid return type for main method.");
+			return;
+		}
+
+		Symbol identifier = staticMethodDeclaration.getIdentifier();
+		if (!"main".equals(identifier.getValue())) {
+			throwTypeError(staticMethodDeclaration, "'public static void' method must be called 'main'.");
+		}
+
+		if (staticMethodDeclaration.getParameters().size() != 1) {
+			throwTypeError(staticMethodDeclaration, "'public static void main' method must have a single argument of type String[].");
+		}
+
+		ParameterDefinition parameter = staticMethodDeclaration.getParameters().get(0);
+		Type parameterType = parameter.getType();
+		if (parameterType.getBasicType() != BasicType.ARRAY || !"String".equals(parameterType.getSubType().getIdentifier().getValue())) {
+			throwTypeError(staticMethodDeclaration, "'public static void main' method must have a single argument of type String[].");
+		}
+
+		mainFound = true;
+		Position position = staticMethodDeclaration.getPosition();
+
+		Definition[] parameterTypes = new Definition[] { new Definition(parameter.getIdentifier(),
+				new Type(parameter.getPosition(), BasicType.STRING_ARGS)) };
+		checkAndInsertDefinition(new MethodDefinition(identifier, returnType, parameterTypes), position);
+	}
+
+	private void checkAndInsertDefinition(MethodDefinition definition, Position position) {
+		if (currentMethodsMap.containsKey(definition.getSymbol())) {
+			throwRedefinitionError(definition.getSymbol(), null, position);
+			return;
+		}
+
+		currentMethodsMap.put(definition.getSymbol(), definition);
+	}
+
+	private void checkAndInsertDefinition(Definition definition, Position position) {
+		if (currentFieldsMap.containsKey(definition.getSymbol())) {
+			throwRedefinitionError(definition.getSymbol(), null, position);
+			return;
+		}
+
+		currentFieldsMap.put(definition.getSymbol(), definition);
+	}
+
+	private void throwTypeError(AstNode astNode, String message) {
+		exceptions.add(new TypeErrorException(astNode.getPosition(), message));
+	}
+
+	private void throwRedefinitionError(Symbol identifier, Position definition, Position redefinition) {
+		exceptions.add(new RedefinitionErrorException(identifier, definition, redefinition));
+	}
+
+	/*
+	 * not needed visitor methods follow below
+	 */
 
 	@Override
 	public void visit(AdditionExpression additionExpression) {
@@ -190,97 +304,4 @@ public class PreNamingAnalysisVisitor implements AstVisitor {
 	public void visit(ParameterDefinition parameterDefinition) {
 	}
 
-	@Override
-	public void visit(Program program) {
-		for (ClassDeclaration curr : program.getClasses()) {
-			curr.accept(this);
-		}
-
-		if (!mainFound) {
-			exceptions.add(new NoMainFoundException());
-		}
-	}
-
-	@Override
-	public void visit(ClassDeclaration classDeclaration) {
-		currentSymbolTable = new SymbolTable();
-		currentSymbolTable.enterScope();
-
-		for (ClassMember curr : classDeclaration.getMembers()) {
-			curr.accept(this);
-		}
-
-		classTables.put(classDeclaration.getIdentifier(), currentSymbolTable);
-		currentSymbolTable = null;
-	}
-
-	@Override
-	public void visit(MethodDeclaration methodDeclaration) {
-		Symbol identifier = methodDeclaration.getIdentifier();
-		Type returnType = methodDeclaration.getType();
-		List<ParameterDefinition> parameters = methodDeclaration.getParameters();
-
-		Type[] parameterTypes = new Type[parameters.size()];
-
-		int i = 0;
-		for (ParameterDefinition currParameter : methodDeclaration.getParameters()) {
-			parameterTypes[i] = currParameter.getType();
-			i++;
-		}
-
-		MethodType methodType = new MethodType(methodDeclaration.getPosition(), returnType, parameterTypes);
-
-		checkAndInsertDefinition(identifier, methodType, methodDeclaration.getPosition()); // FIXME introduce extra scope for methods
-	}
-
-	@Override
-	public void visit(FieldDeclaration fieldDeclaration) {
-		checkAndInsertDefinition(fieldDeclaration.getIdentifier(), fieldDeclaration.getType(), fieldDeclaration.getPosition());
-	}
-
-	private void checkAndInsertDefinition(Symbol identifier, Type type, Position position) {
-		if (currentSymbolTable.isDefinedInCurrentScope(identifier)) {
-			throwRedefinitionError(identifier, null, position);
-			return;
-		}
-
-		currentSymbolTable.insert(identifier, new Definition(identifier, type));
-	}
-
-	@Override
-	public void visit(StaticMethodDeclaration staticMethodDeclaration) {
-		Type returnType = staticMethodDeclaration.getType();
-		if (returnType.getBasicType() != BasicType.VOID) {
-			throwTypeError(staticMethodDeclaration, "Invalid return type for main method.");
-			return;
-		}
-
-		Symbol identifier = staticMethodDeclaration.getIdentifier();
-		if (!"main".equals(identifier.getValue())) {
-			throwTypeError(staticMethodDeclaration, "'public static void' method must be called 'main'.");
-		}
-
-		if (staticMethodDeclaration.getParameters().size() != 1) {
-			throwTypeError(staticMethodDeclaration, "'public static void main' method must have a single argument of type String[].");
-		}
-
-		ParameterDefinition parameter = staticMethodDeclaration.getParameters().get(0);
-		Type parameterType = parameter.getType();
-		if (parameterType.getBasicType() != BasicType.ARRAY || !"String".equals(parameterType.getSubType().getIdentifier().getValue())) {
-			throwTypeError(staticMethodDeclaration, "'public static void main' method must have a single argument of type String[].");
-		}
-
-		mainFound = true;
-		Position position = staticMethodDeclaration.getPosition();
-		Type[] parameterTypes = new Type[] { new Type(parameter.getPosition(), BasicType.STRING_ARGS) };
-		checkAndInsertDefinition(identifier, new MethodType(position, returnType, parameterTypes), position);
-	}
-
-	private void throwTypeError(AstNode astNode, String message) {
-		exceptions.add(new TypeErrorException(astNode.getPosition(), message));
-	}
-
-	private void throwRedefinitionError(Symbol identifier, Position definition, Position redefinition) {
-		exceptions.add(new RedefinitionErrorException(identifier, definition, redefinition));
-	}
 }
