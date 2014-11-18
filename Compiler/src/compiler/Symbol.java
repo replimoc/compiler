@@ -77,4 +77,7 @@ public class Symbol {
 		return definition;
 	}
 
+	public boolean isDefined() {
+		return defScope == null || definition == null;
+	}
 }

@@ -1,8 +1,10 @@
 package compiler.semantic;
 
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
 
+import compiler.Symbol;
 import compiler.ast.AstNode;
 import compiler.ast.Block;
 import compiler.ast.ClassDeclaration;
@@ -48,14 +50,36 @@ import compiler.ast.statement.unary.UnaryExpression;
 import compiler.ast.type.BasicType;
 import compiler.ast.type.Type;
 import compiler.ast.visitor.AstVisitor;
+import compiler.lexer.Position;
+import compiler.semantic.exceptions.NotDefinedException;
+import compiler.semantic.exceptions.RedefinitionErrorException;
 import compiler.semantic.exceptions.TypeErrorException;
+import compiler.semantic.symbolTable.Definition;
+import compiler.semantic.symbolTable.SymbolTable;
 
 public class DeepCheckingVisitor implements AstVisitor {
 
 	private List<Exception> exceptions = new ArrayList<Exception>();
-
+	
+	private final SymbolTable symbolTable;
+	private final HashMap<Symbol, ClassScope> classScopes;
+	private ClassScope currentClassScope = null;
+	
+	public DeepCheckingVisitor(HashMap<Symbol, ClassScope> classScopes) {
+		this.classScopes = classScopes;
+		this.symbolTable = new SymbolTable();
+	}
+	
 	private void throwTypeError(AstNode astNode) {
 		exceptions.add(new TypeErrorException(astNode.getPosition()));
+	}
+	
+	private void throwRedefinitionError(Symbol symbol, Position definition, Position redefinition) {
+		exceptions.add(new RedefinitionErrorException(symbol, definition, redefinition));
+	}
+	
+	private void throwNotDefinedError(Symbol symbol, Position position) {
+		exceptions.add(new NotDefinedException(symbol, position));
 	}
 
 	private void expectType(Type type, AstNode astNode) {
@@ -187,8 +211,6 @@ public class DeepCheckingVisitor implements AstVisitor {
 
 	@Override
 	public void visit(MethodInvocationExpression methodInvocationExpression) {
-		// TODO Auto-generated method stub
-
 	}
 
 	@Override
@@ -205,8 +227,12 @@ public class DeepCheckingVisitor implements AstVisitor {
 
 	@Override
 	public void visit(VariableAccessExpression variableAccessExpression) {
-		// TODO Auto-generated method stub
-
+		// variable can be defined in member scope or current class?
+		if (!variableAccessExpression.getFieldIdentifier().isDefined() &&
+				currentClassScope.getFieldDefinition(variableAccessExpression.getFieldIdentifier()) != null) {
+			throwNotDefinedError(variableAccessExpression.getFieldIdentifier(), variableAccessExpression.getPosition());
+			return;
+		}
 	}
 
 	@Override
@@ -253,11 +279,12 @@ public class DeepCheckingVisitor implements AstVisitor {
 		for (Statement statement : block.getStatements()) {
 			statement.accept(this);
 		}
-
 	}
 
 	@Override
 	public void visit(ClassDeclaration classDeclaration) {
+		currentClassScope = classScopes.get(classDeclaration.getIdentifier());
+		
 		for (ClassMember classMember : classDeclaration.getMembers()) {
 			classMember.accept(this);
 		}
@@ -290,6 +317,12 @@ public class DeepCheckingVisitor implements AstVisitor {
 
 	@Override
 	public void visit(LocalVariableDeclaration localVariableDeclaration) {
+		if (symbolTable.isDefinedInCurrentScope(localVariableDeclaration.getIdentifier())) {
+			throwRedefinitionError(localVariableDeclaration.getIdentifier(), null, localVariableDeclaration.getPosition());
+			return;
+		}
+		symbolTable.insert(localVariableDeclaration.getIdentifier(), new Definition(localVariableDeclaration.getIdentifier(), localVariableDeclaration.getType()));
+		
 		Expression expression = localVariableDeclaration.getExpression();
 		expression.accept(this);
 		expectType(localVariableDeclaration.getType(), expression);
@@ -297,8 +330,11 @@ public class DeepCheckingVisitor implements AstVisitor {
 
 	@Override
 	public void visit(ParameterDefinition parameterDefinition) {
-		// TODO Auto-generated method stub
-
+		if (symbolTable.isDefinedInCurrentScope(parameterDefinition.getIdentifier())) {
+			throwRedefinitionError(parameterDefinition.getIdentifier(), null, parameterDefinition.getPosition());
+			return;
+		}
+		symbolTable.insert(parameterDefinition.getIdentifier(), new Definition(parameterDefinition.getIdentifier(), parameterDefinition.getType()));
 	}
 
 	@Override
@@ -325,10 +361,14 @@ public class DeepCheckingVisitor implements AstVisitor {
 	}
 
 	private void visitMethodDeclaration(MethodDeclaration methodDeclaration) {
+		symbolTable.enterScope();
+		
 		for (ParameterDefinition parameterDefinition : methodDeclaration.getParameters()) {
 			parameterDefinition.accept(this);
 		}
 
 		methodDeclaration.getBlock().accept(this);
+		
+		symbolTable.leaveScope();
 	}
 }
