@@ -103,7 +103,7 @@ public class Parser {
 		Program program = new Program(token.getPosition());
 
 		// ClassDeclaration*
-		while (token.getType() != TokenType.EOF) {
+		while (isNotTokenType(TokenType.EOF)) {
 			try {
 				// class IDENT {
 				expectAndConsume(TokenType.CLASS);
@@ -124,19 +124,20 @@ public class Parser {
 						} catch (ParserException e) {
 							errorsDetected++;
 							System.err.println(e);
-							consumeUntil(TokenType.SEMICOLON, TokenType.RCURLYBRACKET, TokenType.EOF);
+							consumeUntil(TokenType.SEMICOLON, TokenType.RCURLYBRACKET);
 						}
 					}
 					// throw another error in case our previous error handling consumed the last }
-					notExpectAndConsume(TokenType.EOF, TokenType.RCURLYBRACKET);
+					notExpect(TokenType.EOF, TokenType.RCURLYBRACKET);
+					consumeToken();
+
 					program.addClassDeclaration(classDecl);
 				}
 			} catch (ParserException e) {
 				errorsDetected++;
 				System.err.println(e);
-				consumeUntil(TokenType.RCURLYBRACKET, TokenType.EOF);
+				consumeUntil(TokenType.RCURLYBRACKET);
 			}
-
 		}
 		// No ClassDeclaration => Epsilon
 		expect(TokenType.EOF);
@@ -368,7 +369,7 @@ public class Parser {
 				System.err.println(e);
 				consumeUntil(TokenType.RCURLYBRACKET);
 				// throw another error in case our previous error handling consumed the last }
-				notExpectAndConsume(TokenType.EOF, TokenType.RCURLYBRACKET);
+				notExpect(TokenType.EOF, TokenType.RCURLYBRACKET);
 			}
 			break;
 		// empty statement
@@ -383,8 +384,8 @@ public class Parser {
 				errorsDetected++;
 				System.err.println(e);
 				consumeUntil(TokenType.SEMICOLON, TokenType.RCURLYBRACKET);
-				// throw another error in case our previous error handling consumed the last }
-				notExpectAndConsume(TokenType.EOF, TokenType.RCURLYBRACKET);
+				// throw another error in case our previous error handling consumed the last } or ;
+				notExpect(TokenType.EOF, TokenType.RCURLYBRACKET);
 			}
 			break;
 		// while statement
@@ -395,8 +396,8 @@ public class Parser {
 				errorsDetected++;
 				System.err.println(e);
 				consumeUntil(TokenType.SEMICOLON, TokenType.RCURLYBRACKET);
-				// throw another error in case our previous error handling consumed the last }
-				notExpectAndConsume(TokenType.EOF, TokenType.RCURLYBRACKET);
+				// throw another error in case our previous error handling consumed the last } or ;
+				notExpect(TokenType.EOF, TokenType.RCURLYBRACKET);
 			}
 			break;
 		// return statement
@@ -408,7 +409,7 @@ public class Parser {
 				System.err.println(e);
 				consumeUntil(TokenType.SEMICOLON);
 				// throw another error in case our previous error handling consumed the last }
-				notExpectAndConsume(TokenType.EOF, TokenType.RCURLYBRACKET);
+				notExpect(TokenType.EOF, TokenType.RCURLYBRACKET);
 			}
 			break;
 		// ExpressionStatement or LocalVariableDeclarationStatement
@@ -427,8 +428,8 @@ public class Parser {
 					errorsDetected++;
 					System.err.println(e);
 					consumeUntil(TokenType.SEMICOLON);
-					// throw another error in case our previous error handling consumed the last }
-					notExpectAndConsume(TokenType.EOF, TokenType.RCURLYBRACKET);
+					// throw another error in case our previous error handling consumed the last ;
+					notExpect(TokenType.EOF, TokenType.RCURLYBRACKET);
 				}
 				break;
 			} else if (lookAhead.getType() == TokenType.LSQUAREBRACKET) {
@@ -439,8 +440,8 @@ public class Parser {
 						errorsDetected++;
 						System.err.println(e);
 						consumeUntil(TokenType.SEMICOLON);
-						// throw another error in case our previous error handling consumed the last }
-						notExpectAndConsume(TokenType.EOF, TokenType.RCURLYBRACKET);
+						// throw another error in case our previous error handling consumed the last ;
+						notExpect(TokenType.EOF, TokenType.RCURLYBRACKET);
 					}
 					break;
 				}
@@ -453,6 +454,9 @@ public class Parser {
 				errorsDetected++;
 				System.err.println(e);
 				consumeUntil(TokenType.SEMICOLON);
+				// break on EOF
+				notExpect(TokenType.EOF, TokenType.SEMICOLON);
+				break;
 			}
 			expectAndConsume(TokenType.SEMICOLON);
 		}
@@ -1000,24 +1004,12 @@ public class Parser {
 	}
 
 	/**
-	 * Checks if the next token has the given token type and throws an exception.
+	 * Checks if the next token has the given token type.
 	 * 
 	 * @param tokenType
-	 * @throws ParserException
-	 *             if the token type does match
-	 * @throws IOException
-	 */
-	private void notExpectAndConsume(TokenType tokenType, TokenType expected) throws ParserException, IOException {
-		if (token.getType() == tokenType) {
-			throw new ParserException(token, expected);
-		}
-		consumeToken();
-	}
-
-	/**
-	 * Checks if the next token has the given token type and throws an exception.
-	 * 
-	 * @param tokenType
+	 *            not expected token
+	 * @param expected
+	 *            expected token
 	 * @throws ParserException
 	 *             if the token type does match
 	 * @throws IOException
@@ -1045,7 +1037,7 @@ public class Parser {
 	 * Checks if the next token has not the given token type.
 	 * 
 	 * @param tokenType
-	 * @return true if the token type matched, false otherwise
+	 * @return true if the token type did not match, false otherwise
 	 */
 	private boolean isNotTokenType(TokenType tokenType) {
 		return !(isTokenType(tokenType));
@@ -1089,22 +1081,22 @@ public class Parser {
 	}
 
 	/**
-	 * Consume tokens until one of the given tokens or EOF is read. The last read token is also consumed, if it is not EOF.
+	 * Consume tokens until one of the given tokens or EOF is read. The last read token is also consumed if it is not EOF.
 	 * 
 	 * @param tokenTypes
 	 * @throws IOException
 	 */
 	private void consumeUntil(TokenType... tokenTypes) throws IOException {
 		// never consume EOF
-		while (token.getType() != TokenType.EOF) {
+		while (isNotTokenType(TokenType.EOF)) {
 			for (TokenType type : tokenTypes) {
 				if (token.getType() == type) {
 					// consume and return
-					token = tokenSupplier.getNextToken();
+					consumeToken();
 					return;
 				}
 			}
-			token = tokenSupplier.getNextToken();
+			consumeToken();
 		}
 
 	}
