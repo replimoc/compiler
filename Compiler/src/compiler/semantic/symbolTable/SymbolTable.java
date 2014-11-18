@@ -13,11 +13,11 @@ public class SymbolTable {
 		currentScope = null;
 	}
 
-	void enterScope() {
+	public void enterScope() {
 		currentScope = new Scope(currentScope, changeStack.size());
 	}
 
-	void leaveScope() {
+	public void leaveScope() {
 		while (changeStack.size() > currentScope.getOldChangeStackSize()) {
 			Change change = changeStack.pop();
 			change.getSymbol().setDefintion(change.getPrevScope(), change.getPrevDefinition());
@@ -25,12 +25,12 @@ public class SymbolTable {
 		currentScope = currentScope.getParentScope();
 	}
 
-	void insert(Symbol symbol, Definition definition) {
+	public void insert(Symbol symbol, Definition definition) {
 		changeStack.push(new Change(symbol, symbol.getDefinition(), symbol.getDefinitionScope()));
 		symbol.setDefintion(currentScope, definition);
 	}
 
-	boolean isDefinedInCurrentScope(Symbol symbol) {
+	public boolean isDefinedInCurrentScope(Symbol symbol) {
 		return symbol.getDefinitionScope() == currentScope;
 	}
 }
