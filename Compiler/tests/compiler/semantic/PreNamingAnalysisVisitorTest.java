@@ -1,4 +1,4 @@
-package compiler.semantic.symbolTable;
+package compiler.semantic;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
