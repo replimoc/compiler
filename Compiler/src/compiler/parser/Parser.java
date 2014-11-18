@@ -67,7 +67,7 @@ public class Parser {
 
 	public Parser(TokenSuppliable tokenSupplier) throws IOException {
 		this.tokenSupplier = tokenSupplier;
-		token = tokenSupplier.getNextToken();
+		consumeToken();
 		errorsDetected = 0;
 	}
 
@@ -105,17 +105,15 @@ public class Parser {
 		// ClassDeclaration*
 		while (token.getType() != TokenType.EOF) {
 			try {
+				// class IDENT {
 				expectAndConsume(TokenType.CLASS);
-				// save token attributes
-				Position pos = token.getPosition();
-				Symbol symbol = token.getSymbol();
-				expectAndConsume(TokenType.IDENTIFIER);
-
-				ClassDeclaration classDecl = new ClassDeclaration(pos, symbol);
-
+				expect(TokenType.IDENTIFIER);
+				ClassDeclaration classDecl = new ClassDeclaration(token.getPosition(), token.getSymbol());
+				consumeToken();
 				expectAndConsume(TokenType.LCURLYBRACKET);
 
-				if (isTokenTypeAndConsume(TokenType.RCURLYBRACKET)) {
+				if (isTokenType(TokenType.RCURLYBRACKET)) {
+					consumeToken();
 					program.addClassDeclaration(classDecl);
 					continue;
 				} else {
@@ -126,13 +124,7 @@ public class Parser {
 						} catch (ParserException e) {
 							errorsDetected++;
 							System.err.println(e);
-							while (token.getType() != TokenType.SEMICOLON && token.getType() != TokenType.RCURLYBRACKET
-									&& token.getType() != TokenType.EOF) {
-								token = tokenSupplier.getNextToken();
-							}
-							// never consume EOF
-							if (token.getType() != TokenType.EOF)
-								token = tokenSupplier.getNextToken();
+							consumeUntil(TokenType.SEMICOLON, TokenType.RCURLYBRACKET, TokenType.EOF);
 						}
 					}
 					// throw another error in case our previous error handling consumed the last }
@@ -142,19 +134,12 @@ public class Parser {
 			} catch (ParserException e) {
 				errorsDetected++;
 				System.err.println(e);
-				while (token.getType() != TokenType.RCURLYBRACKET && token.getType() != TokenType.EOF) {
-					token = tokenSupplier.getNextToken();
-				}
-				// never consume EOF
-				if (token.getType() != TokenType.EOF)
-					token = tokenSupplier.getNextToken();
+				consumeUntil(TokenType.RCURLYBRACKET, TokenType.EOF);
 			}
 
 		}
 		// No ClassDeclaration => Epsilon
-		if (token.getType() != TokenType.EOF) {
-			throw new ParserException(token, TokenType.EOF);
-		}
+		expect(TokenType.EOF);
 
 		return program;
 	}
@@ -169,25 +154,26 @@ public class Parser {
 	private ClassMember parseClassMember() throws ParserException, IOException {
 		switch (token.getType()) {
 		case PUBLIC:
-			token = tokenSupplier.getNextToken();
+			consumeToken();
 			// Type
-			if (token.getType() == TokenType.INT
-					|| token.getType() == TokenType.BOOLEAN
-					|| token.getType() == TokenType.VOID
-					|| token.getType() == TokenType.IDENTIFIER) {
+			if (isTokenType(TokenType.INT, TokenType.BOOLEAN, TokenType.VOID, TokenType.IDENTIFIER)) {
 				Type type = parseType();
 
 				Token firstToken = token;
-				if (isTokenTypeAndConsume(TokenType.IDENTIFIER)) {
+				if (isTokenType(TokenType.IDENTIFIER)) {
+					consumeToken();
 					// public Type IDENT ;
-					if (isTokenTypeAndConsume(TokenType.SEMICOLON)) {
+					if (isTokenType(TokenType.SEMICOLON)) {
+						consumeToken();
 						// accept
 						return new FieldDeclaration(firstToken.getPosition(), type, firstToken.getSymbol());
 						// public Type IDENT ( Parameters? ) Block
-					} else if (isTokenTypeAndConsume(TokenType.LP)) {
+					} else if (isTokenType(TokenType.LP)) {
+						consumeToken();
 						MethodDeclaration methDecl = new MethodDeclaration(firstToken.getPosition(), firstToken.getSymbol(), type);
 
-						if (isTokenTypeAndConsume(TokenType.RP)) {
+						if (isTokenType(TokenType.RP)) {
+							consumeToken();
 						} else {
 							parseParameters(methDecl);
 							expectAndConsume(TokenType.RP);
@@ -201,7 +187,9 @@ public class Parser {
 					throw new ParserException(token, TokenType.IDENTIFIER);
 				}
 				// MainMethod' -> static void IDENT ( String [ ] IDENT ) Block
-			} else if (isTokenTypeAndConsume(TokenType.STATIC)) {
+			} else if (isTokenType(TokenType.STATIC)) {
+				consumeToken();
+
 				// save void return type
 				Token retType = token;
 				expectAndConsume(TokenType.VOID);
@@ -211,21 +199,22 @@ public class Parser {
 				expectAndConsume(TokenType.IDENTIFIER);
 				expectAndConsume(TokenType.LP);
 
-				Token stringToken = token;
-				expectAndConsume(TokenType.IDENTIFIER);
+				expect(TokenType.IDENTIFIER);
 				// identifier must be "String"
-				if (!stringToken.getSymbol().getValue().equals("String")) {
+				if (!token.getSymbol().getValue().equals("String")) {
 					throw new ParserException(token, TokenType.IDENTIFIER);
 				}
-				Position pos = stringToken.getPosition();
-				Symbol type = stringToken.getSymbol();
+				Position pos = token.getPosition();
+				Symbol type = token.getSymbol();
+				consumeToken();
 
 				expectAndConsume(TokenType.LSQUAREBRACKET);
 				expectAndConsume(TokenType.RSQUAREBRACKET);
 
 				// save identifier symbol
+				expect(TokenType.IDENTIFIER);
 				Symbol ident = token.getSymbol();
-				expectAndConsume(TokenType.IDENTIFIER);
+				consumeToken();
 				expectAndConsume(TokenType.RP);
 
 				// new main method ast node
@@ -248,7 +237,8 @@ public class Parser {
 	 */
 	private void parseParameters(MethodDeclaration methDecl) throws IOException, ParserException {
 		methDecl.addParameter(parseParameter());
-		if (isTokenTypeAndConsume(TokenType.COMMA)) {
+		if (isTokenType(TokenType.COMMA)) {
+			consumeToken();
 			parseParameters(methDecl);
 		}
 	}
@@ -261,9 +251,9 @@ public class Parser {
 	 */
 	private ParameterDefinition parseParameter() throws ParserException, IOException {
 		Type type = parseType();
-		Token identToken = token;
-		expectAndConsume(TokenType.IDENTIFIER);
-		ParameterDefinition param = new ParameterDefinition(identToken.getPosition(), type, identToken.getSymbol());
+		expect(TokenType.IDENTIFIER);
+		ParameterDefinition param = new ParameterDefinition(token.getPosition(), type, token.getSymbol());
+		consumeToken();
 		return param;
 	}
 
@@ -279,27 +269,29 @@ public class Parser {
 		switch (token.getType()) {
 		case INT:
 			type = new Type(token.getPosition(), BasicType.INT);
-			token = tokenSupplier.getNextToken();
+			consumeToken();
 			break;
 		case BOOLEAN:
 			type = new Type(token.getPosition(), BasicType.BOOLEAN);
-			token = tokenSupplier.getNextToken();
+			consumeToken();
 			break;
 		case VOID:
 			type = new Type(token.getPosition(), BasicType.VOID);
-			token = tokenSupplier.getNextToken();
+			consumeToken();
 			break;
 		case IDENTIFIER:
 			type = new ClassType(token.getPosition(), token.getSymbol());
-			token = tokenSupplier.getNextToken();
+			consumeToken();
 			break;
 		default:
 			throw new ParserException(token);
 		}
 
-		while (isTokenTypeAndConsume(TokenType.LSQUAREBRACKET)) {
+		while (isTokenType(TokenType.LSQUAREBRACKET)) {
+			consumeToken();
+			expect(TokenType.RSQUAREBRACKET);
 			Position pos = token.getPosition();
-			expectAndConsume(TokenType.RSQUAREBRACKET);
+			consumeToken();
 
 			type = new ArrayType(pos, type); // TODO: seems to be ugly
 		}
@@ -344,11 +336,13 @@ public class Parser {
 	 * @throws IOException
 	 */
 	private Block parseBlock() throws ParserException, IOException {
-		Position pos = token.getPosition();
-		expectAndConsume(TokenType.LCURLYBRACKET);
-		Block block = new Block(pos);
 
-		while (token.getType() != TokenType.RCURLYBRACKET) {
+		expect(TokenType.LCURLYBRACKET);
+		Position pos = token.getPosition();
+		Block block = new Block(pos);
+		consumeToken();
+
+		while (isNotTokenType(TokenType.RCURLYBRACKET)) {
 			parseBlockStatement(block);
 		}
 		expectAndConsume(TokenType.RCURLYBRACKET);
@@ -372,9 +366,7 @@ public class Parser {
 			} catch (ParserException e) {
 				errorsDetected++;
 				System.err.println(e);
-				while (token.getType() != TokenType.RCURLYBRACKET && token.getType() != TokenType.EOF) {
-					token = tokenSupplier.getNextToken();
-				}
+				consumeUntil(TokenType.RCURLYBRACKET);
 				// throw another error in case our previous error handling consumed the last }
 				notExpectAndConsume(TokenType.EOF, TokenType.RCURLYBRACKET);
 			}
@@ -390,9 +382,7 @@ public class Parser {
 			} catch (ParserException e) {
 				errorsDetected++;
 				System.err.println(e);
-				while (token.getType() != TokenType.SEMICOLON && token.getType() != TokenType.RCURLYBRACKET && token.getType() != TokenType.EOF) {
-					token = tokenSupplier.getNextToken();
-				}
+				consumeUntil(TokenType.SEMICOLON, TokenType.RCURLYBRACKET);
 				// throw another error in case our previous error handling consumed the last }
 				notExpectAndConsume(TokenType.EOF, TokenType.RCURLYBRACKET);
 			}
@@ -404,9 +394,7 @@ public class Parser {
 			} catch (ParserException e) {
 				errorsDetected++;
 				System.err.println(e);
-				while (token.getType() != TokenType.SEMICOLON && token.getType() != TokenType.RCURLYBRACKET && token.getType() != TokenType.EOF) {
-					token = tokenSupplier.getNextToken();
-				}
+				consumeUntil(TokenType.SEMICOLON, TokenType.RCURLYBRACKET);
 				// throw another error in case our previous error handling consumed the last }
 				notExpectAndConsume(TokenType.EOF, TokenType.RCURLYBRACKET);
 			}
@@ -418,9 +406,7 @@ public class Parser {
 			} catch (ParserException e) {
 				errorsDetected++;
 				System.err.println(e);
-				while (token.getType() != TokenType.SEMICOLON && token.getType() != TokenType.EOF) {
-					token = tokenSupplier.getNextToken();
-				}
+				consumeUntil(TokenType.SEMICOLON);
 				// throw another error in case our previous error handling consumed the last }
 				notExpectAndConsume(TokenType.EOF, TokenType.RCURLYBRACKET);
 			}
@@ -440,9 +426,7 @@ public class Parser {
 				} catch (ParserException e) {
 					errorsDetected++;
 					System.err.println(e);
-					while (token.getType() != TokenType.SEMICOLON && token.getType() != TokenType.EOF) {
-						token = tokenSupplier.getNextToken();
-					}
+					consumeUntil(TokenType.SEMICOLON);
 					// throw another error in case our previous error handling consumed the last }
 					notExpectAndConsume(TokenType.EOF, TokenType.RCURLYBRACKET);
 				}
@@ -454,9 +438,7 @@ public class Parser {
 					} catch (ParserException e) {
 						errorsDetected++;
 						System.err.println(e);
-						while (token.getType() != TokenType.SEMICOLON && token.getType() != TokenType.EOF) {
-							token = tokenSupplier.getNextToken();
-						}
+						consumeUntil(TokenType.SEMICOLON);
 						// throw another error in case our previous error handling consumed the last }
 						notExpectAndConsume(TokenType.EOF, TokenType.RCURLYBRACKET);
 					}
@@ -470,16 +452,9 @@ public class Parser {
 			} catch (ParserException e) {
 				errorsDetected++;
 				System.err.println(e);
-				while (token.getType() != TokenType.SEMICOLON && token.getType() != TokenType.EOF) {
-					token = tokenSupplier.getNextToken();
-				}
+				consumeUntil(TokenType.SEMICOLON);
 			}
-
-			if (token.getType() != TokenType.SEMICOLON) {
-				throw new ParserException(token, TokenType.SEMICOLON);
-			}
-
-			token = tokenSupplier.getNextToken();
+			expectAndConsume(TokenType.SEMICOLON);
 		}
 	}
 
@@ -496,7 +471,8 @@ public class Parser {
 		expectAndConsume(TokenType.IDENTIFIER);
 
 		Expression expr = null;
-		if (isTokenTypeAndConsume(TokenType.ASSIGN)) {
+		if (isTokenType(TokenType.ASSIGN)) {
+			consumeToken();
 			expr = parseExpression();
 		}
 		expectAndConsume(TokenType.SEMICOLON);
@@ -546,7 +522,8 @@ public class Parser {
 		expectAndConsume(TokenType.RP);
 		Block trueStmt = parseStatement();
 
-		if (isTokenTypeAndConsume(TokenType.ELSE)) {
+		if (isTokenType(TokenType.ELSE)) {
+			consumeToken();
 			Block falseStmt = parseStatement();
 			return new IfStatement(firstToken.getPosition(), expr, trueStmt, falseStmt);
 		} else {
@@ -577,7 +554,7 @@ public class Parser {
 		expectAndConsume(TokenType.RETURN);
 
 		Expression expr = null;
-		if (token.getType() != TokenType.SEMICOLON) {
+		if (isNotTokenType(TokenType.SEMICOLON)) {
 			expr = parseExpression();
 		}
 
@@ -615,7 +592,7 @@ public class Parser {
 				token.getType().getPrecedence() >= minPrecedence) {
 			Token operationToken = token;
 			TokenType operationTokenType = operationToken.getType();
-			token = tokenSupplier.getNextToken();
+			consumeToken();
 
 			int precedence = operationTokenType.getPrecedence();
 			if (operationTokenType.isLeftAssociative()) {
@@ -698,11 +675,11 @@ public class Parser {
 			return parsePostfixExpression();
 		case LOGICALNOT:
 			pos = token.getPosition();
-			token = tokenSupplier.getNextToken();
+			consumeToken();
 			return new LogicalNotExpression(pos, parseUnaryExpression());
 		case SUBTRACT:
 			pos = token.getPosition();
-			token = tokenSupplier.getNextToken();
+			consumeToken();
 			return new NegateExpression(pos, parseUnaryExpression());
 		default:
 			throw new ParserException(token);
@@ -726,8 +703,7 @@ public class Parser {
 		case LP:
 		case NEW:
 			Expression expr = parsePrimaryExpression();
-			while (token.getType() == TokenType.LSQUAREBRACKET
-					|| token.getType() == TokenType.POINT) {
+			while (isTokenType(TokenType.LSQUAREBRACKET, TokenType.POINT)) {
 				expr = parsePostfixOp(expr);
 			}
 			return expr;
@@ -762,9 +738,11 @@ public class Parser {
 	 */
 	private PostfixExpression parsePostfixOpMethodField(Expression leftExpression) throws IOException,
 			ParserException {
-		if (isTokenTypeAndConsume(TokenType.POINT)) {
+		if (isTokenType(TokenType.POINT)) {
+			consumeToken();
 			Symbol symbol = token.getSymbol();
-			if (isTokenTypeAndConsume(TokenType.IDENTIFIER)) {
+			if (isTokenType(TokenType.IDENTIFIER)) {
+				consumeToken();
 				return parseMethodInvocationFieldAccess(leftExpression, symbol);
 			} else {
 				throw new ParserException(token, TokenType.IDENTIFIER);
@@ -784,7 +762,7 @@ public class Parser {
 		switch (token.getType()) {
 		case LP:
 			// method invocation
-			token = tokenSupplier.getNextToken();
+			consumeToken();
 			Expression[] args = parseArguments();
 			expectAndConsume(TokenType.RP);
 			return new MethodInvocationExpression(leftExpression.getPosition(), leftExpression, ident, args);
@@ -802,9 +780,10 @@ public class Parser {
 	private Expression parseArrayAccess() throws IOException, ParserException {
 		switch (token.getType()) {
 		case LSQUAREBRACKET:
-			token = tokenSupplier.getNextToken();
+			consumeToken();
 			Expression expr = parseExpression();
-			if (isTokenTypeAndConsume(TokenType.RSQUAREBRACKET)) {
+			if (isTokenType(TokenType.RSQUAREBRACKET)) {
+				consumeToken();
 				return expr;
 			} else {
 				throw new ParserException(token, TokenType.RSQUAREBRACKET);
@@ -834,7 +813,8 @@ public class Parser {
 		case NEW:
 			List<Expression> args = new ArrayList<Expression>();
 			args.add(parseExpression());
-			while (isTokenTypeAndConsume(TokenType.COMMA)) {
+			while (isTokenType(TokenType.COMMA)) {
+				consumeToken();
 				args.add(parseExpression());
 			}
 			Expression[] argsArray = new Expression[args.size()];
@@ -857,29 +837,29 @@ public class Parser {
 		Symbol symbol = token.getSymbol();
 		switch (token.getType()) {
 		case FALSE:
-			token = tokenSupplier.getNextToken();
+			consumeToken();
 			return new BooleanConstantExpression(pos, false);
 		case TRUE:
-			token = tokenSupplier.getNextToken();
+			consumeToken();
 			return new BooleanConstantExpression(pos, true);
 		case INTEGER:
-			token = tokenSupplier.getNextToken();
+			consumeToken();
 			return new IntegerConstantExpression(pos, symbol.getValue());
 		case NULL:
-			token = tokenSupplier.getNextToken();
+			consumeToken();
 			return new NullExpression(pos);
 		case THIS:
-			token = tokenSupplier.getNextToken();
+			consumeToken();
 			return new ThisExpression(pos);
 		case IDENTIFIER:
 			return parsePrimaryExpressionIdent();
 		case LP:
-			token = tokenSupplier.getNextToken();
+			consumeToken();
 			Expression expr = parseExpression();
 			expectAndConsume(TokenType.RP);
 			return expr;
 		case NEW:
-			token = tokenSupplier.getNextToken();
+			consumeToken();
 			return parseNewExpression(pos);
 		default:
 			throw new ParserException(token);
@@ -898,10 +878,12 @@ public class Parser {
 		case IDENTIFIER:
 			Position pos = token.getPosition();
 			Symbol symbol = token.getSymbol();
-			token = tokenSupplier.getNextToken();
-			if (isTokenTypeAndConsume(TokenType.LP)) {
+			consumeToken();
+			if (isTokenType(TokenType.LP)) {
+				consumeToken();
 				Expression[] args = parseArguments();
-				if (isTokenTypeAndConsume(TokenType.RP)) {
+				if (isTokenType(TokenType.RP)) {
+					consumeToken();
 					// no access object
 					return new MethodInvocationExpression(pos, null, symbol, args);
 				} else {
@@ -928,15 +910,17 @@ public class Parser {
 		case IDENTIFIER:
 			// new object or new array
 			Symbol symbol = token.getSymbol();
-			token = tokenSupplier.getNextToken();
-			if (isTokenTypeAndConsume(TokenType.LP)) {
+			consumeToken();
+			if (isTokenType(TokenType.LP)) {
+				consumeToken();
 				// new object
-				if (isTokenTypeAndConsume(TokenType.RP)) {
+				if (isTokenType(TokenType.RP)) {
+					consumeToken();
 					return new NewObjectExpression(pos, symbol);
 				} else {
 					throw new ParserException(token, TokenType.RP);
 				}
-			} else if (token.getType() == TokenType.LSQUAREBRACKET) {
+			} else if (isTokenType(TokenType.LSQUAREBRACKET)) {
 				// new array
 				type = new ClassType(pos, symbol);
 				return parseNewArrayExpressionHelp(pos, type);
@@ -956,8 +940,8 @@ public class Parser {
 			throw new ParserException(token);
 		}
 		// new array
-		token = tokenSupplier.getNextToken();
-		if (token.getType() == TokenType.LSQUAREBRACKET) {
+		consumeToken();
+		if (isTokenType(TokenType.LSQUAREBRACKET)) {
 			// new array
 			return parseNewArrayExpressionHelp(pos, type);
 		} else {
@@ -973,16 +957,18 @@ public class Parser {
 	 */
 	private NewArrayExpression parseNewArrayExpressionHelp(Position pos, Type type) throws IOException,
 			ParserException {
-		if (isTokenTypeAndConsume(TokenType.LSQUAREBRACKET)) {
+		if (isTokenType(TokenType.LSQUAREBRACKET)) {
+			consumeToken();
 			Expression expression = parseExpression();
-			if (isTokenTypeAndConsume(TokenType.RSQUAREBRACKET)) {
+			if (isTokenType(TokenType.RSQUAREBRACKET)) {
+				consumeToken();
 				ArrayType arrayType = new ArrayType(pos, type);
 				while (token.getType() == TokenType.LSQUAREBRACKET) {
 					Token lookahead = tokenSupplier.getLookAhead();
 					if (lookahead.getType() == TokenType.RSQUAREBRACKET) {
 						// read both
-						token = tokenSupplier.getNextToken();
-						token = tokenSupplier.getNextToken();
+						consumeToken();
+						consumeToken();
 						arrayType = new ArrayType(pos, arrayType);
 					} else {
 						// read [, but not part of NewArrayExpression
@@ -1010,7 +996,7 @@ public class Parser {
 	 */
 	private void expectAndConsume(TokenType tokenType) throws ParserException, IOException {
 		expect(tokenType);
-		consume();
+		consumeToken();
 	}
 
 	/**
@@ -1025,20 +1011,57 @@ public class Parser {
 		if (token.getType() == tokenType) {
 			throw new ParserException(token, expected);
 		}
-		consume();
+		consumeToken();
 	}
 
 	/**
-	 * Checks if the next token has the given token type and then consumes the token.
+	 * Checks if the next token has the given token type and throws an exception.
+	 * 
+	 * @param tokenType
+	 * @throws ParserException
+	 *             if the token type does match
+	 * @throws IOException
+	 */
+	private void notExpect(TokenType tokenType, TokenType expected) throws ParserException, IOException {
+		if (token.getType() == tokenType) {
+			throw new ParserException(token, expected);
+		}
+	}
+
+	/**
+	 * Checks if the next token has the given token type.
 	 * 
 	 * @param tokenType
 	 * @return true if the token type matched, false otherwise
-	 * @throws IOException
 	 */
-	private boolean isTokenTypeAndConsume(TokenType tokenType) throws IOException {
+	private boolean isTokenType(TokenType tokenType) {
 		if (token.getType() == tokenType) {
-			consume();
 			return true;
+		}
+		return false;
+	}
+
+	/**
+	 * Checks if the next token has not the given token type.
+	 * 
+	 * @param tokenType
+	 * @return true if the token type matched, false otherwise
+	 */
+	private boolean isNotTokenType(TokenType tokenType) {
+		return !(isTokenType(tokenType));
+	}
+
+	/**
+	 * Checks if the next token has one of the given token types.
+	 * 
+	 * @param tokenType
+	 * @return true if the token type matched, false otherwise
+	 */
+	private boolean isTokenType(TokenType... tokenTypes) {
+		for (TokenType type : tokenTypes) {
+			if (token.getType() == type) {
+				return true;
+			}
 		}
 		return false;
 	}
@@ -1048,7 +1071,7 @@ public class Parser {
 	 * 
 	 * @throws IOException
 	 */
-	private void consume() throws IOException {
+	private void consumeToken() throws IOException {
 		token = tokenSupplier.getNextToken();
 	}
 
@@ -1063,5 +1086,26 @@ public class Parser {
 		if (token.getType() != tokenType) {
 			throw new ParserException(token, tokenType);
 		}
+	}
+
+	/**
+	 * Consume tokens until one of the given tokens or EOF is read. The last read token is also consumed, if it is not EOF.
+	 * 
+	 * @param tokenTypes
+	 * @throws IOException
+	 */
+	private void consumeUntil(TokenType... tokenTypes) throws IOException {
+		// never consume EOF
+		while (token.getType() != TokenType.EOF) {
+			for (TokenType type : tokenTypes) {
+				if (token.getType() == type) {
+					// consume and return
+					token = tokenSupplier.getNextToken();
+					return;
+				}
+			}
+			token = tokenSupplier.getNextToken();
+		}
+
 	}
 }
