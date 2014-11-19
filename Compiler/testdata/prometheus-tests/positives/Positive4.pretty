@@ -1,0 +1,3 @@
+class Klasse1 {
+	public static void secondary(String[] args) { }
+}

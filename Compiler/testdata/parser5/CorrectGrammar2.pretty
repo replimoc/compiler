@@ -1,0 +1,30 @@
+class Expressions {
+	public static void main(String[] args) {
+		int a;
+		int b;
+		int c;
+		int d;
+		a = a;
+		a = (!a);
+		a = (-a);
+		a = (a * b);
+		a = (a / c);
+		a = (a % d);
+		int x = a + (a * b);
+		x = (b - (c * d));
+		boolean b1 = (a + b) = (c + (d * d));
+		boolean b2 = (a + b) <= (c + (d * d));
+		boolean b3 = (a + (b % d)) > (c + (d * d));
+		boolean b4 = (a + b) >= (c + (d * d));
+		a != b;
+		a != (b < c);
+		((((a * b) * c) - (d * d)) < 125) == true;
+		c && d;
+		(a + b) && (c + d);
+		((a * b) % d) && (c + d);
+		a || b;
+		a || (c && d);
+		(a + b) || (c + d);
+		((a * b) % d) || ((c + d) && (c - d));
+	}
+}

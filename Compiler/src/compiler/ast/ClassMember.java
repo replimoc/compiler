@@ -1,10 +1,9 @@
 package compiler.ast;
 
 import compiler.Symbol;
-import compiler.ast.visitor.AstVisitor;
 import compiler.lexer.Position;
 
-public class ClassMember extends AstNode {
+public abstract class ClassMember extends AstNode implements Comparable<ClassMember> {
 	private final Symbol identifier;
 
 	public ClassMember(Position position, Symbol identifier) {
@@ -17,7 +16,14 @@ public class ClassMember extends AstNode {
 	}
 
 	@Override
-	public void accept(AstVisitor visitor) {
-		visitor.visit(this);
+	public int compareTo(ClassMember o) {
+		int priorityOrder = this.getSortPriority() - o.getSortPriority();
+		if (priorityOrder == 0) {
+			return this.identifier.getValue().compareTo(o.identifier.getValue());
+		} else {
+			return priorityOrder;
+		}
 	}
+
+	protected abstract int getSortPriority();
 }

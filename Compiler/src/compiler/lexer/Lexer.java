@@ -9,8 +9,11 @@ import compiler.Symbol;
 
 public class Lexer implements TokenSuppliable {
 	private int c;
-	private IPositionalCharacterSource reader;
+	private final PositionalCharacterSource reader;
 	private final StringTable stringTable;
+
+	private boolean inputFinished;
+
 	/**
 	 * First token look ahead.
 	 */
@@ -61,7 +64,7 @@ public class Lexer implements TokenSuppliable {
 	private Token readNextToken() throws IOException {
 		Token t = null;
 
-		if (this.reader == null) {
+		if (inputFinished) {
 			return null;
 		}
 
@@ -72,7 +75,8 @@ public class Lexer implements TokenSuppliable {
 
 			if (c == -1) { // Character is EOF
 				t = token(TokenType.EOF);
-				this.reader = null;
+				inputFinished = true;
+				reader.close();
 			} else if (isAZaz_()) {
 				t = lexIdentifier();
 			} else if (is19()) {
@@ -388,16 +392,11 @@ public class Lexer implements TokenSuppliable {
 		}
 	}
 
-	/**
-	 * Character source for reading characters while keeping treack of their position
-	 */
-	private interface IPositionalCharacterSource {
-		public int getChar() throws IOException;
-
-		public Position getPosition();
+	public void close() {
+		reader.close();
 	}
 
-	private class PositionalCharacterSource implements IPositionalCharacterSource {
+	private class PositionalCharacterSource {
 		private final Reader reader;
 		private int line = 1;
 		private int character = 0;
@@ -406,7 +405,6 @@ public class Lexer implements TokenSuppliable {
 			this.reader = reader;
 		}
 
-		@Override
 		public int getChar() throws IOException {
 			c = reader.read();
 			if (c == '\n' || c == '\r') {
@@ -418,9 +416,15 @@ public class Lexer implements TokenSuppliable {
 			return c;
 		}
 
-		@Override
 		public Position getPosition() {
 			return new Position(line, character);
+		}
+
+		public void close() {
+			try {
+				this.reader.close();
+			} catch (IOException e) {
+			}
 		}
 	}
 

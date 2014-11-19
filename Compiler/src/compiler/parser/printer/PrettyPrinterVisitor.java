@@ -1,14 +1,20 @@
 package compiler.parser.printer;
 
+import java.util.Collections;
+import java.util.List;
+
 import compiler.ast.Block;
 import compiler.ast.ClassDeclaration;
 import compiler.ast.ClassMember;
+import compiler.ast.FieldDeclaration;
+import compiler.ast.MethodDeclaration;
 import compiler.ast.ParameterDefinition;
 import compiler.ast.Program;
+import compiler.ast.StaticMethodDeclaration;
 import compiler.ast.statement.ArrayAccessExpression;
+import compiler.ast.statement.BlockBasedStatement;
 import compiler.ast.statement.BooleanConstantExpression;
 import compiler.ast.statement.Expression;
-import compiler.ast.statement.Identifier;
 import compiler.ast.statement.IfStatement;
 import compiler.ast.statement.IntegerConstantExpression;
 import compiler.ast.statement.LocalVariableDeclaration;
@@ -16,6 +22,7 @@ import compiler.ast.statement.MethodInvocationExpression;
 import compiler.ast.statement.NewArrayExpression;
 import compiler.ast.statement.NewObjectExpression;
 import compiler.ast.statement.NullExpression;
+import compiler.ast.statement.Statement;
 import compiler.ast.statement.ThisExpression;
 import compiler.ast.statement.VariableAccessExpression;
 import compiler.ast.statement.WhileStatement;
@@ -34,15 +41,29 @@ import compiler.ast.statement.binary.ModuloExpression;
 import compiler.ast.statement.binary.MuliplicationExpression;
 import compiler.ast.statement.binary.NonEqualityExpression;
 import compiler.ast.statement.binary.SubtractionExpression;
-import compiler.ast.statement.type.Type;
 import compiler.ast.statement.unary.LogicalNotExpression;
 import compiler.ast.statement.unary.NegateExpression;
 import compiler.ast.statement.unary.ReturnStatement;
+import compiler.ast.type.Type;
 import compiler.ast.visitor.AstVisitor;
 import compiler.lexer.TokenType;
 
 public class PrettyPrinterVisitor implements AstVisitor {
-	private String outputString = ""; // TODO: Change to StringBuffer
+	private StringBuffer stringBuffer = new StringBuffer();
+
+	private PrinterMode mode = PrinterMode.STANDARD;
+	private int precedence = 0;
+	private int tabStops = 0;
+
+	private void printTabs() {
+		for (int i = 0; i < tabStops; i++) {
+			stringBuffer.append('\t');
+		}
+	}
+
+	public void resetOutputStream() {
+		this.stringBuffer = new StringBuffer();
+	}
 
 	/**
 	 * Gets the result of the PrettyPrinterVisitor
@@ -50,7 +71,7 @@ public class PrettyPrinterVisitor implements AstVisitor {
 	 * @return
 	 */
 	public String getOutputString() {
-		return this.outputString;
+		return this.stringBuffer.toString();
 	}
 
 	/**
@@ -62,12 +83,28 @@ public class PrettyPrinterVisitor implements AstVisitor {
 	 *            Type of the token.
 	 */
 	private void visit(BinaryExpression binaryExpression, TokenType tokenType) {
-		// TODO Show only brackets if it is necessary.
-		outputString += "(";
+		int oldPrecedence = precedence;
+
+		precedence = tokenType.getPrecedence();
+		if (oldPrecedence > 0) {
+			stringBuffer.append('(');
+		}
+		if (!tokenType.isLeftAssociative())
+			precedence++;
+
 		binaryExpression.getOperand1().accept(this);
-		outputString += tokenType.getString();
+		stringBuffer.append(' ');
+		stringBuffer.append(tokenType.getString());
+		stringBuffer.append(' ');
+
+		precedence += tokenType.isLeftAssociative() ? 1 : 0;
+
 		binaryExpression.getOperand2().accept(this);
-		outputString += ")";
+
+		if (oldPrecedence > 0) {
+			stringBuffer.append(')');
+		}
+		precedence = oldPrecedence;
 	}
 
 	@Override
@@ -142,116 +179,178 @@ public class PrettyPrinterVisitor implements AstVisitor {
 
 	@Override
 	public void visit(BooleanConstantExpression booleanConstantExpression) {
-		outputString += booleanConstantExpression.isValue();
+		stringBuffer.append(booleanConstantExpression.isValue());
 	}
 
 	@Override
 	public void visit(IntegerConstantExpression integerConstantExpression) {
-		outputString += integerConstantExpression.getIntegerLiteral();
+		stringBuffer.append(integerConstantExpression.getIntegerLiteral());
 	}
 
 	@Override
 	public void visit(MethodInvocationExpression methodInvocationExpression) {
-		// TODO: right format!
-		// outputString += "(";
+		int oldPrecedence = precedence;
+		precedence = 1;
 
-		// expr == null --> this.method()
-		// otherwise expr.ident()
 		if (!methodInvocationExpression.isLocalMethod()) {
+			if (oldPrecedence > 0)
+				stringBuffer.append('(');
+
 			methodInvocationExpression.getMethodExpression().accept(this);
+			stringBuffer.append('.');
 		}
-		// outputString += ")";
-		outputString += "." + methodInvocationExpression.getMethodIdent() + "(";
+
+		stringBuffer.append(methodInvocationExpression.getMethodIdent());
+		stringBuffer.append('(');
 		Expression[] args = methodInvocationExpression.getParameters();
 
-		// print args
-		if (args != null && args.length > 0) {
+		// print arguments
+		if (args.length > 0) {
 			int i = 0;
+			precedence = 0;
 			args[i++].accept(this);
 			while (i < args.length) {
-				outputString += ", ";
+				stringBuffer.append(", ");
+				precedence = 0;
 				args[i++].accept(this);
 			}
+
 		}
 
-		outputString += ")";
+		precedence = oldPrecedence;
+		stringBuffer.append(')');
+
+		if (!methodInvocationExpression.isLocalMethod() && oldPrecedence > 0)
+			stringBuffer.append(')');
 	}
 
 	@Override
 	public void visit(NewArrayExpression newArrayExpression) {
-		// TODO: right format!
-		outputString += "(new ";
-		newArrayExpression.getType().accept(this);
-		outputString += ") [" + newArrayExpression.getFirstDimension() + "]";
-		int dim = newArrayExpression.getDimensions();
+		if (precedence > 0) {
+			stringBuffer.append('(');
+		}
 
-		// print ([])*
-		for (int i = 0; i < dim; i++) {
-			outputString += "[]";
+		stringBuffer.append("new ");
+		visitNewArrayExpression(newArrayExpression.getType(), newArrayExpression.getFirstDimension());
+
+		if (precedence > 0) {
+			stringBuffer.append(')');
 		}
 	}
 
 	@Override
 	public void visit(NewObjectExpression newObjectExpression) {
-		// TODO: right format!
-		outputString += "(new " + newObjectExpression.getIdentifier() + "())";
+		if (precedence > 0) {
+			stringBuffer.append('(');
+		}
+		stringBuffer.append("new ");
+		stringBuffer.append(newObjectExpression.getIdentifier());
+		stringBuffer.append("()");
+
+		if (precedence > 0) {
+			stringBuffer.append(')');
+		}
 	}
 
 	@Override
 	public void visit(VariableAccessExpression variableAccessExpression) {
-		// outputString += variableAccessExpression.getIdentifier().getValue();
-		// outputString += "_"; // FIXME This should be the real identifier
-		// TODO: right format!
-		outputString += "";
-		variableAccessExpression.getExpression().accept(this);
-		outputString += "." + variableAccessExpression.getFieldIdentifier().getValue() + ")";
+		if (variableAccessExpression.getExpression() != null) {
+			int oldPrecedence = precedence;
+			precedence = 1;
+
+			if (oldPrecedence > 0)
+				stringBuffer.append('(');
+
+			variableAccessExpression.getExpression().accept(this);
+			stringBuffer.append('.');
+			stringBuffer.append(variableAccessExpression.getFieldIdentifier().getValue());
+
+			if (oldPrecedence > 0)
+				stringBuffer.append(')');
+
+			precedence = oldPrecedence;
+		} else {
+			stringBuffer.append(variableAccessExpression.getFieldIdentifier().getValue());
+		}
 	}
 
 	@Override
 	public void visit(ArrayAccessExpression arrayAccessExpression) {
-		// TODO: right format!
-		outputString += "(";
+		int oldPrecedence = precedence;
+		precedence = 1;
+
 		arrayAccessExpression.getArrayExpression().accept(this);
-		outputString += "[";
+		stringBuffer.append('[');
+
+		precedence = 0;
+
 		arrayAccessExpression.getIndexExpression().accept(this);
-		outputString += "])";
+		stringBuffer.append(']');
+
+		precedence = oldPrecedence;
 	}
 
 	@Override
 	public void visit(LogicalNotExpression logicalNotExpression) {
-		outputString += "!";
+		if (precedence > 0) {
+			stringBuffer.append('(');
+		}
+		int oldPrecedence = precedence;
+		precedence = 10;
+
+		stringBuffer.append('!');
 		logicalNotExpression.getOperand().accept(this);
+
+		precedence = oldPrecedence;
+		if (precedence > 0) {
+			stringBuffer.append(')');
+		}
 	}
 
 	@Override
 	public void visit(NegateExpression negateExpression) {
-		outputString += "-";
+		if (precedence > 0) {
+			stringBuffer.append('(');
+		}
+		int oldPrecedence = precedence;
+		precedence = 10;
+
+		stringBuffer.append('-');
 		negateExpression.getOperand().accept(this);
+
+		precedence = oldPrecedence;
+		if (precedence > 0) {
+			stringBuffer.append(')');
+		}
 	}
 
 	@Override
 	public void visit(ReturnStatement returnStatement) {
-		// TODO Auto-generated method stub
-
-	}
-
-	@Override
-	public void visit(Identifier literal) {
-		outputString += literal.getSymbol().getValue();
+		if (returnStatement.getOperand() != null) {
+			stringBuffer.append("return ");
+			returnStatement.getOperand().accept(this);
+		} else {
+			stringBuffer.append("return");
+		}
 	}
 
 	@Override
 	public void visit(ThisExpression thisExpression) {
-		outputString += "this";
+		stringBuffer.append("this");
 	}
 
 	@Override
 	public void visit(NullExpression nullExpression) {
-		outputString += "null";
+		stringBuffer.append("null");
 	}
 
 	@Override
 	public void visit(Type type) {
+		int dim = 0;
+		while (type.getSubType() != null) {
+			type = type.getSubType();
+			dim++;
+		}
 		String typeString;
 		switch (type.getBasicType()) {
 		case INT:
@@ -264,61 +363,267 @@ public class PrettyPrinterVisitor implements AstVisitor {
 			typeString = "boolean";
 			break;
 		case CLASS:
-			typeString = "class";
+			typeString = type.getIdentifier().getValue();
 			break;
 		default:
-			typeString = "array";
-			break;
+			throw new IllegalArgumentException();
 		}
-		outputString += typeString;
+		stringBuffer.append(typeString);
+		for (int i = 0; i < dim; i++) {
+			stringBuffer.append("[]");
+		}
+	}
+
+	/**
+	 * Print the type and the expression for new array[expression]([])*
+	 * 
+	 * @param type
+	 * @param expr
+	 */
+	private void visitNewArrayExpression(Type type, Expression expr) {
+		int dim = 0;
+		while (type.getSubType() != null) {
+			type = type.getSubType();
+			dim++;
+		}
+		String typeString;
+		switch (type.getBasicType()) {
+		case INT:
+			typeString = "int";
+			break;
+		case VOID:
+			typeString = "void";
+			break;
+		case BOOLEAN:
+			typeString = "boolean";
+			break;
+		case CLASS:
+			typeString = type.getIdentifier().getValue();
+			break;
+		default:
+			throw new IllegalArgumentException();
+		}
+		stringBuffer.append(typeString);
+
+		stringBuffer.append('[');
+		expr.accept(this);
+		stringBuffer.append(']');
+
+		for (int i = 1; i < dim; i++) {
+			stringBuffer.append("[]");
+		}
 	}
 
 	@Override
 	public void visit(Block block) {
-		// TODO Auto-generated method stub
+		List<Statement> statements = block.getStatements();
 
-	}
+		switch (statements.size()) {
+		case 0:
+			stringBuffer.append("{ }");
+			break;
+		case 1:
+			if (mode == PrinterMode.ENABLE_SINGLE_LINE_BLOCK) {
+				stringBuffer.append('\n');
+				tabStops++;
+				printTabs();
+				Statement statement = statements.get(0);
+				statement.accept(this);
+				if (!(statement instanceof BlockBasedStatement) && !(statement instanceof Block)) {
+					stringBuffer.append(';');
+				}
+				tabStops--;
+				break;
+			}
+		default:
+			stringBuffer.append('{');
+			tabStops++;
 
-	@Override
-	public void visit(ClassMember classMember) {
-		// TODO Auto-generated method stub
-
+			for (Statement statement : statements) {
+				stringBuffer.append('\n');
+				printTabs();
+				statement.accept(this);
+				if (!(statement instanceof BlockBasedStatement) && !(statement instanceof Block)) {
+					stringBuffer.append(';');
+				}
+			}
+			tabStops--;
+			stringBuffer.append('\n');
+			printTabs();
+			stringBuffer.append('}');
+		}
 	}
 
 	@Override
 	public void visit(ClassDeclaration classDeclaration) {
-		// TODO Auto-generated method stub
+		stringBuffer.append("class ");
+		stringBuffer.append(classDeclaration.getIdentifier());
+		stringBuffer.append(" {");
 
+		if (classDeclaration.getMembers().size() > 0) {
+			stringBuffer.append('\n');
+			tabStops++;
+
+			List<ClassMember> members = classDeclaration.getMembers();
+			Collections.sort(members);
+
+			for (ClassMember member : members) {
+				printTabs();
+				member.accept(this);
+			}
+			tabStops--;
+		} else {
+			stringBuffer.append(' ');
+		}
+		stringBuffer.append("}\n");
 	}
 
 	@Override
 	public void visit(IfStatement ifStatement) {
-		// TODO Auto-generated method stub
+		PrinterMode oldMode = mode;
+		mode = PrinterMode.ENABLE_SINGLE_LINE_BLOCK;
 
+		stringBuffer.append("if (");
+		ifStatement.getCondition().accept(this);
+		stringBuffer.append(')');
+
+		Block trueCase = ifStatement.getTrueCase();
+		printWhitespaceIfBlockNeedsCurlyBrackets(trueCase);
+		trueCase.accept(this);
+		int numberOfTrueStatements = trueCase.getNumberOfStatements();
+
+		Block falseCase = ifStatement.getFalseCase();
+		if (falseCase != null) {
+			List<Statement> falseStatements = falseCase.getStatements();
+
+			if (numberOfTrueStatements <= 1) {
+				stringBuffer.append('\n');
+				printTabs();
+			} else { // if true case was a block, add space
+				stringBuffer.append(' ');
+			}
+
+			// handle else if
+			if (falseStatements.size() == 1 && falseStatements.get(0) instanceof IfStatement) {
+
+				stringBuffer.append("else ");
+				falseStatements.get(0).accept(this);
+
+			} else { // handle normal else
+				stringBuffer.append("else");
+				printWhitespaceIfBlockNeedsCurlyBrackets(falseCase);
+				falseCase.accept(this);
+			}
+		}
+
+		mode = oldMode;
+	}
+
+	/**
+	 * Adds a whitespace if the following block uses curly brackets. This can be an empty block or a block with multiple lines or a block with only
+	 * one line printed as method body.
+	 * 
+	 * @param block
+	 */
+	private void printWhitespaceIfBlockNeedsCurlyBrackets(Block block) {
+		if (block.getNumberOfStatements() != 1 || mode != PrinterMode.ENABLE_SINGLE_LINE_BLOCK) {
+			stringBuffer.append(' ');
+		}
 	}
 
 	@Override
 	public void visit(WhileStatement whileStatement) {
-		// TODO Auto-generated method stub
+		stringBuffer.append("while (");
+		whileStatement.getCondition().accept(this);
+		stringBuffer.append(')');
 
+		PrinterMode oldMode = mode;
+		mode = PrinterMode.ENABLE_SINGLE_LINE_BLOCK;
+
+		Block body = whileStatement.getBody();
+		printWhitespaceIfBlockNeedsCurlyBrackets(body);
+		body.accept(this);
+
+		mode = oldMode;
 	}
 
 	@Override
 	public void visit(LocalVariableDeclaration localVariableDeclaration) {
-		// TODO Auto-generated method stub
+		localVariableDeclaration.getType().accept(this);
+		stringBuffer.append(' ');
+		stringBuffer.append(localVariableDeclaration.getIdentifier());
+		Expression expression = localVariableDeclaration.getExpression();
 
+		if (expression != null) {
+			stringBuffer.append(" = ");
+			expression.accept(this);
+		}
 	}
 
 	@Override
 	public void visit(ParameterDefinition parameterDefinition) {
-		// TODO Auto-generated method stub
-
+		parameterDefinition.getType().accept(this);
+		stringBuffer.append(' ');
+		stringBuffer.append(parameterDefinition.getIdentifier());
 	}
 
 	@Override
 	public void visit(Program program) {
-		// TODO Auto-generated method stub
+		List<ClassDeclaration> classes = program.getClasses();
+		Collections.sort(classes);
 
+		for (ClassDeclaration classDeclaration : classes) {
+			classDeclaration.accept(this);
+		}
+	}
+
+	@Override
+	public void visit(MethodDeclaration methodDeclaration) {
+		printMethodDeclaration(methodDeclaration, false);
+	}
+
+	@Override
+	public void visit(StaticMethodDeclaration staticMethodDeclaration) {
+		printMethodDeclaration(staticMethodDeclaration, true);
+	}
+
+	private void printMethodDeclaration(MethodDeclaration methodDeclaration, boolean isStatic) {
+		stringBuffer.append("public ");
+		if (isStatic)
+			stringBuffer.append("static ");
+
+		methodDeclaration.getType().accept(this);
+		stringBuffer.append(' ');
+		stringBuffer.append(methodDeclaration.getIdentifier());
+		stringBuffer.append('(');
+		boolean first = true;
+
+		for (ParameterDefinition parameter : methodDeclaration.getParameters()) {
+			if (first)
+				first = false;
+			else
+				stringBuffer.append(", ");
+			parameter.accept(this);
+		}
+
+		stringBuffer.append(')');
+		Block block = methodDeclaration.getBlock();
+		if (block != null) {
+			printWhitespaceIfBlockNeedsCurlyBrackets(block);
+			block.accept(this);
+			stringBuffer.append('\n');
+		} else {
+			stringBuffer.append(" { }\n");
+		}
+	}
+
+	@Override
+	public void visit(FieldDeclaration fieldDeclaration) {
+		stringBuffer.append("public ");
+		fieldDeclaration.getType().accept(this);
+		stringBuffer.append(' ');
+		stringBuffer.append(fieldDeclaration.getIdentifier().getValue());
+		stringBuffer.append(";\n");
 	}
 
 }

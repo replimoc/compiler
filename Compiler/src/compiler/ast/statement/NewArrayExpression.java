@@ -1,19 +1,18 @@
 package compiler.ast.statement;
 
-import compiler.ast.statement.type.Type;
+import compiler.ast.statement.unary.PrimaryExpression;
+import compiler.ast.type.Type;
 import compiler.ast.visitor.AstVisitor;
 import compiler.lexer.Position;
 
-public class NewArrayExpression extends Expression {
+public class NewArrayExpression extends PrimaryExpression {
 	private final Type type;
 	private final Expression firstDimension;
-	private final int dimensions;
 
-	public NewArrayExpression(Position position, Type type, Expression firstDimension, int dimensions) {
+	public NewArrayExpression(Position position, Type type, Expression firstDimension) {
 		super(position);
 		this.type = type;
 		this.firstDimension = firstDimension;
-		this.dimensions = dimensions;
 	}
 
 	public Type getType() {
@@ -25,7 +24,13 @@ public class NewArrayExpression extends Expression {
 	}
 
 	public int getDimensions() {
-		return dimensions;
+		int dim = 0;
+		Type tmpType = type;
+		while (tmpType.getSubType() != null) {
+			dim++;
+			tmpType = tmpType.getSubType();
+		}
+		return dim;
 	}
 
 	@Override

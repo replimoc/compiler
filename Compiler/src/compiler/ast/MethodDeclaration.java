@@ -4,7 +4,8 @@ import java.util.ArrayList;
 import java.util.List;
 
 import compiler.Symbol;
-import compiler.ast.statement.type.Type;
+import compiler.ast.type.Type;
+import compiler.ast.visitor.AstVisitor;
 import compiler.lexer.Position;
 
 public class MethodDeclaration extends ClassMember {
@@ -17,16 +18,18 @@ public class MethodDeclaration extends ClassMember {
 		super(position, identifier);
 		this.returnType = returnType;
 	}
-	
+
 	public MethodDeclaration(Position position, Symbol identifier, Type returnType, Block block) {
 		super(position, identifier);
 		this.returnType = returnType;
+		this.block = block;
 	}
 
 	public void addParameter(ParameterDefinition parameter) {
 		parameters.add(parameter);
 	}
 
+	@Override
 	public Type getType() {
 		return returnType;
 	}
@@ -38,8 +41,18 @@ public class MethodDeclaration extends ClassMember {
 	public Block getBlock() {
 		return block;
 	}
-	
+
 	public void setBlock(Block block) {
 		this.block = block;
+	}
+
+	@Override
+	public void accept(AstVisitor visitor) {
+		visitor.visit(this);
+	}
+
+	@Override
+	protected int getSortPriority() {
+		return 0;
 	}
 }

@@ -1,13 +1,15 @@
 package compiler;
 
+import compiler.semantic.symbolTable.Definition;
+import compiler.semantic.symbolTable.Scope;
+
 /**
  * Symbol represents a hashed String (see StringTable).
- * 
- * @author Aleksej Frank
- *
  */
 public class Symbol {
-	private String value;
+	private final String value;
+	private Scope defScope;
+	private Definition definition;
 
 	// definition
 
@@ -48,5 +50,34 @@ public class Symbol {
 			return false;
 		return true;
 	}
+	
+	/**
+	 * Sets a reference to a definition in a certain scope.
+	 * @param scope Scope of definition
+	 * @param definition Definition object
+	 */
+	public void setDefintion(Scope scope, Definition definition) {
+		this.defScope = scope;
+		this.definition = definition;
+	}
 
+	/**
+	 * Returns the current definition scope. May be null.
+	 * @return Current definition scope.
+	 */
+	public Scope getDefinitionScope() {
+		return defScope;
+	}
+	
+	/**
+	 * Returns the current definition. May be null.
+	 * @return Current definition
+	 */
+	public Definition getDefinition() {
+		return definition;
+	}
+
+	public boolean isDefined() {
+		return defScope == null || definition == null;
+	}
 }

@@ -43,6 +43,8 @@ class Loops {
         /* while - chain */
         while(1) while(1) while(1) while(1) { while(1) while(1) while(1) while(1); }
 
+        while(1){{}}
+        
         /* random blocks and empty statements*/
         /* the author is boooooooooored */
 

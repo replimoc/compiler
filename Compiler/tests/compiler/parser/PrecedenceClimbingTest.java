@@ -29,14 +29,18 @@ public class PrecedenceClimbingTest {
 	@Test
 	public void testPlus() throws IOException {
 		Parser parser = TestUtils.initParser(TokenType.IDENTIFIER, TokenType.ADD, TokenType.IDENTIFIER, TokenType.EOF);
-		assertEquals("(_+_)", callParseExpression(parser));
+		assertEquals("_ + _", callParseExpression(parser));
 	}
 
 	@Test
 	public void testPlusLeftAssociative() throws IOException {
 		Parser parser = TestUtils.initParser(TokenType.IDENTIFIER, TokenType.ADD, TokenType.IDENTIFIER, TokenType.ADD, TokenType.IDENTIFIER,
 				TokenType.EOF);
-		assertEquals("((_+_)+_)", callParseExpression(parser));
+		assertEquals("(_ + _) + _", callParseExpression(parser));
+
+		Parser parserP = TestUtils.initParser(TokenType.IDENTIFIER, TokenType.ADD, TokenType.LP, TokenType.IDENTIFIER, TokenType.ADD,
+				TokenType.IDENTIFIER, TokenType.RP, TokenType.EOF);
+		assertEquals("_ + (_ + _)", callParseExpression(parserP));
 	}
 
 	@Test
@@ -58,25 +62,30 @@ public class PrecedenceClimbingTest {
 		for (TokenType type : types) {
 			Parser parser = TestUtils.initParser(TokenType.IDENTIFIER, type, TokenType.IDENTIFIER, type, TokenType.IDENTIFIER,
 					TokenType.EOF);
-			assertEquals("((_" + type.getString() + "_)" + type.getString() + "_)", callParseExpression(parser));
+			assertEquals("(_ " + type.getString() + " _) " + type.getString() + " _", callParseExpression(parser));
 		}
 	}
 
 	@Test
 	public void testAssign() throws IOException {
 		Parser parser = TestUtils.initParser(TokenType.IDENTIFIER, TokenType.ASSIGN, TokenType.IDENTIFIER, TokenType.EOF);
-		assertEquals("(_=_)", callParseExpression(parser));
+		assertEquals("_ = _", callParseExpression(parser));
 	}
 
 	@Test
 	public void testAssignRightAssociative() throws IOException {
 		Parser parser = TestUtils.initParser(TokenType.IDENTIFIER, TokenType.ASSIGN, TokenType.IDENTIFIER, TokenType.ASSIGN, TokenType.IDENTIFIER,
 				TokenType.EOF);
-		assertEquals("(_=(_=_))", callParseExpression(parser));
+		assertEquals("_ = (_ = _)", callParseExpression(parser));
+
+		Parser parserP = TestUtils.initParser(TokenType.LP, TokenType.IDENTIFIER, TokenType.ASSIGN, TokenType.IDENTIFIER, TokenType.RP,
+				TokenType.ASSIGN, TokenType.IDENTIFIER,
+				TokenType.EOF);
+		assertEquals("(_ = _) = _", callParseExpression(parserP));
 	}
 
 	@Test
-	public void testTokenPrecedence() throws IOException {
+	public void testTokenPrecedence1() throws IOException {
 		Parser parser1 = TestUtils.initParser(TokenType.IDENTIFIER, TokenType.NOTEQUAL,
 				TokenType.IDENTIFIER, TokenType.ASSIGN,
 				TokenType.IDENTIFIER, TokenType.MODULO,
@@ -92,8 +101,11 @@ public class PrecedenceClimbingTest {
 				TokenType.IDENTIFIER, TokenType.EQUAL,
 				TokenType.IDENTIFIER, TokenType.ADD,
 				TokenType.IDENTIFIER, TokenType.EOF);
-		assertEquals("((_!=_)=(((((_%_)>_)<(_-((_/_)*_)))&&_)||(((_<=_)>=_)==(_+_))))", callParseExpression(parser1));
+		assertEquals("(_ != _) = (((((_ % _) > _) < (_ - ((_ / _) * _))) && _) || (((_ <= _) >= _) == (_ + _)))", callParseExpression(parser1));
+	}
 
+	@Test
+	public void testTokenPrecedence2() throws IOException {
 		Parser parser2 = TestUtils.initParser(TokenType.IDENTIFIER, TokenType.ADD,
 				TokenType.IDENTIFIER, TokenType.EQUAL,
 				TokenType.IDENTIFIER, TokenType.MODULO,
@@ -109,11 +121,11 @@ public class PrecedenceClimbingTest {
 				TokenType.IDENTIFIER, TokenType.LESSEQUAL,
 				TokenType.IDENTIFIER, TokenType.SUBTRACT,
 				TokenType.IDENTIFIER, TokenType.EOF);
-		assertEquals("((((_+_)==((_%_)<_))||_)=(((_>_)>=_)&&(((_/_)*_)!=(_<=(_-_)))))", callParseExpression(parser2));
+		assertEquals("(((_ + _) == ((_ % _) < _)) || _) = (((_ > _) >= _) && (((_ / _) * _) != (_ <= (_ - _))))", callParseExpression(parser2));
 	}
 
 	private String callParseExpression(Parser parser) {
-		return PrettyPrinter.get((Expression) privateMethodCaller.call("parseExpression", parser, new Class<?>[] { int.class }, new Object[] { 0 }));
+		return PrettyPrinter.prettyPrint((Expression) privateMethodCaller.call("parseExpression", parser, new Class<?>[] { int.class }, new Object[] { 0 }));
 	}
 
 }

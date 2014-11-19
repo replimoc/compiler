@@ -2,17 +2,19 @@ package compiler.parser;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.fail;
 
 import java.io.IOException;
 
 import org.junit.Test;
 
+import compiler.ast.Program;
 import compiler.lexer.TokenType;
 import compiler.utils.TestUtils;
 
 public class ParserTest {
 
-	private int parseWithEof(TokenType... tokens) throws IOException, ParserException {
+	private Program parseWithEof(TokenType... tokens) throws IOException, ParsingFailedException {
 		TokenType[] tokensEof = new TokenType[tokens.length + 1];
 		for (int i = 0; i < tokens.length; i++) {
 			tokensEof[i] = tokens[i];
@@ -23,33 +25,39 @@ public class ParserTest {
 		return parser.parse();
 	}
 
+	private void parseWithExpectedErrors(int expectedErrors, TokenType... tokenTypes) throws IOException {
+		try {
+			parseWithEof(tokenTypes);
+			fail();
+		} catch (ParsingFailedException e) {
+			assertEquals(expectedErrors, e.getDetectedErrors());
+		}
+	}
+
 	@Test
-	public void testParseEmptyFile() throws IOException, ParserException {
+	public void testParseEmptyFile() throws IOException, ParsingFailedException {
 		parseWithEof();
 	}
 
 	@Test
-	public void testParseOnlyIntToken() throws IOException, ParserException {
-		int errors = parseWithEof(TokenType.INT);
-		assertEquals(1, errors);
+	public void testParseOnlyIntToken() throws IOException, ParsingFailedException {
+		parseWithExpectedErrors(1, TokenType.INT);
 	}
 
 	@Test
-	public void testParseCurlyBracketClassName() throws IOException, ParserException {
-		int errors = parseWithEof(TokenType.CLASS, TokenType.RCURLYBRACKET, TokenType.LCURLYBRACKET,
-				TokenType.RCURLYBRACKET);
-		assertEquals(2, errors);
+	public void testParseCurlyBracketClassName() throws IOException, ParsingFailedException {
+		parseWithExpectedErrors(2, TokenType.CLASS, TokenType.RCURLYBRACKET, TokenType.LCURLYBRACKET, TokenType.RCURLYBRACKET);
 	}
 
 	@Test
-	public void testParseEmptyClass() throws IOException, ParserException {
+	public void testParseEmptyClass() throws IOException, ParsingFailedException {
 		parseWithEof( // class Class { }
 				TokenType.CLASS, TokenType.IDENTIFIER, TokenType.LCURLYBRACKET,
 				TokenType.RCURLYBRACKET);
 	}
 
 	@Test
-	public void testParseTwoEmptyClasses() throws IOException, ParserException {
+	public void testParseTwoEmptyClasses() throws IOException, ParsingFailedException {
 		parseWithEof( // class ClassA { } class ClassB { }
 				TokenType.CLASS, TokenType.IDENTIFIER, TokenType.LCURLYBRACKET,
 				TokenType.RCURLYBRACKET,
@@ -58,7 +66,7 @@ public class ParserTest {
 	}
 
 	@Test
-	public void testParseClassWithField() throws IOException, ParserException {
+	public void testParseClassWithField() throws IOException, ParsingFailedException {
 		parseWithEof( // class Class { public void field; }
 				TokenType.CLASS, TokenType.IDENTIFIER, TokenType.LCURLYBRACKET,
 				TokenType.PUBLIC, TokenType.VOID, TokenType.IDENTIFIER, TokenType.SEMICOLON,
@@ -66,7 +74,7 @@ public class ParserTest {
 	}
 
 	@Test
-	public void testParseClassWithEmptyMethod() throws IOException, ParserException {
+	public void testParseClassWithEmptyMethod() throws IOException, ParsingFailedException {
 		parseWithEof( // class Class { public void method () {} }
 				TokenType.CLASS, TokenType.IDENTIFIER, TokenType.LCURLYBRACKET,
 				TokenType.PUBLIC, TokenType.VOID, TokenType.IDENTIFIER, TokenType.LP, TokenType.RP, TokenType.LCURLYBRACKET,
@@ -75,7 +83,7 @@ public class ParserTest {
 	}
 
 	@Test
-	public void testParseClassWithEmptyMain() throws IOException, ParserException {
+	public void testParseClassWithEmptyMain() throws IOException, ParsingFailedException {
 		parseWithEof( // class Class { public static void main ( String [] args ) {} }
 				TokenType.CLASS, TokenType.IDENTIFIER, TokenType.LCURLYBRACKET,
 				TokenType.PUBLIC, TokenType.VOID, TokenType.IDENTIFIER, TokenType.LP, TokenType.IDENTIFIER, TokenType.LSQUAREBRACKET,
@@ -85,7 +93,7 @@ public class ParserTest {
 	}
 
 	@Test
-	public void testFirstProductions() throws IOException, ParserException {
+	public void testFirstProductions() throws IOException, ParsingFailedException {
 		Parser parser;
 
 		parser = TestUtils.initParser("class Class { public void function(int param) {} }");

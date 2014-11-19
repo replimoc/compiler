@@ -1,13 +1,17 @@
 package compiler.parser;
 
+import static org.junit.Assert.assertEquals;
+
 import java.io.IOException;
 
 import org.junit.BeforeClass;
 import org.junit.Test;
 
+import compiler.ast.statement.ArrayAccessExpression;
 import compiler.ast.statement.Expression;
 import compiler.ast.visitor.AstVisitor;
 import compiler.lexer.Position;
+import compiler.parser.printer.PrettyPrinter;
 import compiler.utils.PrivateMethodCaller;
 import compiler.utils.TestUtils;
 
@@ -47,7 +51,7 @@ public class ParsePostfixOpTest {
 	@Test
 	public void testArrayAccess() throws IOException {
 		Parser parser = TestUtils.initParser("[42]");
-		caller.call("parsePostfixOp", parser, parameterTypes, args);
+		assertEquals("[42]", callArrayAccessExpression(parser));
 	}
 
 	@Test(expected = RuntimeException.class)
@@ -84,4 +88,7 @@ public class ParsePostfixOpTest {
 		}
 	}
 
+	private String callArrayAccessExpression(Parser parser) {
+		return PrettyPrinter.prettyPrint((ArrayAccessExpression) caller.call("parsePostfixOp", parser, parameterTypes, args));
+	}
 }

@@ -1,0 +1,9 @@
+class FieldMember {
+	public int member;
+}
+class MainMethod {
+	public static void main(String[] args) { }
+}
+class MethodMember {
+	public boolean method() { }
+}

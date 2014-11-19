@@ -6,9 +6,14 @@ import compiler.lexer.Position;
 public abstract class UnaryExpression extends Expression {
 	private final Expression operand;
 
-	public UnaryExpression(Position position, Expression operand) {
+	protected UnaryExpression(Position position, Expression operand) {
 		super(position);
 		this.operand = operand;
+	}
+
+	protected UnaryExpression(Position position) {
+		super(position);
+		this.operand = null;
 	}
 
 	public Expression getOperand() {

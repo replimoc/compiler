@@ -1,17 +1,17 @@
 class MultipleMethods {
-  public int method1 ( ) { }
-  public boolean method1 ( ) { }
-  public void method1 ( ) { }
+  public int method2 ( ) { }
+  public boolean method3 ( ) { }
+  public void method4 ( ) { }
   public SomeType method1 ( ) { }
   
-  public int method2 ( int p ) {}
-  public int method2 ( boolean p ) {}
-  public int method2 ( void p ) {}
-  public int method2 ( SomeType p ) {}
+  public int method5 ( int p ) {}
+  public int method ( boolean p ) {}
+  public int method12 ( void p ) {}
+  public int method112 ( SomeType p ) {}
   
-  public int method3 ( int p , boolean p2 , void p3 , Type p4 ) {}
+  public int z ( int p , boolean p2 , void p3 , Type p4 ) {}
 
-  public int method4 ( ) {
+  public int a ( ) {
     ;
   }
 }

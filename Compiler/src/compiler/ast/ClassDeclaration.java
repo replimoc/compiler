@@ -7,7 +7,7 @@ import compiler.Symbol;
 import compiler.ast.visitor.AstVisitor;
 import compiler.lexer.Position;
 
-public class ClassDeclaration extends AstNode {
+public class ClassDeclaration extends AstNode implements Comparable<ClassDeclaration> {
 	private final Symbol identifier;
 	private final List<ClassMember> members = new ArrayList<ClassMember>();
 
@@ -31,5 +31,10 @@ public class ClassDeclaration extends AstNode {
 	@Override
 	public void accept(AstVisitor visitor) {
 		visitor.visit(this);
+	}
+
+	@Override
+	public int compareTo(ClassDeclaration o) {
+		return identifier.getValue().compareTo(o.identifier.getValue());
 	}
 }

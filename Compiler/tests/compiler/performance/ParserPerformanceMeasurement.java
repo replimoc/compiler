@@ -11,7 +11,7 @@ import compiler.lexer.Lexer;
 import compiler.lexer.Token;
 import compiler.lexer.TokenType;
 import compiler.parser.Parser;
-import compiler.parser.ParserException;
+import compiler.parser.ParsingFailedException;
 import compiler.utils.FixedTokensSupplier;
 import compiler.utils.TestUtils;
 
@@ -40,7 +40,7 @@ public class ParserPerformanceMeasurement implements Measurable {
 	}
 
 	@Override
-	public long measure() throws IOException, ParserException {
+	public long measure() throws IOException, ParsingFailedException {
 		tokenSupplier.reset();
 		Parser parser = new Parser(tokenSupplier);
 

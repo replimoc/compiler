@@ -2,21 +2,14 @@ package compiler.lexer;
 
 import java.io.BufferedReader;
 import java.nio.charset.StandardCharsets;
-import java.nio.file.FileSystems;
-import java.nio.file.FileVisitResult;
 import java.nio.file.Files;
 import java.nio.file.Path;
-import java.nio.file.PathMatcher;
 import java.nio.file.Paths;
-import java.nio.file.SimpleFileVisitor;
-import java.nio.file.attribute.BasicFileAttributes;
-import java.util.ArrayList;
-import java.util.List;
 
-import compiler.utils.TestFileVisitor;
 import org.junit.Assert;
 import org.junit.Test;
 
+import compiler.utils.TestFileVisitor;
 import compiler.utils.TestUtils;
 
 /**
@@ -24,18 +17,19 @@ import compiler.utils.TestUtils;
  * <p/>
  * this test should be started from Compiler directory
  */
-public class LextestOutputTest implements TestFileVisitor.FileTester  {
+public class LextestOutputTest implements TestFileVisitor.FileTester {
 
-    private static final String LEXER_EXTENSION = ".lexer";
+	private static final String LEXER_EXTENSION = ".lexer";
 
 	@Test
 	public void testLexerFiles() throws Exception {
 		Path testDir = Paths.get("testdata");
-        TestFileVisitor lexTester = new TestFileVisitor(LEXER_EXTENSION, this);
+		TestFileVisitor lexTester = new TestFileVisitor(LEXER_EXTENSION, this);
 		Files.walkFileTree(testDir, lexTester);
 		lexTester.checkForFailedTests();
 	}
 
+	@Override
 	public void testSourceFile(Path sourceFile, Path lexFile) throws Exception {
 		// read expected output
 		BufferedReader expectedOutput = Files.newBufferedReader(lexFile, StandardCharsets.US_ASCII);

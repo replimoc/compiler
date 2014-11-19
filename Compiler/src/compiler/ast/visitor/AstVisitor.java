@@ -2,12 +2,13 @@ package compiler.ast.visitor;
 
 import compiler.ast.Block;
 import compiler.ast.ClassDeclaration;
-import compiler.ast.ClassMember;
+import compiler.ast.FieldDeclaration;
+import compiler.ast.MethodDeclaration;
 import compiler.ast.ParameterDefinition;
 import compiler.ast.Program;
+import compiler.ast.StaticMethodDeclaration;
 import compiler.ast.statement.ArrayAccessExpression;
 import compiler.ast.statement.BooleanConstantExpression;
-import compiler.ast.statement.Identifier;
 import compiler.ast.statement.IfStatement;
 import compiler.ast.statement.IntegerConstantExpression;
 import compiler.ast.statement.LocalVariableDeclaration;
@@ -32,10 +33,10 @@ import compiler.ast.statement.binary.ModuloExpression;
 import compiler.ast.statement.binary.MuliplicationExpression;
 import compiler.ast.statement.binary.NonEqualityExpression;
 import compiler.ast.statement.binary.SubtractionExpression;
-import compiler.ast.statement.type.Type;
 import compiler.ast.statement.unary.LogicalNotExpression;
 import compiler.ast.statement.unary.NegateExpression;
 import compiler.ast.statement.unary.ReturnStatement;
+import compiler.ast.type.Type;
 
 public interface AstVisitor {
 	public void visit(AdditionExpression additionExpression);
@@ -86,8 +87,6 @@ public interface AstVisitor {
 
 	public void visit(ReturnStatement returnStatement);
 
-	public void visit(Identifier literal);
-
 	public void visit(ThisExpression thisExpression);
 
 	public void visit(NullExpression nullExpression);
@@ -95,8 +94,6 @@ public interface AstVisitor {
 	public void visit(Type type);
 
 	public void visit(Block block);
-
-	public void visit(ClassMember classMember);
 
 	public void visit(ClassDeclaration classDeclaration);
 
@@ -109,5 +106,11 @@ public interface AstVisitor {
 	public void visit(ParameterDefinition parameterDefinition);
 
 	public void visit(Program program);
+
+	public void visit(MethodDeclaration methodDeclaration);
+
+	public void visit(FieldDeclaration fieldDeclaration);
+
+	public void visit(StaticMethodDeclaration staticMethodDeclaration);
 
 }
