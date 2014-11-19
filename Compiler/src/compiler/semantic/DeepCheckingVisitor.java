@@ -82,7 +82,7 @@ public class DeepCheckingVisitor implements AstVisitor {
 		exceptions.add(new RedefinitionErrorException(symbol, definition, redefinition));
 	}
 	
-	private void throwNotDefinedError(Symbol symbol, Position position) {
+	private void throUndefinedSymbolError(Symbol symbol, Position position) {
 		exceptions.add(new UndefinedSymbolException(symbol, position));
 	}
 
@@ -234,7 +234,7 @@ public class DeepCheckingVisitor implements AstVisitor {
 		// variable can be defined in member scope or current class?
 		if (!variableAccessExpression.getFieldIdentifier().isDefined() &&
 				currentClassScope.getFieldDefinition(variableAccessExpression.getFieldIdentifier()) == null) {
-			throwNotDefinedError(variableAccessExpression.getFieldIdentifier(), variableAccessExpression.getPosition());
+			throUndefinedSymbolError(variableAccessExpression.getFieldIdentifier(), variableAccessExpression.getPosition());
 			return;
 		}
 	}
@@ -378,5 +378,6 @@ public class DeepCheckingVisitor implements AstVisitor {
 		}
 		
 		symbolTable.leaveScope();
+		symbolTable.leaveAllScopes();
 	}
 }

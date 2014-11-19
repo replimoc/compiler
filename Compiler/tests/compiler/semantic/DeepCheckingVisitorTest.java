@@ -126,6 +126,15 @@ public class DeepCheckingVisitorTest {
 		UndefinedSymbolException redExp = (UndefinedSymbolException) exceptions.get(0);
 		assertEquals(redExp.getIdentifier(), s("undefVar"));
 		assertEquals(redExp.getDefinition(), varAccess.getPosition());
+		exceptions.clear();
+		
+		//now add the var
+		ParameterDefinition paramA = new ParameterDefinition(null, t(BasicType.INT), s("undefVar"));
+		methodObj.addParameter(paramA);
+		program.accept(visitor);
+
+		exceptions = visitor.getExceptions();
+		assertEquals(0, exceptions.size());
 	}
 
 	private Type t(BasicType type) {
