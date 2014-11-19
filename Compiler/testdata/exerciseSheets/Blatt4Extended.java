@@ -38,7 +38,7 @@ class HelloWorld
 			c = c+a;
 	}
 	
-	public void foundBug(int a, int b) {
+	public void foundBug() {
 		if(true) {
 			int x;
 		}

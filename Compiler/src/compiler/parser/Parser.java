@@ -23,6 +23,7 @@ import compiler.ast.statement.MethodInvocationExpression;
 import compiler.ast.statement.NewArrayExpression;
 import compiler.ast.statement.NewObjectExpression;
 import compiler.ast.statement.NullExpression;
+import compiler.ast.statement.Statement;
 import compiler.ast.statement.ThisExpression;
 import compiler.ast.statement.VariableAccessExpression;
 import compiler.ast.statement.WhileStatement;
@@ -306,7 +307,7 @@ public class Parser {
 	 * @throws IOException
 	 * @throws ParserException
 	 */
-	private Block parseStatement() throws IOException, ParserException {
+	private Statement parseStatement() throws IOException, ParserException {
 		switch (token.getType()) {
 		// block
 		case LCURLYBRACKET:
@@ -317,16 +318,16 @@ public class Parser {
 			return new Block(token.getPosition());
 			// if statement
 		case IF:
-			return new Block(parseIfStatement());
+			return parseIfStatement();
 			// while statement
 		case WHILE:
-			return new Block(parseWhileStatement());
+			return parseWhileStatement();
 			// return statement
 		case RETURN:
-			return new Block(parseReturnStatement());
+			return parseReturnStatement();
 			// expression: propagate error recognition to parseExpressionStatement
 		default:
-			return new Block(parseExpressionStatement());
+			return parseExpressionStatement();
 		}
 	}
 
@@ -508,7 +509,7 @@ public class Parser {
 		Expression expr = parseExpression();
 		expectAndConsume(TokenType.RP);
 
-		Block statement = parseStatement();
+		Statement statement = parseStatement();
 		return new WhileStatement(firstToken.getPosition(), expr, statement);
 	}
 
@@ -524,11 +525,11 @@ public class Parser {
 		expectAndConsume(TokenType.LP);
 		Expression expr = parseExpression();
 		expectAndConsume(TokenType.RP);
-		Block trueStmt = parseStatement();
+		Statement trueStmt = parseStatement();
 
 		if (isTokenType(TokenType.ELSE)) {
 			consumeToken();
-			Block falseStmt = parseStatement();
+			Statement falseStmt = parseStatement();
 			return new IfStatement(firstToken.getPosition(), expr, trueStmt, falseStmt);
 		} else {
 			return new IfStatement(firstToken.getPosition(), expr, trueStmt);

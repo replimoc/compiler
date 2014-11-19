@@ -1,22 +1,21 @@
 package compiler.ast.statement;
 
-import compiler.ast.Block;
 import compiler.ast.visitor.AstVisitor;
 import compiler.lexer.Position;
 
 public class IfStatement extends BlockBasedStatement {
 	private final Expression condition;
-	private final Block trueCase;
-	private final Block falseCase;
+	private final Statement trueCase;
+	private final Statement falseCase;
 
-	public IfStatement(Position position, Expression condition, Block trueCase, Block falseCase) {
+	public IfStatement(Position position, Expression condition, Statement trueCase, Statement falseCase) {
 		super(position);
 		this.condition = condition;
 		this.trueCase = trueCase;
 		this.falseCase = falseCase;
 	}
 
-	public IfStatement(Position position, Expression condition, Block trueCase) {
+	public IfStatement(Position position, Expression condition, Statement trueCase) {
 		this(position, condition, trueCase, null);
 	}
 
@@ -24,11 +23,11 @@ public class IfStatement extends BlockBasedStatement {
 		return condition;
 	}
 
-	public Block getTrueCase() {
+	public Statement getTrueCase() {
 		return trueCase;
 	}
 
-	public Block getFalseCase() {
+	public Statement getFalseCase() {
 		return falseCase;
 	}
 
