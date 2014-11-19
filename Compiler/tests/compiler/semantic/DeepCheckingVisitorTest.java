@@ -1,7 +1,6 @@
 package compiler.semantic;
 
 import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertNotNull;
 
 import java.util.HashMap;
 import java.util.List;
@@ -21,10 +20,9 @@ import compiler.ast.type.BasicType;
 import compiler.ast.type.Type;
 import compiler.lexer.Position;
 import compiler.lexer.TokenType;
-import compiler.semantic.ClassScope;
-import compiler.semantic.PreNamingAnalysisVisitor;
-import compiler.semantic.exceptions.UndefinedSymbolException;
 import compiler.semantic.exceptions.RedefinitionErrorException;
+import compiler.semantic.exceptions.SemanticAnalysisException;
+import compiler.semantic.exceptions.UndefinedSymbolException;
 import compiler.semantic.symbolTable.Definition;
 import compiler.semantic.symbolTable.MethodDefinition;
 
@@ -39,7 +37,7 @@ public class DeepCheckingVisitorTest {
 		Program program = new Program(null);
 		program.accept(visitor);
 
-		List<Exception> exceptions = visitor.getExceptions();
+		List<SemanticAnalysisException> exceptions = visitor.getExceptions();
 		assertEquals(0, exceptions.size());
 	}
 
@@ -59,9 +57,9 @@ public class DeepCheckingVisitorTest {
 		// valid program
 		program.accept(visitor);
 
-		List<Exception> exceptions = visitor.getExceptions();
+		List<SemanticAnalysisException> exceptions = visitor.getExceptions();
 		assertEquals(0, exceptions.size());
-		
+
 		// var redefined
 		LocalVariableDeclaration locVarB = new LocalVariableDeclaration(null, t(BasicType.INT), s("intVar"));
 		blockObj.addStatement(locVarB);
@@ -69,12 +67,12 @@ public class DeepCheckingVisitorTest {
 
 		exceptions = visitor.getExceptions();
 		assertEquals(1, exceptions.size());
-		
+
 		RedefinitionErrorException redExp = (RedefinitionErrorException) exceptions.get(0);
 		assertEquals(redExp.getIdentifier(), s("intVar"));
 		assertEquals(redExp.getDefinition(), locVarB.getPosition());
 	}
-	
+
 	@Test
 	public void testVarRedefinitionInMethodParameter() {
 		Program program = new Program(null);
@@ -89,22 +87,22 @@ public class DeepCheckingVisitorTest {
 		program.accept(visitor);
 
 		// valid program
-		List<Exception> exceptions = visitor.getExceptions();
+		List<SemanticAnalysisException> exceptions = visitor.getExceptions();
 		assertEquals(0, exceptions.size());
-		
+
 		// param redefinition
 		ParameterDefinition paramB = new ParameterDefinition(null, t(BasicType.INT), s("paramA"));
 		methodObj.addParameter(paramB);
 		program.accept(visitor);
-		
+
 		exceptions = visitor.getExceptions();
 		assertEquals(1, exceptions.size());
-		
+
 		RedefinitionErrorException redExp = (RedefinitionErrorException) exceptions.get(0);
 		assertEquals(redExp.getIdentifier(), s("paramA"));
 		assertEquals(redExp.getDefinition(), paramB.getPosition());
 	}
-	
+
 	@Test
 	public void testVarUndefinedInMethod() {
 		classScopes.put(s("class1"), new ClassScope(new HashMap<Symbol, Definition>(), new HashMap<Symbol, MethodDefinition>()));
@@ -121,14 +119,14 @@ public class DeepCheckingVisitorTest {
 
 		program.accept(visitor);
 
-		List<Exception> exceptions = visitor.getExceptions();
+		List<SemanticAnalysisException> exceptions = visitor.getExceptions();
 		assertEquals(1, exceptions.size());
 		UndefinedSymbolException redExp = (UndefinedSymbolException) exceptions.get(0);
 		assertEquals(redExp.getIdentifier(), s("undefVar"));
-		assertEquals(redExp.getDefinition(), varAccess.getPosition());
+		assertEquals(redExp.getPosition(), varAccess.getPosition());
 		exceptions.clear();
-		
-		//now add the var
+
+		// now add the var
 		ParameterDefinition paramA = new ParameterDefinition(null, t(BasicType.INT), s("undefVar"));
 		methodObj.addParameter(paramA);
 		program.accept(visitor);

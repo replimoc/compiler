@@ -51,37 +51,38 @@ import compiler.ast.type.BasicType;
 import compiler.ast.type.Type;
 import compiler.ast.visitor.AstVisitor;
 import compiler.lexer.Position;
-import compiler.semantic.exceptions.UndefinedSymbolException;
 import compiler.semantic.exceptions.RedefinitionErrorException;
+import compiler.semantic.exceptions.SemanticAnalysisException;
 import compiler.semantic.exceptions.TypeErrorException;
+import compiler.semantic.exceptions.UndefinedSymbolException;
 import compiler.semantic.symbolTable.Definition;
 import compiler.semantic.symbolTable.SymbolTable;
 
 public class DeepCheckingVisitor implements AstVisitor {
 
-	private List<Exception> exceptions = new ArrayList<Exception>();
-	
 	private final SymbolTable symbolTable;
 	private final HashMap<Symbol, ClassScope> classScopes;
 	private ClassScope currentClassScope = null;
-	
+
+	private List<SemanticAnalysisException> exceptions = new ArrayList<>();
+
 	public DeepCheckingVisitor(HashMap<Symbol, ClassScope> classScopes) {
 		this.classScopes = classScopes;
 		this.symbolTable = new SymbolTable();
 	}
-	
-	public List<Exception> getExceptions() {
+
+	public List<SemanticAnalysisException> getExceptions() {
 		return exceptions;
 	}
-	
+
 	private void throwTypeError(AstNode astNode) {
 		exceptions.add(new TypeErrorException(astNode.getPosition()));
 	}
-	
+
 	private void throwRedefinitionError(Symbol symbol, Position definition, Position redefinition) {
 		exceptions.add(new RedefinitionErrorException(symbol, definition, redefinition));
 	}
-	
+
 	private void throUndefinedSymbolError(Symbol symbol, Position position) {
 		exceptions.add(new UndefinedSymbolException(symbol, position));
 	}
@@ -288,7 +289,7 @@ public class DeepCheckingVisitor implements AstVisitor {
 	@Override
 	public void visit(ClassDeclaration classDeclaration) {
 		currentClassScope = classScopes.get(classDeclaration.getIdentifier());
-		
+
 		for (ClassMember classMember : classDeclaration.getMembers()) {
 			classMember.accept(this);
 		}
@@ -325,8 +326,9 @@ public class DeepCheckingVisitor implements AstVisitor {
 			throwRedefinitionError(localVariableDeclaration.getIdentifier(), null, localVariableDeclaration.getPosition());
 			return;
 		}
-		symbolTable.insert(localVariableDeclaration.getIdentifier(), new Definition(localVariableDeclaration.getIdentifier(), localVariableDeclaration.getType()));
-		
+		symbolTable.insert(localVariableDeclaration.getIdentifier(), new Definition(localVariableDeclaration.getIdentifier(),
+				localVariableDeclaration.getType()));
+
 		Expression expression = localVariableDeclaration.getExpression();
 		if (expression != null) {
 			expression.accept(this);
@@ -368,7 +370,7 @@ public class DeepCheckingVisitor implements AstVisitor {
 
 	private void visitMethodDeclaration(MethodDeclaration methodDeclaration) {
 		symbolTable.enterScope();
-		
+
 		for (ParameterDefinition parameterDefinition : methodDeclaration.getParameters()) {
 			parameterDefinition.accept(this);
 		}
@@ -376,7 +378,7 @@ public class DeepCheckingVisitor implements AstVisitor {
 		if (methodDeclaration.getBlock() != null) {
 			methodDeclaration.getBlock().accept(this);
 		}
-		
+
 		symbolTable.leaveScope();
 		symbolTable.leaveAllScopes();
 	}

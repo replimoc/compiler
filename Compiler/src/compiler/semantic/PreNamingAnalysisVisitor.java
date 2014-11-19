@@ -49,6 +49,7 @@ import compiler.ast.visitor.AstVisitor;
 import compiler.lexer.Position;
 import compiler.semantic.exceptions.NoMainFoundException;
 import compiler.semantic.exceptions.RedefinitionErrorException;
+import compiler.semantic.exceptions.SemanticAnalysisException;
 import compiler.semantic.exceptions.TypeErrorException;
 import compiler.semantic.symbolTable.Definition;
 import compiler.semantic.symbolTable.MethodDefinition;
@@ -60,13 +61,13 @@ public class PreNamingAnalysisVisitor implements AstVisitor {
 	private HashMap<Symbol, MethodDefinition> currentMethodsMap;
 
 	private boolean mainFound = false;
-	private List<Exception> exceptions = new ArrayList<Exception>();
+	private List<SemanticAnalysisException> exceptions = new ArrayList<>();
 
 	public HashMap<Symbol, ClassScope> getClassScopes() {
 		return classScopes;
 	}
 
-	public List<Exception> getExceptions() {
+	public List<SemanticAnalysisException> getExceptions() {
 		return exceptions;
 	}
 
