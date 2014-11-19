@@ -51,7 +51,7 @@ import compiler.ast.type.BasicType;
 import compiler.ast.type.Type;
 import compiler.ast.visitor.AstVisitor;
 import compiler.lexer.Position;
-import compiler.semantic.exceptions.NotDefinedException;
+import compiler.semantic.exceptions.UndefinedSymbolException;
 import compiler.semantic.exceptions.RedefinitionErrorException;
 import compiler.semantic.exceptions.TypeErrorException;
 import compiler.semantic.symbolTable.Definition;
@@ -83,7 +83,7 @@ public class DeepCheckingVisitor implements AstVisitor {
 	}
 	
 	private void throwNotDefinedError(Symbol symbol, Position position) {
-		exceptions.add(new NotDefinedException(symbol, position));
+		exceptions.add(new UndefinedSymbolException(symbol, position));
 	}
 
 	private void expectType(Type type, AstNode astNode) {
@@ -233,7 +233,7 @@ public class DeepCheckingVisitor implements AstVisitor {
 	public void visit(VariableAccessExpression variableAccessExpression) {
 		// variable can be defined in member scope or current class?
 		if (!variableAccessExpression.getFieldIdentifier().isDefined() &&
-				currentClassScope.getFieldDefinition(variableAccessExpression.getFieldIdentifier()) != null) {
+				currentClassScope.getFieldDefinition(variableAccessExpression.getFieldIdentifier()) == null) {
 			throwNotDefinedError(variableAccessExpression.getFieldIdentifier(), variableAccessExpression.getPosition());
 			return;
 		}

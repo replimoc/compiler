@@ -16,13 +16,17 @@ import compiler.ast.MethodDeclaration;
 import compiler.ast.ParameterDefinition;
 import compiler.ast.Program;
 import compiler.ast.statement.LocalVariableDeclaration;
+import compiler.ast.statement.VariableAccessExpression;
 import compiler.ast.type.BasicType;
 import compiler.ast.type.Type;
 import compiler.lexer.Position;
 import compiler.lexer.TokenType;
 import compiler.semantic.ClassScope;
 import compiler.semantic.PreNamingAnalysisVisitor;
+import compiler.semantic.exceptions.UndefinedSymbolException;
 import compiler.semantic.exceptions.RedefinitionErrorException;
+import compiler.semantic.symbolTable.Definition;
+import compiler.semantic.symbolTable.MethodDefinition;
 
 public class DeepCheckingVisitorTest {
 
@@ -48,16 +52,24 @@ public class DeepCheckingVisitorTest {
 		Block blockObj = new Block((Position) null);
 		LocalVariableDeclaration locVarA = new LocalVariableDeclaration(null, t(BasicType.CLASS), s("intVar"));
 		blockObj.addStatement(locVarA);
-		LocalVariableDeclaration locVarB = new LocalVariableDeclaration(null, t(BasicType.INT), s("intVar"));
-		blockObj.addStatement(locVarB);
 		methodObj.setBlock(blockObj);
 		classObj.addClassMember(methodObj);
 		program.addClassDeclaration(classObj);
 
+		// valid program
 		program.accept(visitor);
 
 		List<Exception> exceptions = visitor.getExceptions();
+		assertEquals(0, exceptions.size());
+		
+		// var redefined
+		LocalVariableDeclaration locVarB = new LocalVariableDeclaration(null, t(BasicType.INT), s("intVar"));
+		blockObj.addStatement(locVarB);
+		program.accept(visitor);
+
+		exceptions = visitor.getExceptions();
 		assertEquals(1, exceptions.size());
+		
 		RedefinitionErrorException redExp = (RedefinitionErrorException) exceptions.get(0);
 		assertEquals(redExp.getIdentifier(), s("intVar"));
 		assertEquals(redExp.getDefinition(), locVarB.getPosition());
@@ -76,7 +88,7 @@ public class DeepCheckingVisitorTest {
 
 		program.accept(visitor);
 
-		// valid programm
+		// valid program
 		List<Exception> exceptions = visitor.getExceptions();
 		assertEquals(0, exceptions.size());
 		
@@ -91,6 +103,29 @@ public class DeepCheckingVisitorTest {
 		RedefinitionErrorException redExp = (RedefinitionErrorException) exceptions.get(0);
 		assertEquals(redExp.getIdentifier(), s("paramA"));
 		assertEquals(redExp.getDefinition(), paramB.getPosition());
+	}
+	
+	@Test
+	public void testVarUndefinedInMethod() {
+		classScopes.put(s("class1"), new ClassScope(new HashMap<Symbol, Definition>(), new HashMap<Symbol, MethodDefinition>()));
+		Program program = new Program(null);
+		Symbol class1 = s("class1");
+		ClassDeclaration classObj = new ClassDeclaration(null, class1);
+		MethodDeclaration methodObj = new MethodDeclaration(null, s("method"), t(BasicType.VOID));
+		Block blockObj = new Block((Position) null);
+		VariableAccessExpression varAccess = new VariableAccessExpression(null, null, s("undefVar"));
+		blockObj.addStatement(varAccess);
+		methodObj.setBlock(blockObj);
+		classObj.addClassMember(methodObj);
+		program.addClassDeclaration(classObj);
+
+		program.accept(visitor);
+
+		List<Exception> exceptions = visitor.getExceptions();
+		assertEquals(1, exceptions.size());
+		UndefinedSymbolException redExp = (UndefinedSymbolException) exceptions.get(0);
+		assertEquals(redExp.getIdentifier(), s("undefVar"));
+		assertEquals(redExp.getDefinition(), varAccess.getPosition());
 	}
 
 	private Type t(BasicType type) {
