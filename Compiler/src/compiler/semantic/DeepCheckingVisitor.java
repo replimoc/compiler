@@ -70,6 +70,10 @@ public class DeepCheckingVisitor implements AstVisitor {
 		this.symbolTable = new SymbolTable();
 	}
 	
+	public List<Exception> getExceptions() {
+		return exceptions;
+	}
+	
 	private void throwTypeError(AstNode astNode) {
 		exceptions.add(new TypeErrorException(astNode.getPosition()));
 	}
@@ -324,8 +328,10 @@ public class DeepCheckingVisitor implements AstVisitor {
 		symbolTable.insert(localVariableDeclaration.getIdentifier(), new Definition(localVariableDeclaration.getIdentifier(), localVariableDeclaration.getType()));
 		
 		Expression expression = localVariableDeclaration.getExpression();
-		expression.accept(this);
-		expectType(localVariableDeclaration.getType(), expression);
+		if (expression != null) {
+			expression.accept(this);
+			expectType(localVariableDeclaration.getType(), expression);
+		}
 	}
 
 	@Override

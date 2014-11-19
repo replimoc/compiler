@@ -15,6 +15,18 @@ public class RedefinitionErrorException extends Exception {
 		this.definition = definition;
 		this.redefinition = redefinition;
 	}
+	
+	public Symbol getIdentifier() {
+		return identifier;
+	}
+
+	public Position getDefinition() {
+		return definition;
+	}
+
+	public Position getRedefinition() {
+		return redefinition;
+	}
 
 	@Override
 	public String toString() {
