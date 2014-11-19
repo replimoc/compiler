@@ -59,7 +59,7 @@ public class AutomatedAstComparisionTest implements TestFileVisitor.FileTester {
 			int errors = e.getDetectedErrors();
 			assertEquals(expectedOutput.get(0), "error");
 			if (expectedOutput.size() > 1) {
-				assertEquals(new Integer(expectedOutput.get(1)).intValue(), errors);
+				assertEquals(Integer.parseInt(expectedOutput.get(1)), errors);
 			}
 		}
 	}
