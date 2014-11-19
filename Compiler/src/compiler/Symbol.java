@@ -78,6 +78,6 @@ public class Symbol {
 	}
 
 	public boolean isDefined() {
-		return defScope == null || definition == null;
+		return defScope != null && definition != null;
 	}
 }
