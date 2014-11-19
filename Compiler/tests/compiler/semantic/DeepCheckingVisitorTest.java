@@ -13,6 +13,7 @@ import compiler.Symbol;
 import compiler.ast.Block;
 import compiler.ast.ClassDeclaration;
 import compiler.ast.MethodDeclaration;
+import compiler.ast.ParameterDefinition;
 import compiler.ast.Program;
 import compiler.ast.statement.LocalVariableDeclaration;
 import compiler.ast.type.BasicType;
@@ -39,7 +40,7 @@ public class DeepCheckingVisitorTest {
 	}
 
 	@Test
-	public void testVarDeclaration() {
+	public void testVarRedefinitionInMethod() {
 		Program program = new Program(null);
 		Symbol class1 = s("class1");
 		ClassDeclaration classObj = new ClassDeclaration(null, class1);
@@ -60,6 +61,36 @@ public class DeepCheckingVisitorTest {
 		RedefinitionErrorException redExp = (RedefinitionErrorException) exceptions.get(0);
 		assertEquals(redExp.getIdentifier(), s("intVar"));
 		assertEquals(redExp.getDefinition(), locVarB.getPosition());
+	}
+	
+	@Test
+	public void testVarRedefinitionInMethodParameter() {
+		Program program = new Program(null);
+		Symbol class1 = s("class1");
+		ClassDeclaration classObj = new ClassDeclaration(null, class1);
+		MethodDeclaration methodObj = new MethodDeclaration(null, s("method"), t(BasicType.VOID));
+		ParameterDefinition paramA = new ParameterDefinition(null, t(BasicType.INT), s("paramA"));
+		methodObj.addParameter(paramA);
+		classObj.addClassMember(methodObj);
+		program.addClassDeclaration(classObj);
+
+		program.accept(visitor);
+
+		// valid programm
+		List<Exception> exceptions = visitor.getExceptions();
+		assertEquals(0, exceptions.size());
+		
+		// param redefinition
+		ParameterDefinition paramB = new ParameterDefinition(null, t(BasicType.INT), s("paramA"));
+		methodObj.addParameter(paramB);
+		program.accept(visitor);
+		
+		exceptions = visitor.getExceptions();
+		assertEquals(1, exceptions.size());
+		
+		RedefinitionErrorException redExp = (RedefinitionErrorException) exceptions.get(0);
+		assertEquals(redExp.getIdentifier(), s("paramA"));
+		assertEquals(redExp.getDefinition(), paramB.getPosition());
 	}
 
 	private Type t(BasicType type) {

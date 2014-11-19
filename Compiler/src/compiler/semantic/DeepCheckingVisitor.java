@@ -373,7 +373,9 @@ public class DeepCheckingVisitor implements AstVisitor {
 			parameterDefinition.accept(this);
 		}
 
-		methodDeclaration.getBlock().accept(this);
+		if (methodDeclaration.getBlock() != null) {
+			methodDeclaration.getBlock().accept(this);
+		}
 		
 		symbolTable.leaveScope();
 	}
