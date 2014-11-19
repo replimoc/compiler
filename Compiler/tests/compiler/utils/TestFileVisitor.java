@@ -26,14 +26,21 @@ public class TestFileVisitor extends SimpleFileVisitor<Path> {
 	private static final String JAVA_EXTENSION = ".java";
 
 	private final String expectedResultFileExtension;
+	private final String sourceFileExtension;
+
 	private final PathMatcher matcher;
 	private final FileTester fileTester;
 	private final List<Path> failedTestsList = new ArrayList<>();
 
 	public TestFileVisitor(String expectedResultFileExtension, FileTester fileTester) {
+		this(JAVA_EXTENSION, expectedResultFileExtension, fileTester);
+	}
+
+	public TestFileVisitor(String sourceFileExtension, String expectedResultFileExtension, FileTester fileTester) {
 		this.expectedResultFileExtension = expectedResultFileExtension;
-		matcher = FileSystems.getDefault().getPathMatcher("glob:*" + expectedResultFileExtension);
+		this.matcher = FileSystems.getDefault().getPathMatcher("glob:*" + expectedResultFileExtension);
 		this.fileTester = fileTester;
+		this.sourceFileExtension = sourceFileExtension;
 	}
 
 	@Override
@@ -41,7 +48,7 @@ public class TestFileVisitor extends SimpleFileVisitor<Path> {
 		Path name = file.getFileName();
 		if (name != null && matcher.matches(name)) {
 			String parseFilename = name.toString();
-			String sourceFilename = parseFilename.replace(expectedResultFileExtension, JAVA_EXTENSION);
+			String sourceFilename = parseFilename.replace(expectedResultFileExtension, sourceFileExtension);
 
 			Path sourceFilePath = file.getParent().resolve(sourceFilename);
 

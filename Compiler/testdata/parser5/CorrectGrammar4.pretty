@@ -14,11 +14,13 @@ class Test {
 		int k = 0;
 		while (j < dimm) {
 			E[j] = (new int[dimm]);
-			while (k < dimm)
-				if (k == j)
+			while (k < dimm) {
+				if (k == j) {
 					E[j][k] = 1;
-				else
+				} else {
 					E[j][k] = 0;
+				}
+			}
 		}
 	}
 }

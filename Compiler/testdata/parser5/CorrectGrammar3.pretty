@@ -6,21 +6,25 @@ class Loops {
 		int d;
 		a = (-125);
 		while (a < 10) {
-			if ((a % 2) == 0)
+			if ((a % 2) == 0) {
 				b = (b + 1);
-			else
+			} else {
 				c = (c - 1);
+			}
 			a = (a + 3);
 		}
-		while ((a = read(c)) != 0)
+		while ((a = read(c)) != 0) {
 			d = (a - abs(a));
-		if (((d > 0) || (c < 0)) || (x < y))
+		}
+		if (((d > 0) || (c < 0)) || (x < y)) {
 			return 1;
+		}
 		if (true) { }
 		else if (false) { }
 		else { }
-		if (true_or_false())
+		if (true_or_false()) {
 			{ }
+		}
 		if (true)
 			if (true)
 				if (false)
@@ -30,13 +34,15 @@ class Loops {
 		while (1)
 			while (1)
 				while (1)
-					while (1)
+					while (1) {
 						while (1)
 							while (1)
 								while (1)
 									while (1) { }
-		while (1)
+					}
+		while (1) {
 			{ }
+		}
 		{
 			{
 				{ }
