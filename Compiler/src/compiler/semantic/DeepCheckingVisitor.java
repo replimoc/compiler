@@ -245,13 +245,15 @@ public class DeepCheckingVisitor implements AstVisitor {
 		
 		// is inner expression (no left expression)
 		if  (variableAccessExpression.getExpression() == null) {
-			// variable can be defined in member scope or current class
-			if (!variableAccessExpression.getFieldIdentifier().isDefined() &&
-					currentClassScope.getFieldDefinition(variableAccessExpression.getFieldIdentifier()) == null) {
+			// shouldn't be the type of variableAccessExpression set here?
+			if (variableAccessExpression.getFieldIdentifier().isDefined()) {
+				variableAccessExpression.setType(variableAccessExpression.getFieldIdentifier().getDefinition().getType());
+			} else if (currentClassScope.getFieldDefinition(variableAccessExpression.getFieldIdentifier()) != null) {
+				variableAccessExpression.setType(currentClassScope.getFieldDefinition(variableAccessExpression.getFieldIdentifier()).getType());
+			} else {
 				throwUndefinedSymbolError(variableAccessExpression.getFieldIdentifier(), variableAccessExpression.getPosition());
 				return;
 			}
-			// shouldn't be the type of variableAccessExpression set here?
 		} else {
 			Expression leftExpr = variableAccessExpression.getExpression();
 			Type type = leftExpr.getType();
@@ -262,6 +264,18 @@ public class DeepCheckingVisitor implements AstVisitor {
 			
 			// if left expression type is != class  (e.g. int, boolean, void) then throw error
 			if (type.getBasicType() != BasicType.CLASS) {
+				throwNoSuchMemberError(type.getIdentifier(), type.getPosition(), variableAccessExpression.getFieldIdentifier(), variableAccessExpression.getPosition());
+				return;
+			}
+			// check if class exists
+			ClassScope classScope = classScopes.get(type.getIdentifier());
+			if (classScope == null) {
+				//TODO: no such class error?
+				return;
+			}
+			// check if member exists in this class
+			Definition fielDef = classScope.getFieldDefinition(variableAccessExpression.getFieldIdentifier());
+			if (fielDef == null) {
 				throwNoSuchMemberError(type.getIdentifier(), type.getPosition(), variableAccessExpression.getFieldIdentifier(), variableAccessExpression.getPosition());
 				return;
 			}

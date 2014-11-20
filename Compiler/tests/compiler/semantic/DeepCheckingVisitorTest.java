@@ -18,9 +18,11 @@ import compiler.ast.Program;
 import compiler.ast.statement.LocalVariableDeclaration;
 import compiler.ast.statement.VariableAccessExpression;
 import compiler.ast.type.BasicType;
+import compiler.ast.type.ClassType;
 import compiler.ast.type.Type;
 import compiler.lexer.Position;
 import compiler.lexer.TokenType;
+import compiler.semantic.exceptions.NoSuchMemberException;
 import compiler.semantic.exceptions.RedefinitionErrorException;
 import compiler.semantic.exceptions.SemanticAnalysisException;
 import compiler.semantic.exceptions.UndefinedSymbolException;
@@ -152,13 +154,25 @@ public class DeepCheckingVisitorTest {
 		classObj.addClassMember(methodObj);
 		program.addClassDeclaration(classObj);
 
-		/*program.accept(visitor);
+		program.accept(visitor);
 		
+		// myClass1 is undefined
 		List<SemanticAnalysisException> exceptions = visitor.getExceptions();
 		assertEquals(1, exceptions.size());
 		UndefinedSymbolException undSymb = (UndefinedSymbolException) exceptions.get(0);
-		assertNotNull(undSymb);*/
+		assertNotNull(undSymb);
+		exceptions.clear();
 		
+		// now myClass1 is defined
+		LocalVariableDeclaration locVarA = new LocalVariableDeclaration(null, new ClassType(null, s("class1")), s("myClass1"));
+		blockObj.getStatements().add(0, locVarA);
+		
+		program.accept(visitor);
+		
+		exceptions = visitor.getExceptions();
+		assertEquals(1, exceptions.size());
+		NoSuchMemberException nsme = (NoSuchMemberException) exceptions.get(0);
+		assertNotNull(nsme);
 	}
 
 	private Type t(BasicType type) {
