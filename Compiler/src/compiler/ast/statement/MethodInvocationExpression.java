@@ -11,11 +11,11 @@ public class MethodInvocationExpression extends PostfixExpression {
 	private final Expression expression;
 	private final Expression[] parameters;
 
-	public MethodInvocationExpression(Position position, Expression expression, Symbol methodIdent, Expression[] parameters) {
-		super(position, expression);
+	public MethodInvocationExpression(Position position, Expression leftExpression, Symbol methodIdent, Expression[] parameters) {
+		super(position, leftExpression);
 		this.methodIdent = methodIdent;
 		this.parameters = parameters;
-		this.expression = expression;
+		this.expression = leftExpression;
 	}
 
 	public Symbol getMethodIdent() {

@@ -83,7 +83,7 @@ public class DeepCheckingVisitor implements AstVisitor {
 		exceptions.add(new RedefinitionErrorException(symbol, definition, redefinition));
 	}
 
-	private void throUndefinedSymbolError(Symbol symbol, Position position) {
+	private void throwUndefinedSymbolError(Symbol symbol, Position position) {
 		exceptions.add(new UndefinedSymbolException(symbol, position));
 	}
 
@@ -216,6 +216,7 @@ public class DeepCheckingVisitor implements AstVisitor {
 
 	@Override
 	public void visit(MethodInvocationExpression methodInvocationExpression) {
+		
 	}
 
 	@Override
@@ -232,11 +233,17 @@ public class DeepCheckingVisitor implements AstVisitor {
 
 	@Override
 	public void visit(VariableAccessExpression variableAccessExpression) {
-		// variable can be defined in member scope or current class?
-		if (!variableAccessExpression.getFieldIdentifier().isDefined() &&
-				currentClassScope.getFieldDefinition(variableAccessExpression.getFieldIdentifier()) == null) {
-			throUndefinedSymbolError(variableAccessExpression.getFieldIdentifier(), variableAccessExpression.getPosition());
-			return;
+		// is inner expression (no left expression)
+		if (variableAccessExpression.getExpression() == null) {
+			// variable can be defined in member scope or current class
+			if (!variableAccessExpression.getFieldIdentifier().isDefined() &&
+					currentClassScope.getFieldDefinition(variableAccessExpression.getFieldIdentifier()) == null) {
+				throwUndefinedSymbolError(variableAccessExpression.getFieldIdentifier(), variableAccessExpression.getPosition());
+				return;
+			}
+			// shouldn't the type of variableAccessExpression be set here?
+		} else {
+			
 		}
 	}
 
