@@ -1,15 +1,14 @@
 class Main
 {
     public static void main(String[] vargs) {
-        System.out.println(true); /* error */
+        System.out.println(42); /* ok */
     }
 }
 
 class A
 {
-    public A System;
-    public A out;
-
+	public A out;
+	
     public void println(boolean b)
     {
 
@@ -17,11 +16,24 @@ class A
 
     public void foo()
     {
-        System.out.println(1); /* error */
+        System.out.println(1); /* ok */
     }
 
     public void bar()
     {
+    	A System;
+    	
         System.out.println(true); /* ok */
     }
+}
+
+class B
+{
+    public A System;
+    
+    public void foo()
+    {
+        System.out.println(true); /* ok */
+    }
+
 }

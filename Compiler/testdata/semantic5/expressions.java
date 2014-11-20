@@ -67,7 +67,7 @@ class Test {
         A a = new A();
         A[] aa = new A[1];
         aa[0] = new A();
-        A a = null;
+        A a2 = null;
         aa[0] = null;
     }
 }
