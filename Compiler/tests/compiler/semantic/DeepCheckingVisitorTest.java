@@ -28,6 +28,7 @@ import compiler.lexer.Position;
 import compiler.lexer.TokenType;
 import compiler.parser.Parser;
 import compiler.parser.ParsingFailedException;
+import compiler.semantic.exceptions.InvalidMethodCallException;
 import compiler.semantic.exceptions.NoSuchMemberException;
 import compiler.semantic.exceptions.RedefinitionErrorException;
 import compiler.semantic.exceptions.SemanticAnalysisException;
@@ -263,6 +264,29 @@ public class DeepCheckingVisitorTest {
         parser = TestUtils.initParser("class Class { public int asdf; public Class method() {}  public static void main(String[] args) {} public void function(Class param) { param.method().asdf; } }");
         errors = SemanticChecker.checkSemantic(parser.parse());
         assertEquals(0, errors.size());
+        
+        parser = TestUtils.initParser("class Class { public int asdf; public Class method(int a, int b) {}  public static void main(String[] args) {} public void function(Class param) { param.method(1, 1).asdf; } }");
+        errors = SemanticChecker.checkSemantic(parser.parse());
+        assertEquals(0, errors.size());
+        
+        parser = TestUtils.initParser("class Class { public int asdf; public Class method(int a, int b) {}  public static void main(String[] args) {} public void function(Class param) { param.method(1, 1, 1).asdf; } }");
+        errors = SemanticChecker.checkSemantic(parser.parse());
+        assertEquals(1, errors.size());
+        assertNotNull((InvalidMethodCallException) errors.get(0));
+        
+        parser = TestUtils.initParser("class Class { public int asdf; public Class method(int a, int b) {}  public static void main(String[] args) {} public void function(Class param) { param.method(1, 1, 1).asdf; } }");
+        errors = SemanticChecker.checkSemantic(parser.parse());
+        assertEquals(1, errors.size());
+        assertNotNull((InvalidMethodCallException) errors.get(0));
+        
+        parser = TestUtils.initParser("class Class { public int asdf; public Class method(int a, int b) {}  public static void main(String[] args) {} public void function() { this.asdf; this.method(12,12); } }");
+        errors = SemanticChecker.checkSemantic(parser.parse());
+        assertEquals(0, errors.size());
+        
+        parser = TestUtils.initParser("class Class { public int asdf; public Class method(int a, int b) {}  public static void main(String[] args) {} public void function() { this.asdf3; this.method(12,12).asdf; } }");
+        errors = SemanticChecker.checkSemantic(parser.parse());
+        assertEquals(1, errors.size());
+        assertNotNull((NoSuchMemberException) errors.get(0));
 	}
 
 	private Type t(BasicType type) {

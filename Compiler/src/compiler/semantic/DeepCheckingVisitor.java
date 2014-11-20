@@ -48,9 +48,11 @@ import compiler.ast.statement.unary.NegateExpression;
 import compiler.ast.statement.unary.ReturnStatement;
 import compiler.ast.statement.unary.UnaryExpression;
 import compiler.ast.type.BasicType;
+import compiler.ast.type.ClassType;
 import compiler.ast.type.Type;
 import compiler.ast.visitor.AstVisitor;
 import compiler.lexer.Position;
+import compiler.semantic.exceptions.InvalidMethodCallException;
 import compiler.semantic.exceptions.NoSuchMemberException;
 import compiler.semantic.exceptions.RedefinitionErrorException;
 import compiler.semantic.exceptions.SemanticAnalysisException;
@@ -263,9 +265,23 @@ public class DeepCheckingVisitor implements AstVisitor {
 			// no need to check if it's null, as it has been checked before...
 			
 			MethodDefinition methodDef = classScope.getMethodDefinition(methodInvocationExpression.getMethodIdent());
+			// is there the specified method?
 			if (methodDef == null) {
 				throwNoSuchMemberError(leftExprType.getIdentifier(), leftExprType.getPosition(), methodInvocationExpression.getMethodIdent(), methodInvocationExpression.getPosition());
 				return;
+			}
+			// now check params
+			if (methodDef.getParameters().length != methodInvocationExpression.getParameters().length) {
+				exceptions.add(new InvalidMethodCallException(methodInvocationExpression.getMethodIdent(), methodInvocationExpression.getPosition()));
+				return;
+			}
+			
+			for (int i = 0; i < methodDef.getParameters().length; i++) {
+				Definition paramDef = methodDef.getParameters()[i];
+				Expression expr = methodInvocationExpression.getParameters()[i];
+				expr.accept(this);
+				
+				//TODO: compare type of paramDef and expr
 			}
 			
 			methodInvocationExpression.setType(methodDef.getType());
@@ -294,9 +310,9 @@ public class DeepCheckingVisitor implements AstVisitor {
 			Expression leftExpr = variableAccessExpression.getExpression();
 			Type leftExprType = leftExpr.getType();
 			
-			/*if (leftExprType == null) {
+			if (leftExprType == null) {
 				return; //TODO: How handle the case, when left expression is invalid that is: there is a semantic error
-			}*/
+			}
 			
 			// if left expression type is != class  (e.g. int, boolean, void) then throw error
 			if (leftExprType.getBasicType() != BasicType.CLASS) {
@@ -337,12 +353,13 @@ public class DeepCheckingVisitor implements AstVisitor {
 
 	@Override
 	public void visit(ReturnStatement returnStatement) {
-		// TODO Auto-generated method stub
+		returnStatement.accept(this);
+		//TODO: Compare return type of function and the one of returnStatement
 	}
 
 	@Override
 	public void visit(ThisExpression thisExpression) {
-		// TODO Auto-generated method stub
+		thisExpression.setType(new ClassType(null, currentClassSymbol)); //TODO: replace null with position of class
 	}
 
 	@Override
@@ -444,7 +461,10 @@ public class DeepCheckingVisitor implements AstVisitor {
 
 	@Override
 	public void visit(FieldDeclaration fieldDeclaration) {
-		// TODO Auto-generated method stub
+		//TODO: Check for redefinition
+		
+		// check for valid type
+		fieldDeclaration.getType().accept(this);
 	}
 
 	@Override
