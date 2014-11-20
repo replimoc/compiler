@@ -82,7 +82,8 @@ public class PreNamingAnalysisVisitorTest {
 		assertEquals(0, class1Scope.getNumberOfFields());
 		assertEquals(0, class1Scope.getNumberOfMethods());
 
-		assertEquals(1, visitor.getExceptions().size());
+		// no main found and double class
+		assertEquals(2, visitor.getExceptions().size());
 	}
 
 	@Test
