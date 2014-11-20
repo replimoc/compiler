@@ -1,6 +1,7 @@
 package compiler.semantic;
 
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNotNull;
 
 import java.util.HashMap;
 import java.util.List;
@@ -133,6 +134,31 @@ public class DeepCheckingVisitorTest {
 
 		exceptions = visitor.getExceptions();
 		assertEquals(0, exceptions.size());
+	}
+	
+	@Test
+	public void testNoSuchMemberCase() {
+		classScopes.put(s("class1"), new ClassScope(new HashMap<Symbol, Definition>(), new HashMap<Symbol, MethodDefinition>()));
+		
+		Program program = new Program(null);
+		Symbol class1 = s("class1");
+		ClassDeclaration classObj = new ClassDeclaration(null, class1);
+		MethodDeclaration methodObj = new MethodDeclaration(null, s("method"), t(BasicType.VOID));
+		Block blockObj = new Block((Position) null);
+		VariableAccessExpression leftExpr = new VariableAccessExpression(null, null, s("myClass1"));
+		VariableAccessExpression varAccess = new VariableAccessExpression(null, leftExpr, s("undefVar"));
+		blockObj.addStatement(varAccess);
+		methodObj.setBlock(blockObj);
+		classObj.addClassMember(methodObj);
+		program.addClassDeclaration(classObj);
+
+		/*program.accept(visitor);
+		
+		List<SemanticAnalysisException> exceptions = visitor.getExceptions();
+		assertEquals(1, exceptions.size());
+		UndefinedSymbolException undSymb = (UndefinedSymbolException) exceptions.get(0);
+		assertNotNull(undSymb);*/
+		
 	}
 
 	private Type t(BasicType type) {

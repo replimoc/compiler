@@ -51,6 +51,7 @@ import compiler.ast.type.BasicType;
 import compiler.ast.type.Type;
 import compiler.ast.visitor.AstVisitor;
 import compiler.lexer.Position;
+import compiler.semantic.exceptions.NoSuchMemberException;
 import compiler.semantic.exceptions.RedefinitionErrorException;
 import compiler.semantic.exceptions.SemanticAnalysisException;
 import compiler.semantic.exceptions.TypeErrorException;
@@ -83,8 +84,12 @@ public class DeepCheckingVisitor implements AstVisitor {
 		exceptions.add(new RedefinitionErrorException(symbol, definition, redefinition));
 	}
 
-	private void throUndefinedSymbolError(Symbol symbol, Position position) {
+	private void throwUndefinedSymbolError(Symbol symbol, Position position) {
 		exceptions.add(new UndefinedSymbolException(symbol, position));
+	}
+	
+	private void throwNoSuchMemberError(Symbol object, Position objPos, Symbol member, Position memberPos) {
+		exceptions.add(new NoSuchMemberException(object, objPos, member, memberPos));
 	}
 
 	private void expectType(Type type, AstNode astNode) {
@@ -216,6 +221,7 @@ public class DeepCheckingVisitor implements AstVisitor {
 
 	@Override
 	public void visit(MethodInvocationExpression methodInvocationExpression) {
+		
 	}
 
 	@Override
@@ -232,11 +238,33 @@ public class DeepCheckingVisitor implements AstVisitor {
 
 	@Override
 	public void visit(VariableAccessExpression variableAccessExpression) {
-		// variable can be defined in member scope or current class?
-		if (!variableAccessExpression.getFieldIdentifier().isDefined() &&
-				currentClassScope.getFieldDefinition(variableAccessExpression.getFieldIdentifier()) == null) {
-			throUndefinedSymbolError(variableAccessExpression.getFieldIdentifier(), variableAccessExpression.getPosition());
-			return;
+		// first step in right [geklammerten] expression
+		if  (variableAccessExpression.getExpression() != null) {
+			variableAccessExpression.getExpression().accept(this);
+		}
+		
+		// is inner expression (no left expression)
+		if  (variableAccessExpression.getExpression() == null) {
+			// variable can be defined in member scope or current class
+			if (!variableAccessExpression.getFieldIdentifier().isDefined() &&
+					currentClassScope.getFieldDefinition(variableAccessExpression.getFieldIdentifier()) == null) {
+				throwUndefinedSymbolError(variableAccessExpression.getFieldIdentifier(), variableAccessExpression.getPosition());
+				return;
+			}
+			// shouldn't be the type of variableAccessExpression set here?
+		} else {
+			Expression leftExpr = variableAccessExpression.getExpression();
+			Type type = leftExpr.getType();
+			
+			if (type == null) {
+				return; //TODO: How handle the case, when left expression is invalid that is: there is a semantic error
+			}
+			
+			// if left expression type is != class  (e.g. int, boolean, void) then throw error
+			if (type.getBasicType() != BasicType.CLASS) {
+				throwNoSuchMemberError(type.getIdentifier(), type.getPosition(), variableAccessExpression.getFieldIdentifier(), variableAccessExpression.getPosition());
+				return;
+			}
 		}
 	}
 

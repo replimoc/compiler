@@ -9,9 +9,9 @@ public class VariableAccessExpression extends PostfixExpression {
 	private final Expression expression;
 	private final Symbol fieldIdentifier;
 
-	public VariableAccessExpression(Position position, Expression expression, Symbol fieldIdentifier) {
-		super(position, expression);
-		this.expression = expression;
+	public VariableAccessExpression(Position position, Expression leftExpression, Symbol fieldIdentifier) {
+		super(position, leftExpression);
+		this.expression = leftExpression;
 		this.fieldIdentifier = fieldIdentifier;
 	}
 
