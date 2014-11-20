@@ -51,6 +51,7 @@ import compiler.ast.type.BasicType;
 import compiler.ast.type.Type;
 import compiler.ast.visitor.AstVisitor;
 import compiler.lexer.Position;
+import compiler.semantic.exceptions.NoSuchMemberException;
 import compiler.semantic.exceptions.RedefinitionErrorException;
 import compiler.semantic.exceptions.SemanticAnalysisException;
 import compiler.semantic.exceptions.TypeErrorException;
@@ -85,6 +86,10 @@ public class DeepCheckingVisitor implements AstVisitor {
 
 	private void throwUndefinedSymbolError(Symbol symbol, Position position) {
 		exceptions.add(new UndefinedSymbolException(symbol, position));
+	}
+	
+	private void throwNoSuchMemberError(Symbol object, Position objPos, Symbol member, Position memberPos) {
+		exceptions.add(new NoSuchMemberException(object, objPos, member, memberPos));
 	}
 
 	private void expectType(Type type, AstNode astNode) {
@@ -239,7 +244,7 @@ public class DeepCheckingVisitor implements AstVisitor {
 		}
 		
 		// is inner expression (no left expression)
-		if  (variableAccessExpression.getExpression() != null) {
+		if  (variableAccessExpression.getExpression() == null) {
 			// variable can be defined in member scope or current class
 			if (!variableAccessExpression.getFieldIdentifier().isDefined() &&
 					currentClassScope.getFieldDefinition(variableAccessExpression.getFieldIdentifier()) == null) {
@@ -250,9 +255,15 @@ public class DeepCheckingVisitor implements AstVisitor {
 		} else {
 			Expression leftExpr = variableAccessExpression.getExpression();
 			Type type = leftExpr.getType();
+			
+			if (type == null) {
+				return; //TODO: How handle the case, when left expression is invalid that is: there is a semantic error
+			}
+			
 			// if left expression type is != class  (e.g. int, boolean, void) then throw error
 			if (type.getBasicType() != BasicType.CLASS) {
-				
+				throwNoSuchMemberError(type.getIdentifier(), type.getPosition(), variableAccessExpression.getFieldIdentifier(), variableAccessExpression.getPosition());
+				return;
 			}
 		}
 	}
