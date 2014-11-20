@@ -3,6 +3,9 @@ package compiler.semantic;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
 
+import java.io.IOException;
+import java.nio.charset.StandardCharsets;
+import java.nio.file.Files;
 import java.util.HashMap;
 import java.util.List;
 
@@ -20,14 +23,19 @@ import compiler.ast.statement.VariableAccessExpression;
 import compiler.ast.type.BasicType;
 import compiler.ast.type.ClassType;
 import compiler.ast.type.Type;
+import compiler.lexer.Lexer;
 import compiler.lexer.Position;
 import compiler.lexer.TokenType;
+import compiler.parser.Parser;
+import compiler.parser.ParsingFailedException;
 import compiler.semantic.exceptions.NoSuchMemberException;
 import compiler.semantic.exceptions.RedefinitionErrorException;
 import compiler.semantic.exceptions.SemanticAnalysisException;
+import compiler.semantic.exceptions.TypeErrorException;
 import compiler.semantic.exceptions.UndefinedSymbolException;
 import compiler.semantic.symbolTable.Definition;
 import compiler.semantic.symbolTable.MethodDefinition;
+import compiler.utils.TestUtils;
 
 public class DeepCheckingVisitorTest {
 
@@ -181,6 +189,41 @@ public class DeepCheckingVisitorTest {
 		classScopes.put(s("class1"), new ClassScope(fieldMap, new HashMap<Symbol, MethodDefinition>()));
 		exceptions = visitor.getExceptions();
 		assertEquals(0, exceptions.size());
+	}
+	
+	@Test
+	public void testFromString() throws IOException, ParsingFailedException {
+        Parser parser = TestUtils.initParser("class Class { public static void main(String[] args) {} public void function(Class param) {} }");
+        List<SemanticAnalysisException> errors = SemanticChecker.checkSemantic(parser.parse());
+        assertEquals(0, errors.size());
+        
+        parser = TestUtils.initParser("class Class { public static void main(String[] args) {} public void function(ClassB param) {} }");
+        errors = SemanticChecker.checkSemantic(parser.parse());
+        assertEquals(1, errors.size());
+        assertNotNull((TypeErrorException) errors.get(0));
+        
+        parser = TestUtils.initParser("class Class { public static void main(String[] args) {} public void function(Class param, int param) {} }");
+        errors = SemanticChecker.checkSemantic(parser.parse());
+        assertEquals(1, errors.size());
+        assertNotNull((RedefinitionErrorException) errors.get(0));
+        
+        parser = TestUtils.initParser("class Class { public static void main(String[] args) {} public void function(Class param) { paramA; } }");
+        errors = SemanticChecker.checkSemantic(parser.parse());
+        assertEquals(1, errors.size());
+        assertNotNull((UndefinedSymbolException) errors.get(0));
+        
+        parser = TestUtils.initParser("class Class { public static void main(String[] args) {} public void function(Class param) { param.asdf; } }");
+        errors = SemanticChecker.checkSemantic(parser.parse());
+        assertEquals(1, errors.size());
+        assertNotNull((NoSuchMemberException) errors.get(0));
+        
+        parser = TestUtils.initParser("class Class { public int memberInt; public static void main(String[] args) {} public void function(Class param) { param.memberInt; } }");
+        errors = SemanticChecker.checkSemantic(parser.parse());
+        assertEquals(0, errors.size());
+        
+        parser = TestUtils.initParser("class Class { public int memberInt; public static void main(String[] args) {} public void function(Class param) { param.memberInt; } }");
+        errors = SemanticChecker.checkSemantic(parser.parse());
+        assertEquals(0, errors.size());
 	}
 
 	private Type t(BasicType type) {

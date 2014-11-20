@@ -297,24 +297,26 @@ public class DeepCheckingVisitor implements AstVisitor {
 	@Override
 	public void visit(ReturnStatement returnStatement) {
 		// TODO Auto-generated method stub
-
 	}
 
 	@Override
 	public void visit(ThisExpression thisExpression) {
 		// TODO Auto-generated method stub
-
 	}
 
 	@Override
 	public void visit(NullExpression nullExpression) {
 		// TODO Auto-generated method stub
-
 	}
 
 	@Override
 	public void visit(Type type) {
 		type.setType(type);
+		
+		if (type.getBasicType() == BasicType.CLASS && classScopes.containsKey(type.getIdentifier()) == false) {
+			throwTypeError(type); //TODO: Throw some specific error like TypeOfClassNotFound
+			return;
+		}
 	}
 
 	@Override
@@ -376,6 +378,9 @@ public class DeepCheckingVisitor implements AstVisitor {
 
 	@Override
 	public void visit(ParameterDefinition parameterDefinition) {
+		parameterDefinition.getType().accept(this);
+		
+		// check if parameter already defined
 		if (symbolTable.isDefinedInCurrentScope(parameterDefinition.getIdentifier())) {
 			throwRedefinitionError(parameterDefinition.getIdentifier(), null, parameterDefinition.getPosition());
 			return;
@@ -398,7 +403,6 @@ public class DeepCheckingVisitor implements AstVisitor {
 	@Override
 	public void visit(FieldDeclaration fieldDeclaration) {
 		// TODO Auto-generated method stub
-
 	}
 
 	@Override
