@@ -81,6 +81,10 @@ public class DeepCheckingVisitor implements AstVisitor {
 		return exceptions;
 	}
 
+	public List<Exception> getExceptions() {
+		return exceptions;
+	}
+
 	private void throwTypeError(AstNode astNode) {
 		exceptions.add(new TypeErrorException(astNode.getPosition()));
 	}
@@ -148,8 +152,8 @@ public class DeepCheckingVisitor implements AstVisitor {
 
 	@Override
 	public void visit(AssignmentExpression assignmentExpression) {
-		// TODO Auto-generated method stub
-
+		checkBinaryOperandEquality(assignmentExpression);
+		// TODO: Do more checks...
 	}
 
 	@Override
