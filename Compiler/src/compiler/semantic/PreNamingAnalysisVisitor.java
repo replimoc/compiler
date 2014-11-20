@@ -91,9 +91,14 @@ public class PreNamingAnalysisVisitor implements AstVisitor {
 			curr.accept(this);
 		}
 
-		getClassScopes().put(classDeclaration.getIdentifier(), new ClassScope(currentFieldsMap, currentMethodsMap));
-		currentFieldsMap = null;
-		currentMethodsMap = null;
+		Symbol identifier = classDeclaration.getIdentifier();
+		if (classScopes.containsKey(identifier)) {
+			exceptions.add(new RedefinitionErrorException(identifier, null, classDeclaration.getPosition()));
+		} else {
+			getClassScopes().put(identifier, new ClassScope(currentFieldsMap, currentMethodsMap));
+			currentFieldsMap = null;
+			currentMethodsMap = null;
+		}
 	}
 
 	@Override
