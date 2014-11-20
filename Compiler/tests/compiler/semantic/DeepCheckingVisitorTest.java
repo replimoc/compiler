@@ -148,7 +148,7 @@ public class DeepCheckingVisitorTest {
 		MethodDeclaration methodObj = new MethodDeclaration(null, s("method"), t(BasicType.VOID));
 		Block blockObj = new Block((Position) null);
 		VariableAccessExpression leftExpr = new VariableAccessExpression(null, null, s("myClass1"));
-		VariableAccessExpression varAccess = new VariableAccessExpression(null, leftExpr, s("undefVar"));
+		VariableAccessExpression varAccess = new VariableAccessExpression(null, leftExpr, s("memberClass1"));
 		blockObj.addStatement(varAccess);
 		methodObj.setBlock(blockObj);
 		classObj.addClassMember(methodObj);
@@ -163,7 +163,7 @@ public class DeepCheckingVisitorTest {
 		assertNotNull(undSymb);
 		exceptions.clear();
 		
-		// now myClass1 is defined
+		// now myClass1 is defined, but member undefVar is missing
 		LocalVariableDeclaration locVarA = new LocalVariableDeclaration(null, new ClassType(null, s("class1")), s("myClass1"));
 		blockObj.getStatements().add(0, locVarA);
 		
@@ -173,6 +173,14 @@ public class DeepCheckingVisitorTest {
 		assertEquals(1, exceptions.size());
 		NoSuchMemberException nsme = (NoSuchMemberException) exceptions.get(0);
 		assertNotNull(nsme);
+		exceptions.clear();
+		
+		// myClass is defined and undefVar exists
+		HashMap<Symbol, Definition> fieldMap = new HashMap<Symbol, Definition>();
+		fieldMap.put(s("memberClass1"), new Definition(s("MemberType"), t(BasicType.CLASS)));
+		classScopes.put(s("class1"), new ClassScope(fieldMap, new HashMap<Symbol, MethodDefinition>()));
+		exceptions = visitor.getExceptions();
+		assertEquals(0, exceptions.size());
 	}
 
 	private Type t(BasicType type) {
