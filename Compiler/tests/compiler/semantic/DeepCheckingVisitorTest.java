@@ -18,9 +18,11 @@ import compiler.ast.Program;
 import compiler.ast.statement.LocalVariableDeclaration;
 import compiler.ast.statement.VariableAccessExpression;
 import compiler.ast.type.BasicType;
+import compiler.ast.type.ClassType;
 import compiler.ast.type.Type;
 import compiler.lexer.Position;
 import compiler.lexer.TokenType;
+import compiler.semantic.exceptions.NoSuchMemberException;
 import compiler.semantic.exceptions.RedefinitionErrorException;
 import compiler.semantic.exceptions.SemanticAnalysisException;
 import compiler.semantic.exceptions.UndefinedSymbolException;
@@ -146,19 +148,39 @@ public class DeepCheckingVisitorTest {
 		MethodDeclaration methodObj = new MethodDeclaration(null, s("method"), t(BasicType.VOID));
 		Block blockObj = new Block((Position) null);
 		VariableAccessExpression leftExpr = new VariableAccessExpression(null, null, s("myClass1"));
-		VariableAccessExpression varAccess = new VariableAccessExpression(null, leftExpr, s("undefVar"));
+		VariableAccessExpression varAccess = new VariableAccessExpression(null, leftExpr, s("memberClass1"));
 		blockObj.addStatement(varAccess);
 		methodObj.setBlock(blockObj);
 		classObj.addClassMember(methodObj);
 		program.addClassDeclaration(classObj);
 
-		/*program.accept(visitor);
+		program.accept(visitor);
 		
+		// myClass1 is undefined
 		List<SemanticAnalysisException> exceptions = visitor.getExceptions();
 		assertEquals(1, exceptions.size());
 		UndefinedSymbolException undSymb = (UndefinedSymbolException) exceptions.get(0);
-		assertNotNull(undSymb);*/
+		assertNotNull(undSymb);
+		exceptions.clear();
 		
+		// now myClass1 is defined, but member undefVar is missing
+		LocalVariableDeclaration locVarA = new LocalVariableDeclaration(null, new ClassType(null, s("class1")), s("myClass1"));
+		blockObj.getStatements().add(0, locVarA);
+		
+		program.accept(visitor);
+		
+		exceptions = visitor.getExceptions();
+		assertEquals(1, exceptions.size());
+		NoSuchMemberException nsme = (NoSuchMemberException) exceptions.get(0);
+		assertNotNull(nsme);
+		exceptions.clear();
+		
+		// myClass is defined and undefVar exists
+		HashMap<Symbol, Definition> fieldMap = new HashMap<Symbol, Definition>();
+		fieldMap.put(s("memberClass1"), new Definition(s("MemberType"), t(BasicType.CLASS)));
+		classScopes.put(s("class1"), new ClassScope(fieldMap, new HashMap<Symbol, MethodDefinition>()));
+		exceptions = visitor.getExceptions();
+		assertEquals(0, exceptions.size());
 	}
 
 	private Type t(BasicType type) {

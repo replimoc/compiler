@@ -220,49 +220,60 @@ public class DeepCheckingVisitor implements AstVisitor {
 	}
 
 	@Override
-	public void visit(MethodInvocationExpression methodInvocationExpression) {
-		
-	}
-
-	@Override
 	public void visit(NewArrayExpression newArrayExpression) {
 		// TODO Auto-generated method stub
-
 	}
 
 	@Override
 	public void visit(NewObjectExpression newObjectExpression) {
 		// TODO Auto-generated method stub
-
 	}
 
 	@Override
+	public void visit(MethodInvocationExpression methodInvocationExpression) {
+	}
+	
+	@Override
 	public void visit(VariableAccessExpression variableAccessExpression) {
-		// first step in right [geklammerten] expression
+		// first step in outer left expression
 		if  (variableAccessExpression.getExpression() != null) {
 			variableAccessExpression.getExpression().accept(this);
 		}
 		
 		// is inner expression (no left expression)
 		if  (variableAccessExpression.getExpression() == null) {
-			// variable can be defined in member scope or current class
-			if (!variableAccessExpression.getFieldIdentifier().isDefined() &&
-					currentClassScope.getFieldDefinition(variableAccessExpression.getFieldIdentifier()) == null) {
+			// shouldn't be the type of variableAccessExpression set here?
+			if (variableAccessExpression.getFieldIdentifier().isDefined()) {
+				variableAccessExpression.setType(variableAccessExpression.getFieldIdentifier().getDefinition().getType());
+			} else if (currentClassScope.getFieldDefinition(variableAccessExpression.getFieldIdentifier()) != null) {
+				variableAccessExpression.setType(currentClassScope.getFieldDefinition(variableAccessExpression.getFieldIdentifier()).getType());
+			} else {
 				throwUndefinedSymbolError(variableAccessExpression.getFieldIdentifier(), variableAccessExpression.getPosition());
 				return;
 			}
-			// shouldn't be the type of variableAccessExpression set here?
 		} else {
 			Expression leftExpr = variableAccessExpression.getExpression();
-			Type type = leftExpr.getType();
+			Type leftExprType = leftExpr.getType();
 			
-			if (type == null) {
+			if (leftExprType == null) {
 				return; //TODO: How handle the case, when left expression is invalid that is: there is a semantic error
 			}
 			
 			// if left expression type is != class  (e.g. int, boolean, void) then throw error
-			if (type.getBasicType() != BasicType.CLASS) {
-				throwNoSuchMemberError(type.getIdentifier(), type.getPosition(), variableAccessExpression.getFieldIdentifier(), variableAccessExpression.getPosition());
+			if (leftExprType.getBasicType() != BasicType.CLASS) {
+				throwNoSuchMemberError(leftExprType.getIdentifier(), leftExprType.getPosition(), variableAccessExpression.getFieldIdentifier(), variableAccessExpression.getPosition());
+				return;
+			}
+			// check if class exists
+			ClassScope classScope = classScopes.get(leftExprType.getIdentifier());
+			if (classScope == null) {
+				throwTypeError(variableAccessExpression); //TODO: Throw some specific error like TypeOfClassNotFound
+				return;
+			}
+			// check if member exists in this class
+			Definition fielDef = classScope.getFieldDefinition(variableAccessExpression.getFieldIdentifier());
+			if (fielDef == null) {
+				throwNoSuchMemberError(leftExprType.getIdentifier(), leftExprType.getPosition(), variableAccessExpression.getFieldIdentifier(), variableAccessExpression.getPosition());
 				return;
 			}
 		}
@@ -271,7 +282,6 @@ public class DeepCheckingVisitor implements AstVisitor {
 	@Override
 	public void visit(ArrayAccessExpression arrayAccessExpression) {
 		// TODO Auto-generated method stub
-
 	}
 
 	@Override
