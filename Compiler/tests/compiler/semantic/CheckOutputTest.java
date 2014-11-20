@@ -36,9 +36,13 @@ public class CheckOutputTest implements TestFileVisitor.FileTester {
     @Override
     public void testSourceFile(Path sourceFilePath, Path expectedResultFilePath) throws Exception {
 
+        System.err.println("Testing file = " + sourceFilePath + "----------------------------------------------->");
+
         // read expected results file
         List<String> lines = Files.readAllLines(expectedResultFilePath, StandardCharsets.US_ASCII);
         boolean isErrorExpected = !"correct".equals(lines.get(0));
+        int err_num = lines.size() > 1 ? Integer.parseInt(lines.get(1)) : -1;
+
 
         // start lexer
         Lexer lexer = new Lexer(Files.newBufferedReader(sourceFilePath, StandardCharsets.US_ASCII), new StringTable());
@@ -47,6 +51,14 @@ public class CheckOutputTest implements TestFileVisitor.FileTester {
         List<SemanticAnalysisException> errors = SemanticChecker.checkSemantic(parser.parse());
         if (isErrorExpected) {
             if(errors.size() == 0) Assert.fail("semantic analysis succeeded on incorrect program: " + sourceFilePath);
+
+            for (SemanticAnalysisException error : errors) {
+                System.err.println("error.toString() = " + error.toString());
+            }
+            if (err_num > 0)
+            {
+                Assert.assertEquals("wrong number of errors", err_num, errors.size());
+            }
         } else {
             if (!errors.isEmpty()) {
                 System.err.println("");
@@ -60,6 +72,8 @@ public class CheckOutputTest implements TestFileVisitor.FileTester {
             }
             Assert.fail("semantic analysis failed on correct program: " + sourceFilePath);
         }
+
+        System.err.println("<-----------------------------------------------file = " + sourceFilePath + " has passed the test");
 
     }
 }
