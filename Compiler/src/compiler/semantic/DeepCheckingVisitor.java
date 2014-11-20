@@ -57,12 +57,15 @@ import compiler.semantic.exceptions.SemanticAnalysisException;
 import compiler.semantic.exceptions.TypeErrorException;
 import compiler.semantic.exceptions.UndefinedSymbolException;
 import compiler.semantic.symbolTable.Definition;
+import compiler.semantic.symbolTable.MethodDefinition;
 import compiler.semantic.symbolTable.SymbolTable;
 
 public class DeepCheckingVisitor implements AstVisitor {
 
 	private final SymbolTable symbolTable;
 	private final HashMap<Symbol, ClassScope> classScopes;
+	
+	private Symbol currentClassSymbol = null;
 	private ClassScope currentClassScope = null;
 
 	private List<SemanticAnalysisException> exceptions = new ArrayList<>();
@@ -231,6 +234,42 @@ public class DeepCheckingVisitor implements AstVisitor {
 
 	@Override
 	public void visit(MethodInvocationExpression methodInvocationExpression) {
+		// first step in outer left expression
+		if (methodInvocationExpression.getMethodExpression() != null) {
+			methodInvocationExpression.getMethodExpression().accept(this);
+		}
+		
+		//is inner expression
+		if (methodInvocationExpression.getMethodExpression() == null) {
+			MethodDefinition methodDef = currentClassScope.getMethodDefinition(methodInvocationExpression.getMethodIdent());
+			if (methodDef != null) {
+				methodInvocationExpression.setType(methodDef.getType());
+			} else {
+				throwNoSuchMemberError(currentClassSymbol, currentClassSymbol.getDefinition().getType().getPosition(), methodInvocationExpression.getMethodIdent(), methodInvocationExpression.getPosition());
+				return;
+			}
+		} else {
+			Expression leftExpr = methodInvocationExpression.getMethodExpression();
+			Type leftExprType = leftExpr.getType();
+			
+			// if left expression type is != class  (e.g. int, boolean, void) then throw error
+			if (leftExprType.getBasicType() != BasicType.CLASS) {
+				throwNoSuchMemberError(leftExprType.getIdentifier(), leftExprType.getPosition(), methodInvocationExpression.getMethodIdent(), methodInvocationExpression.getPosition());
+				return;
+			}
+			
+			// get class scope
+			ClassScope classScope = classScopes.get(leftExprType.getIdentifier());
+			// no need to check if it's null, as it has been checked before...
+			
+			MethodDefinition methodDef = classScope.getMethodDefinition(methodInvocationExpression.getMethodIdent());
+			if (methodDef == null) {
+				throwNoSuchMemberError(leftExprType.getIdentifier(), leftExprType.getPosition(), methodInvocationExpression.getMethodIdent(), methodInvocationExpression.getPosition());
+				return;
+			}
+			
+			methodInvocationExpression.setType(methodDef.getType());
+		}
 	}
 	
 	@Override
@@ -255,9 +294,9 @@ public class DeepCheckingVisitor implements AstVisitor {
 			Expression leftExpr = variableAccessExpression.getExpression();
 			Type leftExprType = leftExpr.getType();
 			
-			if (leftExprType == null) {
+			/*if (leftExprType == null) {
 				return; //TODO: How handle the case, when left expression is invalid that is: there is a semantic error
-			}
+			}*/
 			
 			// if left expression type is != class  (e.g. int, boolean, void) then throw error
 			if (leftExprType.getBasicType() != BasicType.CLASS) {
@@ -271,13 +310,13 @@ public class DeepCheckingVisitor implements AstVisitor {
 				return;
 			}
 			// check if member exists in this class
-			Definition fielDef = classScope.getFieldDefinition(variableAccessExpression.getFieldIdentifier());
-			if (fielDef == null) {
+			Definition fieldDef = classScope.getFieldDefinition(variableAccessExpression.getFieldIdentifier());
+			if (fieldDef == null) {
 				throwNoSuchMemberError(leftExprType.getIdentifier(), leftExprType.getPosition(), variableAccessExpression.getFieldIdentifier(), variableAccessExpression.getPosition());
 				return;
 			}
 			
-			variableAccessExpression.setType(fielDef.getType());
+			variableAccessExpression.setType(fieldDef.getType());
 		}
 	}
 
@@ -330,6 +369,7 @@ public class DeepCheckingVisitor implements AstVisitor {
 
 	@Override
 	public void visit(ClassDeclaration classDeclaration) {
+		currentClassSymbol = classDeclaration.getIdentifier();
 		currentClassScope = classScopes.get(classDeclaration.getIdentifier());
 
 		for (ClassMember classMember : classDeclaration.getMembers()) {

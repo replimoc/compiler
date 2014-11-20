@@ -154,8 +154,10 @@ public class DeepCheckingVisitorTest {
 		Symbol class1 = s("class1");
 		ClassDeclaration classObj = new ClassDeclaration(null, class1);
 		MethodDeclaration methodObj = new MethodDeclaration(null, s("method"), t(BasicType.VOID));
+		methodObj.setType(t(BasicType.CLASS));
 		Block blockObj = new Block((Position) null);
 		VariableAccessExpression leftExpr = new VariableAccessExpression(null, null, s("myClass1"));
+		leftExpr.setType(t(BasicType.CLASS));
 		VariableAccessExpression varAccess = new VariableAccessExpression(null, leftExpr, s("memberClass1"));
 		blockObj.addStatement(varAccess);
 		methodObj.setBlock(blockObj);
@@ -166,7 +168,7 @@ public class DeepCheckingVisitorTest {
 		
 		// myClass1 is undefined
 		List<SemanticAnalysisException> exceptions = visitor.getExceptions();
-		assertEquals(1, exceptions.size());
+		assertEquals(2, exceptions.size());
 		UndefinedSymbolException undSymb = (UndefinedSymbolException) exceptions.get(0);
 		assertNotNull(undSymb);
 		exceptions.clear();
@@ -225,6 +227,42 @@ public class DeepCheckingVisitorTest {
         errors = SemanticChecker.checkSemantic(parser.parse());
         assertEquals(1, errors.size());
         assertNotNull((NoSuchMemberException) errors.get(0));
+        
+        parser = TestUtils.initParser("class Class { public Class memberClass; public static void main(String[] args) {} public void function(Class param) { int param; } }");
+        errors = SemanticChecker.checkSemantic(parser.parse());
+        assertEquals(1, errors.size());
+        assertNotNull((RedefinitionErrorException) errors.get(0));
+        
+        parser = TestUtils.initParser("class Class { public Class memberClass; public static void main(String[] args) {} public void function(Class param) { int locVarInt; locVarInt.asdf; } }");
+        errors = SemanticChecker.checkSemantic(parser.parse());
+        assertEquals(1, errors.size());
+        assertNotNull((NoSuchMemberException) errors.get(0));
+        
+        parser = TestUtils.initParser("class Class { public Class memberClass; public static void main(String[] args) {} public void function(Class param) { Class locVarClass; locVarClass.memberClass; } }");
+        errors = SemanticChecker.checkSemantic(parser.parse());
+        assertEquals(0, errors.size());
+        
+        parser = TestUtils.initParser("class Class { public void method() {}  public static void main(String[] args) {} public void function(Class param) { method(); } }");
+        errors = SemanticChecker.checkSemantic(parser.parse());
+        assertEquals(0, errors.size());
+        
+        parser = TestUtils.initParser("class Class { public void method() {}  public static void main(String[] args) {} public void function(Class param) { param.method(); } }");
+        errors = SemanticChecker.checkSemantic(parser.parse());
+        assertEquals(0, errors.size());
+        
+        parser = TestUtils.initParser("class Class { public void method() {}  public static void main(String[] args) {} public void function(Class param) { param.methodA(); } }");
+        errors = SemanticChecker.checkSemantic(parser.parse());
+        assertEquals(1, errors.size());
+        assertNotNull((NoSuchMemberException) errors.get(0));
+        
+        parser = TestUtils.initParser("class Class { public void method() {}  public static void main(String[] args) {} public void function(Class param) { param.method().asdf; } }");
+        errors = SemanticChecker.checkSemantic(parser.parse());
+        assertEquals(1, errors.size());
+        assertNotNull((NoSuchMemberException) errors.get(0));
+        
+        parser = TestUtils.initParser("class Class { public int asdf; public Class method() {}  public static void main(String[] args) {} public void function(Class param) { param.method().asdf; } }");
+        errors = SemanticChecker.checkSemantic(parser.parse());
+        assertEquals(0, errors.size());
 	}
 
 	private Type t(BasicType type) {
