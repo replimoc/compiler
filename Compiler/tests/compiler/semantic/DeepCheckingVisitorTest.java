@@ -221,9 +221,10 @@ public class DeepCheckingVisitorTest {
         errors = SemanticChecker.checkSemantic(parser.parse());
         assertEquals(0, errors.size());
         
-        parser = TestUtils.initParser("class Class { public int memberInt; public static void main(String[] args) {} public void function(Class param) { param.memberInt; } }");
+        parser = TestUtils.initParser("class Class { public Class memberClass; public static void main(String[] args) {} public void function(Class param) { param.memberClass.memberClass.asdf; } }");
         errors = SemanticChecker.checkSemantic(parser.parse());
-        assertEquals(0, errors.size());
+        assertEquals(1, errors.size());
+        assertNotNull((NoSuchMemberException) errors.get(0));
 	}
 
 	private Type t(BasicType type) {

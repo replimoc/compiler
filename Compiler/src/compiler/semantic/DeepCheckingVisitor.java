@@ -276,6 +276,8 @@ public class DeepCheckingVisitor implements AstVisitor {
 				throwNoSuchMemberError(leftExprType.getIdentifier(), leftExprType.getPosition(), variableAccessExpression.getFieldIdentifier(), variableAccessExpression.getPosition());
 				return;
 			}
+			
+			variableAccessExpression.setType(fielDef.getType());
 		}
 	}
 
