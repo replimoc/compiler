@@ -226,12 +226,12 @@ public class DeepCheckingVisitor implements AstVisitor {
 
 	@Override
 	public void visit(NewArrayExpression newArrayExpression) {
-		// TODO Auto-generated method stub
+		newArrayExpression.getType().accept(this);
 	}
 
 	@Override
 	public void visit(NewObjectExpression newObjectExpression) {
-		// TODO Auto-generated method stub
+		visit(new ClassType(newObjectExpression.getPosition(), newObjectExpression.getIdentifier()));
 	}
 
 	@Override
