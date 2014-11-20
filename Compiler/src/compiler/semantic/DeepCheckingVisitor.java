@@ -233,17 +233,27 @@ public class DeepCheckingVisitor implements AstVisitor {
 
 	@Override
 	public void visit(VariableAccessExpression variableAccessExpression) {
+		// first step in right [geklammerten] expression
+		if  (variableAccessExpression.getExpression() != null) {
+			variableAccessExpression.getExpression().accept(this);
+		}
+		
 		// is inner expression (no left expression)
-		if (variableAccessExpression.getExpression() == null) {
+		if  (variableAccessExpression.getExpression() != null) {
 			// variable can be defined in member scope or current class
 			if (!variableAccessExpression.getFieldIdentifier().isDefined() &&
 					currentClassScope.getFieldDefinition(variableAccessExpression.getFieldIdentifier()) == null) {
 				throwUndefinedSymbolError(variableAccessExpression.getFieldIdentifier(), variableAccessExpression.getPosition());
 				return;
 			}
-			// shouldn't the type of variableAccessExpression be set here?
+			// shouldn't be the type of variableAccessExpression set here?
 		} else {
-			
+			Expression leftExpr = variableAccessExpression.getExpression();
+			Type type = leftExpr.getType();
+			// if left expression type is != class  (e.g. int, boolean, void) then throw error
+			if (type.getBasicType() != BasicType.CLASS) {
+				
+			}
 		}
 	}
 
