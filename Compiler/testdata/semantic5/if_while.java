@@ -6,6 +6,7 @@ class Test {
         boolean b2 = true;
         boolean b3 = false;
         boolean[] bb = new boolean[5];
+        int x; int y;
 
         /* booleans/true/false */
 
