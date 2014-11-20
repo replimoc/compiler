@@ -89,5 +89,19 @@ class MultiScope {
 class MethodsFields
 {
     public int m;
-    public void m() {}
+    public void m() {} /* this is not an error */
+
+    public void m2() { boolean m; } /* this is also not an error */
+}
+
+class MissingDeclaration
+{
+    public void m()
+    {
+        m = 5;
+        m = true;
+        {
+            m = 4;
+        }
+    }
 }
