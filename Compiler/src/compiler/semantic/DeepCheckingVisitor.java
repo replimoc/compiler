@@ -353,7 +353,7 @@ public class DeepCheckingVisitor implements AstVisitor {
 
 	@Override
 	public void visit(ReturnStatement returnStatement) {
-		returnStatement.accept(this);
+		returnStatement.getOperand().accept(this);
 		//TODO: Compare return type of function and the one of returnStatement
 	}
 
