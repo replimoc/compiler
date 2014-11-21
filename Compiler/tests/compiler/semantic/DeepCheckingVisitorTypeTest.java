@@ -3,8 +3,11 @@ package compiler.semantic;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.fail;
 
+import java.util.HashMap;
+
 import org.junit.Test;
 
+import compiler.Symbol;
 import compiler.ast.AstNode;
 import compiler.ast.statement.BooleanConstantExpression;
 import compiler.ast.statement.IntegerConstantExpression;
@@ -15,7 +18,8 @@ import compiler.semantic.exceptions.TypeErrorException;
 
 public class DeepCheckingVisitorTypeTest {
 
-	private DeepCheckingVisitor visitor = new DeepCheckingVisitor();
+	private HashMap<Symbol, ClassScope> classScopes = new HashMap<Symbol, ClassScope>();
+	private DeepCheckingVisitor visitor = new DeepCheckingVisitor(classScopes);
 	private Position position = new Position(0, 0);
 	private IntegerConstantExpression integer = new IntegerConstantExpression(position, "42");
 	private BooleanConstantExpression btrue = new BooleanConstantExpression(position, true);

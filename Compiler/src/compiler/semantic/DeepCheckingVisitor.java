@@ -81,10 +81,6 @@ public class DeepCheckingVisitor implements AstVisitor {
 		return exceptions;
 	}
 
-	public List<Exception> getExceptions() {
-		return exceptions;
-	}
-
 	private void throwTypeError(AstNode astNode) {
 		exceptions.add(new TypeErrorException(astNode.getPosition()));
 	}
