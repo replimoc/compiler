@@ -8,4 +8,5 @@ public enum BasicType {
 	ARRAY,
 	METHOD,
 	STRING_ARGS,
+	NULL
 }

@@ -66,9 +66,10 @@ public class DeepCheckingVisitor implements AstVisitor {
 
 	private final SymbolTable symbolTable;
 	private final HashMap<Symbol, ClassScope> classScopes;
-	
+
 	private Symbol currentClassSymbol = null;
 	private ClassScope currentClassScope = null;
+	private MethodDefinition currentMethodDefinition = null;
 
 	private List<SemanticAnalysisException> exceptions = new ArrayList<>();
 
@@ -92,20 +93,19 @@ public class DeepCheckingVisitor implements AstVisitor {
 	private void throwUndefinedSymbolError(Symbol symbol, Position position) {
 		exceptions.add(new UndefinedSymbolException(symbol, position));
 	}
-	
+
 	private void throwNoSuchMemberError(Symbol object, Position objPos, Symbol member, Position memberPos) {
 		exceptions.add(new NoSuchMemberException(object, objPos, member, memberPos));
 	}
 
 	private void expectType(Type type, AstNode astNode) {
-		if (!astNode.getType().equals(type)) {
+		if (astNode.getType() != null && !astNode.getType().equals(type)) {
 			throwTypeError(astNode);
 		}
 	}
 
 	private void expectType(BasicType type, AstNode astNode) {
-		if (astNode.getType().getBasicType() != type ||
-				astNode.getType().getSubType() != null) {
+		if (astNode.getType() != null && (astNode.getType().getBasicType() != type || astNode.getType().getSubType() != null)) {
 			throwTypeError(astNode);
 		}
 	}
@@ -123,7 +123,19 @@ public class DeepCheckingVisitor implements AstVisitor {
 		AstNode right = binaryExpression.getOperand2();
 		left.accept(this);
 		right.accept(this);
-		if (!left.getType().equals(right.getType())) {
+		if (left.getType() != null && right.getType() != null && !left.getType().equals(right.getType())) {
+			throwTypeError(binaryExpression);
+		}
+	}
+
+	private void checkBinaryOperandEqualityOrNull(BinaryExpression binaryExpression) {
+		AstNode left = binaryExpression.getOperand1();
+		AstNode right = binaryExpression.getOperand2();
+		left.accept(this);
+		right.accept(this);
+		if (left.getType() != null
+				&& right.getType() != null
+				&& !(left.getType().equals(right.getType()) || left.getType().getBasicType() == BasicType.NULL || right.getType().getBasicType() == BasicType.NULL)) {
 			throwTypeError(binaryExpression);
 		}
 	}
@@ -148,8 +160,7 @@ public class DeepCheckingVisitor implements AstVisitor {
 
 	@Override
 	public void visit(AssignmentExpression assignmentExpression) {
-		checkBinaryOperandEquality(assignmentExpression);
-		// TODO: Do more checks...
+		checkBinaryOperandEqualityOrNull(assignmentExpression);
 	}
 
 	@Override
@@ -205,7 +216,7 @@ public class DeepCheckingVisitor implements AstVisitor {
 
 	@Override
 	public void visit(NonEqualityExpression nonEqualityExpression) {
-		checkBinaryOperandEquality(nonEqualityExpression);
+		checkBinaryOperandEqualityOrNull(nonEqualityExpression);
 		setType(BasicType.BOOLEAN, nonEqualityExpression);
 	}
 
@@ -240,63 +251,73 @@ public class DeepCheckingVisitor implements AstVisitor {
 		if (methodInvocationExpression.getMethodExpression() != null) {
 			methodInvocationExpression.getMethodExpression().accept(this);
 		}
-		
-		//is inner expression
+
+		// is inner expression
 		if (methodInvocationExpression.getMethodExpression() == null) {
-			MethodDefinition methodDef = currentClassScope.getMethodDefinition(methodInvocationExpression.getMethodIdent());
-			if (methodDef != null) {
-				methodInvocationExpression.setType(methodDef.getType());
+			MethodDefinition methodDefinition = currentClassScope.getMethodDefinition(methodInvocationExpression.getMethodIdent());
+			if (methodDefinition != null) {
+				methodInvocationExpression.setType(methodDefinition.getType());
 			} else {
-				throwNoSuchMemberError(currentClassSymbol, currentClassSymbol.getDefinition().getType().getPosition(), methodInvocationExpression.getMethodIdent(), methodInvocationExpression.getPosition());
+				throwNoSuchMemberError(currentClassSymbol, currentClassSymbol.getDefinition().getType().getPosition(),
+						methodInvocationExpression.getMethodIdent(), methodInvocationExpression.getPosition());
 				return;
 			}
 		} else {
-			Expression leftExpr = methodInvocationExpression.getMethodExpression();
-			Type leftExprType = leftExpr.getType();
-			
-			// if left expression type is != class  (e.g. int, boolean, void) then throw error
-			if (leftExprType.getBasicType() != BasicType.CLASS) {
-				throwNoSuchMemberError(leftExprType.getIdentifier(), leftExprType.getPosition(), methodInvocationExpression.getMethodIdent(), methodInvocationExpression.getPosition());
+			Expression leftExpression = methodInvocationExpression.getMethodExpression();
+
+			if (leftExpression.getType() == null) {
+				leftExpression.accept(this);
+			}
+
+			Type leftExpressionType = leftExpression.getType();
+
+			// if left expression type is != class (e.g. int, boolean, void) then throw error
+			if (leftExpressionType.getBasicType() != BasicType.CLASS) {
+				throwNoSuchMemberError(leftExpressionType.getIdentifier(), leftExpressionType.getPosition(),
+						methodInvocationExpression.getMethodIdent(), methodInvocationExpression.getPosition());
 				return;
 			}
-			
+
 			// get class scope
-			ClassScope classScope = classScopes.get(leftExprType.getIdentifier());
+			ClassScope classScope = classScopes.get(leftExpressionType.getIdentifier());
 			// no need to check if it's null, as it has been checked before...
-			
-			MethodDefinition methodDef = classScope.getMethodDefinition(methodInvocationExpression.getMethodIdent());
+
+			MethodDefinition methodDefinition = classScope.getMethodDefinition(methodInvocationExpression.getMethodIdent());
 			// is there the specified method?
-			if (methodDef == null) {
-				throwNoSuchMemberError(leftExprType.getIdentifier(), leftExprType.getPosition(), methodInvocationExpression.getMethodIdent(), methodInvocationExpression.getPosition());
+			if (methodDefinition == null) {
+				throwNoSuchMemberError(leftExpressionType.getIdentifier(), leftExpressionType.getPosition(),
+						methodInvocationExpression.getMethodIdent(), methodInvocationExpression.getPosition());
 				return;
 			}
 			// now check params
-			if (methodDef.getParameters().length != methodInvocationExpression.getParameters().length) {
+			if (methodDefinition.getParameters().length != methodInvocationExpression.getParameters().length) {
 				exceptions.add(new InvalidMethodCallException(methodInvocationExpression.getMethodIdent(), methodInvocationExpression.getPosition()));
 				return;
 			}
-			
-			for (int i = 0; i < methodDef.getParameters().length; i++) {
-				Definition paramDef = methodDef.getParameters()[i];
-				Expression expr = methodInvocationExpression.getParameters()[i];
-				expr.accept(this);
-				
-				//TODO: compare type of paramDef and expr
+
+			for (int i = 0; i < methodDefinition.getParameters().length; i++) {
+				Definition parameterDefinition = methodDefinition.getParameters()[i];
+				Expression expression = methodInvocationExpression.getParameters()[i];
+				expression.accept(this);
+
+				if (parameterDefinition.getType() == null) {
+					expectType(parameterDefinition.getType(), expression);
+				}
 			}
-			
-			methodInvocationExpression.setType(methodDef.getType());
+
+			methodInvocationExpression.setType(methodDefinition.getType());
 		}
 	}
-	
+
 	@Override
 	public void visit(VariableAccessExpression variableAccessExpression) {
 		// first step in outer left expression
-		if  (variableAccessExpression.getExpression() != null) {
+		if (variableAccessExpression.getExpression() != null) {
 			variableAccessExpression.getExpression().accept(this);
 		}
-		
+
 		// is inner expression (no left expression)
-		if  (variableAccessExpression.getExpression() == null) {
+		if (variableAccessExpression.getExpression() == null) {
 			// shouldn't be the type of variableAccessExpression set here?
 			if (variableAccessExpression.getFieldIdentifier().isDefined()) {
 				variableAccessExpression.setType(variableAccessExpression.getFieldIdentifier().getDefinition().getType());
@@ -307,31 +328,36 @@ public class DeepCheckingVisitor implements AstVisitor {
 				return;
 			}
 		} else {
-			Expression leftExpr = variableAccessExpression.getExpression();
-			Type leftExprType = leftExpr.getType();
-			
-			if (leftExprType == null) {
-				return; //TODO: How handle the case, when left expression is invalid that is: there is a semantic error
+			Expression leftExpression = variableAccessExpression.getExpression();
+			leftExpression.accept(this);
+			Type leftExpressionType = leftExpression.getType();
+
+			if (leftExpressionType == null) {
+				return; // TODO: How handle the case, when left expression is invalid that is: there is a semantic error
 			}
-			
-			// if left expression type is != class  (e.g. int, boolean, void) then throw error
-			if (leftExprType.getBasicType() != BasicType.CLASS) {
-				throwNoSuchMemberError(leftExprType.getIdentifier(), leftExprType.getPosition(), variableAccessExpression.getFieldIdentifier(), variableAccessExpression.getPosition());
+
+			// if left expression type is != class (e.g. int, boolean, void) then throw error
+			if (leftExpressionType.getBasicType() != BasicType.CLASS) {
+				throwNoSuchMemberError(leftExpressionType.getIdentifier(), leftExpressionType.getPosition(),
+						variableAccessExpression.getFieldIdentifier(),
+						variableAccessExpression.getPosition());
 				return;
 			}
 			// check if class exists
-			ClassScope classScope = classScopes.get(leftExprType.getIdentifier());
+			ClassScope classScope = classScopes.get(leftExpressionType.getIdentifier());
 			if (classScope == null) {
-				throwTypeError(variableAccessExpression); //TODO: Throw some specific error like TypeOfClassNotFound
+				throwTypeError(variableAccessExpression); // TODO: Throw some specific error like TypeOfClassNotFound
 				return;
 			}
 			// check if member exists in this class
 			Definition fieldDef = classScope.getFieldDefinition(variableAccessExpression.getFieldIdentifier());
 			if (fieldDef == null) {
-				throwNoSuchMemberError(leftExprType.getIdentifier(), leftExprType.getPosition(), variableAccessExpression.getFieldIdentifier(), variableAccessExpression.getPosition());
+				throwNoSuchMemberError(leftExpressionType.getIdentifier(), leftExpressionType.getPosition(),
+						variableAccessExpression.getFieldIdentifier(),
+						variableAccessExpression.getPosition());
 				return;
 			}
-			
+
 			variableAccessExpression.setType(fieldDef.getType());
 		}
 	}
@@ -354,25 +380,26 @@ public class DeepCheckingVisitor implements AstVisitor {
 	@Override
 	public void visit(ReturnStatement returnStatement) {
 		returnStatement.getOperand().accept(this);
-		//TODO: Compare return type of function and the one of returnStatement
+
+		expectType(currentMethodDefinition.getType(), returnStatement);
 	}
 
 	@Override
 	public void visit(ThisExpression thisExpression) {
-		thisExpression.setType(new ClassType(null, currentClassSymbol)); //TODO: replace null with position of class
+		thisExpression.setType(new ClassType(null, currentClassSymbol)); // TODO: replace null with position of class
 	}
 
 	@Override
 	public void visit(NullExpression nullExpression) {
-		// TODO Auto-generated method stub
+		setType(BasicType.NULL, nullExpression);
 	}
 
 	@Override
 	public void visit(Type type) {
 		type.setType(type);
-		
+
 		if (type.getBasicType() == BasicType.CLASS && classScopes.containsKey(type.getIdentifier()) == false) {
-			throwTypeError(type); //TODO: Throw some specific error like TypeOfClassNotFound
+			throwTypeError(type); // TODO: Throw some specific error like TypeOfClassNotFound
 			return;
 		}
 	}
@@ -438,7 +465,7 @@ public class DeepCheckingVisitor implements AstVisitor {
 	@Override
 	public void visit(ParameterDefinition parameterDefinition) {
 		parameterDefinition.getType().accept(this);
-		
+
 		// check if parameter already defined
 		if (symbolTable.isDefinedInCurrentScope(parameterDefinition.getIdentifier())) {
 			throwRedefinitionError(parameterDefinition.getIdentifier(), null, parameterDefinition.getPosition());
@@ -461,8 +488,8 @@ public class DeepCheckingVisitor implements AstVisitor {
 
 	@Override
 	public void visit(FieldDeclaration fieldDeclaration) {
-		//TODO: Check for redefinition
-		
+		// TODO: Check for redefinition
+
 		// check for valid type
 		fieldDeclaration.getType().accept(this);
 	}
@@ -480,7 +507,9 @@ public class DeepCheckingVisitor implements AstVisitor {
 		}
 
 		if (methodDeclaration.getBlock() != null) {
+			currentMethodDefinition = currentClassScope.getMethodDefinition(methodDeclaration.getIdentifier());
 			methodDeclaration.getBlock().accept(this);
+			currentMethodDefinition = null;
 		}
 
 		symbolTable.leaveScope();
