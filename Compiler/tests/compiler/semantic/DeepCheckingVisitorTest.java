@@ -52,6 +52,7 @@ public class DeepCheckingVisitorTest {
 
 	@Test
 	public void testVarRedefinitionInMethod() {
+		classScopes.put(s("class1"), new ClassScope(new HashMap<Symbol, Definition>(), new HashMap<Symbol, MethodDefinition>()));
 		Program program = new Program(null);
 		Symbol class1 = s("class1");
 		ClassDeclaration classObj = new ClassDeclaration(null, class1);
@@ -166,7 +167,7 @@ public class DeepCheckingVisitorTest {
 
 		// myClass1 is undefined
 		List<SemanticAnalysisException> exceptions = visitor.getExceptions();
-		assertEquals(2, exceptions.size());
+		assertEquals(3, exceptions.size());
 		UndefinedSymbolException undSymb = (UndefinedSymbolException) exceptions.get(0);
 		assertNotNull(undSymb);
 		exceptions.clear();
@@ -280,13 +281,13 @@ public class DeepCheckingVisitorTest {
 		parser = TestUtils
 				.initParser("class Class { public int asdf; public Class method(int a, int b) {}  public static void main(String[] args) {} public void function(Class param) { param.method(1, 1, 1).asdf; } }");
 		errors = SemanticChecker.checkSemantic(parser.parse());
-		assertEquals(1, errors.size());
+		assertEquals(2, errors.size());
 		assertNotNull((InvalidMethodCallException) errors.get(0));
 
 		parser = TestUtils
 				.initParser("class Class { public int asdf; public Class method(int a, int b) {}  public static void main(String[] args) {} public void function(Class param) { param.method(1, 1, 1).asdf; } }");
 		errors = SemanticChecker.checkSemantic(parser.parse());
-		assertEquals(1, errors.size());
+		assertEquals(2, errors.size());
 		assertNotNull((InvalidMethodCallException) errors.get(0));
 
 		parser = TestUtils
