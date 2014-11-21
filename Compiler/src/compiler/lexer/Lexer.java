@@ -6,6 +6,11 @@ import java.io.Reader;
 import compiler.StringTable;
 import compiler.StringTable.Entry;
 import compiler.Symbol;
+import compiler.ast.type.BasicType;
+import compiler.ast.type.ClassType;
+import compiler.ast.type.Type;
+import compiler.semantic.symbolTable.Definition;
+import compiler.semantic.symbolTable.Scope;
 
 public class Lexer implements TokenSuppliable {
 	private int c;
@@ -385,6 +390,8 @@ public class Lexer implements TokenSuppliable {
 	}
 
 	private static void initStringTable(StringTable stringTable) {
+		Entry entr = stringTable.insert("System", TokenType.IDENTIFIER);
+		entr.getSymbol().setDefintion(new Scope(null, 0), new Definition(entr.getSymbol(), new ClassType(null, new Symbol("System"))));
 		for (TokenType curr : TokenType.values()) {
 			if (curr.isKeyword()) {
 				stringTable.insert(curr.getString(), curr);

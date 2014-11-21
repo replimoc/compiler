@@ -329,7 +329,7 @@ public class DeepCheckingVisitor implements AstVisitor {
 			}
 		} else {
 			Expression leftExpression = variableAccessExpression.getExpression();
-			leftExpression.accept(this);
+			//leftExpression.accept(this); TODO: why do we need this? We already visited the left expression...
 			Type leftExpressionType = leftExpression.getType();
 
 			if (leftExpressionType == null) {

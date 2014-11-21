@@ -32,7 +32,9 @@ public final class SemanticChecker {
 		
 		HashMap<Symbol, MethodDefinition> psMethods = new HashMap<Symbol, MethodDefinition>();
 		Symbol printLineSymbol = new Symbol("println");
-		psMethods.put(printLineSymbol, new MethodDefinition(printLineSymbol, new Type(null, BasicType.VOID), null));
+		Definition[] definitions = new Definition[1];
+		definitions[0] = new Definition(new Symbol("arg"), new Type(null, BasicType.INT));
+		psMethods.put(printLineSymbol, new MethodDefinition(printLineSymbol, new Type(null, BasicType.VOID), definitions));
 		ClassScope printStreamScope = new ClassScope(new HashMap<Symbol, Definition>(), psMethods);
 		classScopes.put(printStream, printStreamScope);
 		

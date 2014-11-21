@@ -167,7 +167,7 @@ public class DeepCheckingVisitorTest {
 
 		// myClass1 is undefined
 		List<SemanticAnalysisException> exceptions = visitor.getExceptions();
-		assertEquals(3, exceptions.size());
+		assertEquals(2, exceptions.size());
 		UndefinedSymbolException undSymb = (UndefinedSymbolException) exceptions.get(0);
 		assertNotNull(undSymb);
 		exceptions.clear();
@@ -281,13 +281,13 @@ public class DeepCheckingVisitorTest {
 		parser = TestUtils
 				.initParser("class Class { public int asdf; public Class method(int a, int b) {}  public static void main(String[] args) {} public void function(Class param) { param.method(1, 1, 1).asdf; } }");
 		errors = SemanticChecker.checkSemantic(parser.parse());
-		assertEquals(2, errors.size());
+		assertEquals(1, errors.size());
 		assertNotNull((InvalidMethodCallException) errors.get(0));
 
 		parser = TestUtils
 				.initParser("class Class { public int asdf; public Class method(int a, int b) {}  public static void main(String[] args) {} public void function(Class param) { param.method(1, 1, 1).asdf; } }");
 		errors = SemanticChecker.checkSemantic(parser.parse());
-		assertEquals(2, errors.size());
+		assertEquals(1, errors.size());
 		assertNotNull((InvalidMethodCallException) errors.get(0));
 
 		parser = TestUtils
@@ -300,6 +300,17 @@ public class DeepCheckingVisitorTest {
 		errors = SemanticChecker.checkSemantic(parser.parse());
 		assertEquals(1, errors.size());
 		assertNotNull((NoSuchMemberException) errors.get(0));
+		
+		parser = TestUtils
+				.initParser("class Class { public static void main(String[] args) {} public void function() { System.out.println(42); } }");
+		errors = SemanticChecker.checkSemantic(parser.parse());
+		assertEquals(0, errors.size());
+
+		parser = TestUtils
+				.initParser("class Class { public static void main(String[] args) {} public void function() { boolean args = true; System.out.println(args); } }");
+		errors = SemanticChecker.checkSemantic(parser.parse());
+		assertEquals(0, errors.size());
+		//assertNotNull((NoSuchMemberException) errors.get(0));
 	}
 
 	private Type t(BasicType type) {
