@@ -36,6 +36,7 @@ import compiler.ast.statement.binary.SubtractionExpression;
 import compiler.ast.statement.unary.LogicalNotExpression;
 import compiler.ast.statement.unary.NegateExpression;
 import compiler.ast.statement.unary.ReturnStatement;
+import compiler.ast.type.ClassType;
 import compiler.ast.type.Type;
 
 public interface AstVisitor {
@@ -112,5 +113,7 @@ public interface AstVisitor {
 	public void visit(FieldDeclaration fieldDeclaration);
 
 	public void visit(StaticMethodDeclaration staticMethodDeclaration);
+
+	public void visit(ClassType classType);
 
 }

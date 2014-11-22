@@ -1,21 +1,22 @@
 package compiler.semantic.exceptions;
 
-import compiler.lexer.Position;
+import compiler.ast.AstNode;
 
 public class TypeErrorException extends SemanticAnalysisException {
 	private static final long serialVersionUID = -271485782975658532L;
 
-	public TypeErrorException(Position position) {
-		this(position, null);
+	public TypeErrorException(AstNode astNode) {
+		this(astNode, null);
 	}
 
-	public TypeErrorException(Position position, String message) {
-		super(position, buildMessage(position, message));
+	public TypeErrorException(AstNode astNode, String message) {
+		super(astNode.getPosition(), buildMessage(astNode, message));
 	}
 
-	public static String buildMessage(Position position, String message) {
-		String positionString = position != null ? position.toString() : "unknown";
+	public static String buildMessage(AstNode astNode, String message) {
+		String classString = astNode.getClass() != null ? astNode.getClass().toString() : "unknown";
+		String positionString = astNode.getPosition() != null ? astNode.getPosition().toString() : "unknown";
 		String messageString = message != null ? ": " + message : "";
-		return "error: type error at position " + positionString + messageString;
+		return "error: type error in token " + classString + " at position " + positionString + messageString;
 	}
 }

@@ -44,6 +44,7 @@ import compiler.ast.statement.unary.LogicalNotExpression;
 import compiler.ast.statement.unary.NegateExpression;
 import compiler.ast.statement.unary.ReturnStatement;
 import compiler.ast.type.BasicType;
+import compiler.ast.type.ClassType;
 import compiler.ast.type.Type;
 import compiler.ast.visitor.AstVisitor;
 import compiler.lexer.Position;
@@ -175,7 +176,7 @@ public class PreNamingAnalysisVisitor implements AstVisitor {
 	}
 
 	private void throwTypeError(AstNode astNode, String message) {
-		exceptions.add(new TypeErrorException(astNode.getPosition(), message));
+		exceptions.add(new TypeErrorException(astNode, message));
 	}
 
 	private void throwRedefinitionError(Symbol identifier, Position definition, Position redefinition) {
@@ -312,6 +313,10 @@ public class PreNamingAnalysisVisitor implements AstVisitor {
 
 	@Override
 	public void visit(ParameterDefinition parameterDefinition) {
+	}
+
+	@Override
+	public void visit(ClassType classType) {
 	}
 
 }

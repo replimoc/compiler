@@ -1,6 +1,7 @@
 package compiler.ast.type;
 
 import compiler.Symbol;
+import compiler.ast.visitor.AstVisitor;
 import compiler.lexer.Position;
 
 public class ClassType extends Type {
@@ -15,5 +16,10 @@ public class ClassType extends Type {
 	@Override
 	public Symbol getIdentifier() {
 		return identifier;
+	}
+
+	@Override
+	public void accept(AstVisitor visitor) {
+		visitor.visit(this);
 	}
 }

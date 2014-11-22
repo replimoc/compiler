@@ -83,7 +83,7 @@ public class DeepCheckingVisitor implements AstVisitor {
 	}
 
 	private void throwTypeError(AstNode astNode) {
-		exceptions.add(new TypeErrorException(astNode.getPosition()));
+		exceptions.add(new TypeErrorException(astNode));
 	}
 
 	private void throwRedefinitionError(Symbol symbol, Position definition, Position redefinition) {
@@ -100,6 +100,12 @@ public class DeepCheckingVisitor implements AstVisitor {
 
 	private void expectType(Type type, AstNode astNode) {
 		if (astNode.getType() != null && !astNode.getType().equals(type)) {
+			throwTypeError(astNode);
+		}
+	}
+
+	private void expectTypeOrNull(Type type, AstNode astNode) {
+		if (astNode.getType() != null && !(astNode.getType().getBasicType() == BasicType.NULL || astNode.getType().equals(type))) {
 			throwTypeError(astNode);
 		}
 	}
@@ -170,7 +176,7 @@ public class DeepCheckingVisitor implements AstVisitor {
 
 	@Override
 	public void visit(EqualityExpression equalityExpression) {
-		checkBinaryOperandEquality(equalityExpression);
+		checkBinaryOperandEqualityOrNull(equalityExpression);
 		setType(BasicType.BOOLEAN, equalityExpression);
 	}
 
@@ -329,7 +335,6 @@ public class DeepCheckingVisitor implements AstVisitor {
 			}
 		} else {
 			Expression leftExpression = variableAccessExpression.getExpression();
-			//leftExpression.accept(this); TODO: why do we need this? We already visited the left expression...
 			Type leftExpressionType = leftExpression.getType();
 
 			if (leftExpressionType == null) {
@@ -364,7 +369,8 @@ public class DeepCheckingVisitor implements AstVisitor {
 
 	@Override
 	public void visit(ArrayAccessExpression arrayAccessExpression) {
-		// TODO Auto-generated method stub
+		arrayAccessExpression.getArrayExpression().accept(this);
+		arrayAccessExpression.getIndexExpression().accept(this);
 	}
 
 	@Override
@@ -397,9 +403,12 @@ public class DeepCheckingVisitor implements AstVisitor {
 	@Override
 	public void visit(Type type) {
 		type.setType(type);
+	}
 
-		if (type.getBasicType() == BasicType.CLASS && classScopes.containsKey(type.getIdentifier()) == false) {
-			throwTypeError(type); // TODO: Throw some specific error like TypeOfClassNotFound
+	@Override
+	public void visit(ClassType classType) {
+		if (classScopes.containsKey(classType.getIdentifier()) == false) {
+			throwTypeError(classType); // TODO: Throw some specific error like TypeOfClassNotFound
 			return;
 		}
 	}
@@ -458,7 +467,7 @@ public class DeepCheckingVisitor implements AstVisitor {
 		Expression expression = localVariableDeclaration.getExpression();
 		if (expression != null) {
 			expression.accept(this);
-			expectType(localVariableDeclaration.getType(), expression);
+			expectTypeOrNull(localVariableDeclaration.getType(), expression);
 		}
 	}
 

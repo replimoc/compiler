@@ -44,6 +44,7 @@ import compiler.ast.statement.binary.SubtractionExpression;
 import compiler.ast.statement.unary.LogicalNotExpression;
 import compiler.ast.statement.unary.NegateExpression;
 import compiler.ast.statement.unary.ReturnStatement;
+import compiler.ast.type.ClassType;
 import compiler.ast.type.Type;
 import compiler.ast.visitor.AstVisitor;
 import compiler.lexer.TokenType;
@@ -345,6 +346,15 @@ public class PrettyPrinterVisitor implements AstVisitor {
 
 	@Override
 	public void visit(Type type) {
+		visitType(type);
+	}
+
+	@Override
+	public void visit(ClassType classType) {
+		visitType(classType);
+	}
+
+	public void visitType(Type type) {
 		int dim = 0;
 		while (type.getSubType() != null) {
 			type = type.getSubType();
