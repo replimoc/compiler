@@ -396,9 +396,12 @@ public class DeepCheckingVisitor implements AstVisitor {
 
 	@Override
 	public void visit(ReturnStatement returnStatement) {
-		returnStatement.getOperand().accept(this);
-
-		expectType(currentMethodDefinition.getType(), returnStatement);
+		if (returnStatement.getOperand() != null) {
+			returnStatement.getOperand().accept(this);
+			expectType(currentMethodDefinition.getType(), returnStatement);
+		} else if (currentMethodDefinition.getType().getBasicType() != BasicType.VOID) {
+			throwTypeError(returnStatement);
+		}
 	}
 
 	@Override
