@@ -273,7 +273,7 @@ public class DeepCheckingVisitor implements AstVisitor {
 		if (methodInvocationExpression.getMethodExpression() == null) {
 			MethodDefinition methodDefinition = currentClassScope.getMethodDefinition(methodInvocationExpression.getMethodIdent());
 			if (methodDefinition != null) {
-				methodInvocationExpression.setType(methodDefinition.getType());
+				checkParameterDefinitionAndSetReturnType(methodInvocationExpression, methodDefinition);
 			} else {
 				throwNoSuchMemberError(currentClassSymbol, currentClassSymbol.getDefinition().getType().getPosition(),
 						methodInvocationExpression.getMethodIdent(), methodInvocationExpression.getPosition());
@@ -306,24 +306,29 @@ public class DeepCheckingVisitor implements AstVisitor {
 						methodInvocationExpression.getMethodIdent(), methodInvocationExpression.getPosition());
 				return;
 			}
-			// now check params
-			if (methodDefinition.getParameters().length != methodInvocationExpression.getParameters().length) {
-				exceptions.add(new InvalidMethodCallException(methodInvocationExpression.getMethodIdent(), methodInvocationExpression.getPosition()));
-				return;
-			}
-
-			for (int i = 0; i < methodDefinition.getParameters().length; i++) {
-				Definition parameterDefinition = methodDefinition.getParameters()[i];
-				Expression expression = methodInvocationExpression.getParameters()[i];
-				expression.accept(this);
-
-				if (parameterDefinition.getType() == null) {
-					expectType(parameterDefinition.getType(), expression);
-				}
-			}
-
-			methodInvocationExpression.setType(methodDefinition.getType());
+			checkParameterDefinitionAndSetReturnType(methodInvocationExpression, methodDefinition);
 		}
+	}
+
+	private void checkParameterDefinitionAndSetReturnType(MethodInvocationExpression methodInvocationExpression, MethodDefinition methodDefinition) {
+		// now check params
+		if (methodDefinition.getParameters().length != methodInvocationExpression.getParameters().length) {
+			exceptions.add(new InvalidMethodCallException(methodInvocationExpression.getMethodIdent(), methodInvocationExpression.getPosition()));
+			return;
+		}
+
+		for (int i = 0; i < methodDefinition.getParameters().length; i++) {
+			Definition parameterDefinition = methodDefinition.getParameters()[i];
+			Expression expression = methodInvocationExpression.getParameters()[i];
+			expression.accept(this);
+
+			if (parameterDefinition.getType() != null) {
+				expectType(parameterDefinition.getType(), expression);
+			}
+		}
+
+		methodInvocationExpression.setType(methodDefinition.getType());
+
 	}
 
 	@Override
