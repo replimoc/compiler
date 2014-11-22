@@ -104,13 +104,8 @@ public class DeepCheckingVisitor implements AstVisitor {
 	}
 
 	private void expectType(Type type, AstNode astNode) {
-		if (astNode.getType() != null && !astNode.getType().equals(type)) {
-			throwTypeError(astNode);
-		}
-	}
-
-	private void expectTypeOrNull(Type type, AstNode astNode) {
-		if (astNode.getType() != null && !(astNode.getType().getBasicType() == BasicType.NULL || astNode.getType().equals(type))) {
+		if (astNode.getType() != null
+				&& !((type.getBasicType() != null && astNode.getType().getBasicType() == BasicType.NULL) || astNode.getType().equals(type))) {
 			throwTypeError(astNode);
 		}
 	}
@@ -497,7 +492,7 @@ public class DeepCheckingVisitor implements AstVisitor {
 		Expression expression = localVariableDeclaration.getExpression();
 		if (expression != null) {
 			expression.accept(this);
-			expectTypeOrNull(localVariableDeclaration.getType(), expression);
+			expectType(localVariableDeclaration.getType(), expression);
 		}
 	}
 
