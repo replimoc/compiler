@@ -154,11 +154,6 @@ public class PreNamingAnalysisVisitor implements AstVisitor {
 			throwTypeError(staticMethodDeclaration, "'public static void main' method must have a single argument of type String[].");
 		}
 		
-		// if we already have found one main -> error
-		if (mainFound == true) {
-			throwRedefinitionError(staticMethodDeclaration.getIdentifier(), null, staticMethodDeclaration.getPosition());
-		}
-		
 		mainFound = true;
 		Position position = staticMethodDeclaration.getPosition();
 
