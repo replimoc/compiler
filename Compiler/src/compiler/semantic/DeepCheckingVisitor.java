@@ -347,6 +347,9 @@ public class DeepCheckingVisitor implements AstVisitor {
 				variableAccessExpression.setType(variableAccessExpression.getFieldIdentifier().getDefinition().getType());
 			} else if (currentClassScope.getFieldDefinition(variableAccessExpression.getFieldIdentifier()) != null) {
 				variableAccessExpression.setType(currentClassScope.getFieldDefinition(variableAccessExpression.getFieldIdentifier()).getType());
+			// special case is System
+			} else if (variableAccessExpression.getFieldIdentifier().getValue().equals("System")) {
+				variableAccessExpression.setType(new ClassType(null, new Symbol("System")));
 			} else {
 				throwUndefinedSymbolError(variableAccessExpression.getFieldIdentifier(), variableAccessExpression.getPosition());
 				return;

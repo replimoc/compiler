@@ -390,8 +390,6 @@ public class Lexer implements TokenSuppliable {
 	}
 
 	private static void initStringTable(StringTable stringTable) {
-		Entry entr = stringTable.insert("System", TokenType.IDENTIFIER);
-		entr.getSymbol().setDefintion(new Scope(null, 0), new Definition(entr.getSymbol(), new ClassType(null, new Symbol("System"))));
 		for (TokenType curr : TokenType.values()) {
 			if (curr.isKeyword()) {
 				stringTable.insert(curr.getString(), curr);
