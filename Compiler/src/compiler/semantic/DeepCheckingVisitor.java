@@ -167,6 +167,17 @@ public class DeepCheckingVisitor implements AstVisitor {
 	@Override
 	public void visit(AssignmentExpression assignmentExpression) {
 		checkBinaryOperandEqualityOrNull(assignmentExpression);
+
+		Expression operand1 = assignmentExpression.getOperand1();
+		if (operand1 instanceof ThisExpression
+				|| operand1 instanceof MethodInvocationExpression
+				|| operand1 instanceof NewObjectExpression
+				|| operand1 instanceof NewArrayExpression
+				|| operand1 instanceof BinaryExpression
+				|| operand1 instanceof LogicalNotExpression
+				|| operand1 instanceof NegateExpression) {
+			throwTypeError(assignmentExpression.getOperand1());
+		}
 	}
 
 	@Override
@@ -264,7 +275,7 @@ public class DeepCheckingVisitor implements AstVisitor {
 		if (methodInvocationExpression.getMethodExpression() == null) {
 			MethodDefinition methodDefinition = currentClassScope.getMethodDefinition(methodInvocationExpression.getMethodIdent());
 			if (methodDefinition != null) {
-				methodInvocationExpression.setType(methodDefinition.getType());
+				checkParameterDefinitionAndSetReturnType(methodInvocationExpression, methodDefinition);
 			} else {
 				throwNoSuchMemberError(currentClassSymbol, currentClassSymbol.getDefinition().getType().getPosition(),
 						methodInvocationExpression.getMethodIdent(), methodInvocationExpression.getPosition());
@@ -297,24 +308,29 @@ public class DeepCheckingVisitor implements AstVisitor {
 						methodInvocationExpression.getMethodIdent(), methodInvocationExpression.getPosition());
 				return;
 			}
-			// now check params
-			if (methodDefinition.getParameters().length != methodInvocationExpression.getParameters().length) {
-				exceptions.add(new InvalidMethodCallException(methodInvocationExpression.getMethodIdent(), methodInvocationExpression.getPosition()));
-				return;
-			}
-
-			for (int i = 0; i < methodDefinition.getParameters().length; i++) {
-				Definition parameterDefinition = methodDefinition.getParameters()[i];
-				Expression expression = methodInvocationExpression.getParameters()[i];
-				expression.accept(this);
-
-				if (parameterDefinition.getType() != null) {
-					expectType(parameterDefinition.getType(), expression);
-				}
-			}
-
-			methodInvocationExpression.setType(methodDefinition.getType());
+			checkParameterDefinitionAndSetReturnType(methodInvocationExpression, methodDefinition);
 		}
+	}
+
+	private void checkParameterDefinitionAndSetReturnType(MethodInvocationExpression methodInvocationExpression, MethodDefinition methodDefinition) {
+		// now check params
+		if (methodDefinition.getParameters().length != methodInvocationExpression.getParameters().length) {
+			exceptions.add(new InvalidMethodCallException(methodInvocationExpression.getMethodIdent(), methodInvocationExpression.getPosition()));
+			return;
+		}
+
+		for (int i = 0; i < methodDefinition.getParameters().length; i++) {
+			Definition parameterDefinition = methodDefinition.getParameters()[i];
+			Expression expression = methodInvocationExpression.getParameters()[i];
+			expression.accept(this);
+
+			if (parameterDefinition.getType() != null) {
+				expectType(parameterDefinition.getType(), expression);
+			}
+		}
+
+		methodInvocationExpression.setType(methodDefinition.getType());
+
 	}
 
 	@Override
@@ -387,9 +403,12 @@ public class DeepCheckingVisitor implements AstVisitor {
 
 	@Override
 	public void visit(ReturnStatement returnStatement) {
-		returnStatement.getOperand().accept(this);
-
-		expectType(currentMethodDefinition.getType(), returnStatement);
+		if (returnStatement.getOperand() != null) {
+			returnStatement.getOperand().accept(this);
+			expectType(currentMethodDefinition.getType(), returnStatement.getOperand());
+		} else if (currentMethodDefinition.getType().getBasicType() != BasicType.VOID) {
+			throwTypeError(returnStatement);
+		}
 	}
 
 	@Override
