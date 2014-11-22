@@ -49,6 +49,7 @@ import compiler.ast.type.ClassType;
 import compiler.ast.type.Type;
 import compiler.ast.visitor.AstVisitor;
 import compiler.lexer.Position;
+import compiler.semantic.exceptions.MultipleStaticMethodsException;
 import compiler.semantic.exceptions.NoMainFoundException;
 import compiler.semantic.exceptions.RedefinitionErrorException;
 import compiler.semantic.exceptions.SemanticAnalysisException;
@@ -63,7 +64,7 @@ public class PreNamingAnalysisVisitor implements AstVisitor {
 	private HashMap<Symbol, MethodDefinition> currentMethodsMap;
 
 	private boolean mainFound = false;
-	private List<SemanticAnalysisException> exceptions = new ArrayList<>();
+	private final List<SemanticAnalysisException> exceptions = new ArrayList<>();
 
 	public HashMap<Symbol, ClassScope> getClassScopes() {
 		return classScopes;
@@ -129,6 +130,9 @@ public class PreNamingAnalysisVisitor implements AstVisitor {
 
 	@Override
 	public void visit(StaticMethodDeclaration staticMethodDeclaration) {
+		if (mainFound)
+			throwMultipleStaticMethodsError(staticMethodDeclaration.getPosition());
+
 		Type returnType = staticMethodDeclaration.getType();
 		if (returnType.getBasicType() != BasicType.VOID) {
 			throwTypeError(staticMethodDeclaration, "Invalid return type for main method.");
@@ -188,6 +192,10 @@ public class PreNamingAnalysisVisitor implements AstVisitor {
 
 	private void throwRedefinitionError(Symbol identifier, Position definition, Position redefinition) {
 		exceptions.add(new RedefinitionErrorException(identifier, definition, redefinition));
+	}
+
+	private void throwMultipleStaticMethodsError(Position definition) {
+		exceptions.add(new MultipleStaticMethodsException(definition));
 	}
 
 	/*
