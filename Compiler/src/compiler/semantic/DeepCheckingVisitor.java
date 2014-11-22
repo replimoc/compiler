@@ -167,6 +167,17 @@ public class DeepCheckingVisitor implements AstVisitor {
 	@Override
 	public void visit(AssignmentExpression assignmentExpression) {
 		checkBinaryOperandEqualityOrNull(assignmentExpression);
+
+		Expression operand1 = assignmentExpression.getOperand1();
+		if (operand1 instanceof ThisExpression
+				|| operand1 instanceof MethodInvocationExpression
+				|| operand1 instanceof NewObjectExpression
+				|| operand1 instanceof NewArrayExpression
+				|| operand1 instanceof BinaryExpression
+				|| operand1 instanceof LogicalNotExpression
+				|| operand1 instanceof NegateExpression) {
+			throwTypeError(assignmentExpression.getOperand1());
+		}
 	}
 
 	@Override
