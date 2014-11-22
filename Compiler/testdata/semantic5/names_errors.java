@@ -19,6 +19,9 @@ class Main
 
         vargs[5];
 
+	/* no error, vargs without access are allowed */
+        vargs;
+
         /* error - this inside of main */
 
         this.m();

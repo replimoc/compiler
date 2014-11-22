@@ -72,6 +72,7 @@ public class DeepCheckingVisitor implements AstVisitor {
 	private MethodDefinition currentMethodDefinition = null;
 
 	private List<SemanticAnalysisException> exceptions = new ArrayList<>();
+	private boolean isStaticMethod;
 
 	public DeepCheckingVisitor(HashMap<Symbol, ClassScope> classScopes) {
 		this.classScopes = classScopes;
@@ -83,7 +84,11 @@ public class DeepCheckingVisitor implements AstVisitor {
 	}
 
 	private void throwTypeError(AstNode astNode) {
-		exceptions.add(new TypeErrorException(astNode));
+		throwTypeError(astNode, null);
+	}
+
+	private void throwTypeError(AstNode astNode, String message) {
+		exceptions.add(new TypeErrorException(astNode, message));
 	}
 
 	private void throwRedefinitionError(Symbol symbol, Position definition, Position redefinition) {
@@ -414,6 +419,9 @@ public class DeepCheckingVisitor implements AstVisitor {
 
 	@Override
 	public void visit(ThisExpression thisExpression) {
+		if (isStaticMethod) {
+			throwTypeError(thisExpression, "This not allowed in static methods.");
+		}
 		thisExpression.setType(new ClassType(null, currentClassSymbol)); // TODO: replace null with position of class
 	}
 
@@ -514,6 +522,7 @@ public class DeepCheckingVisitor implements AstVisitor {
 
 	@Override
 	public void visit(MethodDeclaration methodDeclaration) {
+		isStaticMethod = false;
 		visitMethodDeclaration(methodDeclaration);
 	}
 
@@ -527,6 +536,7 @@ public class DeepCheckingVisitor implements AstVisitor {
 
 	@Override
 	public void visit(StaticMethodDeclaration staticMethodDeclaration) {
+		isStaticMethod = true;
 		visitMethodDeclaration(staticMethodDeclaration);
 	}
 
