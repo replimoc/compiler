@@ -178,6 +178,7 @@ public class DeepCheckingVisitor implements AstVisitor {
 				|| operand1 instanceof NegateExpression) {
 			throwTypeError(assignmentExpression.getOperand1());
 		}
+		setType(operand1.getType(), assignmentExpression);
 	}
 
 	@Override
