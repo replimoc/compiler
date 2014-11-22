@@ -7,19 +7,13 @@ import compiler.lexer.Position;
 
 public class ParameterDefinition extends AstNode {
 
-	private final Type type;
 	private final Symbol identifier;
 
 	public ParameterDefinition(Position position, Type type, Symbol identifier) {
 		super(position);
-		this.type = type;
+		setType(type);
 		this.identifier = identifier;
 
-	}
-
-	@Override
-	public Type getType() {
-		return type;
 	}
 
 	public Symbol getIdentifier() {

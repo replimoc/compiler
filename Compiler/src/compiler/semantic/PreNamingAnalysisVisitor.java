@@ -43,6 +43,7 @@ import compiler.ast.statement.binary.SubtractionExpression;
 import compiler.ast.statement.unary.LogicalNotExpression;
 import compiler.ast.statement.unary.NegateExpression;
 import compiler.ast.statement.unary.ReturnStatement;
+import compiler.ast.type.ArrayType;
 import compiler.ast.type.BasicType;
 import compiler.ast.type.ClassType;
 import compiler.ast.type.Type;
@@ -148,12 +149,18 @@ public class PreNamingAnalysisVisitor implements AstVisitor {
 		if (parameterType.getBasicType() != BasicType.ARRAY || !"String".equals(parameterType.getSubType().getIdentifier().getValue())) {
 			throwTypeError(staticMethodDeclaration, "'public static void main' method must have a single argument of type String[].");
 		}
-
+		
+		// if we already have found one main -> error
+		if (mainFound == true) {
+			throwRedefinitionError(staticMethodDeclaration.getIdentifier(), null, staticMethodDeclaration.getPosition());
+		}
+		
 		mainFound = true;
 		Position position = staticMethodDeclaration.getPosition();
 
 		Definition[] parameterTypes = new Definition[] { new Definition(parameter.getIdentifier(),
 				new Type(parameter.getPosition(), BasicType.STRING_ARGS)) };
+		parameter.setType(new ArrayType(parameter.getPosition(), new Type(parameter.getPosition(), BasicType.STRING_ARGS)));
 		checkAndInsertDefinition(new MethodDefinition(identifier, returnType, parameterTypes), position);
 	}
 

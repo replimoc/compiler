@@ -15,6 +15,7 @@ import compiler.ast.ParameterDefinition;
 import compiler.ast.Program;
 import compiler.ast.StaticMethodDeclaration;
 import compiler.ast.statement.ArrayAccessExpression;
+import compiler.ast.statement.BlockBasedStatement;
 import compiler.ast.statement.BooleanConstantExpression;
 import compiler.ast.statement.Expression;
 import compiler.ast.statement.IfStatement;
@@ -449,9 +450,11 @@ public class DeepCheckingVisitor implements AstVisitor {
 
 	@Override
 	public void visit(Block block) {
+		symbolTable.enterScope();
 		for (Statement statement : block.getStatements()) {
 			statement.accept(this);
 		}
+		symbolTable.leaveScope();
 	}
 
 	@Override
@@ -553,7 +556,10 @@ public class DeepCheckingVisitor implements AstVisitor {
 
 		if (methodDeclaration.getBlock() != null) {
 			currentMethodDefinition = currentClassScope.getMethodDefinition(methodDeclaration.getIdentifier());
-			methodDeclaration.getBlock().accept(this);
+			//methodDeclaration.getBlock().accept(this);
+			for (Statement statement : methodDeclaration.getBlock().getStatements()) {
+				statement.accept(this);
+			}
 			currentMethodDefinition = null;
 		}
 
