@@ -321,6 +321,11 @@ public class DeepCheckingVisitorTest {
 				.initParser("class Class { public static void main(String[] args) {} public void function() { boolean b = true; System.out.println(new Class()); } }");
 		errors = SemanticChecker.checkSemantic(parser.parse());
 		assertEquals(1, errors.size());
+		
+		parser = TestUtils
+				.initParser("class Class { public static void main(String[] args) {} public int m; public void m() { } }");
+		errors = SemanticChecker.checkSemantic(parser.parse());
+		assertEquals(0, errors.size());
 	}
 
 	private Type t(BasicType type) {
