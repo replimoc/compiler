@@ -248,7 +248,9 @@ public class DeepCheckingVisitor implements AstVisitor {
 
 	@Override
 	public void visit(NewObjectExpression newObjectExpression) {
-		visit(new ClassType(newObjectExpression.getPosition(), newObjectExpression.getIdentifier()));
+		ClassType type = new ClassType(newObjectExpression.getPosition(), newObjectExpression.getIdentifier());
+		visit(type);
+		newObjectExpression.setType(type);
 	}
 
 	@Override
@@ -306,7 +308,7 @@ public class DeepCheckingVisitor implements AstVisitor {
 				Expression expression = methodInvocationExpression.getParameters()[i];
 				expression.accept(this);
 
-				if (parameterDefinition.getType() == null) {
+				if (parameterDefinition.getType() != null) {
 					expectType(parameterDefinition.getType(), expression);
 				}
 			}
