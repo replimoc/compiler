@@ -15,7 +15,7 @@ class Hello {
 
     public Hello Hello() {
 		this.world = new World();
-		{}{}{}{}{}{}{}{}{}{}{}
+		{}{}{}{}{}{}{}{}{}{}{} /* semantic error, no return */
 	}
 	
 	public void print() {
@@ -24,7 +24,7 @@ class Hello {
 }
 
 class Main {
-	public static void foo(String[] bar) { /* semantic error */
+	public static void foo(String[] bar) { /* semantic error, the body of this method will be ignored */
 		if ((G) = A == B && C != Y / Z < H) {
 			WorldArray ws = new World[A = B*10 || !C][];
 			while (this.T % 42) {
