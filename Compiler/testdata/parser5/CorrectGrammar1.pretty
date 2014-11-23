@@ -8,7 +8,8 @@ class Arrays {
 		int y = 5;
 		int z = x;
 		Cl1 cl1 = null;
-		int a = a + b;
+		int a = a + x;
+		int c = x + b;
 		return x + (y * z);
 	}
 	public int[] getList(int len) {
@@ -25,9 +26,10 @@ class Arrays {
 class Cl1 {
 	public Cl1 Cl1() {
 		(this.clazzy) = null;
+		Arrays arrays = new Arrays();
 		(this.list) = (arrays.getList(100));
 		(this.matrix) = (arrays.getMatrix(100));
-		(this.cube) = (arrays.getCube(100));
+		(this.cube) = (arrays.getCube());
 		(this.wtf) = (this.Cl1());
 	}
 	public Cl2 cl2;
@@ -68,11 +70,11 @@ class Parameters {
 	}
 	public void i_accept_no_params() {
 		Cl1 cl1 = new Cl1();
-		Cl1 cl2 = Parameters.i_accept_no_params(cl1, null);
+		Cl1 cl2 = i_accept_no_params(cl1, null);
 		return false;
 	}
-	public void i_accept_no_params(void a, void b, void c) {
-		(((a + b) - c) + d) - (-x);
+	public void i_accept_no_params2(void a, void b, void c) {
+		(((a + b) - c) + d) - (-1);
 		return;
 	}
 	public void i_accept_one_param(Cl1 cl1) { }
