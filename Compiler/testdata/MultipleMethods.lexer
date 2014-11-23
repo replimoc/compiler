@@ -78,7 +78,7 @@ identifier p2
 void
 identifier p3
 ,
-identifier Type
+identifier SomeType
 identifier p4
 )
 {
@@ -90,6 +90,22 @@ identifier a
 )
 {
 ;
+}
+}
+class
+identifier SomeType
+{
+public
+static
+void
+identifier main
+(
+identifier String
+[
+]
+identifier args
+)
+{
 }
 }
 EOF

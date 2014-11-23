@@ -9,9 +9,12 @@ class MultipleMethods {
   public int method12 ( void p ) {}
   public int method112 ( SomeType p ) {}
   
-  public int z ( int p , boolean p2 , void p3 , Type p4 ) {}
+  public int z ( int p , boolean p2 , void p3 , SomeType p4 ) {}
 
   public int a ( ) {
     ;
   }
+}
+class SomeType {
+	public static void main(String[] args) { }
 }
