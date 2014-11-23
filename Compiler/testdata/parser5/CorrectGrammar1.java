@@ -4,12 +4,12 @@
 
 class Cl1 {
 
-    public CLAZZ clazzy;
+    public CLAZZ clazzy; /* semantic error */
     public void main; /*semantic error*/
     public int[] list;
     public int[][] matrix;
     public int[][][] cube;
-    public Cl2 cl2;
+    public Cl2 cl2; /* semantic error */
 
     /**
      * do we have constructors in mini-java?
@@ -77,8 +77,8 @@ class Parameters {
     }
     public void i_accept_a_lot_of_params(int a, int[] vec, int[][] A, int[][][] cube) {}
 
-    public void i_accept_no_params2(void a,void b,void c) {
-        a + b - c + (d) - (-1);  /*semantic error void to +*/
+    public void i_accept_no_params2(void a,void b,void c) { /* semantic error x3 */
+        a + b - c + (d) - (-1);  /*semantic error void to + and void to - and d undefined*/
         return;
     }
 
@@ -117,6 +117,7 @@ class MainClass {
         System.out.println(100);
         System.out.println(33);
 
+        // errors not detected due to not_a_main is not main
         return 0;
         return 1;
         return 2+4+129;
