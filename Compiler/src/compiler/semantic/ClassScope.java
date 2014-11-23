@@ -26,19 +26,6 @@ public class ClassScope {
 		return fields.get(identifier);
 	}
 
-	public SymbolTable createMethodSymbolTable(Symbol identifier) {
-		SymbolTable symbolTable = createClassSymbolTable();
-		symbolTable.enterScope();
-
-		MethodDefinition method = getMethodDefinition(identifier);
-
-		for (Definition currParameter : method.getParameters()) {
-			symbolTable.insert(currParameter.getSymbol(), currParameter);
-		}
-
-		return symbolTable;
-	}
-
 	public int getNumberOfFields() {
 		return fields.size();
 	}
@@ -55,6 +42,7 @@ public class ClassScope {
 			symbolTable.insert(curr.getKey(), curr.getValue());
 		}
 
+		symbolTable.enterScope();
 		return symbolTable;
 	}
 
@@ -68,12 +56,12 @@ public class ClassScope {
 	}
 
 	public MethodDefinition[] getMethodDefinitions() {
-		MethodDefinition[] fields = new MethodDefinition[this.fields.size()];
+		MethodDefinition[] methods = new MethodDefinition[this.methods.size()];
 		int i = 0;
 		for (Entry<Symbol, MethodDefinition> curr : this.methods.entrySet()) {
-			fields[i++] = curr.getValue();
+			methods[i++] = curr.getValue();
 		}
-		return fields;
+		return methods;
 	}
 
 	@Override

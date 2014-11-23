@@ -5,7 +5,7 @@
 class Error {
 
     
-    public static void (String[] args{
+    public static void (String[] args){
     	
     }
 }

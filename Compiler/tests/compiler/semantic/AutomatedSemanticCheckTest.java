@@ -18,7 +18,7 @@ import compiler.utils.TestFileVisitor;
 /**
  * Test correctness of semantic analysis che
  */
-public class CheckOutputTest implements TestFileVisitor.FileTester {
+public class AutomatedSemanticCheckTest implements TestFileVisitor.FileTester {
 
 	private static final String SEMANTIC_CHECK_EXTENSION = ".sc";
 
