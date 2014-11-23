@@ -4,6 +4,7 @@ class FieldMember {
 
 class MethodMember {
   public boolean method ( ) {
+	  return true;
   }
 }
 
