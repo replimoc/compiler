@@ -12,9 +12,6 @@ class C
 
 
     public static void main(String[] args) {
-
-        int x; int y;
-
         /*no null in statements*/
         boolean[] b = null;
         int[] x = null;
