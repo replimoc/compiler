@@ -624,13 +624,15 @@ public class DeepCheckingVisitor implements AstVisitor {
 
 		// visit body
 		currentMethodDefinition = currentClassScope.getMethodDefinition(methodDeclaration.getIdentifier());
-		returnOnAllPaths = false;
-		methodDeclaration.getBlock().accept(this);
+		if (currentMethodDefinition != null) {
+			returnOnAllPaths = false;
+			methodDeclaration.getBlock().accept(this);
 
-		// if method has return type, check if all paths have a return statement
-		if (currentMethodDefinition.getType().getBasicType() != BasicType.VOID) {
-			if (!returnOnAllPaths) {
-				exceptions.add(new MissingReturnStatementOnAPathException(methodDeclaration.getPosition(), methodDeclaration.getIdentifier()));
+			// if method has return type, check if all paths have a return statement
+			if (currentMethodDefinition.getType().getBasicType() != BasicType.VOID) {
+				if (!returnOnAllPaths) {
+					exceptions.add(new MissingReturnStatementOnAPathException(methodDeclaration.getPosition(), methodDeclaration.getIdentifier()));
+				}
 			}
 		}
 
