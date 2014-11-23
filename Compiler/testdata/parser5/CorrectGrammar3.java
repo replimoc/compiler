@@ -56,7 +56,7 @@ class Loops {
             }
         }
 
-        ;(     oO    ); /*semantic error - oO is undefined*/
+        ;(     oO    ); /*semantic error - oO is undefined and no expression statement*/
 
         ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 

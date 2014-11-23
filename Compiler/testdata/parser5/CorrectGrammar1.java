@@ -78,7 +78,7 @@ class Parameters {
     public void i_accept_a_lot_of_params(int a, int[] vec, int[][] A, int[][][] cube) {}
 
     public void i_accept_no_params2(void a,void b,void c) { /* semantic error x3 */
-        a + b - c + (d) - (-1);  /*semantic error void to + and void to - and d undefined*/
+        a + b - c + (d) - (-1);  /*semantic error void to + and void to - and d undefined and no expression statement*/
         return;
     }
 

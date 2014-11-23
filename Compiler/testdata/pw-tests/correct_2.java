@@ -23,7 +23,7 @@ class _ {
                                             {
                                                 {
                                                     {
-                                                        _._; /* semantic error first _ is a variable of array of []  */
+                                                        _._; /* semantic error first _ is a variable of array of []  and no expression statement */
                                                     }
                                                     _._((((this = _ * this))), new _[_][]); /* maybe an error, but i can't read this*/
                                                 }

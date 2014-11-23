@@ -56,6 +56,7 @@ import compiler.semantic.exceptions.IllegalAccessToNonStaticMemberException;
 import compiler.semantic.exceptions.InvalidMethodCallException;
 import compiler.semantic.exceptions.MissingReturnStatementOnAPathException;
 import compiler.semantic.exceptions.NoSuchMemberException;
+import compiler.semantic.exceptions.NotAnExpressionStatementException;
 import compiler.semantic.exceptions.RedefinitionErrorException;
 import compiler.semantic.exceptions.SemanticAnalysisException;
 import compiler.semantic.exceptions.TypeErrorException;
@@ -75,7 +76,8 @@ public class DeepCheckingVisitor implements AstVisitor {
 	private MethodDefinition currentMethodDefinition = null;
 
 	private boolean isStaticMethod;
-	private boolean returnOnAllPaths = false;
+	private boolean returnOnAllPaths;
+	private boolean isExpressionStatement;
 
 	public DeepCheckingVisitor(HashMap<Symbol, ClassScope> classScopes) {
 		this.classScopes = classScopes;
@@ -183,6 +185,8 @@ public class DeepCheckingVisitor implements AstVisitor {
 
 	@Override
 	public void visit(AssignmentExpression assignmentExpression) {
+		this.isExpressionStatement = true;
+
 		checkBinaryOperandEqualityOrNull(assignmentExpression);
 
 		Expression operand1 = assignmentExpression.getOperand1();
@@ -469,6 +473,8 @@ public class DeepCheckingVisitor implements AstVisitor {
 
 	@Override
 	public void visit(ReturnStatement returnStatement) {
+		isExpressionStatement = true;
+
 		if (returnStatement.getOperand() != null) {
 			returnStatement.getOperand().accept(this);
 			expectType(currentMethodDefinition.getType(), returnStatement.getOperand());
@@ -522,7 +528,7 @@ public class DeepCheckingVisitor implements AstVisitor {
 
 		for (Statement statement : block.getStatements()) {
 			returnOnAllPaths = false;
-			statement.accept(this);
+			acceptStatement(statement);
 			returnInBlockFound |= returnOnAllPaths;
 		}
 
@@ -554,13 +560,13 @@ public class DeepCheckingVisitor implements AstVisitor {
 		Statement trueCase = ifStatement.getTrueCase();
 
 		returnOnAllPaths = false;
-		trueCase.accept(this);
+		acceptStatement(trueCase);
 		returnInTrueCase = returnOnAllPaths;
 
 		Statement falseCase = ifStatement.getFalseCase();
 		if (falseCase != null) {
 			returnOnAllPaths = false;
-			falseCase.accept(this);
+			acceptStatement(falseCase);
 			returnInFalseCase = returnOnAllPaths;
 		}
 
@@ -573,7 +579,18 @@ public class DeepCheckingVisitor implements AstVisitor {
 		condition.accept(this);
 		expectType(BasicType.BOOLEAN, condition);
 
-		whileStatement.getBody().accept(this);
+		acceptStatement(whileStatement.getBody());
+	}
+
+	private void acceptStatement(Statement statement) {
+		isExpressionStatement = false;
+
+		statement.accept(this);
+
+		if (statement instanceof Expression && !isExpressionStatement
+				&& !(statement instanceof MethodInvocationExpression || statement instanceof NewObjectExpression)) {
+			exceptions.add(new NotAnExpressionStatementException(statement.getPosition()));
+		}
 	}
 
 	@Override
