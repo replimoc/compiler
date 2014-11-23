@@ -57,6 +57,7 @@ class AveryTree {
 		this.numberOfPlayers = 4;
 		root = new AveryNode();
 		root.construct1(1);
+		return root;
 	}
 
 	public static void main(String[] args) {

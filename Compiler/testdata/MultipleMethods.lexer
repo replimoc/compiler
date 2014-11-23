@@ -7,6 +7,9 @@ identifier method2
 (
 )
 {
+return
+integer literal 1
+;
 }
 public
 boolean
@@ -14,6 +17,9 @@ identifier method3
 (
 )
 {
+return
+true
+;
 }
 public
 void
@@ -28,6 +34,9 @@ identifier method1
 (
 )
 {
+return
+null
+;
 }
 public
 int
@@ -37,6 +46,9 @@ int
 identifier p
 )
 {
+return
+integer literal 1
+;
 }
 public
 int
@@ -46,6 +58,9 @@ boolean
 identifier p
 )
 {
+return
+integer literal 1
+;
 }
 public
 int
@@ -55,6 +70,9 @@ void
 identifier p
 )
 {
+return
+integer literal 1
+;
 }
 public
 int
@@ -64,6 +82,9 @@ identifier SomeType
 identifier p
 )
 {
+return
+integer literal 1
+;
 }
 public
 int
@@ -82,9 +103,12 @@ identifier SomeType
 identifier p4
 )
 {
+return
+integer literal 1
+;
 }
 public
-int
+void
 identifier a
 (
 )

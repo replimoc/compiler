@@ -4,6 +4,7 @@ class Test {
 
     public int foo() {
         this = new Test(); /* error - can't assign to this */
+        return 1;
     }
 
     public static void main(String[] args) {

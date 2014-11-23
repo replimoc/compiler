@@ -15,6 +15,9 @@ identifier method
 (
 )
 {
+return
+true
+;
 }
 }
 class
