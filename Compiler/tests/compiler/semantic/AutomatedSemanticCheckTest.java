@@ -25,6 +25,7 @@ public class AutomatedSemanticCheckTest implements TestFileVisitor.FileTester {
 	@Test
 	public void testCheckFiles() throws Exception {
 		Path testDir = Paths.get("testdata");
+//		TestFileVisitor lexTester = new TestFileVisitor(SEMANTIC_CHECK_EXTENSION, this, "multiarrays");
 		TestFileVisitor lexTester = new TestFileVisitor(SEMANTIC_CHECK_EXTENSION, this);
 		Files.walkFileTree(testDir, lexTester);
 		lexTester.checkForFailedTests();
