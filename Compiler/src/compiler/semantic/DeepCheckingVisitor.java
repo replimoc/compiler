@@ -68,7 +68,7 @@ public class DeepCheckingVisitor implements AstVisitor {
 	private final HashMap<Symbol, ClassScope> classScopes;
 
 	private SymbolTable symbolTable = null;
-	private Symbol currentClassSymbol = null;
+	private ClassDeclaration currentClassDeclaration;
 	private ClassScope currentClassScope = null;
 	private MethodDefinition currentMethodDefinition = null;
 
@@ -303,7 +303,7 @@ public class DeepCheckingVisitor implements AstVisitor {
 			if (methodDefinition != null) {
 				checkParameterDefinitionAndSetReturnType(methodInvocationExpression, methodDefinition);
 			} else {
-				throwNoSuchMemberError(currentClassSymbol, currentClassSymbol.getDefinition().getType().getPosition(),
+				throwNoSuchMemberError(currentClassDeclaration.getIdentifier(), currentClassDeclaration.getPosition(),
 						methodInvocationExpression.getMethodIdent(), methodInvocationExpression.getPosition());
 				return;
 			}
@@ -475,7 +475,7 @@ public class DeepCheckingVisitor implements AstVisitor {
 		if (isStaticMethod) {
 			throwTypeError(thisExpression, "'this' is not allowed in static methods.");
 		}
-		thisExpression.setType(new ClassType(null, currentClassSymbol));
+		thisExpression.setType(new ClassType(null, currentClassDeclaration.getIdentifier()));
 	}
 
 	@Override
@@ -507,12 +507,13 @@ public class DeepCheckingVisitor implements AstVisitor {
 
 	@Override
 	public void visit(ClassDeclaration classDeclaration) {
-		currentClassSymbol = classDeclaration.getIdentifier();
+		currentClassDeclaration = classDeclaration;
 		currentClassScope = classScopes.get(classDeclaration.getIdentifier());
 
 		for (ClassMember classMember : classDeclaration.getMembers()) {
 			classMember.accept(this);
 		}
+		currentClassDeclaration = null;
 	}
 
 	@Override
