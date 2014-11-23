@@ -117,7 +117,7 @@ class MainClass {
         System.out.println(100);
         System.out.println(33);
 
-        // errors not detected due to not_a_main is not main
+        /* errors not detected due to not_a_main is not main */
         return 0;
         return 1;
         return 2+4+129;
