@@ -332,7 +332,17 @@ public class DeepCheckingVisitorTest {
 		assertEquals(1, errors.size());
 		
 		parser = TestUtils
+				.initParser("class Class { public static void main(String[] args) {} public void bla() { this.bla(); } }");
+		errors = SemanticChecker.checkSemantic(parser.parse());
+		assertEquals(0, errors.size());
+		
+		/*parser = TestUtils
 				.initParser("class Class { public static void main(String[] args) {} public Class classA; public void bla(Class classB) { { Class classA; } } }");
+		errors = SemanticChecker.checkSemantic(parser.parse());
+		assertEquals(1, errors.size());*/
+		
+		parser = TestUtils
+				.initParser("class Main{public static void main(String[] vargs){vargs[5];}}");
 		errors = SemanticChecker.checkSemantic(parser.parse());
 		assertEquals(1, errors.size());
 	}
