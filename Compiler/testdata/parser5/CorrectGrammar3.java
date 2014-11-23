@@ -25,17 +25,17 @@ class Loops {
             a = a + 3;
         }
 
-        while ( (a = read(c)) != 0 )
+        while ( (a = read(c)) != 0 ) /*semantic error - read is undefined*/
         {
-            d = a - abs(a);
+            d = a - abs(a); /*semantic error - abs is undefined*/
         }
 
-        if ((d > 0) || (c < 0) || x < y)
+        if ((d > 0) || (c < 0) || x < y) /*semantic error - x,y are undefined*/
         {
             return 1;
         }
 
-        if (true) {} else if (false) {} else {} if (true_or_false()) {{}};
+        if (true) {} else if (false) {} else {} if (true_or_false()) {{}}; /*semantic error - true_or_false is undefined*/
 
         /* if - chain */
         if (true) if (true) if (false) if (true) if ((null)) if (true) ;
@@ -56,7 +56,7 @@ class Loops {
             }
         }
 
-        ;(     oO    );
+        ;(     oO    ); /*semantic error - oO is undefined*/
 
         ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
