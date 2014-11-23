@@ -327,9 +327,11 @@ public class DeepCheckingVisitor implements AstVisitor {
 
 			// get class scope
 			ClassScope classScope = classScopes.get(leftExpressionType.getIdentifier());
-			// no need to check if it's null, as it has been checked before...
 
-			MethodDefinition methodDefinition = classScope.getMethodDefinition(methodInvocationExpression.getMethodIdent());
+			MethodDefinition methodDefinition = null;
+			if (classScope != null) {
+				methodDefinition = classScope.getMethodDefinition(methodInvocationExpression.getMethodIdent());
+			}
 			// is there the specified method?
 			if (methodDefinition == null) {
 				throwNoSuchMemberError(leftExpressionType.getIdentifier(), leftExpressionType.getPosition(),
