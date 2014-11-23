@@ -54,6 +54,7 @@ import compiler.ast.visitor.AstVisitor;
 import compiler.lexer.Position;
 import compiler.semantic.exceptions.IllegalAccessToNonStaticMemberException;
 import compiler.semantic.exceptions.InvalidMethodCallException;
+import compiler.semantic.exceptions.MissingReturnStatementOnAPathException;
 import compiler.semantic.exceptions.NoSuchMemberException;
 import compiler.semantic.exceptions.RedefinitionErrorException;
 import compiler.semantic.exceptions.SemanticAnalysisException;
@@ -65,6 +66,7 @@ import compiler.semantic.symbolTable.SymbolTable;
 
 public class DeepCheckingVisitor implements AstVisitor {
 
+	private final List<SemanticAnalysisException> exceptions = new ArrayList<>();
 	private final HashMap<Symbol, ClassScope> classScopes;
 
 	private SymbolTable symbolTable = null;
@@ -72,8 +74,8 @@ public class DeepCheckingVisitor implements AstVisitor {
 	private ClassScope currentClassScope = null;
 	private MethodDefinition currentMethodDefinition = null;
 
-	private final List<SemanticAnalysisException> exceptions = new ArrayList<>();
 	private boolean isStaticMethod;
+	private boolean returnOnAllPaths = false;
 
 	public DeepCheckingVisitor(HashMap<Symbol, ClassScope> classScopes) {
 		this.classScopes = classScopes;
@@ -465,6 +467,7 @@ public class DeepCheckingVisitor implements AstVisitor {
 		if (returnStatement.getOperand() != null) {
 			returnStatement.getOperand().accept(this);
 			expectType(currentMethodDefinition.getType(), returnStatement.getOperand());
+			returnOnAllPaths = true;
 		} else if (currentMethodDefinition.getType().getBasicType() != BasicType.VOID) {
 			throwTypeError(returnStatement);
 		}
@@ -498,11 +501,17 @@ public class DeepCheckingVisitor implements AstVisitor {
 
 	@Override
 	public void visit(Block block) {
-		symbolTable.enterScope();
+		this.symbolTable.enterScope();
+		boolean returnInBlockFound = returnOnAllPaths;
+
 		for (Statement statement : block.getStatements()) {
+			returnOnAllPaths = false;
 			statement.accept(this);
+			returnInBlockFound |= returnOnAllPaths;
 		}
-		symbolTable.leaveScope();
+
+		returnOnAllPaths = returnInBlockFound;
+		this.symbolTable.leaveScope();
 	}
 
 	@Override
@@ -522,12 +531,25 @@ public class DeepCheckingVisitor implements AstVisitor {
 		condition.accept(this);
 		expectType(BasicType.BOOLEAN, condition);
 
-		if (ifStatement.getTrueCase() != null) {
-			ifStatement.getTrueCase().accept(this);
+		boolean oldReturnOnAllPaths = returnOnAllPaths;
+		boolean returnInTrueCase = false;
+		boolean returnInFalseCase = false;
+
+		Statement trueCase = ifStatement.getTrueCase();
+		if (trueCase != null) {
+			returnOnAllPaths = false;
+			trueCase.accept(this);
+			returnInTrueCase = returnOnAllPaths;
 		}
-		if (ifStatement.getFalseCase() != null) {
-			ifStatement.getFalseCase().accept(this);
+
+		Statement falseCase = ifStatement.getFalseCase();
+		if (falseCase != null) {
+			returnOnAllPaths = false;
+			falseCase.accept(this);
+			returnInFalseCase = returnOnAllPaths;
 		}
+
+		returnOnAllPaths = oldReturnOnAllPaths | (returnInTrueCase & returnInFalseCase);
 	}
 
 	@Override
@@ -600,15 +622,20 @@ public class DeepCheckingVisitor implements AstVisitor {
 			parameterDefinition.accept(this);
 		}
 
-		if (methodDeclaration.getBlock() != null) {
-			currentMethodDefinition = currentClassScope.getMethodDefinition(methodDeclaration.getIdentifier());
-			// don't visit block, as every block should have it's own scope
-			for (Statement statement : methodDeclaration.getBlock().getStatements()) {
-				statement.accept(this);
+		// visit body
+		currentMethodDefinition = currentClassScope.getMethodDefinition(methodDeclaration.getIdentifier());
+		returnOnAllPaths = false;
+		methodDeclaration.getBlock().accept(this);
+
+		// if method has return type, check if all paths have a return statement
+		if (currentMethodDefinition.getType().getBasicType() != BasicType.VOID) {
+			if (!returnOnAllPaths) {
+				exceptions.add(new MissingReturnStatementOnAPathException(methodDeclaration.getPosition()));
 			}
-			currentMethodDefinition = null;
 		}
 
+		// leave method scope.
+		currentMethodDefinition = null;
 		symbolTable.leaveAllScopes();
 		symbolTable = null;
 	}
