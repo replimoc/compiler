@@ -400,6 +400,11 @@ public class DeepCheckingVisitor implements AstVisitor {
 			}
 		} else {
 			Expression leftExpression = variableAccessExpression.getExpression();
+
+			if (leftExpression instanceof ThisExpression && isStaticMethod) {
+				return;
+			}
+
 			Type leftExpressionType = leftExpression.getType();
 
 			if (leftExpressionType == null) {
