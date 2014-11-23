@@ -78,7 +78,7 @@ public class DeepCheckingVisitorTest {
 
 		RedefinitionErrorException redExp = (RedefinitionErrorException) exceptions.get(0);
 		assertEquals(redExp.getIdentifier(), s("intVar"));
-		assertEquals(redExp.getDefinition(), locVarB.getPosition());
+		assertEquals(redExp.getRedefinition(), locVarB.getPosition());
 	}
 
 	@Test
@@ -108,8 +108,8 @@ public class DeepCheckingVisitorTest {
 		assertEquals(1, exceptions.size());
 
 		RedefinitionErrorException redExp = (RedefinitionErrorException) exceptions.get(0);
-		assertEquals(redExp.getIdentifier(), s("paramA"));
-		assertEquals(redExp.getDefinition(), paramB.getPosition());
+		assertEquals(s("paramA"), redExp.getIdentifier());
+		assertEquals(paramB.getPosition(), redExp.getRedefinition());
 	}
 
 	@Test

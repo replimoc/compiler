@@ -1,7 +1,9 @@
 package compiler.semantic;
 
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertTrue;
 
 import java.util.AbstractMap.SimpleEntry;
 import java.util.HashMap;
@@ -16,8 +18,10 @@ import compiler.ast.FieldDeclaration;
 import compiler.ast.MethodDeclaration;
 import compiler.ast.ParameterDefinition;
 import compiler.ast.Program;
+import compiler.ast.StaticMethodDeclaration;
 import compiler.ast.type.ArrayType;
 import compiler.ast.type.BasicType;
+import compiler.ast.type.ClassType;
 import compiler.ast.type.Type;
 import compiler.lexer.TokenType;
 import compiler.semantic.symbolTable.Definition;
@@ -48,6 +52,7 @@ public class PreNamingAnalysisVisitorTest {
 
 		HashMap<Symbol, ClassScope> classes = visitor.getClassScopes();
 		assertEquals(0, classes.size());
+		assertEquals(1, visitor.getExceptions().size());
 	}
 
 	@Test
@@ -64,6 +69,7 @@ public class PreNamingAnalysisVisitorTest {
 		assertNotNull(class1Scope);
 		assertEquals(0, class1Scope.getNumberOfFields());
 		assertEquals(0, class1Scope.getNumberOfMethods());
+		assertEquals(1, visitor.getExceptions().size()); // no main
 	}
 
 	@Test
@@ -95,6 +101,7 @@ public class PreNamingAnalysisVisitorTest {
 		program.accept(visitor);
 
 		assertEquals(expectedScopes, visitor.getClassScopes());
+		assertEquals(1, visitor.getExceptions().size()); // no main
 	}
 
 	@Test
@@ -106,6 +113,7 @@ public class PreNamingAnalysisVisitorTest {
 		program.accept(visitor);
 
 		assertEquals(expectedScopes, visitor.getClassScopes());
+		assertEquals(1, visitor.getExceptions().size());
 	}
 
 	@Test
@@ -117,6 +125,82 @@ public class PreNamingAnalysisVisitorTest {
 		program.accept(visitor);
 
 		assertEquals(expectedScopes, visitor.getClassScopes());
+		assertEquals(1, visitor.getExceptions().size());
+	}
+
+	@Test
+	public void testValidMain() {
+		ClassScope scope1 = scope(f(), asArray(m("main", t(BasicType.VOID), d("args", t(ct("String"), 1)))));
+		HashMap<Symbol, ClassScope> expectedScopes = scopes(c("class1", scope1));
+
+		Program program = createAst(expectedScopes);
+		program.accept(visitor);
+
+		assertNotNull(visitor.getClassScopes().get(s("class1")));
+		assertEquals(1, visitor.getClassScopes().get(s("class1")).getNumberOfMethods());
+		assertTrue(visitor.hasMain());
+		assertEquals(0, visitor.getExceptions().size());
+	}
+
+	@Test
+	public void testMainInvalidReturnType() {
+		ClassScope scope1 = scope(f(), asArray(m("main", t(BasicType.INT), d("args", t(ct("String"), 1)))));
+		HashMap<Symbol, ClassScope> expectedScopes = scopes(c("class1", scope1));
+
+		Program program = createAst(expectedScopes);
+		program.accept(visitor);
+
+		assertFalse(visitor.hasMain());
+		assertEquals(2, visitor.getExceptions().size());
+	}
+
+	@Test
+	public void testMainNoParameter() {
+		ClassScope scope1 = scope(f(), asArray(m("main", t(BasicType.VOID))));
+		HashMap<Symbol, ClassScope> expectedScopes = scopes(c("class1", scope1));
+
+		Program program = createAst(expectedScopes);
+		program.accept(visitor);
+
+		assertFalse(visitor.hasMain());
+		assertEquals(2, visitor.getExceptions().size());
+	}
+
+	@Test
+	public void testMainInvalidParameterArrayType() {
+		ClassScope scope1 = scope(f(), asArray(m("main", t(BasicType.VOID), d("args", t(ct("Bla"), 1)))));
+		ClassScope scope2 = scope(f(), m());
+		HashMap<Symbol, ClassScope> expectedScopes = scopes(c("class1", scope1), c("Bla", scope2));
+
+		Program program = createAst(expectedScopes);
+		program.accept(visitor);
+
+		assertFalse(visitor.hasMain());
+		assertEquals(2, visitor.getExceptions().size());
+	}
+
+	@Test
+	public void testMainInvalidParameterNoArrayType() {
+		ClassScope scope1 = scope(f(), asArray(m("main", t(BasicType.VOID), d("args", t(BasicType.INT)))));
+		HashMap<Symbol, ClassScope> expectedScopes = scopes(c("class1", scope1));
+
+		Program program = createAst(expectedScopes);
+		program.accept(visitor);
+
+		assertFalse(visitor.hasMain());
+		assertEquals(2, visitor.getExceptions().size());
+	}
+
+	@Test
+	public void testMainNoArrayParameterType() {
+		ClassScope scope1 = scope(f(), asArray(m("main", t(BasicType.INT), d("args", ct("String")))));
+		HashMap<Symbol, ClassScope> expectedScopes = scopes(c("class1", scope1));
+
+		Program program = createAst(expectedScopes);
+		program.accept(visitor);
+
+		assertFalse(visitor.hasMain());
+		assertEquals(2, visitor.getExceptions().size());
 	}
 
 	private static Program createAst(HashMap<Symbol, ClassScope> scopes) {
@@ -132,13 +216,24 @@ public class PreNamingAnalysisVisitorTest {
 		return program;
 	}
 
+	@SafeVarargs
+	private static <T> T[] asArray(T... t) {
+		return t;
+	}
+
 	private static ClassDeclaration createClassDeclaration(Symbol name, Definition[] fields, MethodDefinition[] methods) {
 		ClassDeclaration classDeclaration = new ClassDeclaration(null, name);
 		for (Definition field : fields) {
 			classDeclaration.addClassMember(new FieldDeclaration(null, field.getType(), field.getSymbol()));
 		}
 		for (MethodDefinition method : methods) {
-			MethodDeclaration methodDeclaration = new MethodDeclaration(null, method.getSymbol(), method.getType());
+			MethodDeclaration methodDeclaration;
+			if ("main".equals(method.getSymbol().getValue())) { // hack to test static main
+				methodDeclaration = new StaticMethodDeclaration(null, method.getSymbol(), method.getType());
+			} else {
+				methodDeclaration = new MethodDeclaration(null, method.getSymbol(), method.getType());
+			}
+
 			for (Definition param : method.getParameters()) {
 				methodDeclaration.addParameter(new ParameterDefinition(null, param.getType(), param.getSymbol()));
 			}
@@ -160,6 +255,14 @@ public class PreNamingAnalysisVisitorTest {
 	private static ClassScope scope(Definition[] fields, MethodDefinition[] methods) {
 		HashMap<Symbol, Definition> fieldsMap = new HashMap<>();
 		HashMap<Symbol, MethodDefinition> methodsMap = new HashMap<>();
+
+		for (Definition curr : fields) {
+			fieldsMap.put(curr.getSymbol(), curr);
+		}
+		for (MethodDefinition curr : methods) {
+			methodsMap.put(curr.getSymbol(), curr);
+		}
+
 		return new ClassScope(fieldsMap, methodsMap);
 	}
 
@@ -196,7 +299,10 @@ public class PreNamingAnalysisVisitorTest {
 	}
 
 	private static Type t(BasicType basicType, int dimensions) {
-		Type type = t(basicType);
+		return t(t(basicType), dimensions);
+	}
+
+	private static Type t(Type type, int dimensions) {
 		for (int i = 0; i < dimensions; i++) {
 			type = new ArrayType(null, type);
 		}
@@ -209,5 +315,9 @@ public class PreNamingAnalysisVisitorTest {
 
 	private Definition d(String name, Type type) {
 		return new Definition(s(name), type);
+	}
+
+	private Type ct(String string) {
+		return new ClassType(null, s(string));
 	}
 }
