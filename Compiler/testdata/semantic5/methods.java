@@ -76,9 +76,9 @@ class Test {
     public void f6(int[] x) {}
     public void f7(boolean[] x) {}
 
-    public static void main(String[] args) {
-
-        /* test correct parameters */
+    public void test()
+    {
+         /* test correct parameters */
 
         int x; boolean b; Test test;
         int[] xx; boolean[] bb; Test[] tt;
@@ -111,5 +111,11 @@ class Test {
         xx = m51();
         Test[] ttt = m52();
         tt = m52();
+    }
+
+    public static void main(String[] args) {
+        Test t = new Test();
+        t.test();
+
     }
 }

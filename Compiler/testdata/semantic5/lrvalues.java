@@ -15,7 +15,7 @@ class Test {
         boolean[] bb = new boolean[123];
         (new boolean[123])[0] = true; /* ok ? (at least I think so ) */
 
-        m() = 5; /* error - assigment to rvalue */
+        t.m() = 5; /* error - assigment to rvalue */
         x + y = 5;
         x - y = 5;
         x * y = 5;

@@ -37,9 +37,9 @@ class Test {
     public int[] m544() {return 1;}
     public Test[] m5444() {return this;}
 
-    public static void main(String[] args) {
-
-        /* calling methods with wrong paramters */
+    public void test()
+    {
+         /* calling methods with wrong paramters */
         boolean b; int x; Test t;
 
         m21(x);
@@ -59,5 +59,10 @@ class Test {
         x = m41();
         b = m43();
         t = m42();
+    }
+
+    public static void main(String[] args) {
+        Test test = new Test();
+        test.test();
     }
 }
