@@ -619,7 +619,8 @@ public class DeepCheckingVisitor implements AstVisitor {
 	}
 
 	private void visitMethodDeclaration(MethodDeclaration methodDeclaration) {
-		symbolTable = currentClassScope.createClassSymbolTable();
+		symbolTable = new SymbolTable();
+		symbolTable.enterScope();
 
 		for (ParameterDefinition parameterDefinition : methodDeclaration.getParameters()) {
 			parameterDefinition.accept(this);
