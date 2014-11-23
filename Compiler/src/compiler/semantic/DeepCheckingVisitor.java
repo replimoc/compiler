@@ -399,10 +399,13 @@ public class DeepCheckingVisitor implements AstVisitor {
 		arrayExpression.accept(this);
 		indexExpression.accept(this);
 
-		if (expectType(BasicType.ARRAY, arrayExpression) && arrayExpression.getType().getSubType().getBasicType() == BasicType.STRING_ARGS) {
-			throwTypeError(arrayAccessExpression, "Access on main method parameter forbidden.");
+		if (arrayExpression.getType() != null && arrayExpression.getType().getBasicType() == BasicType.ARRAY) {
+			if (arrayExpression.getType().getSubType().getBasicType() == BasicType.STRING_ARGS) {
+				throwTypeError(arrayAccessExpression, "Access on main method parameter forbidden.");
+			}
+		} else {
+			throwTypeError(arrayAccessExpression, "Access access on a non array.");
 		}
-
 		expectType(BasicType.INT, indexExpression);
 	}
 
