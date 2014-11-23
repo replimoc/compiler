@@ -107,16 +107,24 @@ public class DeepCheckingVisitor implements AstVisitor {
 		exceptions.add(new IllegalAccessToNonStaticMemberException(objPos));
 	}
 
+	private boolean hasType(Type type, AstNode astNode) {
+		return !(astNode.getType() != null
+		&& !((type.getBasicType() != null && astNode.getType().getBasicType() == BasicType.NULL) || astNode.getType().equals(type)));
+	}
+
+	private boolean hasType(BasicType type, AstNode astNode) {
+		return !(astNode.getType() != null && (astNode.getType().getBasicType() != type || astNode.getType().getSubType() != null));
+	}
+
 	private void expectType(Type type, AstNode astNode) {
-		if (astNode.getType() != null
-				&& !((type.getBasicType() != null && astNode.getType().getBasicType() == BasicType.NULL) || astNode.getType().equals(type))) {
+		if (!hasType(type, astNode)) {
 			throwTypeError(astNode);
 		}
 	}
 
 	private boolean expectType(BasicType type, AstNode astNode) {
 		boolean result = true;
-		if (astNode.getType() != null && (astNode.getType().getBasicType() != type || astNode.getType().getSubType() != null)) {
+		if (!hasType(type, astNode)) {
 			throwTypeError(astNode);
 			result = false;
 		}
@@ -176,6 +184,7 @@ public class DeepCheckingVisitor implements AstVisitor {
 		checkBinaryOperandEqualityOrNull(assignmentExpression);
 
 		Expression operand1 = assignmentExpression.getOperand1();
+		Expression operand2 = assignmentExpression.getOperand2();
 		if (operand1 instanceof ThisExpression
 				|| operand1 instanceof MethodInvocationExpression
 				|| operand1 instanceof NewObjectExpression
@@ -183,8 +192,12 @@ public class DeepCheckingVisitor implements AstVisitor {
 				|| operand1 instanceof BinaryExpression
 				|| operand1 instanceof LogicalNotExpression
 				|| operand1 instanceof NegateExpression) {
-			throwTypeError(assignmentExpression.getOperand1());
+			throwTypeError(operand1);
+		} else if (operand1.getType() != null && operand2.getType() != null &&
+				(hasType(BasicType.INT, operand1) || hasType(BasicType.BOOLEAN, operand1)) && hasType(BasicType.NULL, operand2)) {
+			throwTypeError(operand2);
 		}
+
 		setType(operand1.getType(), assignmentExpression);
 	}
 
