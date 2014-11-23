@@ -64,9 +64,9 @@ import compiler.semantic.symbolTable.SymbolTable;
 
 public class DeepCheckingVisitor implements AstVisitor {
 
-	private final SymbolTable symbolTable;
 	private final HashMap<Symbol, ClassScope> classScopes;
 
+	private SymbolTable symbolTable = null;
 	private Symbol currentClassSymbol = null;
 	private ClassScope currentClassScope = null;
 	private MethodDefinition currentMethodDefinition = null;
@@ -76,7 +76,6 @@ public class DeepCheckingVisitor implements AstVisitor {
 
 	public DeepCheckingVisitor(HashMap<Symbol, ClassScope> classScopes) {
 		this.classScopes = classScopes;
-		this.symbolTable = new SymbolTable();
 	}
 
 	public List<SemanticAnalysisException> getExceptions() {
@@ -289,7 +288,7 @@ public class DeepCheckingVisitor implements AstVisitor {
 			Expression leftExpression = methodInvocationExpression.getMethodExpression();
 
 			Type leftExpressionType = leftExpression.getType();
-			
+
 			if (leftExpressionType == null) {
 				return; // left expressions failed...
 			}
@@ -351,7 +350,7 @@ public class DeepCheckingVisitor implements AstVisitor {
 				variableAccessExpression.setType(variableAccessExpression.getFieldIdentifier().getDefinition().getType());
 			} else if (currentClassScope.getFieldDefinition(variableAccessExpression.getFieldIdentifier()) != null) {
 				variableAccessExpression.setType(currentClassScope.getFieldDefinition(variableAccessExpression.getFieldIdentifier()).getType());
-			// special case is System
+				// special case is System
 			} else if (variableAccessExpression.getFieldIdentifier().getValue().equals("System")) {
 				variableAccessExpression.setType(new ClassType(null, new Symbol("System")));
 			} else {
@@ -542,10 +541,6 @@ public class DeepCheckingVisitor implements AstVisitor {
 
 	@Override
 	public void visit(FieldDeclaration fieldDeclaration) {
-		// TODO: Check for redefinition
-
-		// check for valid type
-		fieldDeclaration.getType().accept(this);
 	}
 
 	@Override
@@ -555,7 +550,7 @@ public class DeepCheckingVisitor implements AstVisitor {
 	}
 
 	private void visitMethodDeclaration(MethodDeclaration methodDeclaration) {
-		symbolTable.enterScope();
+		symbolTable = currentClassScope.createClassSymbolTable();
 
 		for (ParameterDefinition parameterDefinition : methodDeclaration.getParameters()) {
 			parameterDefinition.accept(this);
@@ -570,7 +565,7 @@ public class DeepCheckingVisitor implements AstVisitor {
 			currentMethodDefinition = null;
 		}
 
-		symbolTable.leaveScope();
 		symbolTable.leaveAllScopes();
+		symbolTable = null;
 	}
 }
