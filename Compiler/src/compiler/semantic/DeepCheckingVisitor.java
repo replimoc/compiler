@@ -91,8 +91,8 @@ public class DeepCheckingVisitor implements AstVisitor {
 		exceptions.add(new TypeErrorException(astNode, message));
 	}
 
-	private void throwRedefinitionError(Symbol symbol, Position definition, Position redefinition) {
-		exceptions.add(new RedefinitionErrorException(symbol, definition, redefinition));
+	private void throwRedefinitionError(Symbol symbol, Position redefinition) {
+		exceptions.add(new RedefinitionErrorException(symbol, redefinition));
 	}
 
 	private void throwUndefinedSymbolError(Symbol symbol, Position position) {
@@ -544,7 +544,7 @@ public class DeepCheckingVisitor implements AstVisitor {
 	@Override
 	public void visit(LocalVariableDeclaration localVariableDeclaration) {
 		if (symbolTable.isDefinedInCurrentScope(localVariableDeclaration.getIdentifier())) {
-			throwRedefinitionError(localVariableDeclaration.getIdentifier(), null, localVariableDeclaration.getPosition());
+			throwRedefinitionError(localVariableDeclaration.getIdentifier(), localVariableDeclaration.getPosition());
 			return;
 		}
 		symbolTable.insert(localVariableDeclaration.getIdentifier(), new Definition(localVariableDeclaration.getIdentifier(),
@@ -563,7 +563,7 @@ public class DeepCheckingVisitor implements AstVisitor {
 
 		// check if parameter already defined
 		if (symbolTable.isDefinedInCurrentScope(parameterDefinition.getIdentifier())) {
-			throwRedefinitionError(parameterDefinition.getIdentifier(), null, parameterDefinition.getPosition());
+			throwRedefinitionError(parameterDefinition.getIdentifier(), parameterDefinition.getPosition());
 			return;
 		}
 		symbolTable.insert(parameterDefinition.getIdentifier(), new Definition(parameterDefinition.getIdentifier(), parameterDefinition.getType()));

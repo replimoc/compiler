@@ -100,7 +100,7 @@ public class PreNamingAnalysisVisitor implements AstVisitor {
 
 		Symbol identifier = classDeclaration.getIdentifier();
 		if (classScopes.containsKey(identifier)) {
-			exceptions.add(new RedefinitionErrorException(identifier, null, classDeclaration.getPosition()));
+			throwRedefinitionError(identifier, classDeclaration.getPosition());
 		} else {
 			getClassScopes().put(identifier, new ClassScope(currentFieldsMap, currentMethodsMap));
 			currentFieldsMap = null;
@@ -174,7 +174,7 @@ public class PreNamingAnalysisVisitor implements AstVisitor {
 
 	private void checkAndInsertDefinition(MethodDefinition definition, Position position) {
 		if (currentMethodsMap.containsKey(definition.getSymbol())) {
-			throwRedefinitionError(definition.getSymbol(), null, position);
+			throwRedefinitionError(definition.getSymbol(), position);
 			return;
 		}
 
@@ -183,7 +183,7 @@ public class PreNamingAnalysisVisitor implements AstVisitor {
 
 	private void checkAndInsertDefinition(Definition definition, Position position) {
 		if (currentFieldsMap.containsKey(definition.getSymbol())) {
-			throwRedefinitionError(definition.getSymbol(), null, position);
+			throwRedefinitionError(definition.getSymbol(), position);
 			return;
 		}
 
@@ -194,8 +194,8 @@ public class PreNamingAnalysisVisitor implements AstVisitor {
 		exceptions.add(new TypeErrorException(astNode, message));
 	}
 
-	private void throwRedefinitionError(Symbol identifier, Position definition, Position redefinition) {
-		exceptions.add(new RedefinitionErrorException(identifier, definition, redefinition));
+	private void throwRedefinitionError(Symbol identifier, Position redefinition) {
+		exceptions.add(new RedefinitionErrorException(identifier, redefinition));
 	}
 
 	private void throwMultipleStaticMethodsError(Position definition) {
