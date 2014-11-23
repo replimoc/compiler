@@ -60,11 +60,14 @@ import compiler.semantic.symbolTable.MethodDefinition;
 public class PreNamingAnalysisVisitor implements AstVisitor {
 
 	private final HashMap<Symbol, ClassScope> classScopes = new HashMap<>();
+
 	private HashMap<Symbol, Definition> currentFieldsMap;
 	private HashMap<Symbol, MethodDefinition> currentMethodsMap;
 
 	private boolean mainFound = false;
 	private final List<SemanticAnalysisException> exceptions = new ArrayList<>();
+
+	private Symbol stringSymbol;
 
 	public HashMap<Symbol, ClassScope> getClassScopes() {
 		return classScopes;
@@ -84,7 +87,7 @@ public class PreNamingAnalysisVisitor implements AstVisitor {
 			curr.accept(this);
 		}
 
-		if (!mainFound) {
+		if (!mainFound || classScopes.get(stringSymbol) != null) {
 			exceptions.add(new NoMainFoundException());
 		}
 	}
@@ -162,6 +165,7 @@ public class PreNamingAnalysisVisitor implements AstVisitor {
 			throwTypeError(staticMethodDeclaration, "'public static void main' method must have a single argument of type String[].");
 			return;
 		}
+		stringSymbol = parameterType.getSubType().getIdentifier();
 
 		mainFound = true;
 		Position position = staticMethodDeclaration.getPosition();
