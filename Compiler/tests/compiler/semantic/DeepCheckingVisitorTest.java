@@ -9,7 +9,6 @@ import java.util.List;
 
 import org.junit.Test;
 
-import compiler.StringTable;
 import compiler.Symbol;
 import compiler.ast.Program;
 import compiler.parser.Parser;
@@ -21,7 +20,6 @@ public class DeepCheckingVisitorTest {
 
 	private HashMap<Symbol, ClassScope> classScopes = new HashMap<Symbol, ClassScope>();
 	private final DeepCheckingVisitor visitor = new DeepCheckingVisitor(classScopes);
-	private final StringTable stringTable = new StringTable();
 
 	@Test
 	public void testEmptyProgram() {
@@ -171,23 +169,23 @@ public class DeepCheckingVisitorTest {
 				.initParser("class Class { public static void main(String[] args) {} public Class System; public void bla() { System.out.println(); } }");
 		errors = SemanticChecker.checkSemantic(parser.parse());
 		assertEquals(1, errors.size());
-		
+
 		parser = TestUtils
 				.initParser("class Class { public static void main(String[] args) {} public void bla() { this.bla(); } }");
 		errors = SemanticChecker.checkSemantic(parser.parse());
 		assertEquals(0, errors.size());
-		
+
 		parser = TestUtils
 				.initParser("class Class { public static void main(String[] args) {} public Class classA; public void bla(Class classB) { { Class classB; } } }");
 		errors = SemanticChecker.checkSemantic(parser.parse());
 		assertEquals(1, errors.size());
-		
+
 		parser = TestUtils
 				.initParser("class Main{public static void main(String[] vargs){vargs[5];}}");
 		errors = SemanticChecker.checkSemantic(parser.parse());
 		assertEquals(1, errors.size());
 	}
-	
+
 	@Test
 	public void testSystemOutPrintln() throws IOException, ParsingFailedException {
 		Parser parser = TestUtils
