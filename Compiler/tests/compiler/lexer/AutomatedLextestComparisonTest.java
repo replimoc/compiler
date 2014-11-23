@@ -17,7 +17,7 @@ import compiler.utils.TestUtils;
  * <p/>
  * this test should be started from Compiler directory
  */
-public class LextestOutputTest implements TestFileVisitor.FileTester {
+public class AutomatedLextestComparisonTest implements TestFileVisitor.FileTester {
 
 	private static final String LEXER_EXTENSION = ".lexer";
 
