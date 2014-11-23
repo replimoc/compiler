@@ -1,6 +1,12 @@
 class MultipleFields {
   public int member;
-  public boolean member;
-  public void member2;
-  public SomeType member3;
+  public boolean member2;
+  public void member3;
+  public SomeType member4;
+}
+
+class SomeType {
+	public static void main(String[] args) {
+		
+	}
 }

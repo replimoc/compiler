@@ -7,15 +7,31 @@ identifier member
 ;
 public
 boolean
-identifier member
-;
-public
-void
 identifier member2
 ;
 public
-identifier SomeType
+void
 identifier member3
 ;
+public
+identifier SomeType
+identifier member4
+;
+}
+class
+identifier SomeType
+{
+public
+static
+void
+identifier main
+(
+identifier String
+[
+]
+identifier args
+)
+{
+}
 }
 EOF

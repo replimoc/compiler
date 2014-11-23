@@ -8,5 +8,8 @@ class MultipleMethods {
 	public boolean method3() { }
 	public void method4() { }
 	public int method5(int p) { }
-	public int z(int p, boolean p2, void p3, Type p4) { }
+	public int z(int p, boolean p2, void p3, SomeType p4) { }
+}
+class SomeType {
+	public static void main(String[] args) { }
 }
