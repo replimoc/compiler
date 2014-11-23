@@ -24,12 +24,12 @@ public final class SemanticChecker {
 		ast.accept(preAnalysisVisitor);
 		HashMap<Symbol, ClassScope> classScopes = preAnalysisVisitor.getClassScopes();
 		List<SemanticAnalysisException> exceptions = preAnalysisVisitor.getExceptions();
-		
+
 		// fill System.out.println
 		// create PrintStream class
 		Symbol printStream = new Symbol("PrintStream");
 		Definition printStreamDefinition = new Definition(printStream, new ClassType(new Position(-1, -1), printStream));
-		
+
 		HashMap<Symbol, MethodDefinition> psMethods = new HashMap<Symbol, MethodDefinition>();
 		Symbol printLineSymbol = new Symbol("println");
 		Definition[] definitions = new Definition[1];
@@ -37,10 +37,10 @@ public final class SemanticChecker {
 		psMethods.put(printLineSymbol, new MethodDefinition(printLineSymbol, new Type(null, BasicType.VOID), definitions));
 		ClassScope printStreamScope = new ClassScope(new HashMap<Symbol, Definition>(), psMethods);
 		classScopes.put(printStream, printStreamScope);
-		
+
 		Symbol systemSymbol = new Symbol("System");
 		systemSymbol.setDefintion(new Scope(null, 0), new Definition(systemSymbol, new ClassType(null, systemSymbol)));
-		HashMap<Symbol, Definition> fields = new HashMap<Symbol, Definition>();	
+		HashMap<Symbol, Definition> fields = new HashMap<Symbol, Definition>();
 		fields.put(new Symbol("out"), printStreamDefinition);
 		HashMap<Symbol, MethodDefinition> methods = new HashMap<Symbol, MethodDefinition>();
 		ClassScope systemClassScope = new ClassScope(fields, methods);

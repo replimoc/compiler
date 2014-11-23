@@ -25,22 +25,22 @@ class Loops {
             a = a + 3;
         }
 
-        while ( (a = read(c)) != 0 )
+        while ( (a = read(c)) != 0 ) /*semantic error - read is undefined*/
         {
-            d = a - abs(a);
+            d = a - abs(a); /*semantic error - abs is undefined*/
         }
 
-        if ((d > 0) || (c < 0) || x < y)
+        if ((d > 0) || (c < 0) || x < y) /*semantic error - x,y are undefined*/
         {
-            return 1;
+            return 1; /* semantic error: return type is void */
         }
 
-        if (true) {} else if (false) {} else {} if (true_or_false()) {{}};
+        if (true) {} else if (false) {} else {} if (true_or_false()) {{}}; /*semantic error - true_or_false is undefined*/
 
-        /* if - chain */
+        /* if - chain, semantic error: expected boolean, null given */
         if (true) if (true) if (false) if (true) if ((null)) if (true) ;
 
-        /* while - chain */
+        /* while - chain. 8 semantic error - expected boolean, int given */
         while(1) while(1) while(1) while(1) { while(1) while(1) while(1) while(1); }
 
         while(1){{}}
@@ -56,10 +56,10 @@ class Loops {
             }
         }
 
-        ;(     oO    );
+        ;(     oO    ); /*semantic error - oO is undefined*/
 
         ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
-        return 0;
+        return 0; /* semantic error: expected return type void */
     }
 }

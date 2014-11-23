@@ -60,11 +60,14 @@ import compiler.semantic.symbolTable.MethodDefinition;
 public class PreNamingAnalysisVisitor implements AstVisitor {
 
 	private final HashMap<Symbol, ClassScope> classScopes = new HashMap<>();
+
 	private HashMap<Symbol, Definition> currentFieldsMap;
 	private HashMap<Symbol, MethodDefinition> currentMethodsMap;
 
 	private boolean mainFound = false;
 	private final List<SemanticAnalysisException> exceptions = new ArrayList<>();
+
+	private Symbol stringSymbol;
 
 	public HashMap<Symbol, ClassScope> getClassScopes() {
 		return classScopes;
@@ -74,13 +77,17 @@ public class PreNamingAnalysisVisitor implements AstVisitor {
 		return exceptions;
 	}
 
+	public boolean hasMain() {
+		return mainFound;
+	}
+
 	@Override
 	public void visit(Program program) {
 		for (ClassDeclaration curr : program.getClasses()) {
 			curr.accept(this);
 		}
 
-		if (!mainFound) {
+		if (!mainFound || classScopes.get(stringSymbol) != null) {
 			exceptions.add(new NoMainFoundException());
 		}
 	}
@@ -96,7 +103,7 @@ public class PreNamingAnalysisVisitor implements AstVisitor {
 
 		Symbol identifier = classDeclaration.getIdentifier();
 		if (classScopes.containsKey(identifier)) {
-			exceptions.add(new RedefinitionErrorException(identifier, null, classDeclaration.getPosition()));
+			throwRedefinitionError(identifier, classDeclaration.getPosition());
 		} else {
 			getClassScopes().put(identifier, new ClassScope(currentFieldsMap, currentMethodsMap));
 			currentFieldsMap = null;
@@ -130,8 +137,10 @@ public class PreNamingAnalysisVisitor implements AstVisitor {
 
 	@Override
 	public void visit(StaticMethodDeclaration staticMethodDeclaration) {
-		if (mainFound)
+		if (mainFound) {
 			throwMultipleStaticMethodsError(staticMethodDeclaration.getPosition());
+			return;
+		}
 
 		Type returnType = staticMethodDeclaration.getType();
 		if (returnType.getBasicType() != BasicType.VOID) {
@@ -142,18 +151,22 @@ public class PreNamingAnalysisVisitor implements AstVisitor {
 		Symbol identifier = staticMethodDeclaration.getIdentifier();
 		if (!"main".equals(identifier.getValue())) {
 			throwTypeError(staticMethodDeclaration, "'public static void' method must be called 'main'.");
+			return;
 		}
 
 		if (staticMethodDeclaration.getParameters().size() != 1) {
 			throwTypeError(staticMethodDeclaration, "'public static void main' method must have a single argument of type String[].");
+			return;
 		}
 
 		ParameterDefinition parameter = staticMethodDeclaration.getParameters().get(0);
 		Type parameterType = parameter.getType();
 		if (parameterType.getBasicType() != BasicType.ARRAY || !"String".equals(parameterType.getSubType().getIdentifier().getValue())) {
 			throwTypeError(staticMethodDeclaration, "'public static void main' method must have a single argument of type String[].");
+			return;
 		}
-		
+		stringSymbol = parameterType.getSubType().getIdentifier();
+
 		mainFound = true;
 		Position position = staticMethodDeclaration.getPosition();
 
@@ -165,7 +178,7 @@ public class PreNamingAnalysisVisitor implements AstVisitor {
 
 	private void checkAndInsertDefinition(MethodDefinition definition, Position position) {
 		if (currentMethodsMap.containsKey(definition.getSymbol())) {
-			throwRedefinitionError(definition.getSymbol(), null, position);
+			throwRedefinitionError(definition.getSymbol(), position);
 			return;
 		}
 
@@ -174,7 +187,7 @@ public class PreNamingAnalysisVisitor implements AstVisitor {
 
 	private void checkAndInsertDefinition(Definition definition, Position position) {
 		if (currentFieldsMap.containsKey(definition.getSymbol())) {
-			throwRedefinitionError(definition.getSymbol(), null, position);
+			throwRedefinitionError(definition.getSymbol(), position);
 			return;
 		}
 
@@ -185,8 +198,8 @@ public class PreNamingAnalysisVisitor implements AstVisitor {
 		exceptions.add(new TypeErrorException(astNode, message));
 	}
 
-	private void throwRedefinitionError(Symbol identifier, Position definition, Position redefinition) {
-		exceptions.add(new RedefinitionErrorException(identifier, definition, redefinition));
+	private void throwRedefinitionError(Symbol identifier, Position redefinition) {
+		exceptions.add(new RedefinitionErrorException(identifier, redefinition));
 	}
 
 	private void throwMultipleStaticMethodsError(Position definition) {

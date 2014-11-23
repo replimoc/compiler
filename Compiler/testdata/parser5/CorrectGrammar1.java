@@ -5,8 +5,7 @@
 class Cl1 {
 
     public CLAZZ clazzy;
-    /** yeah, that is a varible **/
-    public void main;
+    public void main; /*semantic error*/
     public int[] list;
     public int[][] matrix;
     public int[][][] cube;
@@ -19,12 +18,12 @@ class Cl1 {
     public Cl1 Cl1()
     {
         this.clazzy = null;
-        /*Arrays arrays = new Arrays();*/
+        Arrays arrays = new Arrays();
         this.list = arrays.getList(100);
-        this.matrix = arrays.getMatrix(100);
-        this.cube = arrays.getCube(100);
+        this.matrix = arrays.getMatrix(100); /*semantic error - function accepts no param*/
+        this.cube = arrays.getCube();
 
-        this.wtf = this.Cl1();
+        this.wtf = this.Cl1();  /*semantic error*/
     }
 }
 
@@ -36,7 +35,8 @@ class Arrays {
         int y = 5;
         int z = x;
         Cl1 cl1 = null;
-        int a = a + b;
+        int a = a + x;  /*semantic error*/
+        int c = x + b;  /*semantic error*/
 
         return x + y * z;
     }
@@ -50,8 +50,8 @@ class Arrays {
 
     public int[][] getMatrix()
     {
-        int[] matrix = new int[10][];
-        return matrix;
+        int[] matrix = new int[10][];  /*semantic error - wrong type*/
+        return matrix;  /*semantic error - wrong return type */
     }
 
     public int[][][] getCube()
@@ -66,8 +66,8 @@ class Parameters {
     public void i_accept_no_params()
     {
         Cl1 cl1 = new Cl1();
-        Cl1 cl2 = Parameters.i_accept_no_params(cl1, null);
-        return false;
+        Cl1 cl2 = i_accept_no_params(cl1, null);  /*semantic error - wrong params, wrong return type*/
+        return false;  /*semantic error*/
     }
 
     public void i_accept_one_param(Cl1 cl1)
@@ -76,8 +76,8 @@ class Parameters {
     }
     public void i_accept_a_lot_of_params(int a, int[] vec, int[][] A, int[][][] cube) {}
 
-    public void i_accept_no_params(void a,void b,void c) {
-        a + b - c + (d) - (-x);
+    public void i_accept_no_params2(void a,void b,void c) {
+        a + b - c + (d) - (-1);  /*semantic error void to +*/
         return;
     }
 
@@ -100,7 +100,7 @@ class MainClass {
      * This is not a main, really not MAIN :)
      * @param cmlds
      */
-    public static void not_a_main ( String[] forbidden_fruit)
+    public static void not_a_main ( String[] forbidden_fruit)  /*semantic error must be called main*/
     {
         /* hello world! (in ascii) */
         System.out.println(104);
@@ -116,8 +116,8 @@ class MainClass {
         System.out.println(100);
         System.out.println(33);
 
-        return 0;
-        return 1;
-        return 2+4+129;
+        return 0;/*semantic error*/
+        return 1;/*semantic error*/
+        return 2+4+129;/*semantic error*/
     }
 }
