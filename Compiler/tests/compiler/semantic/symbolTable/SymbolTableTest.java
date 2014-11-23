@@ -2,6 +2,7 @@ package compiler.semantic.symbolTable;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
 
 import java.lang.reflect.Field;
@@ -20,7 +21,7 @@ public class SymbolTableTest {
 	private StringTable stringTable = new StringTable();
 
 	@Test
-	public void testSymbolTable() throws NoSuchFieldException, SecurityException, IllegalArgumentException, IllegalAccessException {
+	public void testSymbolTable() throws Exception {
 		symbolTable.enterScope();
 		assertTrue(enterDefinition(getSymbol("number"), BasicType.INT));
 
@@ -57,6 +58,41 @@ public class SymbolTableTest {
 		// we are at top level scope: currentScope is null, so this must return true
 		assertTrue(symbolTable.isDefinedInCurrentScope(getSymbol("number")));
 		assertTrue(symbolTable.isDefinedInCurrentScope(getSymbol("number1")));
+	}
+
+	@Test
+	public void testLeaveAllScopes() throws Exception {
+		symbolTable.enterScope();
+		symbolTable.enterScope();
+		assertTrue(enterDefinition(getSymbol("number"), BasicType.INT));
+
+		assertFalse(enterDefinition(getSymbol("number"), BasicType.INT));
+		assertFalse(enterDefinition(getSymbol("number"), BasicType.INT));
+		assertTrue(enterDefinition(getSymbol("number1"), BasicType.INT));
+
+		assertTrue(symbolTable.isDefinedInCurrentScope(getSymbol("number")));
+		assertFalse(symbolTable.isDefinedInCurrentScope(getSymbol("asdf")));
+		assertTrue(symbolTable.isDefinedInCurrentScope(getSymbol("number1")));
+
+		symbolTable.enterScope();
+		assertTrue(enterDefinition(getSymbol("number"), BasicType.INT));
+		symbolTable.enterScope();
+		symbolTable.enterScope();
+
+		symbolTable.leaveAllScopes();
+
+		Field privChangeStack = SymbolTable.class.getDeclaredField("changeStack");
+		privChangeStack.setAccessible(true);
+		@SuppressWarnings("unchecked")
+		LinkedList<Change> cs = (LinkedList<Change>) privChangeStack.get(symbolTable);
+		assertTrue(cs.isEmpty());
+		privChangeStack.setAccessible(false);
+
+		assertNull(getSymbol("number").getDefinitionScope());
+		assertNull(getSymbol("number").getDefinition());
+
+		assertNull(getSymbol("number1").getDefinitionScope());
+		assertNull(getSymbol("number1").getDefinition());
 	}
 
 	private boolean enterDefinition(Symbol symbol, BasicType basicType) {
