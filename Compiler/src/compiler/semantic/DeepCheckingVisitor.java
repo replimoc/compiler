@@ -630,7 +630,7 @@ public class DeepCheckingVisitor implements AstVisitor {
 		// if method has return type, check if all paths have a return statement
 		if (currentMethodDefinition.getType().getBasicType() != BasicType.VOID) {
 			if (!returnOnAllPaths) {
-				exceptions.add(new MissingReturnStatementOnAPathException(methodDeclaration.getPosition()));
+				exceptions.add(new MissingReturnStatementOnAPathException(methodDeclaration.getPosition(), methodDeclaration.getIdentifier()));
 			}
 		}
 
