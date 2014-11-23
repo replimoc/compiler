@@ -288,11 +288,11 @@ public class DeepCheckingVisitor implements AstVisitor {
 		} else {
 			Expression leftExpression = methodInvocationExpression.getMethodExpression();
 
-			if (leftExpression.getType() == null) {
-				leftExpression.accept(this);
-			}
-
 			Type leftExpressionType = leftExpression.getType();
+			
+			if (leftExpressionType == null) {
+				return; // left expressions failed...
+			}
 
 			// if left expression type is != class (e.g. int, boolean, void) then throw error
 			if (leftExpressionType.getBasicType() != BasicType.CLASS) {
@@ -351,7 +351,7 @@ public class DeepCheckingVisitor implements AstVisitor {
 				variableAccessExpression.setType(variableAccessExpression.getFieldIdentifier().getDefinition().getType());
 			} else if (currentClassScope.getFieldDefinition(variableAccessExpression.getFieldIdentifier()) != null) {
 				variableAccessExpression.setType(currentClassScope.getFieldDefinition(variableAccessExpression.getFieldIdentifier()).getType());
-				// special case is System
+			// special case is System
 			} else if (variableAccessExpression.getFieldIdentifier().getValue().equals("System")) {
 				variableAccessExpression.setType(new ClassType(null, new Symbol("System")));
 			} else {
@@ -363,7 +363,7 @@ public class DeepCheckingVisitor implements AstVisitor {
 			Type leftExpressionType = leftExpression.getType();
 
 			if (leftExpressionType == null) {
-				return; // TODO: How handle the case, when left expression is invalid that is: there is a semantic error
+				return; // left expressions failed...
 			}
 
 			// if left expression type is != class (e.g. int, boolean, void) then throw error
