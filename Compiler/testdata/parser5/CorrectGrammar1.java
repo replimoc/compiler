@@ -24,6 +24,7 @@ class Cl1 {
         this.cube = arrays.getCube();
 
         this.wtf = this.Cl1();  /*semantic error*/
+        return null;
     }
 }
 
