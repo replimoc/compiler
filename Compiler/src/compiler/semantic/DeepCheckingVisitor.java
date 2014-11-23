@@ -606,6 +606,9 @@ public class DeepCheckingVisitor implements AstVisitor {
 
 	@Override
 	public void visit(FieldDeclaration fieldDeclaration) {
+		if (hasType(BasicType.VOID, fieldDeclaration)) {
+			throwTypeError(fieldDeclaration);
+		}
 	}
 
 	@Override
