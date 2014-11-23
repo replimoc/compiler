@@ -15,17 +15,17 @@ class MultiScope {
         {
             int x;
             {
-                x = 1;
+                /*x = 1;*/
                 boolean x;
-                x = true;
-                x = false;
+                /*x = true;
+                x = false;*/
                 {
                     int x;
                 }
             }
-            x = 5; x = 7;
+            /*x = 5; x = 7;*/
         }
-        x = x * x - x / x + x;
+        /*x = x * x - x / x + x;*/
     }
 
 }
