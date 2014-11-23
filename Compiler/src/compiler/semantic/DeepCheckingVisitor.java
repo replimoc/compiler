@@ -354,9 +354,7 @@ public class DeepCheckingVisitor implements AstVisitor {
 			Expression expression = methodInvocationExpression.getParameters()[i];
 			expression.accept(this);
 
-			if (parameterDefinition.getType() != null) {
-				expectType(parameterDefinition.getType(), expression);
-			}
+			expectType(parameterDefinition.getType(), expression);
 		}
 
 		methodInvocationExpression.setType(methodDefinition.getType());
@@ -448,7 +446,7 @@ public class DeepCheckingVisitor implements AstVisitor {
 			return; // Already an error thrown in an upper left array part.
 		}
 
-		if (arrayExpression.getType() != null && arrayExpression.getType().getBasicType() == BasicType.ARRAY) {
+		if (arrayExpression.getType().getBasicType() == BasicType.ARRAY) {
 			if (arrayExpression.getType().getSubType().getBasicType() == BasicType.STRING_ARGS) {
 				throwTypeError(arrayAccessExpression, "Access on main method parameter forbidden.");
 			}
@@ -496,6 +494,17 @@ public class DeepCheckingVisitor implements AstVisitor {
 	@Override
 	public void visit(Type type) {
 		type.setType(type);
+
+		if (type.getBasicType() == BasicType.ARRAY && searchForVoidSubtype(type)) {
+			throwTypeError(type);
+		}
+	}
+
+	private boolean searchForVoidSubtype(Type type) {
+		while (type != null && type.getBasicType() == BasicType.ARRAY) {
+			type = type.getSubType();
+		}
+		return type == null || type.getBasicType() == BasicType.VOID;
 	}
 
 	@Override
@@ -543,11 +552,10 @@ public class DeepCheckingVisitor implements AstVisitor {
 		boolean returnInFalseCase = false;
 
 		Statement trueCase = ifStatement.getTrueCase();
-		if (trueCase != null) {
-			returnOnAllPaths = false;
-			trueCase.accept(this);
-			returnInTrueCase = returnOnAllPaths;
-		}
+
+		returnOnAllPaths = false;
+		trueCase.accept(this);
+		returnInTrueCase = returnOnAllPaths;
 
 		Statement falseCase = ifStatement.getFalseCase();
 		if (falseCase != null) {
@@ -565,13 +573,13 @@ public class DeepCheckingVisitor implements AstVisitor {
 		condition.accept(this);
 		expectType(BasicType.BOOLEAN, condition);
 
-		if (whileStatement.getBody() != null) {
-			whileStatement.getBody().accept(this);
-		}
+		whileStatement.getBody().accept(this);
 	}
 
 	@Override
 	public void visit(LocalVariableDeclaration localVariableDeclaration) {
+		localVariableDeclaration.getType().accept(this);
+
 		if (localVariableDeclaration.getIdentifier().isDefined()) {
 			throwRedefinitionError(localVariableDeclaration.getIdentifier(), localVariableDeclaration.getPosition());
 			return;
@@ -582,7 +590,7 @@ public class DeepCheckingVisitor implements AstVisitor {
 			expression.accept(this);
 			expectType(localVariableDeclaration.getType(), expression);
 		}
-		
+
 		symbolTable.insert(localVariableDeclaration.getIdentifier(), new Definition(localVariableDeclaration.getIdentifier(),
 				localVariableDeclaration.getType()));
 	}
@@ -614,6 +622,7 @@ public class DeepCheckingVisitor implements AstVisitor {
 
 	@Override
 	public void visit(FieldDeclaration fieldDeclaration) {
+		fieldDeclaration.getType().accept(this);
 		if (hasType(BasicType.VOID, fieldDeclaration)) {
 			throwTypeError(fieldDeclaration);
 		}
@@ -627,6 +636,8 @@ public class DeepCheckingVisitor implements AstVisitor {
 	}
 
 	private void visitMethodDeclaration(MethodDeclaration methodDeclaration) {
+		methodDeclaration.getType().accept(this);
+
 		symbolTable = new SymbolTable();
 		symbolTable.enterScope();
 

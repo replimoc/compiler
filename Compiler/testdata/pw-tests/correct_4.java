@@ -116,5 +116,5 @@ class A
 	}
 	
 	public void println(int i) {System.out.println(i);}
-	public void println(boolean b) {System.out.println(b);} /* semantic error - overloading */
+	public void println(boolean b) {System.out.println(b);} /* semantic error - overloading and wrong paramter type */
 }
