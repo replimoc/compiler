@@ -31,6 +31,7 @@ class Cl1 {
 		(this.matrix) = (arrays.getMatrix(100));
 		(this.cube) = (arrays.getCube());
 		(this.wtf) = (this.Cl1());
+		return null;
 	}
 	public Cl2 cl2;
 	public CLAZZ clazzy;
