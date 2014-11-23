@@ -23,3 +23,13 @@ class foo {
         return ;
     }
 }
+
+class bar
+{
+    public bar bar;
+}
+
+class foo2
+{
+    public foo2[][] foo2;
+}
