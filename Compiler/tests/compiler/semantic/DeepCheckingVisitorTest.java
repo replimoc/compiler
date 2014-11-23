@@ -17,7 +17,7 @@ import compiler.semantic.exceptions.SemanticAnalysisException;
 import compiler.utils.TestUtils;
 
 public class DeepCheckingVisitorTest {
-
+	
 	private HashMap<Symbol, ClassScope> classScopes = new HashMap<Symbol, ClassScope>();
 	private final DeepCheckingVisitor visitor = new DeepCheckingVisitor(classScopes);
 
@@ -204,6 +204,29 @@ public class DeepCheckingVisitorTest {
 				.initParser("class Main{public void[] asdf() { return null; } public static void main(String[] vargs){}}");
 		errors = SemanticChecker.checkSemantic(parser.parse());
 		assertEquals(1, errors.size());
+		
+		parser = TestUtils
+				.initParser("class Main{public __0_ _0__ (_0I_ _oO0) { return null; } public static void main(String[] vargs){}}");
+		errors = SemanticChecker.checkSemantic(parser.parse());
+		assertEquals(2, errors.size());
+		
+		parser = TestUtils
+				.initParser("class Main{public void asdf() { this.asdf(classA); } public static void main(String[] vargs){}}");
+		errors = SemanticChecker.checkSemantic(parser.parse());
+		assertEquals(1, errors.size());
+		
+		parser = TestUtils
+				.initParser("class Main{public int asdf() { return this * 42; } public static void main(String[] vargs){}}");
+		errors = SemanticChecker.checkSemantic(parser.parse());
+		assertEquals(1, errors.size());
+	}
+	
+	@Test
+	public void testVoidParams() throws IOException, ParsingFailedException {
+		Parser parser = TestUtils
+				.initParser("class Main{public void asdf(void a, void b, void c) { return; } public static void main(String[] vargs){}}");
+		List<SemanticAnalysisException> errors = SemanticChecker.checkSemantic(parser.parse());
+		assertEquals(3, errors.size());
 	}
 
 	@Test

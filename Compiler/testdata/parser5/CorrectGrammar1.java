@@ -4,12 +4,12 @@
 
 class Cl1 {
 
-    public CLAZZ clazzy;
+    public CLAZZ clazzy; /* semenatic error */
     public void main; /*semantic error*/
     public int[] list;
     public int[][] matrix;
     public int[][][] cube;
-    public Cl2 cl2;
+    public Cl2 cl2; /*semantic error*/
 
     /**
      * do we have constructors in mini-java?
@@ -121,4 +121,6 @@ class MainClass {
         return 1;
         return 2+4+129;
     }
+    
+    /* semenatic error - there is no main*/
 }
