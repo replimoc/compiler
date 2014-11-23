@@ -404,7 +404,7 @@ public class DeepCheckingVisitor implements AstVisitor {
 				throwTypeError(arrayAccessExpression, "Access on main method parameter forbidden.");
 			}
 		} else {
-			throwTypeError(arrayAccessExpression, "Access access on a non array.");
+			throwTypeError(arrayAccessExpression, "Array access on a non array.");
 		}
 		expectType(BasicType.INT, indexExpression);
 	}
@@ -432,7 +432,7 @@ public class DeepCheckingVisitor implements AstVisitor {
 	@Override
 	public void visit(ThisExpression thisExpression) {
 		if (isStaticMethod) {
-			throwTypeError(thisExpression, "This not allowed in static methods.");
+			throwTypeError(thisExpression, "'this' is not allowed in static methods.");
 		}
 		thisExpression.setType(new ClassType(null, currentClassSymbol)); // TODO: replace null with position of class
 	}
