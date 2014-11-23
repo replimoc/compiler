@@ -583,6 +583,8 @@ public class DeepCheckingVisitor implements AstVisitor {
 
 	@Override
 	public void visit(LocalVariableDeclaration localVariableDeclaration) {
+		localVariableDeclaration.getType().accept(this);
+
 		if (localVariableDeclaration.getIdentifier().isDefined()) {
 			throwRedefinitionError(localVariableDeclaration.getIdentifier(), localVariableDeclaration.getPosition());
 			return;
@@ -625,6 +627,7 @@ public class DeepCheckingVisitor implements AstVisitor {
 
 	@Override
 	public void visit(FieldDeclaration fieldDeclaration) {
+		fieldDeclaration.getType().accept(this);
 		if (hasType(BasicType.VOID, fieldDeclaration)) {
 			throwTypeError(fieldDeclaration);
 		}
