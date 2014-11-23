@@ -297,7 +297,7 @@ public class DeepCheckingVisitor implements AstVisitor {
 			if (isStaticMethod) {
 				// there are no static method
 				throwIllegalAccessToNonStaticMemberError(methodInvocationExpression.getPosition());
-				// continue
+				return;
 			}
 			MethodDefinition methodDefinition = currentClassScope.getMethodDefinition(methodInvocationExpression.getMethodIdent());
 			if (methodDefinition != null) {
