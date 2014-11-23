@@ -30,7 +30,7 @@ public class RedefinitionErrorException extends SemanticAnalysisException {
 	}
 
 	public static String buildMessage(Symbol identifier, Position definition, Position redefinition) {
-		return "error: Identifier " + identifier + " at position " + redefinition + " has already been definied at " + definition;
+		return "error: Identifier " + identifier + " at position " + redefinition + " has already been defined at " + definition;
 	}
 
 }

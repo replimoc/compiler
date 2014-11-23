@@ -52,6 +52,7 @@ import compiler.ast.type.ClassType;
 import compiler.ast.type.Type;
 import compiler.ast.visitor.AstVisitor;
 import compiler.lexer.Position;
+import compiler.semantic.exceptions.IllegalAccessToNonStaticMemberException;
 import compiler.semantic.exceptions.InvalidMethodCallException;
 import compiler.semantic.exceptions.NoSuchMemberException;
 import compiler.semantic.exceptions.RedefinitionErrorException;
@@ -71,7 +72,7 @@ public class DeepCheckingVisitor implements AstVisitor {
 	private ClassScope currentClassScope = null;
 	private MethodDefinition currentMethodDefinition = null;
 
-	private List<SemanticAnalysisException> exceptions = new ArrayList<>();
+	private final List<SemanticAnalysisException> exceptions = new ArrayList<>();
 	private boolean isStaticMethod;
 
 	public DeepCheckingVisitor(HashMap<Symbol, ClassScope> classScopes) {
@@ -100,6 +101,10 @@ public class DeepCheckingVisitor implements AstVisitor {
 
 	private void throwNoSuchMemberError(Symbol object, Position objPos, Symbol member, Position memberPos) {
 		exceptions.add(new NoSuchMemberException(object, objPos, member, memberPos));
+	}
+
+	private void throwIllegalAccessToNonStaticMemberError(Position objPos) {
+		exceptions.add(new IllegalAccessToNonStaticMemberException(objPos));
 	}
 
 	private void expectType(Type type, AstNode astNode) {
@@ -276,6 +281,11 @@ public class DeepCheckingVisitor implements AstVisitor {
 
 		// is inner expression
 		if (methodInvocationExpression.getMethodExpression() == null) {
+			if (isStaticMethod) {
+				// there are no static method
+				throwIllegalAccessToNonStaticMemberError(methodInvocationExpression.getPosition());
+				// continue
+			}
 			MethodDefinition methodDefinition = currentClassScope.getMethodDefinition(methodInvocationExpression.getMethodIdent());
 			if (methodDefinition != null) {
 				checkParameterDefinitionAndSetReturnType(methodInvocationExpression, methodDefinition);
@@ -347,8 +357,22 @@ public class DeepCheckingVisitor implements AstVisitor {
 		if (variableAccessExpression.getExpression() == null) {
 			// shouldn't be the type of variableAccessExpression set here?
 			if (variableAccessExpression.getFieldIdentifier().isDefined()) {
+				if (isStaticMethod) {
+					if (variableAccessExpression.getFieldIdentifier().getDefinitionScope().getParentScope() == null) {
+						// class field has no parent scope since there are no inner classes
+						// there are no static fields
+						throwIllegalAccessToNonStaticMemberError(variableAccessExpression.getPosition());
+						// continue
+					}
+				}
 				variableAccessExpression.setType(variableAccessExpression.getFieldIdentifier().getDefinition().getType());
 			} else if (currentClassScope.getFieldDefinition(variableAccessExpression.getFieldIdentifier()) != null) {
+				// no static field defined in class scope possible
+				if (isStaticMethod) {
+					// there are no static fields
+					throwIllegalAccessToNonStaticMemberError(variableAccessExpression.getPosition());
+					// continue
+				}
 				variableAccessExpression.setType(currentClassScope.getFieldDefinition(variableAccessExpression.getFieldIdentifier()).getType());
 				// special case is System
 			} else if (variableAccessExpression.getFieldIdentifier().getValue().equals("System")) {
@@ -449,7 +473,7 @@ public class DeepCheckingVisitor implements AstVisitor {
 	@Override
 	public void visit(ClassType classType) {
 		if (classScopes.containsKey(classType.getIdentifier()) == false) {
-			throwTypeError(classType); 
+			throwTypeError(classType);
 			return;
 		}
 	}
@@ -547,6 +571,7 @@ public class DeepCheckingVisitor implements AstVisitor {
 	public void visit(StaticMethodDeclaration staticMethodDeclaration) {
 		isStaticMethod = true;
 		visitMethodDeclaration(staticMethodDeclaration);
+		isStaticMethod = false;
 	}
 
 	private void visitMethodDeclaration(MethodDeclaration methodDeclaration) {
