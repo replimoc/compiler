@@ -376,7 +376,7 @@ public class DeepCheckingVisitor implements AstVisitor {
 			// check if class exists
 			ClassScope classScope = classScopes.get(leftExpressionType.getIdentifier());
 			if (classScope == null) {
-				throwTypeError(variableAccessExpression); // TODO: Throw some specific error like TypeOfClassNotFound
+				throwTypeError(variableAccessExpression);
 				return;
 			}
 			// check if member exists in this class
@@ -434,7 +434,7 @@ public class DeepCheckingVisitor implements AstVisitor {
 		if (isStaticMethod) {
 			throwTypeError(thisExpression, "'this' is not allowed in static methods.");
 		}
-		thisExpression.setType(new ClassType(null, currentClassSymbol)); // TODO: replace null with position of class
+		thisExpression.setType(new ClassType(null, currentClassSymbol));
 	}
 
 	@Override
@@ -450,7 +450,7 @@ public class DeepCheckingVisitor implements AstVisitor {
 	@Override
 	public void visit(ClassType classType) {
 		if (classScopes.containsKey(classType.getIdentifier()) == false) {
-			throwTypeError(classType); // TODO: Throw some specific error like TypeOfClassNotFound
+			throwTypeError(classType);
 			return;
 		}
 	}
@@ -542,8 +542,6 @@ public class DeepCheckingVisitor implements AstVisitor {
 
 	@Override
 	public void visit(FieldDeclaration fieldDeclaration) {
-		// TODO: Check for redefinition
-
 		// check for valid type
 		fieldDeclaration.getType().accept(this);
 	}
