@@ -23,8 +23,10 @@ class Test {
         x / y = 5;
         x % y = 5;
         -x = 5;
+        !b = false;
         new Test() = new Test();
         new int[5] = new int[4];
+
 
     }
 }
