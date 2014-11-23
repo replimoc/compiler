@@ -17,6 +17,7 @@ class Nested
                     }
                     return 1;
                 }
+                /* no return in else case */
             }
         }
         else

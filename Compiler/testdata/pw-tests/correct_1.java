@@ -22,7 +22,7 @@ class AveryNode {
 	public void construct1(int p_initial) {
 		p = p_initial;
 		f = 1;
-		rho = computerho(p, g, b);
+		rho = computerho(p, g, b); /* semantic error x2 g,b not defined*/
 		depth = 0;
 		
 		initializeChildren();
@@ -34,12 +34,12 @@ class AveryNode {
 		
 		if (good) {
 			f = parent.rho * parent.f;
-			p = (g * parent.p) / parent.rho;
+			p = (g * parent.p) / parent.rho; /* semantic error g */
 		} else {
 			f = 1 - parent.rho * parent.f;
-			p = ((1-g) * parent.p) / (1 - parent.rho);
+			p = ((1-g) * parent.p) / (1 - parent.rho); /* semantic error g */
 		}
-		rho = computerho(p, g, b);
+		rho = computerho(p, g, b); /* semantic error x2 g,b */
 		
 		initializeChildren();
 	}

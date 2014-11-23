@@ -20,11 +20,11 @@ class Hello {
 	
 	public void print() {
 		System.out.println(world.worldId = world.worldId + 1);
-	}
+	} /* not an error in java */
 }
 
 class Main {
-	public static void foo(String[] bar) {
+	public static void foo(String[] bar) { /* semantic error */
 		if ((G) = A == B && C != Y / Z < H) {
 			WorldArray ws = new World[A = B*10 || !C][];
 			while (this.T % 42) {
