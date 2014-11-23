@@ -74,6 +74,10 @@ public class PreNamingAnalysisVisitor implements AstVisitor {
 		return exceptions;
 	}
 
+	public boolean hasMain() {
+		return mainFound;
+	}
+
 	@Override
 	public void visit(Program program) {
 		for (ClassDeclaration curr : program.getClasses()) {
@@ -130,8 +134,10 @@ public class PreNamingAnalysisVisitor implements AstVisitor {
 
 	@Override
 	public void visit(StaticMethodDeclaration staticMethodDeclaration) {
-		if (mainFound)
+		if (mainFound) {
 			throwMultipleStaticMethodsError(staticMethodDeclaration.getPosition());
+			return;
+		}
 
 		Type returnType = staticMethodDeclaration.getType();
 		if (returnType.getBasicType() != BasicType.VOID) {
@@ -142,18 +148,21 @@ public class PreNamingAnalysisVisitor implements AstVisitor {
 		Symbol identifier = staticMethodDeclaration.getIdentifier();
 		if (!"main".equals(identifier.getValue())) {
 			throwTypeError(staticMethodDeclaration, "'public static void' method must be called 'main'.");
+			return;
 		}
 
 		if (staticMethodDeclaration.getParameters().size() != 1) {
 			throwTypeError(staticMethodDeclaration, "'public static void main' method must have a single argument of type String[].");
+			return;
 		}
 
 		ParameterDefinition parameter = staticMethodDeclaration.getParameters().get(0);
 		Type parameterType = parameter.getType();
 		if (parameterType.getBasicType() != BasicType.ARRAY || !"String".equals(parameterType.getSubType().getIdentifier().getValue())) {
 			throwTypeError(staticMethodDeclaration, "'public static void main' method must have a single argument of type String[].");
+			return;
 		}
-		
+
 		mainFound = true;
 		Position position = staticMethodDeclaration.getPosition();
 
