@@ -45,16 +45,16 @@ class A
 	public B[] getBB() {return bb;}
 	
 	/* mj special: void arrays */
-	public void[][][] setBB(B[] bbb)
+	public void[][][] setBB(B[] bbb) /* semantic error */
 	{
 		bb = bbb;;;;;;;;;
-		return new void[7][][];
+		return new void[7][][];  /* posssibly this too*/
 	}
 	
 	public static void main(String[] args)
 	{
 		int x = 1;
-		int y = x + !!7 = 5;
+		int y = x + !!7 = 5; /* semantic error x3 at !!7 and assignment to rvalue */
 		A a = new A();
 		a.realmain();
 	}
@@ -94,19 +94,19 @@ class A
 	
 	public void logic(boolean a, boolean b, boolean c)
 	{
-		println(!a);
-		println(a && b && c);
-		println(a || b || c);
+		println(!a); /* semantic error bool to int */
+		println(a && b && c); /* semantic error bool to int */
+		println(a || b || c); /* semantic error bool to int */
 	}
 	
 	public void compare(int a, int b)
 	{
-		println(a < b);
-		println(a <= b);
-		println(a == b);
-		println(a != b);
-		println(a >= b);
-		println(a > b);
+		println(a < b); /* semantic error bool to int */
+		println(a <= b); /* semantic error bool to int */
+		println(a == b); /* semantic error bool to int */
+		println(a != b); /* semantic error bool to int */
+		println(a >= b); /* semantic error bool to int */
+		println(a > b); /* semantic error bool to int */
 	}
 	
 	public boolean foo()
@@ -116,5 +116,5 @@ class A
 	}
 	
 	public void println(int i) {System.out.println(i);}
-	public void println(boolean b) {System.out.println(b);}
+	public void println(boolean b) {System.out.println(b);} /* semantic error - overloading */
 }
