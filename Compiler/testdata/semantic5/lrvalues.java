@@ -9,8 +9,8 @@ class Test {
     public static void main(String[] args) {
 
         int x = 5; /* ok, assignment to lvalue */
-        int y = m();
         Test t = new Test();
+        int y = t.m();
         boolean b = true;
         boolean[] bb = new boolean[123];
         (new boolean[123])[0] = true; /* ok ? (at least I think so ) */
