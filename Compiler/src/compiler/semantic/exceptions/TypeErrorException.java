@@ -14,9 +14,8 @@ public class TypeErrorException extends SemanticAnalysisException {
 	}
 
 	public static String buildMessage(AstNode astNode, String message) {
-		String classString = astNode.getClass() != null ? astNode.getClass().toString() : "unknown";
 		String positionString = astNode.getPosition() != null ? astNode.getPosition().toString() : "unknown";
 		String messageString = message != null ? ": " + message : "";
-		return "error: type error in token " + classString + " at position " + positionString + messageString;
+		return "error: type error in token at position " + positionString + messageString;
 	}
 }
