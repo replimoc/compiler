@@ -21,7 +21,7 @@ class Test {
 
         int[][] E = new int[dimm][];
 
-        int j = 0; int k = 0;
+        j = 0; int k = 0;
         while (j < dimm)
         {
             E[j] = new int[dimm];
