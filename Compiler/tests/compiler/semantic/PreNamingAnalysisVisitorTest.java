@@ -98,9 +98,20 @@ public class PreNamingAnalysisVisitorTest {
 	}
 
 	@Test
-	public void tesClassTwoFieldsThreeMethods() {
+	public void testClassTwoFieldsThreeMethods() {
 		ClassScope scope1 = scope(f(1, 2), m(1, 2, 3));
 		HashMap<Symbol, ClassScope> expectedScopes = scopes(c("class1", scope1), c("class2", scope1));
+
+		Program program = createAst(expectedScopes);
+		program.accept(visitor);
+
+		assertEquals(expectedScopes, visitor.getClassScopes());
+	}
+
+	@Test
+	public void testDoubleFieldDefinition() {
+		ClassScope scope1 = scope(f(1, 2, 0, 1), m());
+		HashMap<Symbol, ClassScope> expectedScopes = scopes(c("class1", scope1));
 
 		Program program = createAst(expectedScopes);
 		program.accept(visitor);

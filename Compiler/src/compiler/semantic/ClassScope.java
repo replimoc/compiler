@@ -56,12 +56,12 @@ public class ClassScope {
 	}
 
 	public MethodDefinition[] getMethodDefinitions() {
-		MethodDefinition[] fields = new MethodDefinition[this.fields.size()];
+		MethodDefinition[] methods = new MethodDefinition[this.methods.size()];
 		int i = 0;
 		for (Entry<Symbol, MethodDefinition> curr : this.methods.entrySet()) {
-			fields[i++] = curr.getValue();
+			methods[i++] = curr.getValue();
 		}
-		return fields;
+		return methods;
 	}
 
 	@Override
