@@ -15,7 +15,6 @@ import compiler.ast.ParameterDefinition;
 import compiler.ast.Program;
 import compiler.ast.StaticMethodDeclaration;
 import compiler.ast.statement.ArrayAccessExpression;
-import compiler.ast.statement.BlockBasedStatement;
 import compiler.ast.statement.BooleanConstantExpression;
 import compiler.ast.statement.Expression;
 import compiler.ast.statement.IfStatement;
@@ -111,10 +110,13 @@ public class DeepCheckingVisitor implements AstVisitor {
 		}
 	}
 
-	private void expectType(BasicType type, AstNode astNode) {
+	private boolean expectType(BasicType type, AstNode astNode) {
+		boolean result = true;
 		if (astNode.getType() != null && (astNode.getType().getBasicType() != type || astNode.getType().getSubType() != null)) {
 			throwTypeError(astNode);
+			result = false;
 		}
+		return result;
 	}
 
 	private void setType(Type type, AstNode astNode) {
@@ -349,7 +351,7 @@ public class DeepCheckingVisitor implements AstVisitor {
 				variableAccessExpression.setType(variableAccessExpression.getFieldIdentifier().getDefinition().getType());
 			} else if (currentClassScope.getFieldDefinition(variableAccessExpression.getFieldIdentifier()) != null) {
 				variableAccessExpression.setType(currentClassScope.getFieldDefinition(variableAccessExpression.getFieldIdentifier()).getType());
-			// special case is System
+				// special case is System
 			} else if (variableAccessExpression.getFieldIdentifier().getValue().equals("System")) {
 				variableAccessExpression.setType(new ClassType(null, new Symbol("System")));
 			} else {
@@ -392,14 +394,16 @@ public class DeepCheckingVisitor implements AstVisitor {
 
 	@Override
 	public void visit(ArrayAccessExpression arrayAccessExpression) {
-		arrayAccessExpression.getArrayExpression().accept(this);
-		arrayAccessExpression.getIndexExpression().accept(this);
+		Expression arrayExpression = arrayAccessExpression.getArrayExpression();
+		Expression indexExpression = arrayAccessExpression.getIndexExpression();
+		arrayExpression.accept(this);
+		indexExpression.accept(this);
 
-		if (arrayAccessExpression.getArrayExpression().getType() != null
-				&& arrayAccessExpression.getArrayExpression().getType().getBasicType() == BasicType.ARRAY
-				&& arrayAccessExpression.getArrayExpression().getType().getSubType().getBasicType() == BasicType.STRING_ARGS) {
+		if (expectType(BasicType.ARRAY, arrayExpression) && arrayExpression.getType().getSubType().getBasicType() == BasicType.STRING_ARGS) {
 			throwTypeError(arrayAccessExpression, "Access on main method parameter forbidden.");
 		}
+
+		expectType(BasicType.INT, indexExpression);
 	}
 
 	@Override
@@ -556,7 +560,7 @@ public class DeepCheckingVisitor implements AstVisitor {
 
 		if (methodDeclaration.getBlock() != null) {
 			currentMethodDefinition = currentClassScope.getMethodDefinition(methodDeclaration.getIdentifier());
-			//methodDeclaration.getBlock().accept(this);
+			// methodDeclaration.getBlock().accept(this);
 			for (Statement statement : methodDeclaration.getBlock().getStatements()) {
 				statement.accept(this);
 			}
