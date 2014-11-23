@@ -496,6 +496,17 @@ public class DeepCheckingVisitor implements AstVisitor {
 	@Override
 	public void visit(Type type) {
 		type.setType(type);
+
+		if (type.getBasicType() == BasicType.ARRAY && searchForVoidSubtype(type)) {
+			throwTypeError(type);
+		}
+	}
+
+	private boolean searchForVoidSubtype(Type type) {
+		while (type != null && type.getBasicType() == BasicType.ARRAY) {
+			type = type.getSubType();
+		}
+		return type == null || type.getBasicType() == BasicType.VOID;
 	}
 
 	@Override
@@ -582,7 +593,7 @@ public class DeepCheckingVisitor implements AstVisitor {
 			expression.accept(this);
 			expectType(localVariableDeclaration.getType(), expression);
 		}
-		
+
 		symbolTable.insert(localVariableDeclaration.getIdentifier(), new Definition(localVariableDeclaration.getIdentifier(),
 				localVariableDeclaration.getType()));
 	}
@@ -627,6 +638,8 @@ public class DeepCheckingVisitor implements AstVisitor {
 	}
 
 	private void visitMethodDeclaration(MethodDeclaration methodDeclaration) {
+		methodDeclaration.getType().accept(this);
+
 		symbolTable = new SymbolTable();
 		symbolTable.enterScope();
 
