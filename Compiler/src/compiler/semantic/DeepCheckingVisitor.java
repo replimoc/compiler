@@ -110,12 +110,12 @@ public class DeepCheckingVisitor implements AstVisitor {
 	}
 
 	private boolean hasType(Type type, AstNode astNode) {
-		return !(astNode.getType() != null
-		&& !((type.getBasicType() != null && astNode.getType().getBasicType() == BasicType.NULL) || astNode.getType().equals(type)));
+		return (astNode.getType() == null
+				|| (type.getBasicType() != null && astNode.getType().getBasicType() == BasicType.NULL) || astNode.getType().equals(type));
 	}
 
 	private boolean hasType(BasicType type, AstNode astNode) {
-		return !(astNode.getType() != null && (astNode.getType().getBasicType() != type || astNode.getType().getSubType() != null));
+		return (astNode.getType() == null || astNode.getType().getBasicType() == type);
 	}
 
 	private void expectType(Type type, AstNode astNode) {
