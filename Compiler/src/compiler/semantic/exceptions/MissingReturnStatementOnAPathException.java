@@ -9,6 +9,6 @@ public class MissingReturnStatementOnAPathException extends SemanticAnalysisExce
 
 	public MissingReturnStatementOnAPathException(Position position, Symbol methodIdentifier) {
 		super(position, "error: At least one path in method '" + methodIdentifier.getValue() + "' at " + position
-				+ "does not have a return statement.");
+				+ " does not have a return statement.");
 	}
 }

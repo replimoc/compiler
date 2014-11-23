@@ -400,6 +400,11 @@ public class DeepCheckingVisitor implements AstVisitor {
 			}
 		} else {
 			Expression leftExpression = variableAccessExpression.getExpression();
+
+			if (leftExpression instanceof ThisExpression && isStaticMethod) {
+				return;
+			}
+
 			Type leftExpressionType = leftExpression.getType();
 
 			if (leftExpressionType == null) {
@@ -571,14 +576,15 @@ public class DeepCheckingVisitor implements AstVisitor {
 			throwRedefinitionError(localVariableDeclaration.getIdentifier(), localVariableDeclaration.getPosition());
 			return;
 		}
-		symbolTable.insert(localVariableDeclaration.getIdentifier(), new Definition(localVariableDeclaration.getIdentifier(),
-				localVariableDeclaration.getType()));
 
 		Expression expression = localVariableDeclaration.getExpression();
 		if (expression != null) {
 			expression.accept(this);
 			expectType(localVariableDeclaration.getType(), expression);
 		}
+		
+		symbolTable.insert(localVariableDeclaration.getIdentifier(), new Definition(localVariableDeclaration.getIdentifier(),
+				localVariableDeclaration.getType()));
 	}
 
 	@Override
