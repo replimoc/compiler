@@ -6,11 +6,6 @@ import java.io.Reader;
 import compiler.StringTable;
 import compiler.StringTable.Entry;
 import compiler.Symbol;
-import compiler.ast.type.BasicType;
-import compiler.ast.type.ClassType;
-import compiler.ast.type.Type;
-import compiler.semantic.symbolTable.Definition;
-import compiler.semantic.symbolTable.Scope;
 
 public class Lexer implements TokenSuppliable {
 	private int c;
