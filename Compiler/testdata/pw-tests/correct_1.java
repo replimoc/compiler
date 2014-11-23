@@ -57,7 +57,7 @@ class AveryTree {
 		this.numberOfPlayers = 4;
 		root = new AveryNode();
 		root.construct1(1);
-		return root; /* semantic error - wrong return type */
+		return root; /* semantic error: AveryTree is not AveryNode */
 	}
 
 	public static void main(String[] args) {

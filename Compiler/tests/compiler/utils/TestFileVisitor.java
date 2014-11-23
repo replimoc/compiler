@@ -7,8 +7,10 @@ import java.nio.file.Path;
 import java.nio.file.PathMatcher;
 import java.nio.file.SimpleFileVisitor;
 import java.nio.file.attribute.BasicFileAttributes;
+import java.util.AbstractMap.SimpleEntry;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map.Entry;
 
 import org.junit.Assert;
 import org.junit.Ignore;
@@ -19,79 +21,88 @@ import org.junit.Ignore;
 @Ignore
 public class TestFileVisitor extends SimpleFileVisitor<Path> {
 
-    public interface FileTester {
-        void testSourceFile(Path sourceFilePath, Path expectedResultFilePath) throws Exception;
-    }
+	public interface FileTester {
+		void testSourceFile(Path sourceFilePath, Path expectedResultFilePath) throws Exception;
+	}
 
-    private static final String JAVA_EXTENSION = ".java";
+	private static final String JAVA_EXTENSION = ".java";
 
-    private final String expectedResultFileExtension;
-    private final String sourceFileExtension;
-    private final String sourceFile;
+	private final String expectedResultFileExtension;
+	private final String sourceFileExtension;
+	private final String sourceFile;
 
-    private final PathMatcher matcher;
-    private final FileTester fileTester;
-    private final List<Path> failedTestsList = new ArrayList<>();
+	private final PathMatcher matcher;
+	private final FileTester fileTester;
+	private final List<Entry<Path, Throwable>> failedTestsList = new ArrayList<>();
 
-    public TestFileVisitor(String expectedResultFileExtension, FileTester fileTester) {
-        this(JAVA_EXTENSION, expectedResultFileExtension, fileTester, null);
-    }
+	public TestFileVisitor(String expectedResultFileExtension, FileTester fileTester) {
+		this(JAVA_EXTENSION, expectedResultFileExtension, fileTester, null);
+	}
 
-    public TestFileVisitor(String expectedResultFileExtension, FileTester fileTester, String sourceFile) {
-        this(JAVA_EXTENSION, expectedResultFileExtension, fileTester, sourceFile);
-    }
+	public TestFileVisitor(String expectedResultFileExtension, FileTester fileTester, String sourceFile) {
+		this(JAVA_EXTENSION, expectedResultFileExtension, fileTester, sourceFile);
+	}
 
-    public TestFileVisitor(String sourceFileExtension, String expectedResultFileExtension,
-                            FileTester fileTester) {
-        this(sourceFileExtension, expectedResultFileExtension, fileTester, null);
-    }
+	public TestFileVisitor(String sourceFileExtension, String expectedResultFileExtension,
+			FileTester fileTester) {
+		this(sourceFileExtension, expectedResultFileExtension, fileTester, null);
+	}
 
+	private TestFileVisitor(String sourceFileExtension, String expectedResultFileExtension,
+			FileTester fileTester, String sourceFile) {
+		this.expectedResultFileExtension = expectedResultFileExtension;
+		this.sourceFile = sourceFile;
+		if (this.sourceFile == null) {
+			this.matcher = FileSystems.getDefault().getPathMatcher("glob:*" + expectedResultFileExtension);
+		} else {
+			this.matcher = FileSystems.getDefault().getPathMatcher("glob:*" + sourceFile + expectedResultFileExtension);
+		}
+		this.fileTester = fileTester;
+		this.sourceFileExtension = sourceFileExtension;
+	}
 
-    private TestFileVisitor(String sourceFileExtension, String expectedResultFileExtension,
-                            FileTester fileTester, String sourceFile) {
-        this.expectedResultFileExtension = expectedResultFileExtension;
-        this.sourceFile = sourceFile;
-        if (this.sourceFile == null) {
-            this.matcher = FileSystems.getDefault().getPathMatcher("glob:*" + expectedResultFileExtension);
-        } else {
-            this.matcher = FileSystems.getDefault().getPathMatcher("glob:*" + sourceFile + expectedResultFileExtension);
-        }
-        this.fileTester = fileTester;
-        this.sourceFileExtension = sourceFileExtension;
-    }
+	@Override
+	public FileVisitResult visitFile(Path file, BasicFileAttributes attrs) {
+		Path name = file.getFileName();
+		if (name != null && matcher.matches(name)) {
+			String parseFilename = name.toString();
+			String sourceFilename = parseFilename.replace(expectedResultFileExtension, sourceFileExtension);
 
-    @Override
-    public FileVisitResult visitFile(Path file, BasicFileAttributes attrs) {
-        Path name = file.getFileName();
-        if (name != null && matcher.matches(name)) {
-            String parseFilename = name.toString();
-            String sourceFilename = parseFilename.replace(expectedResultFileExtension, sourceFileExtension);
+			Path sourceFilePath = file.getParent().resolve(sourceFilename);
 
-            Path sourceFilePath = file.getParent().resolve(sourceFilename);
+			try {
+				if (!Files.exists(sourceFilePath)) {
+					Assert.fail("cannot find program to output " + sourceFilePath);
+				}
 
-            try {
-                if (!Files.exists(sourceFilePath)) {
-                    Assert.fail("cannot find program to output " + sourceFilePath);
-                }
+				fileTester.testSourceFile(sourceFilePath, file);
+			} catch (Throwable e) {
+				printException(sourceFilePath, e);
+				failedTestsList.add(new SimpleEntry<Path, Throwable>(sourceFilePath, e));
+			}
+		}
+		return FileVisitResult.CONTINUE;
+	}
 
-                fileTester.testSourceFile(sourceFilePath, file);
-            } catch (Throwable e) {
-                System.err.println("");
-                System.err.println(">>>>>~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~<<<<<");
-                System.err.println("Test for file = " + file + " failed");
-                e.printStackTrace();
-                System.err.println("^^^^^~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~^^^^^");
-                System.err.println("");
-                failedTestsList.add(file);
-            }
+	public void checkForFailedTests() {
+		printFailedTestsMessages();
+		if (failedTestsList.size() != 0) {
+			Assert.fail("Tests for " + failedTestsList.size() + " test(s) failed");
+		}
+	}
 
-        }
-        return FileVisitResult.CONTINUE;
-    }
+	private void printFailedTestsMessages() {
+		for (Entry<Path, Throwable> curr : failedTestsList) {
+			printException(curr.getKey(), curr.getValue());
+		}
+	}
 
-    public void checkForFailedTests() {
-        if (failedTestsList.size() != 0) {
-            Assert.fail("Tests for " + failedTestsList.size() + " test(s) failed");
-        }
-    }
+	private void printException(Path file, Throwable exception) {
+		System.err.println();
+		System.err.println(">>>>>~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~<<<<<");
+		System.err.println("Test for file = " + file + " failed");
+		exception.printStackTrace();
+		System.err.println("^^^^^~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~^^^^^");
+		System.err.println();
+	}
 }

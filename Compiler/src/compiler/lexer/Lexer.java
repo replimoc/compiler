@@ -398,7 +398,7 @@ public class Lexer implements TokenSuppliable {
 
 	private class PositionalCharacterSource {
 		private final Reader reader;
-		private int line = 0;
+		private int line = 1;
 		private int character = 0;
 
 		public PositionalCharacterSource(Reader reader) {
