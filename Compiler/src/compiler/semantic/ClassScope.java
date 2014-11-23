@@ -38,9 +38,9 @@ public class ClassScope {
 		SymbolTable symbolTable = new SymbolTable();
 		symbolTable.enterScope();
 
-		for (Entry<Symbol, Definition> curr : fields.entrySet()) {
+		/*for (Entry<Symbol, Definition> curr : fields.entrySet()) {
 			symbolTable.insert(curr.getKey(), curr.getValue());
-		}
+		}*/
 
 		symbolTable.enterScope();
 		return symbolTable;

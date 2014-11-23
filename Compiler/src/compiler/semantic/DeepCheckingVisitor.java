@@ -565,7 +565,7 @@ public class DeepCheckingVisitor implements AstVisitor {
 
 	@Override
 	public void visit(LocalVariableDeclaration localVariableDeclaration) {
-		if (symbolTable.isDefinedInCurrentScope(localVariableDeclaration.getIdentifier())) {
+		if (localVariableDeclaration.getIdentifier().isDefined()) {
 			throwRedefinitionError(localVariableDeclaration.getIdentifier(), localVariableDeclaration.getPosition());
 			return;
 		}
