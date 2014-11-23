@@ -580,6 +580,10 @@ public class DeepCheckingVisitor implements AstVisitor {
 	public void visit(LocalVariableDeclaration localVariableDeclaration) {
 		localVariableDeclaration.getType().accept(this);
 
+		if (hasType(BasicType.VOID, localVariableDeclaration)) {
+			throwTypeError(localVariableDeclaration);
+		}
+
 		if (localVariableDeclaration.getIdentifier().isDefined()) {
 			throwRedefinitionError(localVariableDeclaration.getIdentifier(), localVariableDeclaration.getPosition());
 			return;
@@ -598,6 +602,10 @@ public class DeepCheckingVisitor implements AstVisitor {
 	@Override
 	public void visit(ParameterDefinition parameterDefinition) {
 		parameterDefinition.getType().accept(this);
+
+		if (hasType(BasicType.VOID, parameterDefinition)) {
+			throwTypeError(parameterDefinition);
+		}
 
 		// check if parameter already defined
 		if (symbolTable.isDefinedInCurrentScope(parameterDefinition.getIdentifier())) {
