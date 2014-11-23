@@ -25,3 +25,11 @@ class A
         System.out.println(true); /* ok */
     }
 }
+
+class B {
+	public B System;
+	
+	public void bla () {
+		System.out.println(); /* error */
+	}
+}
