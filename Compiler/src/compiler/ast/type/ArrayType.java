@@ -26,4 +26,28 @@ public class ArrayType extends Type {
 		return tmpType.getIdentifier();
 	}
 
+	@Override
+	public int hashCode() {
+		final int prime = 31;
+		int result = super.hashCode();
+		result = prime * result + ((subType == null) ? 0 : subType.hashCode());
+		return result;
+	}
+
+	@Override
+	public boolean equals(Object obj) {
+		if (this == obj)
+			return true;
+		if (!super.equals(obj))
+			return false;
+		if (getClass() != obj.getClass())
+			return false;
+		ArrayType other = (ArrayType) obj;
+		if (subType == null) {
+			if (other.subType != null)
+				return false;
+		} else if (!subType.equals(other.subType))
+			return false;
+		return true;
+	}
 }
