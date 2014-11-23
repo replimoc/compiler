@@ -6,7 +6,6 @@ import java.util.Map.Entry;
 import compiler.Symbol;
 import compiler.semantic.symbolTable.Definition;
 import compiler.semantic.symbolTable.MethodDefinition;
-import compiler.semantic.symbolTable.SymbolTable;
 
 public class ClassScope {
 
@@ -32,18 +31,6 @@ public class ClassScope {
 
 	public int getNumberOfMethods() {
 		return methods.size();
-	}
-
-	public SymbolTable createClassSymbolTable() {
-		SymbolTable symbolTable = new SymbolTable();
-		symbolTable.enterScope();
-
-		/*for (Entry<Symbol, Definition> curr : fields.entrySet()) {
-			symbolTable.insert(curr.getKey(), curr.getValue());
-		}*/
-
-		symbolTable.enterScope();
-		return symbolTable;
 	}
 
 	public Definition[] getFieldDefinitions() {

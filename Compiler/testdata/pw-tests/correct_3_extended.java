@@ -24,7 +24,7 @@ class Hello {
 }
 
 class Main {
-	public static void foo(String[] bar) { /* semantic error, the body of this method will be ignored */
+	public static void main(String[] bar) {
 		if ((G) = A == B && C != Y / Z < H) {
 			WorldArray ws = new World[A = B*10 || !C][];
 			while (this.T % 42) {

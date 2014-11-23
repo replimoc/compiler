@@ -327,9 +327,11 @@ public class DeepCheckingVisitor implements AstVisitor {
 
 			// get class scope
 			ClassScope classScope = classScopes.get(leftExpressionType.getIdentifier());
-			// no need to check if it's null, as it has been checked before...
 
-			MethodDefinition methodDefinition = classScope.getMethodDefinition(methodInvocationExpression.getMethodIdent());
+			MethodDefinition methodDefinition = null;
+			if (classScope != null) {
+				methodDefinition = classScope.getMethodDefinition(methodInvocationExpression.getMethodIdent());
+			}
 			// is there the specified method?
 			if (methodDefinition == null) {
 				throwNoSuchMemberError(leftExpressionType.getIdentifier(), leftExpressionType.getPosition(),
@@ -607,6 +609,9 @@ public class DeepCheckingVisitor implements AstVisitor {
 
 	@Override
 	public void visit(FieldDeclaration fieldDeclaration) {
+		if (hasType(BasicType.VOID, fieldDeclaration)) {
+			throwTypeError(fieldDeclaration);
+		}
 	}
 
 	@Override
@@ -617,7 +622,8 @@ public class DeepCheckingVisitor implements AstVisitor {
 	}
 
 	private void visitMethodDeclaration(MethodDeclaration methodDeclaration) {
-		symbolTable = currentClassScope.createClassSymbolTable();
+		symbolTable = new SymbolTable();
+		symbolTable.enterScope();
 
 		for (ParameterDefinition parameterDefinition : methodDeclaration.getParameters()) {
 			parameterDefinition.accept(this);
@@ -632,7 +638,7 @@ public class DeepCheckingVisitor implements AstVisitor {
 			// if method has return type, check if all paths have a return statement
 			if (currentMethodDefinition.getType().getBasicType() != BasicType.VOID) {
 				if (!returnOnAllPaths) {
-					exceptions.add(new MissingReturnStatementOnAPathException(methodDeclaration.getPosition()));
+					exceptions.add(new MissingReturnStatementOnAPathException(methodDeclaration.getPosition(), methodDeclaration.getIdentifier()));
 				}
 			}
 		}
