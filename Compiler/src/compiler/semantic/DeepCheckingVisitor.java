@@ -354,9 +354,7 @@ public class DeepCheckingVisitor implements AstVisitor {
 			Expression expression = methodInvocationExpression.getParameters()[i];
 			expression.accept(this);
 
-			if (parameterDefinition.getType() != null) {
-				expectType(parameterDefinition.getType(), expression);
-			}
+			expectType(parameterDefinition.getType(), expression);
 		}
 
 		methodInvocationExpression.setType(methodDefinition.getType());
@@ -448,7 +446,7 @@ public class DeepCheckingVisitor implements AstVisitor {
 			return; // Already an error thrown in an upper left array part.
 		}
 
-		if (arrayExpression.getType() != null && arrayExpression.getType().getBasicType() == BasicType.ARRAY) {
+		if (arrayExpression.getType().getBasicType() == BasicType.ARRAY) {
 			if (arrayExpression.getType().getSubType().getBasicType() == BasicType.STRING_ARGS) {
 				throwTypeError(arrayAccessExpression, "Access on main method parameter forbidden.");
 			}
@@ -554,11 +552,10 @@ public class DeepCheckingVisitor implements AstVisitor {
 		boolean returnInFalseCase = false;
 
 		Statement trueCase = ifStatement.getTrueCase();
-		if (trueCase != null) {
-			returnOnAllPaths = false;
-			trueCase.accept(this);
-			returnInTrueCase = returnOnAllPaths;
-		}
+
+		returnOnAllPaths = false;
+		trueCase.accept(this);
+		returnInTrueCase = returnOnAllPaths;
 
 		Statement falseCase = ifStatement.getFalseCase();
 		if (falseCase != null) {
@@ -576,9 +573,7 @@ public class DeepCheckingVisitor implements AstVisitor {
 		condition.accept(this);
 		expectType(BasicType.BOOLEAN, condition);
 
-		if (whileStatement.getBody() != null) {
-			whileStatement.getBody().accept(this);
-		}
+		whileStatement.getBody().accept(this);
 	}
 
 	@Override
