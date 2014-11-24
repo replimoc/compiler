@@ -19,7 +19,8 @@ import compiler.utils.TestUtils;
 public class DeepCheckingVisitorTest {
 
 	private HashMap<Symbol, ClassScope> classScopes = new HashMap<Symbol, ClassScope>();
-	private final DeepCheckingVisitor visitor = new DeepCheckingVisitor(classScopes);
+	private final DeepCheckingVisitor visitor = new DeepCheckingVisitor(
+			classScopes);
 
 	@Test
 	public void testEmptyProgram() {
@@ -32,27 +33,33 @@ public class DeepCheckingVisitorTest {
 
 	@Test
 	public void testFromString() throws IOException, ParsingFailedException {
-		Parser parser = TestUtils.initParser("class Class { public static void main(String[] args) {} public void function(Class param) {} }");
-		List<SemanticAnalysisException> errors = SemanticChecker.checkSemantic(parser.parse());
+		Parser parser = TestUtils
+				.initParser("class Class { public static void main(String[] args) {} public void function(Class param) {} }");
+		List<SemanticAnalysisException> errors = SemanticChecker
+				.checkSemantic(parser.parse());
 		assertEquals(0, errors.size());
 
-		parser = TestUtils.initParser("class Class { public static void main(String[] args) {} public void function(ClassB param) {} }");
+		parser = TestUtils
+				.initParser("class Class { public static void main(String[] args) {} public void function(ClassB param) {} }");
 		errors = SemanticChecker.checkSemantic(parser.parse());
 		assertEquals(1, errors.size());
 		assertNotNull(errors.get(0));
 
-		parser = TestUtils.initParser("class Class { public static void main(String[] args) {} public void function(Class param, int param) {} }");
+		parser = TestUtils
+				.initParser("class Class { public static void main(String[] args) {} public void function(Class param, int param) {} }");
 		errors = SemanticChecker.checkSemantic(parser.parse());
 		assertEquals(1, errors.size());
 		assertNotNull(errors.get(0));
 
-		parser = TestUtils.initParser("class Class { public static void main(String[] args) {} public void function(Class param) { paramA; } }");
+		parser = TestUtils
+				.initParser("class Class { public static void main(String[] args) {} public void function(Class param) { paramA; } }");
 		errors = SemanticChecker.checkSemantic(parser.parse());
 		assertEquals(2, errors.size());
 		assertNotNull(errors.get(0));
 		assertNotNull(errors.get(1));
 
-		parser = TestUtils.initParser("class Class { public static void main(String[] args) {} public void function(Class param) { param.asdf; } }");
+		parser = TestUtils
+				.initParser("class Class { public static void main(String[] args) {} public void function(Class param) { param.asdf; } }");
 		errors = SemanticChecker.checkSemantic(parser.parse());
 		assertEquals(2, errors.size());
 		assertNotNull(errors.get(0));
@@ -227,15 +234,32 @@ public class DeepCheckingVisitorTest {
 	public void testVoidParams() throws IOException, ParsingFailedException {
 		Parser parser = TestUtils
 				.initParser("class Main{public void asdf(void a, void b, void c) { return; } public static void main(String[] vargs){}}");
-		List<SemanticAnalysisException> errors = SemanticChecker.checkSemantic(parser.parse());
+		List<SemanticAnalysisException> errors = SemanticChecker
+				.checkSemantic(parser.parse());
 		assertEquals(3, errors.size());
 	}
 
 	@Test
-	public void testSystemOutPrintln() throws IOException, ParsingFailedException {
+	public void testSitzung6Errors() throws IOException, ParsingFailedException {
+		Parser parser = TestUtils
+				.initParser("class Main{public void a() { return b(); } public void b() {} public static void main(String[] vargs){}}");
+		List<SemanticAnalysisException> errors = SemanticChecker
+				.checkSemantic(parser.parse());
+		assertEquals(1, errors.size());
+
+		parser = TestUtils
+				.initParser("class Main{public void a(int a, int a, int a) { } public static void main(String[] vargs){}}");
+		errors = SemanticChecker.checkSemantic(parser.parse());
+		assertEquals(1, errors.size());
+	}
+
+	@Test
+	public void testSystemOutPrintln() throws IOException,
+			ParsingFailedException {
 		Parser parser = TestUtils
 				.initParser("class main{public static void main(String[] a){}} class System { public System System; public System out; public void println(){System.out.println();}}");
-		List<SemanticAnalysisException> errors = SemanticChecker.checkSemantic(parser.parse());
+		List<SemanticAnalysisException> errors = SemanticChecker
+				.checkSemantic(parser.parse());
 		assertEquals(0, errors.size());
 	}
 }
