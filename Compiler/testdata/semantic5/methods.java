@@ -52,6 +52,7 @@ class Test {
         while(true) {
             return 1;
         }
+        return 0;
     }
 
     /* return objects */
