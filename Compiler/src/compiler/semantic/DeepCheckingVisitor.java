@@ -580,6 +580,7 @@ public class DeepCheckingVisitor implements AstVisitor {
 		expectType(BasicType.BOOLEAN, condition);
 
 		acceptStatement(whileStatement.getBody());
+		returnOnAllPaths = false;
 	}
 
 	private void acceptStatement(Statement statement) {
