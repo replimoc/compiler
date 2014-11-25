@@ -1,7 +1,10 @@
 package compiler.firm;
 
+import java.util.List;
+
 import compiler.ast.Block;
 import compiler.ast.ClassDeclaration;
+import compiler.ast.ClassMember;
 import compiler.ast.FieldDeclaration;
 import compiler.ast.MethodDeclaration;
 import compiler.ast.ParameterDefinition;
@@ -36,11 +39,94 @@ import compiler.ast.statement.binary.SubtractionExpression;
 import compiler.ast.statement.unary.LogicalNotExpression;
 import compiler.ast.statement.unary.NegateExpression;
 import compiler.ast.statement.unary.ReturnStatement;
+import compiler.ast.type.BasicType;
 import compiler.ast.type.ClassType;
 import compiler.ast.type.Type;
 import compiler.ast.visitor.AstVisitor;
 
+import firm.ArrayType;
+import firm.MethodType;
+import firm.Mode;
+import firm.Mode.Arithmetic;
+import firm.PrimitiveType;
+
 public class FirmGenerationVisitor implements AstVisitor {
+
+	// 64 bit pointer
+	private final Mode reference;
+
+	public FirmGenerationVisitor() {
+		reference = Mode.createReferenceMode("P64", Arithmetic.None, 64, 0);
+	}
+
+	private firm.Type createType(Type type) {
+		Type tmpType = type;
+		while (tmpType.getSubType() != null) {
+			tmpType = tmpType.getSubType();
+		}
+
+		firm.Type firmType = null;
+		switch (tmpType.getBasicType()) {
+		case INT:
+			firmType = new PrimitiveType(Mode.getIs()); // integer signed 32 bit
+			break;
+		case BOOLEAN:
+			firmType = new PrimitiveType(Mode.getBu()); // unsigned 8 bit
+			break;
+		case VOID:
+			// TODO: do nothing?
+			break;
+		case NULL:
+			// TODO: necessary?
+			firmType = new PrimitiveType(reference);
+			break;
+		}
+
+		if (type.getBasicType() == BasicType.ARRAY) {
+			// create composite type
+			firmType = new ArrayType(firmType);
+		}
+
+		return firmType;
+	}
+
+	private firm.Type createType(FieldDeclaration decl) {
+		firm.Type type = createType(decl.getType());
+
+		if (type == null) {
+			type = new firm.ClassType(decl.getType().getIdentifier().getValue());
+		}
+		return type;
+	}
+
+	private firm.Type createType(ClassMember decl) {
+		// TODO:
+		throw new RuntimeException();
+	}
+
+	private MethodType createType(MethodDeclaration decl) {
+		List<ParameterDefinition> params = decl.getParameters();
+		firm.Type[] paramTypes = new firm.Type[params.size()];
+		for (int i = 0; i < params.size(); i++) {
+			paramTypes[i] = createType(params.get(i).getType());
+		}
+
+		firm.Type returnType = createType(decl.getType());
+
+		return new MethodType(paramTypes, new firm.Type[] { returnType });
+	}
+
+	private firm.ClassType createClassType(ClassDeclaration decl) {
+		firm.ClassType classType = new firm.ClassType(decl.getIdentifier().getValue());
+
+		List<ClassMember> members = decl.getMembers();
+
+		for (ClassMember member : members) {
+			// TODO: entities?
+		}
+
+		return null;
+	}
 
 	@Override
 	public void visit(AdditionExpression additionExpression) {
