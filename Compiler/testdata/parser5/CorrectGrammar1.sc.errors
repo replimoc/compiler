@@ -5,7 +5,6 @@ error: type error in token at position line   8, character 21
 error: type error in token at position line  12, character 15
 error: Invalid member function call getMatrix at position line  23, character 29
 error: Member wtf at position line  26, character 13 is not available in object Cl1 defined at null
-error: Identifier a at position line  39, character 18 has not been defined
 error: Identifier b at position line  40, character 22 has not been defined
 error: type error in token at position line  54, character 27
 error: type error in token at position line  55, character 22
