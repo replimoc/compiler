@@ -1,1 +1,1 @@
-error: type error in token at position line   3, character 10
+error: type error in token at position line   3, character  9: Expected return statement without type.
