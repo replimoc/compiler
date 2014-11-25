@@ -1,6 +1,7 @@
 error: No 'public static void main(String[] args)' method has been found.
 error: type error in token at position line   2, character 30
-error: type error in token at position line   3, character 27
+error: type error in token at position line   3, character 35: Left side of assignment expression should variable or array.
+error: type error in token at position line   3, character 27: Left side of assignment expression should variable or array.
 error: type error in token at position line   3, character 42
 error: type error in token at position line   4, character 15
 error: At least one path in method 'foo' at line   2, character 34 does not have a return statement.

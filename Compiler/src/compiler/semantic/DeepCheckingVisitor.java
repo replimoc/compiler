@@ -191,16 +191,8 @@ public class DeepCheckingVisitor implements AstVisitor {
 
 		Expression operand1 = assignmentExpression.getOperand1();
 		Expression operand2 = assignmentExpression.getOperand2();
-		if (operand1 instanceof ThisExpression
-				|| operand1 instanceof MethodInvocationExpression
-				|| operand1 instanceof NewObjectExpression
-				|| operand1 instanceof NewArrayExpression
-				|| operand1 instanceof BinaryExpression
-				|| operand1 instanceof LogicalNotExpression
-				|| operand1 instanceof NegateExpression
-				|| operand1 instanceof IntegerConstantExpression
-				|| operand1 instanceof BooleanConstantExpression) {
-			throwTypeError(operand1);
+		if (!(operand1 instanceof VariableAccessExpression || operand1 instanceof ArrayAccessExpression)) {
+			throwTypeError(operand1, "Left side of assignment expression should variable or array.");
 		} else if (operand1.getType() != null && operand2.getType() != null &&
 				(hasType(BasicType.INT, operand1) || hasType(BasicType.BOOLEAN, operand1)) && hasType(BasicType.NULL, operand2)) {
 			throwTypeError(operand2);
