@@ -474,12 +474,17 @@ public class DeepCheckingVisitor implements AstVisitor {
 	@Override
 	public void visit(ReturnStatement returnStatement) {
 		isExpressionStatement = true;
+		boolean isVoidMethod = currentMethodDefinition.getType().getBasicType() == BasicType.VOID;
 
 		if (returnStatement.getOperand() != null) {
+			if (isVoidMethod) {
+				throwTypeError(returnStatement, "Expected return statement without type.");
+				return;
+			}
 			returnStatement.getOperand().accept(this);
 			expectType(currentMethodDefinition.getType(), returnStatement.getOperand());
 			returnOnAllPaths = true;
-		} else if (currentMethodDefinition.getType().getBasicType() != BasicType.VOID) {
+		} else if (!isVoidMethod) {
 			throwTypeError(returnStatement);
 		}
 	}
