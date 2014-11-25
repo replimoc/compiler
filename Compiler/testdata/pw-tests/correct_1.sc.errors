@@ -1,0 +1,7 @@
+error: Identifier g at position line  25, character 24 has not been defined
+error: Identifier b at position line  25, character 27 has not been defined
+error: Identifier g at position line  37, character 10 has not been defined
+error: Identifier g at position line  40, character 13 has not been defined
+error: Identifier g at position line  42, character 24 has not been defined
+error: Identifier b at position line  42, character 27 has not been defined
+error: type error in token at position line  60, character 14

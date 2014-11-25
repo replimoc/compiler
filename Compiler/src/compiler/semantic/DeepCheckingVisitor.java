@@ -113,7 +113,9 @@ public class DeepCheckingVisitor implements AstVisitor {
 
 	private boolean hasType(Type type, AstNode astNode) {
 		return (astNode.getType() == null
-				|| (type.getBasicType() != null && astNode.getType().getBasicType() == BasicType.NULL) || astNode.getType().equals(type));
+				|| (type.getBasicType() != null && type.getBasicType() != BasicType.INT && type.getBasicType() != BasicType.BOOLEAN
+				&& astNode.getType().getBasicType() == BasicType.NULL)
+				|| astNode.getType().equals(type));
 	}
 
 	private boolean hasType(BasicType type, AstNode astNode) {
@@ -191,14 +193,8 @@ public class DeepCheckingVisitor implements AstVisitor {
 
 		Expression operand1 = assignmentExpression.getOperand1();
 		Expression operand2 = assignmentExpression.getOperand2();
-		if (operand1 instanceof ThisExpression
-				|| operand1 instanceof MethodInvocationExpression
-				|| operand1 instanceof NewObjectExpression
-				|| operand1 instanceof NewArrayExpression
-				|| operand1 instanceof BinaryExpression
-				|| operand1 instanceof LogicalNotExpression
-				|| operand1 instanceof NegateExpression) {
-			throwTypeError(operand1);
+		if (!(operand1 instanceof VariableAccessExpression || operand1 instanceof ArrayAccessExpression)) {
+			throwTypeError(operand1, "Left side of assignment expression should variable or array.");
 		} else if (operand1.getType() != null && operand2.getType() != null &&
 				(hasType(BasicType.INT, operand1) || hasType(BasicType.BOOLEAN, operand1)) && hasType(BasicType.NULL, operand2)) {
 			throwTypeError(operand2);
@@ -282,6 +278,9 @@ public class DeepCheckingVisitor implements AstVisitor {
 	@Override
 	public void visit(NewArrayExpression newArrayExpression) {
 		newArrayExpression.getType().accept(this);
+		newArrayExpression.getFirstDimension().accept(this);
+
+		expectType(BasicType.INT, newArrayExpression.getFirstDimension());
 	}
 
 	@Override
@@ -293,11 +292,6 @@ public class DeepCheckingVisitor implements AstVisitor {
 
 	@Override
 	public void visit(MethodInvocationExpression methodInvocationExpression) {
-		// first step in outer left expression
-		if (methodInvocationExpression.getMethodExpression() != null) {
-			methodInvocationExpression.getMethodExpression().accept(this);
-		}
-
 		// is inner expression
 		if (methodInvocationExpression.getMethodExpression() == null) {
 			if (isStaticMethod) {
@@ -314,6 +308,9 @@ public class DeepCheckingVisitor implements AstVisitor {
 				return;
 			}
 		} else {
+			// first step in outer left expression
+			methodInvocationExpression.getMethodExpression().accept(this);
+
 			Expression leftExpression = methodInvocationExpression.getMethodExpression();
 
 			Type leftExpressionType = leftExpression.getType();
@@ -474,12 +471,17 @@ public class DeepCheckingVisitor implements AstVisitor {
 	@Override
 	public void visit(ReturnStatement returnStatement) {
 		isExpressionStatement = true;
+		boolean isVoidMethod = currentMethodDefinition.getType().getBasicType() == BasicType.VOID;
 
 		if (returnStatement.getOperand() != null) {
+			if (isVoidMethod) {
+				throwTypeError(returnStatement, "Expected return statement without type.");
+				return;
+			}
 			returnStatement.getOperand().accept(this);
 			expectType(currentMethodDefinition.getType(), returnStatement.getOperand());
 			returnOnAllPaths = true;
-		} else if (currentMethodDefinition.getType().getBasicType() != BasicType.VOID) {
+		} else if (!isVoidMethod) {
 			throwTypeError(returnStatement);
 		}
 	}
@@ -607,14 +609,14 @@ public class DeepCheckingVisitor implements AstVisitor {
 			return;
 		}
 
+		symbolTable.insert(localVariableDeclaration.getIdentifier(), new Definition(localVariableDeclaration.getIdentifier(),
+				localVariableDeclaration.getType()));
+
 		Expression expression = localVariableDeclaration.getExpression();
 		if (expression != null) {
 			expression.accept(this);
 			expectType(localVariableDeclaration.getType(), expression);
 		}
-
-		symbolTable.insert(localVariableDeclaration.getIdentifier(), new Definition(localVariableDeclaration.getIdentifier(),
-				localVariableDeclaration.getType()));
 	}
 
 	@Override

@@ -1,5 +1,7 @@
 package compiler.semantic;
 
+import java.io.File;
+import java.io.FileWriter;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -25,7 +27,7 @@ public class AutomatedSemanticCheckTest implements TestFileVisitor.FileTester {
 	@Test
 	public void testCheckFiles() throws Exception {
 		Path testDir = Paths.get("testdata");
-//		TestFileVisitor lexTester = new TestFileVisitor(SEMANTIC_CHECK_EXTENSION, this, "multiarrays");
+		// TestFileVisitor lexTester = new TestFileVisitor(SEMANTIC_CHECK_EXTENSION, this, "multiarrays");
 		TestFileVisitor lexTester = new TestFileVisitor(SEMANTIC_CHECK_EXTENSION, this);
 		Files.walkFileTree(testDir, lexTester);
 		lexTester.checkForFailedTests();
@@ -34,7 +36,7 @@ public class AutomatedSemanticCheckTest implements TestFileVisitor.FileTester {
 	@Override
 	public void testSourceFile(Path sourceFilePath, Path expectedResultFilePath) throws Exception {
 
-		System.err.println("Testing file = " + sourceFilePath + "----------------------------------------------->");
+		System.out.println("Testing file = " + sourceFilePath + "----------------------------------------------->");
 
 		// read expected results file
 		List<String> lines = Files.readAllLines(expectedResultFilePath, StandardCharsets.US_ASCII);
@@ -50,8 +52,20 @@ public class AutomatedSemanticCheckTest implements TestFileVisitor.FileTester {
 			if (errors.size() == 0)
 				Assert.fail("semantic analysis succeeded on incorrect program: " + sourceFilePath);
 
-			for (SemanticAnalysisException error : errors) {
-				System.err.println("error.toString() = " + error.toString());
+			if (err_num == errors.size()) {
+				// Incorrect program produces the right errors, write them to a log file
+				File file = new File(expectedResultFilePath.toFile().getPath() + ".errors");
+				FileWriter output = new FileWriter(file, false);
+				for (SemanticAnalysisException error : errors) {
+					output.append(error.toString() + "\n");
+				}
+				output.close();
+				output = null;
+				file = null;
+			} else {
+				for (SemanticAnalysisException error : errors) {
+					System.out.println("error.toString() = " + error.toString());
+				}
 			}
 			if (err_num > 0)
 			{
@@ -59,14 +73,14 @@ public class AutomatedSemanticCheckTest implements TestFileVisitor.FileTester {
 			}
 		} else {
 			if (!errors.isEmpty()) {
-				System.err.println("");
-				System.err.println("----------------------------------------------------------------------------");
+				System.out.println("");
+				System.out.println("----------------------------------------------------------------------------");
 				System.err.println("Test for file = " + sourceFilePath + " failed");
 				for (SemanticAnalysisException error : errors) {
 					error.printStackTrace();
 				}
-				System.err.println("----------------------------------------------------------------------------");
-				System.err.println("");
+				System.out.println("----------------------------------------------------------------------------");
+				System.out.println("");
 				Assert.fail("semantic analysis failed on correct program: " + sourceFilePath);
 			}
 		}

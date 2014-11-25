@@ -1,6 +1,6 @@
 class xl8JuK4Y3rbR3nFI0rPkaQLCUcYvyvdLNnoip09ebjGtbnV5vZwuYlSKCD0iVEr1SnTye1nD6zfrBZyvSgV78CaZc6MXlagHPGqunhERuKwpJ5MjvDpaY5BfYY6PCD8ReCgSfUt82r2w06147czVlZWzuVWPftW9Lb2frNTaecOYTJbryYrxfpPJZabT8QC9CgPQB2bv {
     public void[][][][][][][] foo(boolean bar) { /* semantic error void[] */
-        boolean[] baz = 42 = (null = 42); /* semantic error x2 */
+        boolean[] baz = 42 = (null = 42); /* semantic error x3 */
         return; /* semantic error  */
         /* semantic error - return statement is missing */
     }

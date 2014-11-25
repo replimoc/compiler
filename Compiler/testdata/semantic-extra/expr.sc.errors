@@ -1,0 +1,16 @@
+error: No 'public static void main(String[] args)' method has been found.
+error: type error in token at position line   3, character 38
+error: type error in token at position line   3, character 40
+error: Identifier b at position line   3, character 45 has not been defined
+error: type error in token at position line   3, character 40
+error: Identifier k at position line   3, character 52 has not been defined
+error: type error in token at position line   3, character 65
+error: type error in token at position line   4, character  0
+error: type error in token at position line   4, character  0
+error: type error in token at position line   5, character 47
+error: type error in token at position line   5, character 60
+error: type error in token at position line   5, character 62
+error: type error in token at position line   5, character 53
+error: type error in token at position line   5, character 46
+error: type error in token at position line   5, character 39
+error: type error in token at position line   6, character  0

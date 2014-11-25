@@ -197,7 +197,7 @@ public class DeepCheckingVisitorTest {
 		parser = TestUtils
 				.initParser("class Main{public static void main(String[] vargs){int a = a;}}");
 		errors = SemanticChecker.checkSemantic(parser.parse());
-		assertEquals(1, errors.size());
+		assertEquals(0, errors.size());
 
 		parser = TestUtils
 				.initParser("class Main{public static void asdf(String[] vargs){return 0;}}");
@@ -250,7 +250,7 @@ public class DeepCheckingVisitorTest {
 		parser = TestUtils
 				.initParser("class Main{public void a(int a, int a, int a) { } public static void main(String[] vargs){}}");
 		errors = SemanticChecker.checkSemantic(parser.parse());
-		assertEquals(1, errors.size());
+		assertEquals(2, errors.size());
 	}
 
 	@Test

@@ -1,0 +1,19 @@
+error: type error in token at position line 104, character 34: 'public static void' method must be called 'main'.
+error: No 'public static void main(String[] args)' method has been found.
+error: type error in token at position line   7, character 17
+error: type error in token at position line   8, character 21
+error: type error in token at position line  12, character 15
+error: Invalid member function call getMatrix at position line  23, character 29
+error: Member wtf at position line  26, character 13 is not available in object Cl1 defined at null
+error: Identifier b at position line  40, character 22 has not been defined
+error: type error in token at position line  54, character 27
+error: type error in token at position line  55, character 22
+error: Invalid member function call i_accept_no_params at position line  70, character 37
+error: type error in token at position line  71, character 15: Expected return statement without type.
+error: type error in token at position line  80, character 43
+error: type error in token at position line  80, character 50
+error: type error in token at position line  80, character 57
+error: type error in token at position line  81, character 10
+error: type error in token at position line  81, character 20
+error: Identifier d at position line  81, character 23 has not been defined
+error: Insert assignment operator to complete expression at line  81, character 32

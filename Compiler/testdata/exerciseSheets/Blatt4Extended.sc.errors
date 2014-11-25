@@ -1,0 +1,6 @@
+error: Member foo at position line   7, character  9 is not available in object PrintStream defined at line  -1, character -1
+error: Illegal access to non static member at line  11, character 19
+error: Illegal access to non static member at line  15, character 18
+error: type error in token at position line  25, character 13: Array access on a non array.
+error: Member bar at position line  30, character  7 is not available in object HelloWorld defined at line  30, character  7
+error: Identifier e at position line  31, character  5 has not been defined

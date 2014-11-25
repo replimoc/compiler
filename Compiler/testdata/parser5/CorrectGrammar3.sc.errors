@@ -1,0 +1,19 @@
+error: Illegal access to non static member at line  28, character 26
+error: Illegal access to non static member at line  30, character 24
+error: Identifier x at position line  33, character 36 has not been defined
+error: Identifier y at position line  33, character 40 has not been defined
+error: type error in token at position line  35, character 19: Expected return statement without type.
+error: Illegal access to non static member at line  38, character 66
+error: type error in token at position line  41, character 59
+error: type error in token at position line  44, character 16
+error: type error in token at position line  44, character 25
+error: type error in token at position line  44, character 34
+error: type error in token at position line  44, character 43
+error: type error in token at position line  44, character 54
+error: type error in token at position line  44, character 63
+error: type error in token at position line  44, character 72
+error: type error in token at position line  44, character 81
+error: type error in token at position line  46, character 16
+error: Identifier oO at position line  59, character 18 has not been defined
+error: Insert assignment operator to complete expression at line  59, character 18
+error: type error in token at position line  63, character 15: Expected return statement without type.
