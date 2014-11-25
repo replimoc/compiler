@@ -113,7 +113,9 @@ public class DeepCheckingVisitor implements AstVisitor {
 
 	private boolean hasType(Type type, AstNode astNode) {
 		return (astNode.getType() == null
-				|| (type.getBasicType() != null && astNode.getType().getBasicType() == BasicType.NULL) || astNode.getType().equals(type));
+				|| (type.getBasicType() != null && type.getBasicType() != BasicType.INT && type.getBasicType() != BasicType.BOOLEAN
+				&& astNode.getType().getBasicType() == BasicType.NULL)
+				|| astNode.getType().equals(type));
 	}
 
 	private boolean hasType(BasicType type, AstNode astNode) {
@@ -290,11 +292,6 @@ public class DeepCheckingVisitor implements AstVisitor {
 
 	@Override
 	public void visit(MethodInvocationExpression methodInvocationExpression) {
-		// first step in outer left expression
-		if (methodInvocationExpression.getMethodExpression() != null) {
-			methodInvocationExpression.getMethodExpression().accept(this);
-		}
-
 		// is inner expression
 		if (methodInvocationExpression.getMethodExpression() == null) {
 			if (isStaticMethod) {
@@ -311,6 +308,9 @@ public class DeepCheckingVisitor implements AstVisitor {
 				return;
 			}
 		} else {
+			// first step in outer left expression
+			methodInvocationExpression.getMethodExpression().accept(this);
+
 			Expression leftExpression = methodInvocationExpression.getMethodExpression();
 
 			Type leftExpressionType = leftExpression.getType();
