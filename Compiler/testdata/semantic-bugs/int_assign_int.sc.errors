@@ -1,1 +1,2 @@
-error: type error in token at position line   3, character  4
+error: type error in token at position line   4, character  4: Left side of assignment expression should variable or array.
+error: type error in token at position line   5, character  7: Left side of assignment expression should variable or array.
