@@ -1,0 +1,3 @@
+error: type error in token at position line   9, character  4: Array access on a non array.
+error: type error in token at position line  10, character  6
+error: type error in token at position line  11, character 10

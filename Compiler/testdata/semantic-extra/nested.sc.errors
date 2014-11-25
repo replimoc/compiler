@@ -1,0 +1,4 @@
+error: At least one path in method 'correct1' at line   3, character 24 does not have a return statement.
+error: At least one path in method 'error1' at line  32, character 22 does not have a return statement.
+error: At least one path in method 'error2' at line  57, character 22 does not have a return statement.
+error: At least one path in method 'error3' at line 106, character 22 does not have a return statement.

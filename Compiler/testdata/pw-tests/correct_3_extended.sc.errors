@@ -1,0 +1,16 @@
+error: At least one path in method 'Hello' at line  16, character 23 does not have a return statement.
+error: Identifier G at position line  28, character  9 has not been defined
+error: Identifier A at position line  28, character 14 has not been defined
+error: Identifier B at position line  28, character 19 has not been defined
+error: Identifier C at position line  28, character 24 has not been defined
+error: Identifier Y at position line  28, character 29 has not been defined
+error: Identifier Z at position line  28, character 33 has not been defined
+error: Identifier H at position line  28, character 37 has not been defined
+error: type error in token at position line  29, character 14
+error: type error in token at position line  29, character 23
+error: type error in token at position line  30, character 15: 'this' is not allowed in static methods.
+error: type error in token at position line  30, character 23
+error: Illegal access to non static member at line  32, character 13
+error: type error in token at position line  32, character  8: Array access on a non array.
+error: type error in token at position line  32, character 13
+error: Member print at position line  33, character  8 is not available in object WorldArray defined at line  29, character 14

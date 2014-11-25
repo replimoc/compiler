@@ -1,0 +1,21 @@
+error: Identifier Test at position line   7, character 11 has already been defined.
+error: Identifier x at position line  34, character 17 has already been defined.
+error: Identifier y at position line  37, character 17 has already been defined.
+error: Identifier m1 at position line  46, character 20 has already been defined.
+error: Identifier m2 at position line  50, character 22 has already been defined.
+error: Identifier m3 at position line  54, character 19 has already been defined.
+error: Illegal access to non static member at line  20, character 14
+error: type error in token at position line  20, character 14: Access on main method parameter forbidden.
+error: Insert assignment operator to complete expression at line  20, character 14
+error: Illegal access to non static member at line  23, character 14
+error: Insert assignment operator to complete expression at line  23, character 14
+error: type error in token at position line  27, character 13: 'this' is not allowed in static methods.
+error: type error in token at position line  39, character 18
+error: type error in token at position line  50, character 38
+error: Identifier x at position line  61, character 14 has already been defined.
+error: Identifier y at position line  64, character 18 has already been defined.
+error: Identifier z at position line  68, character 22 has already been defined.
+error: type error in token at position line  71, character 18
+error: Identifier m at position line  79, character 10 has not been defined
+error: Identifier m at position line  80, character 10 has not been defined
+error: Identifier m at position line  82, character 14 has not been defined
