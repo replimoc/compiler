@@ -36,7 +36,7 @@ class Arrays {
         int y = 5;
         int z = x;
         Cl1 cl1 = null;
-        int a = a + x;  /*semantic error*/
+        int a = a + x;  /* no semantic error*/
         int c = x + b;  /*semantic error*/
 
         return x + y * z;
