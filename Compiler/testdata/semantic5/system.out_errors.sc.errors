@@ -1,0 +1,3 @@
+error: type error in token at position line   4, character 32
+error: type error in token at position line  20, character 29
+error: Member out at position line  33, character  9 is not available in object B defined at line  30, character 10

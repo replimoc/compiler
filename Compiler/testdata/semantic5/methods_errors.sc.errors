@@ -1,0 +1,25 @@
+error: Identifier m1 at position line   6, character 19 has already been defined.
+error: type error in token at position line   6, character 26
+error: type error in token at position line  24, character 35
+error: type error in token at position line  25, character 39
+error: type error in token at position line  26, character 39
+error: type error in token at position line  28, character 34
+error: type error in token at position line  29, character 35
+error: type error in token at position line  30, character 35
+error: type error in token at position line  32, character 35
+error: type error in token at position line  33, character 33
+error: type error in token at position line  34, character 36
+error: type error in token at position line  36, character 40
+error: type error in token at position line  37, character 34
+error: type error in token at position line  38, character 39
+error: type error in token at position line  45, character 14
+error: type error in token at position line  46, character 14
+error: type error in token at position line  47, character 14
+error: type error in token at position line  48, character 14
+error: type error in token at position line  50, character 16
+error: type error in token at position line  51, character 16
+error: type error in token at position line  52, character 16
+error: type error in token at position line  59, character  0
+error: type error in token at position line  60, character  0
+error: type error in token at position line  61, character  0
+error: type error in token at position line  62, character  0

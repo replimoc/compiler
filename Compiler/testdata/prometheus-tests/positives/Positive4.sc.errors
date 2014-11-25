@@ -1,0 +1,2 @@
+error: type error in token at position line   3, character 30: 'public static void' method must be called 'main'.
+error: No 'public static void main(String[] args)' method has been found.
