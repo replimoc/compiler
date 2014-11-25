@@ -73,25 +73,19 @@ public class Lexer implements TokenSuppliable {
 				nextChar();
 			}
 
-			if (isAZaz_()) {
+			if (c == -1) { // Character is EOF
+				t = token(TokenType.EOF);
+				inputFinished = true;
+				reader.close();
+			} else if (isAZaz_()) {
 				t = lexIdentifier();
 			} else if (is19()) {
 				t = lexIntegerLiteral();
+			} else if (c == '0') {
+				t = tokenStringTable(TokenType.INTEGER, "0");
+				nextChar();
 			} else {
-				switch (c) {
-				case '0':
-					t = tokenStringTable(TokenType.INTEGER, "0");
-					nextChar();
-					break;
-				case -1:
-					t = token(TokenType.EOF);
-					inputFinished = true;
-					reader.close();
-					break;
-				default:
-					t = lexOperatorAndComment();
-				}
-
+				t = lexOperatorAndComment();
 			}
 		} while (t == null);
 		return t;
@@ -128,48 +122,20 @@ public class Lexer implements TokenSuppliable {
 	}
 
 	private boolean isAZaz_() {
-		if (c < 'A' || c > 'z')
-			return false;
-		switch (c) {
-		case '[':
-		case ']':
-		case '\\':
-		case '^':
-		case '`':
-			return false;
-		default:
-			return true;
-		}
+		return ((c >= 'A' && c <= 'Z') ||
+				(c >= 'a' && c <= 'z') || c == '_');
 	}
 
 	private boolean isAZaz_09() {
-		if (c < '0' || c > 'z')
-			return false;
-		switch (c) {
-		case '[':
-		case ']':
-		case '\\':
-		case '^':
-		case '`':
-		case ':':
-		case ';':
-		case '<':
-		case '>':
-		case '=':
-		case '?':
-		case '@':
-			return false;
-		default:
-			return true;
-		}
+		return isAZaz_() || is09();
 	}
 
 	private boolean is09() {
-		return !(c < '0' || c > '9');
+		return (c >= '0' && c <= '9');
 	}
 
 	private boolean is19() {
-		return !(c < '1' || c > '9');
+		return (c >= '1' && c <= '9');
 	}
 
 	/*
