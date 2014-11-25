@@ -276,6 +276,9 @@ public class DeepCheckingVisitor implements AstVisitor {
 	@Override
 	public void visit(NewArrayExpression newArrayExpression) {
 		newArrayExpression.getType().accept(this);
+		newArrayExpression.getFirstDimension().accept(this);
+
+		expectType(BasicType.INT, newArrayExpression.getFirstDimension());
 	}
 
 	@Override
