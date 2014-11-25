@@ -6,18 +6,7 @@ import compiler.ast.*;
 import java.util.List;
 
 import compiler.ast.Block;
-import compiler.ast.statement.ArrayAccessExpression;
-import compiler.ast.statement.BooleanConstantExpression;
-import compiler.ast.statement.IfStatement;
-import compiler.ast.statement.IntegerConstantExpression;
-import compiler.ast.statement.LocalVariableDeclaration;
-import compiler.ast.statement.MethodInvocationExpression;
-import compiler.ast.statement.NewArrayExpression;
-import compiler.ast.statement.NewObjectExpression;
-import compiler.ast.statement.NullExpression;
-import compiler.ast.statement.ThisExpression;
-import compiler.ast.statement.VariableAccessExpression;
-import compiler.ast.statement.WhileStatement;
+import compiler.ast.statement.*;
 import compiler.ast.statement.binary.AdditionExpression;
 import compiler.ast.statement.binary.AssignmentExpression;
 import compiler.ast.statement.binary.DivisionExpression;
@@ -135,11 +124,27 @@ public class FirmGenerationVisitor implements AstVisitor {
         return null;
     }
 
+    private firm.Mode convertTypeToMode(Type type)
+    {
+        switch (type.getBasicType())
+        {
+            case INT:
+                return modeInt;
+            case BOOLEAN:
+                return modeBool;
+            case CLASS:
+                return modeRef;
+            default:
+                throw new RuntimeException("convertTypeToMode for " + type + " is not implemented");
+        }
+    }
+
 
     // library function print_int in global scope
     final Entity print_int;
 
-    // current method
+    // current definitions
+    firm.ClassType currentClass = null;
     Construction currentMethod = null;
 
     public FirmGenerationVisitor() {
@@ -153,12 +158,28 @@ public class FirmGenerationVisitor implements AstVisitor {
 
     @Override
     public void visit(AdditionExpression additionExpression) {
-        // TODO Auto-generated method stub
 
+        // get type of expression
+        Mode mode = convertTypeToMode(additionExpression.getType());
+
+        // get firmNode for fist operand
+        Expression operand1 = additionExpression.getOperand1();
+        operand1.accept(this);
+        Node operand1Node = operand1.getFirmNode();
+
+        // get firmNode for second operand
+        Expression operand2 = additionExpression.getOperand2();
+        operand2.accept(this);
+        Node operand2Node = operand2.getFirmNode();
+
+        // TODO read operand type from expression type
+        Node addExpr = currentMethod.newAdd(operand1Node, operand2Node, mode);
+        additionExpression.setFirmNode(addExpr);
     }
 
     @Override
     public void visit(AssignmentExpression assignmentExpression) {
+        System.out.println("assignmentExpression = [" + assignmentExpression + "]");
         // TODO Auto-generated method stub
 
     }
@@ -239,8 +260,14 @@ public class FirmGenerationVisitor implements AstVisitor {
 
     @Override
     public void visit(IntegerConstantExpression integerConstantExpression) {
-        // TODO Auto-generated method stub
+        System.out.println("integerConstantExpression = [" + integerConstantExpression + "]");
 
+        // TODO check for errors in parseInt
+        String intValue = integerConstantExpression.getIntegerLiteral();
+        int val = Integer.parseInt(intValue);
+
+        Node constant = currentMethod.newConst(val, modeInt);
+        integerConstantExpression.setFirmNode(constant);
     }
 
     @Override
@@ -311,8 +338,14 @@ public class FirmGenerationVisitor implements AstVisitor {
 
     @Override
     public void visit(Block block) {
-        // TODO Auto-generated method stub
+        for (Statement statement : block.getStatements()) {
+//            System.out.println("statement.getClass().getName() = " + statement.getClass().getName());
+            statement.accept(this);
+        }
 
+        // get last statement and set block firmNode to this statement
+        Statement lastStatement = block.getStatements().get(block.getNumberOfStatements()-1);
+        block.setFirmNode(lastStatement.getFirmNode());
     }
 
     @Override
@@ -329,8 +362,19 @@ public class FirmGenerationVisitor implements AstVisitor {
 
     @Override
     public void visit(LocalVariableDeclaration localVariableDeclaration) {
-        // TODO Auto-generated method stub
+        int variableNumber = 0; // TODO get variable number
+        Mode variableMode = convertTypeToMode(localVariableDeclaration.getType());
 
+        Expression expression = localVariableDeclaration.getExpression();
+        if (expression != null) {
+            expression.accept(this);
+        }
+
+        Node firmNode = expression.getFirmNode();
+        currentMethod.setVariable(variableNumber, firmNode);
+        Node varNode = currentMethod.getVariable(variableNumber, variableMode);
+
+        localVariableDeclaration.setFirmNode(varNode);
     }
 
     @Override
@@ -340,6 +384,7 @@ public class FirmGenerationVisitor implements AstVisitor {
 
     @Override
     public void visit(ClassDeclaration classDeclaration) {
+        currentClass = createClassType(classDeclaration);
         for (ClassMember curr : classDeclaration.getMembers()) {
             curr.accept(this);
         }
@@ -376,13 +421,18 @@ public class FirmGenerationVisitor implements AstVisitor {
         MethodType mainType = new MethodType(new firm.Type[]{}, new firm.Type[]{});
         Entity mainEntity = new Entity(Program.getGlobalType(), "__main__", mainType);
 
-        int variablesCount = 100; // TODO
+        int variablesCount = 100; // TODO count variables
         Graph mainGraph = new Graph(mainEntity, variablesCount);
         this.currentMethod = new Construction(mainGraph);
 
         staticMethodDeclaration.getBlock().accept(this);
 
+        //TODO: here it is necessary to check whether block contains return statements
+        //TODO: and if it does, get it, otherwise return "void" as here
+        //TODO: (if I understood correctly )if method returns void it is necessary to link last statement with return
+        //TODO: otherwise it won't appear in graph
         Node returnNode = currentMethod.newReturn(currentMethod.getCurrentMem(), new Node[]{});
+        returnNode.setPred(0, staticMethodDeclaration.getBlock().getFirmNode());
         mainGraph.getEndBlock().addPred(returnNode);
 
         currentMethod.setUnreachable();
