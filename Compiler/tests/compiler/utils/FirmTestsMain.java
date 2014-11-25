@@ -8,7 +8,7 @@ import java.io.IOException;
 /**
  * TODO document me
  */
-public class FirmTester {
+public class FirmTestsMain {
 
     public static void main(String[] argss) throws IOException {
         Firm.init();
