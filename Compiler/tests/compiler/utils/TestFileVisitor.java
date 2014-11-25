@@ -95,6 +95,10 @@ public class TestFileVisitor extends SimpleFileVisitor<Path> {
 		for (Entry<Path, Throwable> curr : failedTestsList) {
 			printException(curr.getKey(), curr.getValue());
 		}
+		System.out.println("Tests fail for following files:");
+		for (Entry<Path, Throwable> curr : failedTestsList) {
+			System.out.println("* " + curr.getKey());
+		}
 	}
 
 	private void printException(Path file, Throwable exception) {
