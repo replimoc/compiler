@@ -2,7 +2,6 @@ package compiler.utils;
 
 import compiler.firm.TempFirmCode;
 import firm.*;
-import firm.nodes.*;
 
 import java.io.IOException;
 
@@ -17,8 +16,10 @@ public class FirmTester {
                 Firm.getMinorVersion(),
                 Firm.getMajorVersion());
 
-        TempFirmCode.createEmptyMethod();
-//        TempFirmCode.createPrintIntGraph(mainEntity);
+        TempFirmCode.createStaticEmptyMethod();
+        TempFirmCode.createStaticMethodWithParam();
+        TempFirmCode.createMethodWithLocalVar();
+        TempFirmCode.createPrintIntGraph();
 
         for (Graph g : Program.getGraphs()) {
             g.check();
