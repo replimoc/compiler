@@ -197,7 +197,9 @@ public class DeepCheckingVisitor implements AstVisitor {
 				|| operand1 instanceof NewArrayExpression
 				|| operand1 instanceof BinaryExpression
 				|| operand1 instanceof LogicalNotExpression
-				|| operand1 instanceof NegateExpression) {
+				|| operand1 instanceof NegateExpression
+				|| operand1 instanceof IntegerConstantExpression
+				|| operand1 instanceof BooleanConstantExpression) {
 			throwTypeError(operand1);
 		} else if (operand1.getType() != null && operand2.getType() != null &&
 				(hasType(BasicType.INT, operand1) || hasType(BasicType.BOOLEAN, operand1)) && hasType(BasicType.NULL, operand2)) {
