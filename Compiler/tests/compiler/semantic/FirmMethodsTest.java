@@ -3,6 +3,8 @@ package compiler.semantic;
 import org.apache.commons.math3.analysis.function.Constant;
 import org.junit.Test;
 
+import compiler.firm.FirmUtils;
+
 import firm.ClassType;
 import firm.CompoundType;
 import firm.Construction;
@@ -21,7 +23,8 @@ public class FirmMethodsTest {
 
 	@Test
 	public void testjFirmInit() {
-		Firm.init();
+		FirmUtils.initFirm();
+		
 		System.out.printf("Initialized Firm Version: %1s.%2s\n",
 				Firm.getMajorVersion(), Firm.getMinorVersion());
 
@@ -52,5 +55,7 @@ public class FirmMethodsTest {
 		
 		construction.finish();
 		Dump.dumpGraph(graph, "-after-construction");
+		
+		FirmUtils.finishFirm();
 	}
 }
