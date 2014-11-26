@@ -1,29 +1,32 @@
 package compiler.utils;
 
-import compiler.firm.TempFirmCode;
-import firm.*;
-
 import java.io.IOException;
+
+import compiler.firm.FirmUtils;
+import compiler.firm.TempFirmCode;
+
+import firm.Dump;
+import firm.Graph;
+import firm.Program;
 
 /**
  * TODO document me
  */
 public class FirmTestsMain {
 
-    public static void main(String[] argss) throws IOException {
-        Firm.init();
-        System.out.printf("Initialized libFirm Version: %1s.%2s\n",
-                Firm.getMinorVersion(),
-                Firm.getMajorVersion());
+	public static void main(String[] argss) throws IOException {
+		FirmUtils.initFirm();
 
-        TempFirmCode.createStaticEmptyMethod();
-        TempFirmCode.createStaticMethodWithParam();
-        TempFirmCode.createMethodWithLocalVar();
-        TempFirmCode.createPrintIntGraph();
+		TempFirmCode.createStaticEmptyMethod();
+		TempFirmCode.createStaticMethodWithParam();
+		TempFirmCode.createMethodWithLocalVar();
+		TempFirmCode.createPrintIntGraph();
 
-        for (Graph g : Program.getGraphs()) {
-            g.check();
-            Dump.dumpGraph(g, "--finished");
-        }
-    }
+		for (Graph g : Program.getGraphs()) {
+			g.check();
+			Dump.dumpGraph(g, "--finished");
+		}
+
+		FirmUtils.finishFirm();
+	}
 }
