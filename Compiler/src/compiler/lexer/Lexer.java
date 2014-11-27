@@ -73,17 +73,17 @@ public class Lexer implements TokenSuppliable {
 				nextChar();
 			}
 
-			if (c == -1) { // Character is EOF
-				t = token(TokenType.EOF);
-				inputFinished = true;
-				reader.close();
-			} else if (isAZaz_()) {
+			if (isAZaz_()) {
 				t = lexIdentifier();
 			} else if (is19()) {
 				t = lexIntegerLiteral();
 			} else if (c == '0') {
 				t = tokenStringTable(TokenType.INTEGER, "0");
 				nextChar();
+			} else if (c == -1) { // Character is EOF
+				t = token(TokenType.EOF);
+				inputFinished = true;
+				reader.close();
 			} else {
 				t = lexOperatorAndComment();
 			}
@@ -122,8 +122,9 @@ public class Lexer implements TokenSuppliable {
 	}
 
 	private boolean isAZaz_() {
-		return ((c >= 'A' && c <= 'Z') ||
-				(c >= 'a' && c <= 'z') || c == '_');
+		// usually more lower case letters than upper case letters
+		return ((c >= 'a' && c <= 'z') ||
+				(c >= 'A' && c <= 'Z') || c == '_');
 	}
 
 	private boolean isAZaz_09() {
