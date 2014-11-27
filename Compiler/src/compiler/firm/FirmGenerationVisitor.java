@@ -88,6 +88,14 @@ public class FirmGenerationVisitor implements AstVisitor {
 		case NULL:
 			firmType = new PrimitiveType(modeRef);
 			break;
+		case CLASS:
+		case METHOD:
+			break;
+		default:
+			// no access allowed to public static void main(String[] args)
+			// therefore no type needed for String
+			// TODO:
+			throw new RuntimeException();
 		}
 
 		if (type.getBasicType() == BasicType.ARRAY) {
