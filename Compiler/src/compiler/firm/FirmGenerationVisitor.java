@@ -47,6 +47,7 @@ import compiler.ast.type.Type;
 import compiler.ast.visitor.AstVisitor;
 
 import firm.ArrayType;
+import firm.CompoundType;
 import firm.Construction;
 import firm.Entity;
 import firm.Firm;
@@ -68,6 +69,12 @@ public class FirmGenerationVisitor implements AstVisitor {
 	private final Mode modeBool = Mode.getBu(); // unsigned 8 bit
 	private final Mode modeRef = Mode.createReferenceMode("P64", Arithmetic.TwosComplement, 64, 64); // 64 bit pointer
 
+	/**
+	 * Create and return a {@link firm.Type} for the given {@link Type}.
+	 * 
+	 * @param type
+	 * @return
+	 */
 	private firm.Type createType(Type type) {
 		Type tmpType = type;
 		while (tmpType.getSubType() != null) {
@@ -106,6 +113,12 @@ public class FirmGenerationVisitor implements AstVisitor {
 		return firmType;
 	}
 
+	/**
+	 * Create and return a method type for the given {@link FieldDeclaration}.
+	 * 
+	 * @param decl
+	 * @return
+	 */
 	private firm.Type createType(FieldDeclaration decl) {
 		firm.Type type;
 
@@ -117,11 +130,23 @@ public class FirmGenerationVisitor implements AstVisitor {
 		return type;
 	}
 
+	/**
+	 * Create and return a method type for the given {@link ClassMember}.
+	 * 
+	 * @param decl
+	 * @return
+	 */
 	private firm.Type createType(ClassMember decl) {
 		// TODO:
 		throw new RuntimeException();
 	}
 
+	/**
+	 * Create and return a method type for the given {@link MethodDeclaration}.
+	 * 
+	 * @param decl
+	 * @return
+	 */
 	private MethodType createType(MethodDeclaration decl) {
 		List<ParameterDefinition> params = decl.getParameters();
 		firm.Type[] paramTypes = new firm.Type[params.size()];
@@ -139,30 +164,53 @@ public class FirmGenerationVisitor implements AstVisitor {
 		}
 	}
 
+	/**
+	 * Create and return a {@link firm.ClassType} for the given {@link ClassDeclaration}.
+	 * 
+	 * @param decl
+	 * @return
+	 */
 	private firm.ClassType createClassType(ClassDeclaration decl) {
 		firm.ClassType classType = new firm.ClassType(decl.getIdentifier().getValue());
-
-		List<ClassMember> members = decl.getMembers();
-
-		for (ClassMember member : members) {
-			firm.Type type = createType(member);
-			String uniqueIdent;
-			if (member instanceof FieldDeclaration) {
-				uniqueIdent = "f";
-			} else {
-				uniqueIdent = "m";
-			}
-			// bind entity to class type
-			// TODO: do this elsewhere?
-			String name = decl.getIdentifier().getValue() + "#" + uniqueIdent + "#" + member.getIdentifier().getValue();
-			Entity entity = new Entity(classType, name, type);
-			entity.setLdIdent(name);
-		}
-		// TODO: do this elsewhere?
-		Entity entity = new Entity(Program.getGlobalType(), decl.getIdentifier().getValue(), classType);
-		entity.setLdIdent(decl.getIdentifier().getValue());
-
 		return classType;
+	}
+
+	/**
+	 * Create and return an entity for the given {@link FieldDeclaration}, that is part of the given {@link ClassDeclaration} of type
+	 * {@link CompoundType}.
+	 * 
+	 * @param decl
+	 * @param classType
+	 * @param member
+	 * @param type
+	 * @return
+	 */
+	private Entity createClassMemberEntity(ClassDeclaration decl, CompoundType classType, FieldDeclaration member, firm.Type type) {
+		String name = decl.getIdentifier().getValue() + "#" + "f" + "#" + member.getIdentifier().getValue();
+		Entity entity = new Entity(classType, name, type);
+		entity.setLdIdent(name);
+		return entity;
+	}
+
+	/**
+	 * Create and return an entity for the given {@link MethodDeclaration}, that is part of the given {@link ClassDeclaration} of type
+	 * {@link CompoundType}.
+	 * 
+	 * @param decl
+	 * @param classType
+	 * @param member
+	 * @param type
+	 * @return
+	 */
+	private Entity createClassMemberEntity(ClassDeclaration decl, CompoundType classType, MethodDeclaration member, firm.Type type) {
+		String name = decl.getIdentifier().getValue() + "#" + "m" + "#" + member.getIdentifier().getValue();
+		Entity entity = new Entity(classType, name, type);
+		entity.setLdIdent(name);
+		return entity;
+	}
+
+	private Entity createClassMemberEntity(ClassDeclaration decl, CompoundType classType, ClassMember member, firm.Type type) {
+		throw new RuntimeException();
 	}
 
 	private firm.Mode convertTypeToMode(Type type)
