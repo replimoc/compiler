@@ -49,7 +49,6 @@ import compiler.ast.visitor.AstVisitor;
 import firm.ArrayType;
 import firm.Construction;
 import firm.Entity;
-import firm.Firm;
 import firm.Graph;
 import firm.MethodType;
 import firm.Mode;
@@ -59,10 +58,6 @@ import firm.Program;
 import firm.nodes.Node;
 
 public class FirmGenerationVisitor implements AstVisitor {
-
-	/*static {
-		Firm.init();
-	}*/
 
 	private final Mode modeInt = Mode.getIs(); // integer signed 32 bit
 	private final Mode modeBool = Mode.getBu(); // unsigned 8 bit
