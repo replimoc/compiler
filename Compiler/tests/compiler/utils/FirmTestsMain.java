@@ -20,6 +20,7 @@ public class FirmTestsMain {
 		TempFirmCode.createStaticEmptyMethod();
 		TempFirmCode.createStaticMethodWithParam();
 		TempFirmCode.createMethodWithLocalVar();
+		TempFirmCode.createMethodWithReferenceToClass();
 		TempFirmCode.createPrintIntGraph();
 
 		for (Graph g : Program.getGraphs()) {
