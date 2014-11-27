@@ -8,7 +8,7 @@ public class FirmUtils {
 		System.setProperty("jna.library.path", "lib/firm/");
 		Firm.init();
 
-		System.out.printf("Initialized libFirm Version: %1s.%s\n", Firm.getMinorVersion(), Firm.getMajorVersion());
+		System.out.printf("Initialized libFirm Version: %1s.%s\n", Firm.getMajorVersion(), Firm.getMinorVersion());
 	}
 
 	public static void finishFirm() {
