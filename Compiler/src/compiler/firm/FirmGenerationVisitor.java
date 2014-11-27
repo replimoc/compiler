@@ -176,6 +176,7 @@ public class FirmGenerationVisitor implements AstVisitor {
 	firm.ClassType currentClass = null;
 	Construction currentMethod = null;
 	String currentClassPrefix = "";
+	int currentMethodVariableCount = 0;
 
 	public FirmGenerationVisitor() {
 		// create library function(s)
@@ -406,7 +407,14 @@ public class FirmGenerationVisitor implements AstVisitor {
 
 	@Override
 	public void visit(ParameterDefinition parameterDefinition) {
+		firm.Type variableType = createType(parameterDefinition.getType());
 
+		//TODO: add function name, find out what global type actually is...
+		Entity paramEntity = new Entity(Program.getGlobalType(), currentClassPrefix + "#f#" + parameterDefinition.getIdentifier().getValue(), variableType);
+		Node firmNode = currentMethod.newAddress(paramEntity);
+		
+		currentMethod.setVariable(currentMethodVariableCount++, firmNode);
+		parameterDefinition.setFirmNode(firmNode);
 	}
 
 	@Override
@@ -433,9 +441,14 @@ public class FirmGenerationVisitor implements AstVisitor {
 		Entity methodEntity = new Entity(Program.getGlobalType(), currentClassPrefix + "#f#" + methodDeclaration.getIdentifier().getValue(), methodType);
 		
 		int numberLocalVariables = 0; // TODO count variables
-		int variablesCount = methodDeclaration.getParameters().size() + numberLocalVariables ;
+		int variablesCount = 1 + methodDeclaration.getParameters().size() + numberLocalVariables;
 		Graph mainGraph = new Graph(methodEntity, variablesCount);
 		currentMethod = new Construction(mainGraph);
+		
+		// create parameters variables
+		for (ParameterDefinition param : methodDeclaration.getParameters()) {
+			param.accept(this);
+		}
 
 		Node returnNode = currentMethod.newReturn(currentMethod.getCurrentMem(), new Node[] {});
 		
