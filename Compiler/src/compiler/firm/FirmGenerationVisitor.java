@@ -60,9 +60,9 @@ import firm.nodes.Node;
 
 public class FirmGenerationVisitor implements AstVisitor {
 
-	static {
+	/*static {
 		Firm.init();
-	}
+	}*/
 
 	private final Mode modeInt = Mode.getIs(); // integer signed 32 bit
 	private final Mode modeBool = Mode.getBu(); // unsigned 8 bit
@@ -180,6 +180,7 @@ public class FirmGenerationVisitor implements AstVisitor {
 	// current definitions
 	firm.ClassType currentClass = null;
 	Construction currentMethod = null;
+	String currentClassPrefix = "";
 
 	public FirmGenerationVisitor() {
 		// create library function(s)
@@ -417,6 +418,7 @@ public class FirmGenerationVisitor implements AstVisitor {
 	public void visit(ClassDeclaration classDeclaration) {
 		currentClass = createClassType(classDeclaration);
 		for (ClassMember curr : classDeclaration.getMembers()) {
+			currentClassPrefix = curr.getIdentifier().getValue();
 			curr.accept(this);
 		}
 		// TODO Auto-generated method stub
@@ -432,8 +434,27 @@ public class FirmGenerationVisitor implements AstVisitor {
 
 	@Override
 	public void visit(MethodDeclaration methodDeclaration) {
-		// TODO Auto-generated method stub
+		MethodType methodType = createType(methodDeclaration);
+		Entity methodEntity = new Entity(Program.getGlobalType(), currentClassPrefix + "#f#" + methodDeclaration.getIdentifier().getValue(), methodType);
+		
+		int numberLocalVariables = 0; // TODO count variables
+		int variablesCount = methodDeclaration.getParameters().size() + numberLocalVariables ;
+		Graph mainGraph = new Graph(methodEntity, variablesCount);
+		currentMethod = new Construction(mainGraph);
 
+		Node returnNode = currentMethod.newReturn(currentMethod.getCurrentMem(), new Node[] {});
+		
+		if (methodDeclaration.getBlock().isEmpty()) {
+			// return block has no predecessor!
+		} else {
+			methodDeclaration.getBlock().accept(this);
+			returnNode.setPred(0, methodDeclaration.getBlock().getFirmNode());
+		}
+		
+		mainGraph.getEndBlock().addPred(returnNode);
+		
+		currentMethod.setUnreachable();
+		currentMethod.finish();
 	}
 
 	@Override
@@ -450,7 +471,7 @@ public class FirmGenerationVisitor implements AstVisitor {
 		// we can't use argument of main and we have checked that it is not used
 		// so mainType is void main(void)
 		MethodType mainType = new MethodType(new firm.Type[] {}, new firm.Type[] {});
-		Entity mainEntity = new Entity(Program.getGlobalType(), "__main__", mainType);
+		Entity mainEntity = new Entity(Program.getGlobalType(), currentClassPrefix + "#f#" + methodName.getValue(), mainType);
 
 		int variablesCount = 100; // TODO count variables
 		Graph mainGraph = new Graph(mainEntity, variablesCount);
