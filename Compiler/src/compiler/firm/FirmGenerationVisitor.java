@@ -137,8 +137,11 @@ public class FirmGenerationVisitor implements AstVisitor {
 	 * @return
 	 */
 	private firm.Type createType(ClassMember decl) {
-		// TODO:
-		throw new RuntimeException();
+		if (decl instanceof FieldDeclaration) {
+			return createType((FieldDeclaration) decl);
+		} else {
+			return createType((MethodDeclaration) decl);
+		}
 	}
 
 	/**
@@ -210,7 +213,11 @@ public class FirmGenerationVisitor implements AstVisitor {
 	}
 
 	private Entity createClassMemberEntity(ClassDeclaration decl, CompoundType classType, ClassMember member, firm.Type type) {
-		throw new RuntimeException();
+		if (member instanceof FieldDeclaration) {
+			return createClassMemberEntity(decl, classType, (FieldDeclaration) member, type);
+		} else {
+			return createClassMemberEntity(decl, classType, (MethodDeclaration) member, type);
+		}
 	}
 
 	private firm.Mode convertTypeToMode(Type type)
