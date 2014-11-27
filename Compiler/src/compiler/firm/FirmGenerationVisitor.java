@@ -153,8 +153,11 @@ public class FirmGenerationVisitor implements AstVisitor {
 				uniqueIdent = "m";
 			}
 			// bind entity to class type
-			new Entity(classType, decl.getIdentifier().getValue() + "_" + uniqueIdent + "_" + member.getIdentifier().getValue(), type);
+			String name = decl.getIdentifier().getValue() + "_" + uniqueIdent + "_" + member.getIdentifier().getValue();
+			Entity entity = new Entity(classType, name, type);
+			entity.setLdIdent(name);
 		}
+		Entity entity = new Entity(Program.getGlobalType(), decl.getIdentifier().getValue(), classType);
 
 		return classType;
 	}
