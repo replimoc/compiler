@@ -36,33 +36,6 @@ public class FirmMethodsTest {
 	public void testjFirmInit() throws Exception {
 		FirmUtils.initFirm();
 
-		/*PrimitiveType intType = new PrimitiveType(Mode.getIs());
-
-		ClassType globalType = Program.getGlobalType();
-
-		// create method named foo(int, int) : int
-		MethodType methodType = new MethodType(new Type[] { intType, intType },
-				new Type[] { intType });
-		Entity methodEntity = new Entity(globalType, "foo", methodType);
-		methodEntity.setLdIdent("foo");
-
-		int n_vars = 2 + 1; // two parameters + local var
-		Graph graph = new Graph(methodEntity, n_vars);
-		Construction construction = new Construction(graph);
-
-		// create a const node
-		Node returnConst = construction.newConst(42, Mode.getIs());
-		// set var 2 to const node
-		construction.setVariable(2, returnConst);
-
-		Node nreturn = construction.newReturn(construction.getCurrentMem(), new Node[] { returnConst });
-		graph.getEndBlock().addPred(nreturn);
-
-		construction.setUnreachable();
-
-		construction.finish();
-		Dump.dumpGraph(graph, "-after-construction");*/
-
 		compiler.ast.Program ast = getAstForFile("firmdata/methodstest.java");
 		assertEquals(1, ast.getClasses().size());
 		

@@ -372,8 +372,6 @@ public class FirmGenerationVisitor implements AstVisitor {
 
 	@Override
 	public void visit(VariableAccessExpression variableAccessExpression) {
-		// TODO Auto-generated method stub
-
 	}
 
 	@Override
@@ -459,16 +457,11 @@ public class FirmGenerationVisitor implements AstVisitor {
 		localVariableDeclaration.setFirmNode(varNode);
 	}
 
-	@Override
-	public void visit(ParameterDefinition parameterDefinition) {
-		firm.Type variableType = createType(parameterDefinition.getType());
-
-		//TODO: add function name, find out what global type actually is...
-		Entity paramEntity = new Entity(Program.getGlobalType(), currentClassPrefix + "#f#" + parameterDefinition.getIdentifier().getValue(), variableType);
-		Node firmNode = currentMethod.newAddress(paramEntity);
+	public void createParameterDefinition(Node args, ParameterDefinition parameterDefinition) {
+		Node paramProj = currentMethod.newProj(args, convertTypeToMode(parameterDefinition.getType()), currentMethodVariableCount++);
+		currentMethod.setVariable(currentMethodVariableCount, paramProj);
 		
-		currentMethod.setVariable(currentMethodVariableCount++, firmNode);
-		parameterDefinition.setFirmNode(firmNode);
+		parameterDefinition.setFirmNode(paramProj);
 	}
 
 	@Override
@@ -494,14 +487,16 @@ public class FirmGenerationVisitor implements AstVisitor {
 		MethodType methodType = createType(methodDeclaration);
 		Entity methodEntity = new Entity(Program.getGlobalType(), currentClassPrefix + "#f#" + methodDeclaration.getIdentifier().getValue(), methodType);
 		
+		currentMethodVariableCount = 0;
 		int numberLocalVariables = 0; // TODO count variables
 		int variablesCount = 1 + methodDeclaration.getParameters().size() + numberLocalVariables;
-		Graph mainGraph = new Graph(methodEntity, variablesCount);
-		currentMethod = new Construction(mainGraph);
+		Graph graph = new Graph(methodEntity, variablesCount);
+		currentMethod = new Construction(graph);
 		
 		// create parameters variables
+		Node args = graph.getArgs();
 		for (ParameterDefinition param : methodDeclaration.getParameters()) {
-			param.accept(this);
+			createParameterDefinition(args, param);
 		}
 
 		Node returnNode = currentMethod.newReturn(currentMethod.getCurrentMem(), new Node[] {});
@@ -513,7 +508,7 @@ public class FirmGenerationVisitor implements AstVisitor {
 			returnNode.setPred(0, methodDeclaration.getBlock().getFirmNode());
 		}
 		
-		mainGraph.getEndBlock().addPred(returnNode);
+		graph.getEndBlock().addPred(returnNode);
 		
 		currentMethod.setUnreachable();
 		currentMethod.finish();
@@ -557,6 +552,12 @@ public class FirmGenerationVisitor implements AstVisitor {
 	public void visit(ClassType classType) {
 		// TODO Auto-generated method stub
 
+	}
+
+	@Override
+	public void visit(ParameterDefinition parameterDefinition) {
+		// TODO Auto-generated method stub
+		
 	}
 
 }
