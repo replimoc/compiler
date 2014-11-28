@@ -231,13 +231,13 @@ public class FirmGenerationVisitor implements AstVisitor {
 	}
 
 	// library function print_int in global scope
-	final Entity print_int;
+	private final Entity print_int;
 
 	// current definitions
-	firm.ClassType currentClass = null;
-	Construction currentMethod = null;
-	String currentClassPrefix = "";
-	int currentMethodVariableCount = 0;
+	private firm.ClassType currentClass = null;
+	private Construction currentMethod = null;
+	private String currentClassPrefix = "";
+	private int currentMethodVariableCount = 0;
 
 	public FirmGenerationVisitor() {
 		// create library function(s)
@@ -479,7 +479,6 @@ public class FirmGenerationVisitor implements AstVisitor {
 			currentClassPrefix = curr.getIdentifier().getValue();
 			curr.accept(this);
 		}
-		// TODO Auto-generated method stub
 	}
 
 	@Override
@@ -487,7 +486,6 @@ public class FirmGenerationVisitor implements AstVisitor {
 		for (ClassDeclaration curr : program.getClasses()) {
 			curr.accept(this);
 		}
-		// TODO Auto-generated method stub
 	}
 
 	@Override
@@ -497,7 +495,7 @@ public class FirmGenerationVisitor implements AstVisitor {
 				methodType);
 
 		currentMethodVariableCount = 0;
-		int numberLocalVariables = 0; // TODO count variables
+		int numberLocalVariables = methodDeclaration.getNumberOfLocalVariables();
 		int variablesCount = 1 + methodDeclaration.getParameters().size() + numberLocalVariables;
 		Graph graph = new Graph(methodEntity, variablesCount);
 		currentMethod = new Construction(graph);

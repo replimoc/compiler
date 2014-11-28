@@ -1,9 +1,8 @@
-package compiler.utils;
+package compiler.firm;
 
 import java.io.IOException;
 
-import compiler.firm.FirmUtils;
-import compiler.firm.TempFirmCode;
+import org.junit.Ignore;
 
 import firm.Dump;
 import firm.Graph;
@@ -12,6 +11,7 @@ import firm.Program;
 /**
  * TODO document me
  */
+@Ignore
 public class FirmTestsMain {
 
 	public static void main(String[] argss) throws IOException {

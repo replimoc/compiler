@@ -13,7 +13,7 @@ public class MethodDeclaration extends ClassMember {
 	private final Type returnType;
 	private final List<ParameterDefinition> parameters = new ArrayList<ParameterDefinition>();
 	private Block block;
-	private int numberOfLocals;
+	private int numberOfLocalVariables;
 
 	public MethodDeclaration(Position position, Symbol identifier, Type returnType) {
 		super(position, identifier);
@@ -58,14 +58,14 @@ public class MethodDeclaration extends ClassMember {
 	}
 
 	public void setNumberOfRequiredLocals(int numberOfLocals) {
-		this.setNumberOfLocals(numberOfLocals);
+		this.setNumberOfLocalVariables(numberOfLocals);
 	}
 
-	public int getNumberOfLocals() {
-		return numberOfLocals;
+	public int getNumberOfLocalVariables() {
+		return numberOfLocalVariables;
 	}
 
-	public void setNumberOfLocals(int numberOfLocals) {
-		this.numberOfLocals = numberOfLocals;
+	public void setNumberOfLocalVariables(int numberOfLocalVariables) {
+		this.numberOfLocalVariables = numberOfLocalVariables;
 	}
 }

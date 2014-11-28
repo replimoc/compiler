@@ -2,7 +2,6 @@ package compiler.firm;
 
 import static org.junit.Assert.assertEquals;
 
-import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Paths;
@@ -12,23 +11,14 @@ import org.junit.Test;
 
 import compiler.StringTable;
 import compiler.ast.ClassMember;
-import compiler.ast.MethodDeclaration;
 import compiler.lexer.Lexer;
 import compiler.parser.Parser;
-import compiler.parser.ParsingFailedException;
 import compiler.semantic.SemanticChecker;
 import compiler.semantic.exceptions.SemanticAnalysisException;
-import firm.ClassType;
-import firm.Construction;
+
 import firm.Dump;
-import firm.Entity;
 import firm.Graph;
-import firm.MethodType;
-import firm.Mode;
-import firm.PrimitiveType;
 import firm.Program;
-import firm.Type;
-import firm.nodes.Node;
 
 public class FirmMethodsTest {
 
@@ -38,7 +28,7 @@ public class FirmMethodsTest {
 
 		compiler.ast.Program ast = getAstForFile("firmdata/methodstest.java");
 		assertEquals(1, ast.getClasses().size());
-		
+
 		FirmGenerationVisitor firmGen = new FirmGenerationVisitor();
 		for (ClassMember classMember : ast.getClasses().get(0).getMembers()) {
 			classMember.accept(firmGen);
@@ -51,7 +41,7 @@ public class FirmMethodsTest {
 
 		FirmUtils.finishFirm();
 	}
-	
+
 	private compiler.ast.Program getAstForFile(String fileName) throws Exception {
 		Lexer lexer = new Lexer(Files.newBufferedReader(Paths.get(fileName), StandardCharsets.US_ASCII), new StringTable());
 		Parser parser = new Parser(lexer);
@@ -63,7 +53,7 @@ public class FirmMethodsTest {
 			}
 			throw new Exception("program is not semantically correct");
 		}
-		
+
 		return program;
 	}
 }

@@ -99,16 +99,17 @@ public class TempFirmCode {
 		Mode modeRef = Mode.getP();
 		Type intType = new PrimitiveType(modeInt);
 		Type reference_to_Test = new PointerType(classTest);
+		Type reference_to_A = new PointerType(classA);
 
 		// define field y
 		Entity A__Y = new Entity(classA, "y", classTest);
 
 		// define field z
-		Entity A__Z = new Entity(classTest, "z", intType);
+		Entity TEST_Z = new Entity(classTest, "z", intType);
 
 		// define method "method"
-		MethodType A__method_Type = new MethodType(new Type[] { reference_to_Test, intType }, new Type[] {});
-		Entity A__method = new Entity(classA, "method(A,I)V with test", A__method_Type);
+		MethodType A__method_Type = new MethodType(new Type[] { reference_to_A, intType }, new Type[] {});
+		Entity A__method = new Entity(classA, "methodWithIndirection(A,I)V", A__method_Type);
 
 		// create graph for entity A::method
 		int varThisNum = 0;
@@ -142,7 +143,7 @@ public class TempFirmCode {
 		Node loadThisY = construction.newLoad(mem, addrof_thisY, modeRef);
 		Node loadThisYResult = construction.newProj(loadThisY, modeRef, Load.pnRes);
 		// load this.y.z and add this.y.z to tmp1
-		Node addrof_Z = construction.newMember(loadThisYResult, A__Z);
+		Node addrof_Z = construction.newMember(loadThisYResult, TEST_Z);
 		Node loadThisYZ = construction.newLoad(mem, addrof_Z, modeInt);
 		Node loadThisYZResult = construction.newProj(loadThisYZ, modeInt, Load.pnRes);
 
