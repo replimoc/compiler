@@ -30,17 +30,17 @@ public final class SemanticChecker {
 		if (classScopes.containsKey(systemSymbol) == false) {
 			// create PrintStream class
 			Symbol printStream = new Symbol("PrintStream");
-			Definition printStreamDefinition = new Definition(printStream, new ClassType(new Position(-1, -1), printStream));
+			Definition printStreamDefinition = new Definition(printStream, new ClassType(new Position(-1, -1), printStream), null);
 
 			HashMap<Symbol, MethodDefinition> psMethods = new HashMap<Symbol, MethodDefinition>();
 			Symbol printLineSymbol = new Symbol("println");
 			Definition[] definitions = new Definition[1];
-			definitions[0] = new Definition(new Symbol("arg"), new Type(null, BasicType.INT));
-			psMethods.put(printLineSymbol, new MethodDefinition(printLineSymbol, new Type(null, BasicType.VOID), definitions));
+			definitions[0] = new Definition(new Symbol("arg"), new Type(null, BasicType.INT), null);
+			psMethods.put(printLineSymbol, new MethodDefinition(printLineSymbol, new Type(null, BasicType.VOID), definitions, null));
 			ClassScope printStreamScope = new ClassScope(new HashMap<Symbol, Definition>(), psMethods);
 			classScopes.put(printStream, printStreamScope);
 
-			systemSymbol.setDefintion(new Scope(null, 0), new Definition(systemSymbol, new ClassType(null, systemSymbol)));
+			systemSymbol.setDefintion(new Scope(null, 0), new Definition(systemSymbol, new ClassType(null, systemSymbol), null));
 			HashMap<Symbol, Definition> fields = new HashMap<Symbol, Definition>();
 			fields.put(new Symbol("out"), printStreamDefinition);
 			HashMap<Symbol, MethodDefinition> methods = new HashMap<Symbol, MethodDefinition>();
