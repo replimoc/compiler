@@ -14,6 +14,7 @@ import firm.Construction;
 import firm.Entity;
 import firm.Graph;
 import firm.Mode;
+import firm.nodes.Call;
 import firm.nodes.Node;
 
 public class FirmGenerationVisitor implements AstVisitor {
@@ -32,7 +33,7 @@ public class FirmGenerationVisitor implements AstVisitor {
     public void visit(AdditionExpression additionExpression) {
 
         // get type of expression
-        Mode mode = convertTypeToMode(additionExpression.getType());
+        Mode mode = convertAstTypeToMode(additionExpression.getType());
 
         // get firmNode for fist operand
         Expression operand1 = additionExpression.getOperand1();
@@ -51,9 +52,20 @@ public class FirmGenerationVisitor implements AstVisitor {
 
     @Override
     public void visit(AssignmentExpression assignmentExpression) {
-        System.out.println("assignmentExpression = [" + assignmentExpression + "]");
-        // TODO Auto-generated method stub
+        int variableNumber = -1;
+        VariableAccessExpression variableAccess = (VariableAccessExpression) assignmentExpression.getOperand1();
+        AstNode variableDefinitionNode = variableAccess.getDefinition().getAstNode();
+        // TODO fix this shit
+        if (variableDefinitionNode instanceof LocalVariableDeclaration) {
+            variableNumber = ((LocalVariableDeclaration) variableDefinitionNode).getFirmVariableNumber();
+        }
+        Expression rhsExpression = assignmentExpression.getOperand2();
+        assert rhsExpression != null; // TODO is this true
 
+        rhsExpression.accept(this);
+        Node firmNode = rhsExpression.getFirmNode();
+        currentMethodConstruction.setVariable(variableNumber, firmNode);
+        assignmentExpression.setFirmNode(currentMethodConstruction.getCurrentMem());
     }
 
     @Override
@@ -150,14 +162,44 @@ public class FirmGenerationVisitor implements AstVisitor {
 
     @Override
     public void visit(NewArrayExpression newArrayExpression) {
-        // TODO Auto-generated method stub
+        firm.Type elementsType = hierarchy.getType(newArrayExpression.getType().getSubType());
+
+        Expression elementsCount = newArrayExpression.getFirstDimension();
+        elementsCount.accept(this);
+
+        Node numberOfElements = elementsCount.getFirmNode();
+        assert numberOfElements != null;
+        Node sizeofClass = currentMethodConstruction.newSize(hierarchy.modeInt, elementsType);
+        Node callocClass = currentMethodConstruction.newCall(
+                currentMethodConstruction.getCurrentMem(),
+                currentMethodConstruction.newAddress(hierarchy.calloc),
+                new Node[]{numberOfElements, sizeofClass}, hierarchy.calloc.getType());
+        // update memory
+        currentMethodConstruction.setCurrentMem(currentMethodConstruction.newProj(callocClass, Mode.getM(), Call.pnM));
+        // set FirmNode to returned reference
+        Node callocResult = currentMethodConstruction.newProj(callocClass, Mode.getT(), Call.pnTResult);
+        Node referenceToObject = currentMethodConstruction.newProj(callocResult, hierarchy.modeRef, 0);
+        newArrayExpression.setFirmNode(referenceToObject);
 
     }
 
     @Override
     public void visit(NewObjectExpression newObjectExpression) {
-        // TODO Auto-generated method stub
+        String className = newObjectExpression.getType().getIdentifier().getValue();
+        firm.ClassType classType = hierarchy.getClassEntity(className);
 
+        Node numberOfElements = currentMethodConstruction.newConst(1, hierarchy.modeInt);
+        Node sizeofClass = currentMethodConstruction.newSize(hierarchy.modeInt, classType);
+        Node callocClass = currentMethodConstruction.newCall(
+                currentMethodConstruction.getCurrentMem(),
+                currentMethodConstruction.newAddress(hierarchy.calloc),
+                new Node[]{numberOfElements, sizeofClass}, hierarchy.calloc.getType());
+        // update memory
+        currentMethodConstruction.setCurrentMem(currentMethodConstruction.newProj(callocClass, Mode.getM(), Call.pnM));
+        // set FirmNode to returned reference
+        Node callocResult = currentMethodConstruction.newProj(callocClass, Mode.getT(), Call.pnTResult);
+        Node referenceToObject = currentMethodConstruction.newProj(callocResult, hierarchy.modeRef, 0);
+        newObjectExpression.setFirmNode(referenceToObject);
     }
 
     @Override
@@ -210,7 +252,7 @@ public class FirmGenerationVisitor implements AstVisitor {
     @Override
     public void visit(Block block) {
         for (Statement statement : block.getStatements()) {
-            // System.out.println("statement.getClass().getName() = " + statement.getClass().getName());
+            System.out.println("about to visit: = " + statement.getClass().getName());
             statement.accept(this);
         }
 
@@ -233,21 +275,24 @@ public class FirmGenerationVisitor implements AstVisitor {
 
     @Override
     public void visit(LocalVariableDeclaration localVariableDeclaration) {
-        int variableNumber = 0; // TODO get variable number
-        Mode variableMode = convertTypeToMode(localVariableDeclaration.getType());
+        int variableNumber = currentMethodVariableCount++;
+        localVariableDeclaration.setFirmVariableNumber(variableNumber);
+//        Mode variableMode = convertAstTypeToMode(localVariableDeclaration.getType());
 
         Expression expression = localVariableDeclaration.getExpression();
         if (expression != null) {
+            System.out.println("about to visit = " + expression.getClass().getName());
             expression.accept(this);
+
+            Node firmNode = expression.getFirmNode();
+            assert firmNode != null;
+            currentMethodConstruction.setVariable(variableNumber, firmNode);
+            localVariableDeclaration.setFirmNode(currentMethodConstruction.getCurrentMem());
+        } else {
+            System.out.println("localVariableDeclaration without assignment");
+            System.out.println("localVariableDeclaration = [" + localVariableDeclaration + "]");
         }
 
-        return; // TODO
-
-//		Node firmNode = expression.getFirmNode();
-//		currentMethodConstruction.setVariable(variableNumber, firmNode);
-//		Node varNode = currentMethodConstruction.getVariable(variableNumber, variableMode);
-//
-//		localVariableDeclaration.setFirmNode(varNode);
     }
 
 
@@ -285,8 +330,8 @@ public class FirmGenerationVisitor implements AstVisitor {
             createParameterDefinition(args, param);
         }
 
-        // parse block
-        methodDeclaration.getBlock().accept(this);
+        // TODO block
+//        methodDeclaration.getBlock().accept(this);
 
         Node returnNode;
 
@@ -295,7 +340,7 @@ public class FirmGenerationVisitor implements AstVisitor {
             returnNode = currentMethodConstruction.newReturn(currentMethodConstruction.getCurrentMem(), new Node[]{});
 //            returnNode.setPred(0, methodDeclaration.getBlock().getFirmNode());
         } else {
-            Mode constMode = convertTypeToMode(methodDeclaration.getType());
+            Mode constMode = convertAstTypeToMode(methodDeclaration.getType());
             Node constRet = currentMethodConstruction.newConst(0, constMode);
             returnNode = currentMethodConstruction.newReturn(currentMethodConstruction.getCurrentMem(), new Node[]{constRet});
 
@@ -315,8 +360,7 @@ public class FirmGenerationVisitor implements AstVisitor {
     private void createParameterDefinition(Node args, ParameterDefinition parameterDefinition) {
         //TODO maybe this is better to do with visitor
         // args can be called as construction.getGraph().getArgs();
-        System.out.println("convertTypeToMode(parameterDefinition.getType()) = " + convertTypeToMode(parameterDefinition.getType()));
-        Node paramProj = currentMethodConstruction.newProj(args, convertTypeToMode(parameterDefinition.getType()), currentMethodVariableCount++);
+        Node paramProj = currentMethodConstruction.newProj(args, convertAstTypeToMode(parameterDefinition.getType()), currentMethodVariableCount++);
         currentMethodConstruction.setVariable(currentMethodVariableCount, paramProj);
 
         parameterDefinition.setFirmNode(paramProj);
@@ -343,7 +387,8 @@ public class FirmGenerationVisitor implements AstVisitor {
         // TODO: (if I understood correctly )if method returns void it is necessary to link last statement with return
         // TODO: otherwise it won't appear in graph
         Node returnNode = currentMethodConstruction.newReturn(currentMethodConstruction.getCurrentMem(), new Node[]{});
-//		returnNode.setPred(0, staticMethodDeclaration.getBlock().getFirmNode()); // TODO
+        if (staticMethodDeclaration.getBlock().getFirmNode() != null) // TODO
+            returnNode.setPred(0, staticMethodDeclaration.getBlock().getFirmNode()); // TODO
         mainGraph.getEndBlock().addPred(returnNode);
 
         currentMethodConstruction.setUnreachable();
@@ -362,7 +407,7 @@ public class FirmGenerationVisitor implements AstVisitor {
 
     }
 
-    private firm.Mode convertTypeToMode(Type type) {
+    private firm.Mode convertAstTypeToMode(Type type) {
         switch (type.getBasicType()) {
             case INT:
                 return hierarchy.modeInt;
@@ -372,7 +417,7 @@ public class FirmGenerationVisitor implements AstVisitor {
             case ARRAY:
                 return hierarchy.modeRef;
             default:
-                throw new RuntimeException("convertTypeToMode for " + type.getIdentifier() + " is not implemented");
+                throw new RuntimeException("convertAstTypeToMode for " + type.getIdentifier() + " is not implemented");
         }
     }
 

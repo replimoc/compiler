@@ -28,7 +28,6 @@ class FirmHierarchy {
     final Entity mainMethod;
 
 
-
     static class ClassWrapper {
         ClassWrapper(String className) {
             classType = new ClassType(className);
@@ -109,6 +108,14 @@ class FirmHierarchy {
         Entity method = currentClass.getMemberByName(entityName);
         System.out.println("method = " + method);
         return method;
+    }
+
+    public ClassType getClassEntity(String className) {
+        return definedClasses.get(className).classType;
+    }
+
+    public firm.Type getType(compiler.ast.type.Type type) {
+        return getTypeDeclaration(type);
     }
 
     private firm.Type getTypeDeclaration(compiler.ast.type.Type type) {
