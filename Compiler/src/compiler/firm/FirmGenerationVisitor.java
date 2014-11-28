@@ -47,9 +47,9 @@ import compiler.ast.type.Type;
 import compiler.ast.visitor.AstVisitor;
 
 import firm.ArrayType;
+import firm.CompoundType;
 import firm.Construction;
 import firm.Entity;
-import firm.Firm;
 import firm.Graph;
 import firm.MethodType;
 import firm.Mode;
@@ -60,15 +60,16 @@ import firm.nodes.Node;
 
 public class FirmGenerationVisitor implements AstVisitor {
 
-	static {
-		Firm.init();
-	}
-
 	private final Mode modeInt = Mode.getIs(); // integer signed 32 bit
-    final Mode modeSizeT = Mode.getLu();
-    final Mode modeBool = Mode.getBu(); //TODO
+	private final Mode modeBool = Mode.getBu(); // unsigned 8 bit
 	private final Mode modeRef = Mode.createReferenceMode("P64", Arithmetic.TwosComplement, 64, 64); // 64 bit pointer
 
+	/**
+	 * Create and return a {@link firm.Type} for the given {@link Type}.
+	 * 
+	 * @param type
+	 * @return
+	 */
 	private firm.Type createType(Type type) {
 		Type tmpType = type;
 		while (tmpType.getSubType() != null) {
@@ -107,6 +108,12 @@ public class FirmGenerationVisitor implements AstVisitor {
 		return firmType;
 	}
 
+	/**
+	 * Create and return a method type for the given {@link FieldDeclaration}.
+	 * 
+	 * @param decl
+	 * @return
+	 */
 	private firm.Type createType(FieldDeclaration decl) {
 		firm.Type type;
 
@@ -118,11 +125,26 @@ public class FirmGenerationVisitor implements AstVisitor {
 		return type;
 	}
 
+	/**
+	 * Create and return a method type for the given {@link ClassMember}.
+	 * 
+	 * @param decl
+	 * @return
+	 */
 	private firm.Type createType(ClassMember decl) {
-		// TODO:
-		throw new RuntimeException();
+		if (decl instanceof FieldDeclaration) {
+			return createType((FieldDeclaration) decl);
+		} else {
+			return createType((MethodDeclaration) decl);
+		}
 	}
 
+	/**
+	 * Create and return a method type for the given {@link MethodDeclaration}.
+	 * 
+	 * @param decl
+	 * @return
+	 */
 	private MethodType createType(MethodDeclaration decl) {
 		List<ParameterDefinition> params = decl.getParameters();
 		firm.Type[] paramTypes = new firm.Type[params.size()];
@@ -140,24 +162,57 @@ public class FirmGenerationVisitor implements AstVisitor {
 		}
 	}
 
+	/**
+	 * Create and return a {@link firm.ClassType} for the given {@link ClassDeclaration}.
+	 * 
+	 * @param decl
+	 * @return
+	 */
 	private firm.ClassType createClassType(ClassDeclaration decl) {
 		firm.ClassType classType = new firm.ClassType(decl.getIdentifier().getValue());
-
-		List<ClassMember> members = decl.getMembers();
-
-		for (ClassMember member : members) {
-			firm.Type type = createType(member);
-			String uniqueIdent;
-			if (member instanceof FieldDeclaration) {
-				uniqueIdent = "f";
-			} else {
-				uniqueIdent = "m";
-			}
-			// bind entity to class type
-			new Entity(classType, decl.getIdentifier().getValue() + "_" + uniqueIdent + "_" + member.getIdentifier().getValue(), type);
-		}
-
 		return classType;
+	}
+
+	/**
+	 * Create and return an entity for the given {@link FieldDeclaration}, that is part of the given {@link ClassDeclaration} of type
+	 * {@link CompoundType}.
+	 * 
+	 * @param decl
+	 * @param classType
+	 * @param member
+	 * @param type
+	 * @return
+	 */
+	private Entity createClassMemberEntity(ClassDeclaration decl, CompoundType classType, FieldDeclaration member, firm.Type type) {
+		String name = decl.getIdentifier().getValue() + "#" + "f" + "#" + member.getIdentifier().getValue();
+		Entity entity = new Entity(classType, name, type);
+		entity.setLdIdent(name);
+		return entity;
+	}
+
+	/**
+	 * Create and return an entity for the given {@link MethodDeclaration}, that is part of the given {@link ClassDeclaration} of type
+	 * {@link CompoundType}.
+	 * 
+	 * @param decl
+	 * @param classType
+	 * @param member
+	 * @param type
+	 * @return
+	 */
+	private Entity createClassMemberEntity(ClassDeclaration decl, CompoundType classType, MethodDeclaration member, firm.Type type) {
+		String name = decl.getIdentifier().getValue() + "#" + "m" + "#" + member.getIdentifier().getValue();
+		Entity entity = new Entity(classType, name, type);
+		entity.setLdIdent(name);
+		return entity;
+	}
+
+	private Entity createClassMemberEntity(ClassDeclaration decl, CompoundType classType, ClassMember member, firm.Type type) {
+		if (member instanceof FieldDeclaration) {
+			return createClassMemberEntity(decl, classType, (FieldDeclaration) member, type);
+		} else {
+			return createClassMemberEntity(decl, classType, (MethodDeclaration) member, type);
+		}
 	}
 
 	private firm.Mode convertTypeToMode(Type type)
@@ -182,6 +237,8 @@ public class FirmGenerationVisitor implements AstVisitor {
 	// current definitions
 	firm.ClassType currentClass = null;
 	Construction currentMethod = null;
+	String currentClassPrefix = "";
+	int currentMethodVariableCount = 0;
 
 	public FirmGenerationVisitor() {
 		// create library function(s)
@@ -326,8 +383,7 @@ public class FirmGenerationVisitor implements AstVisitor {
 
 	@Override
 	public void visit(VariableAccessExpression variableAccessExpression) {
-		// TODO Auto-generated method stub
-
+		variableAccessExpression.setFirmNode(variableAccessExpression.getDefinition().getAstNode().getFirmNode());
 	}
 
 	@Override
@@ -413,15 +469,18 @@ public class FirmGenerationVisitor implements AstVisitor {
 		localVariableDeclaration.setFirmNode(varNode);
 	}
 
-	@Override
-	public void visit(ParameterDefinition parameterDefinition) {
+	public void createParameterDefinition(Node args, ParameterDefinition parameterDefinition) {
+		Node paramProj = currentMethod.newProj(args, convertTypeToMode(parameterDefinition.getType()), currentMethodVariableCount++);
+		currentMethod.setVariable(currentMethodVariableCount, paramProj);
 
+		parameterDefinition.setFirmNode(paramProj);
 	}
 
 	@Override
 	public void visit(ClassDeclaration classDeclaration) {
 		currentClass = createClassType(classDeclaration);
 		for (ClassMember curr : classDeclaration.getMembers()) {
+			currentClassPrefix = curr.getIdentifier().getValue();
 			curr.accept(this);
 		}
 		// TODO Auto-generated method stub
@@ -437,8 +496,35 @@ public class FirmGenerationVisitor implements AstVisitor {
 
 	@Override
 	public void visit(MethodDeclaration methodDeclaration) {
-		// TODO Auto-generated method stub
+		MethodType methodType = createType(methodDeclaration);
+		Entity methodEntity = new Entity(Program.getGlobalType(), currentClassPrefix + "#f#" + methodDeclaration.getIdentifier().getValue(),
+				methodType);
 
+		currentMethodVariableCount = 0;
+		int numberLocalVariables = 0; // TODO count variables
+		int variablesCount = 1 + methodDeclaration.getParameters().size() + numberLocalVariables;
+		Graph graph = new Graph(methodEntity, variablesCount);
+		currentMethod = new Construction(graph);
+
+		// create parameters variables
+		Node args = graph.getArgs();
+		for (ParameterDefinition param : methodDeclaration.getParameters()) {
+			createParameterDefinition(args, param);
+		}
+
+		Node returnNode = currentMethod.newReturn(currentMethod.getCurrentMem(), new Node[] {});
+
+		if (methodDeclaration.getBlock().isEmpty()) {
+			// return block has no predecessor!
+		} else {
+			methodDeclaration.getBlock().accept(this);
+			returnNode.setPred(0, methodDeclaration.getBlock().getFirmNode());
+		}
+
+		graph.getEndBlock().addPred(returnNode);
+
+		currentMethod.setUnreachable();
+		currentMethod.finish();
 	}
 
 	@Override
@@ -455,7 +541,7 @@ public class FirmGenerationVisitor implements AstVisitor {
 		// we can't use argument of main and we have checked that it is not used
 		// so mainType is void main(void)
 		MethodType mainType = new MethodType(new firm.Type[] {}, new firm.Type[] {});
-		Entity mainEntity = new Entity(Program.getGlobalType(), "__main__", mainType);
+		Entity mainEntity = new Entity(Program.getGlobalType(), currentClassPrefix + "#f#" + methodName.getValue(), mainType);
 
 		int variablesCount = 100; // TODO count variables
 		Graph mainGraph = new Graph(mainEntity, variablesCount);
@@ -477,6 +563,12 @@ public class FirmGenerationVisitor implements AstVisitor {
 
 	@Override
 	public void visit(ClassType classType) {
+		// TODO Auto-generated method stub
+
+	}
+
+	@Override
+	public void visit(ParameterDefinition parameterDefinition) {
 		// TODO Auto-generated method stub
 
 	}
