@@ -8,6 +8,8 @@ public class SymbolTable {
 
 	private final LinkedList<Change> changeStack = new LinkedList<Change>();
 	private Scope currentScope;
+	private int localVariables;
+	private int maxLocalVariables;
 
 	public SymbolTable() {
 		currentScope = null;
@@ -18,9 +20,12 @@ public class SymbolTable {
 	}
 
 	public void leaveScope() {
+		maxLocalVariables = Math.max(maxLocalVariables, localVariables);
+
 		while (changeStack.size() > currentScope.getOldChangeStackSize()) {
 			Change change = changeStack.pop();
 			change.getSymbol().setDefintion(change.getPrevScope(), change.getPrevDefinition());
+			localVariables--;
 		}
 		currentScope = currentScope.getParentScope();
 	}
@@ -28,6 +33,7 @@ public class SymbolTable {
 	public void insert(Symbol symbol, Definition definition) {
 		changeStack.push(new Change(symbol, symbol.getDefinition(), symbol.getDefinitionScope()));
 		symbol.setDefintion(currentScope, definition);
+		localVariables++;
 	}
 
 	public boolean isDefinedInCurrentScope(Symbol symbol) {
@@ -38,5 +44,9 @@ public class SymbolTable {
 		while (currentScope != null) {
 			leaveScope();
 		}
+	}
+
+	public int getRequiredLocalVariables() {
+		return maxLocalVariables;
 	}
 }
