@@ -17,11 +17,12 @@ public class FirmTestsMain {
 	public static void main(String[] argss) throws IOException {
 		FirmUtils.initFirm();
 
-		TempFirmCode.createStaticEmptyMethod();
-		TempFirmCode.createStaticMethodWithParam();
-		TempFirmCode.createMethodWithLocalVar();
-		TempFirmCode.createMethodWithReferenceToClass();
-		TempFirmCode.createPrintIntGraph();
+//		TempFirmCode.createStaticEmptyMethod();
+//		TempFirmCode.createStaticMethodWithParam();
+//		TempFirmCode.createMethodWithLocalVar();
+//		TempFirmCode.createMethodWithReferenceToClass();
+//		TempFirmCode.createPrintIntGraph();
+        TempFirmCode.createCallocGraph();
 
 		for (Graph g : Program.getGraphs()) {
 			g.check();

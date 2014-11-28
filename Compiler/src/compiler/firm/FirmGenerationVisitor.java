@@ -232,6 +232,7 @@ public class FirmGenerationVisitor implements AstVisitor {
 
 	// library function print_int in global scope
 	final Entity print_int;
+    final Entity calloc;
 
 	// current definitions
 	firm.ClassType currentClass = null;
@@ -242,7 +243,10 @@ public class FirmGenerationVisitor implements AstVisitor {
 	public FirmGenerationVisitor() {
 		// create library function(s)
 		MethodType print_int_type = new MethodType(new firm.Type[] { new PrimitiveType(modeInt) }, new firm.Type[] {});
-		this.print_int = new Entity(firm.Program.getGlobalType(), "print_int", print_int_type);
+		this.print_int = new Entity(firm.Program.getGlobalType(), "#print_int", print_int_type);
+        //void* calloc (size_t num, size_t size);
+        MethodType calloc_type = new MethodType(new firm.Type[]{new PrimitiveType(modeInt),new PrimitiveType(modeInt)}, new firm.Type[]{new PrimitiveType(modeRef)});
+        this.calloc = new Entity(firm.Program.getGlobalType(), "#calloc", calloc_type);
 	}
 
 	@Override
