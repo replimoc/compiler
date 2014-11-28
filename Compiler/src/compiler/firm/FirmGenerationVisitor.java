@@ -45,7 +45,6 @@ import compiler.ast.type.BasicType;
 import compiler.ast.type.ClassType;
 import compiler.ast.type.Type;
 import compiler.ast.visitor.AstVisitor;
-
 import firm.ArrayType;
 import firm.CompoundType;
 import firm.Construction;
@@ -57,6 +56,7 @@ import firm.Mode.Arithmetic;
 import firm.PrimitiveType;
 import firm.Program;
 import firm.nodes.Node;
+import firm.nodes.Store;
 
 public class FirmGenerationVisitor implements AstVisitor {
 
@@ -507,15 +507,14 @@ public class FirmGenerationVisitor implements AstVisitor {
 		for (ParameterDefinition param : methodDeclaration.getParameters()) {
 			createParameterDefinition(args, param);
 		}
-
-		// Node storeMem = currentMethod.newProj(currentMethod.getCurrentMem(), Mode.getM(), Store.pnM);
-		Node returnNode = currentMethod.newReturn(currentMethod.getCurrentMem(), new Node[] {});
+		
+		Node returnNode = currentMethod.newReturn(currentMethod.getCurrentMem(), new Node[] { currentMethod.getCurrentMem()}); //TODO: in case of return, we have to add the node here
 
 		if (methodDeclaration.getBlock().isEmpty()) {
 			// return block has no predecessor!
 		} else {
-			returnNode.setPred(0, currentMethod.getCurrentMem());
 			methodDeclaration.getBlock().accept(this);
+			returnNode.setPred(0, methodDeclaration.getBlock().getFirmNode());
 		}
 
 		graph.getEndBlock().addPred(returnNode);
