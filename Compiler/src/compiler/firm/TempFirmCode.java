@@ -1,7 +1,20 @@
 package compiler.firm;
 
-import firm.*;
-import firm.nodes.*;
+import firm.ArrayType;
+import firm.ClassType;
+import firm.Construction;
+import firm.Entity;
+import firm.Graph;
+import firm.MethodType;
+import firm.Mode;
+import firm.PointerType;
+import firm.PrimitiveType;
+import firm.Program;
+import firm.Type;
+import firm.nodes.Call;
+import firm.nodes.Load;
+import firm.nodes.Node;
+import firm.nodes.Store;
 
 /**
  * temporary code for firm graph
@@ -87,7 +100,6 @@ public class TempFirmCode {
 		Mode modeInt = Mode.getIs();
 		Mode modeRef = Mode.getP();
 		Type intType = new PrimitiveType(modeInt);
-		Type reference_to_Test = new PointerType(classTest);
 		Type reference_to_A = new PointerType(classA);
 
 		// define field y
@@ -216,8 +228,8 @@ public class TempFirmCode {
 		Node addExpr2 = construction.newAdd(loadThisYResult, addExpr, modeInt);
 
 		// store this.y
-//        Node addrof_thisY = construction.newMember(projThis, A__y);
-		Node storeThisY = construction.newStore(mem,  addrof_thisY /*construction.getVariable(varThisNum, modeRef)*/, addExpr2);
+		// Node addrof_thisY = construction.newMember(projThis, A__y);
+		Node storeThisY = construction.newStore(mem, addrof_thisY /* construction.getVariable(varThisNum, modeRef) */, addExpr2);
 		Node storeMem = construction.newProj(storeThisY, Mode.getM(), Store.pnM);
 
 		// ------------------------- method return statement --------------------------------
@@ -275,118 +287,109 @@ public class TempFirmCode {
 		construction.finish();
 	}
 
-    /**
-     * class A {
-     *      int i;
-     *
-     *      ... main() {
-     *          A a = new A();
-     *          a.i = 10;
-     *          int[] x = new int[10];
-     *          x[0] = 10;
-     *      }
-     * }
-     */
-    public static void createCallocGraph()
-    {
-        // define class
-        ClassType classA = new ClassType("A");
+	/**
+	 * class A { int i;
+	 *
+	 * ... main() { A a = new A(); a.i = 10; int[] x = new int[10]; x[0] = 10; } }
+	 */
+	public static void createCallocGraph()
+	{
+		// define class
+		ClassType classA = new ClassType("A");
 
+		Mode modeInt = Mode.getIs();
+		Mode modeRef = Mode.getP();
+		Type intType = new PrimitiveType(modeInt);
+		Type intArrType = new ArrayType(intType);
+		Type reference_to_VoidStar = new PrimitiveType(modeRef);
 
-        Mode modeInt = Mode.getIs();
-        Mode modeRef = Mode.getP();
-        Type intType = new PrimitiveType(modeInt);
-        Type intArrType = new ArrayType(intType);
-        Type reference_to_A = new PointerType(classA);
-        Type reference_to_VoidStar = new PrimitiveType(modeRef);
+		// defina A.i
+		Entity A__i = new Entity(classA, "A::i", intType);
 
-        // defina A.i
-        Entity A__i = new Entity(classA, "A::i", intType);
+		// define method "main"
+		MethodType mainType = new MethodType(new firm.Type[] {}, new firm.Type[] {});
+		Entity mainEntity = new Entity(Program.getGlobalType(), "main(V)V", mainType);
 
-        // define method "main"
-        MethodType mainType = new MethodType(new firm.Type[]{}, new firm.Type[]{});
-        Entity mainEntity = new Entity(Program.getGlobalType(), "main(V)V", mainType);
+		// define "calloc"
+		MethodType calloc_type = new MethodType(new firm.Type[] { intType, intType }, new firm.Type[] { reference_to_VoidStar });
+		Entity callocEntity = new Entity(firm.Program.getGlobalType(), "calloc", calloc_type);
 
-        // define "calloc"
-        MethodType calloc_type = new MethodType(new firm.Type[]{intType, intType}, new firm.Type[]{reference_to_VoidStar});
-        Entity callocEntity = new Entity(firm.Program.getGlobalType(), "calloc", calloc_type);
+		int varA = 0;
+		int varXArr = 1;
+		int varCount = 2;
+		Graph graph = new Graph(mainEntity, varCount);
+		Construction construction = new Construction(graph);
+		Node c0 = construction.newConst(0, modeInt);
+		Node c10 = construction.newConst(10, modeInt);
+		Node callocAddr = construction.newAddress(callocEntity);
 
-        int varA = 0;
-        int varXArr = 1;
-        int varCount = 2;
-        Graph graph = new Graph(mainEntity, varCount);
-        Construction construction = new Construction(graph);
-        Node c0 = construction.newConst(0, modeInt);
-        Node c10 = construction.newConst(10, modeInt);
-        Node callocAddr = construction.newAddress(callocEntity);
+		//
+		// A a = new A();
+		//
 
-        //
-        // A a = new A();
-        //
+		// call constructor of A with calloc
+		Node num_A = construction.newConst(1, modeInt);
+		Node size_A = construction.newSize(modeInt, classA);
+		Node callocA = construction.newCall(construction.getCurrentMem(), callocAddr, new Node[] { num_A, size_A }, calloc_type);
 
-        // call constructor of A with calloc
-        Node num_A = construction.newConst(1, modeInt);
-        Node size_A = construction.newSize(modeInt, classA);
-        Node callocA = construction.newCall(construction.getCurrentMem(), callocAddr, new Node[]{num_A, size_A}, calloc_type);
+		// update memory
+		Node memAfterNewA = construction.newProj(callocA, Mode.getM(), Call.pnM);
+		construction.setCurrentMem(memAfterNewA);
 
-        // update memory
-        Node memAfterNewA = construction.newProj(callocA, Mode.getM(), Call.pnM);
-        construction.setCurrentMem(memAfterNewA);
+		// this should cast void* to A* and assign it to a
+		// get tuple with method call result
+		Node callocAResult = construction.newProj(callocA, Mode.getT(), Call.pnTResult);
+		// get first item in a tuple which is reference to new A;
+		Node aRef = construction.newProj(callocAResult, modeRef, 0);
+		construction.setVariable(varA, aRef);
 
-        // this should cast void* to A* and assign it to a
-        // get tuple with method call result
-        Node callocAResult = construction.newProj(callocA, Mode.getT(), Call.pnTResult);
-        // get first item in a tuple which is reference to new A;
-        Node aRef = construction.newProj(callocAResult, modeRef,0);
-        construction.setVariable(varA, aRef);
+		//
+		// a.i = 10;
+		//
 
-        //
-        // a.i = 10;
-        //
+		Node addrOfA__i = construction.newMember(construction.getVariable(varA, modeRef), A__i);
+		Node storeA_I = construction.newStore(construction.getCurrentMem(), addrOfA__i, c10);
+		// update memory
+		Node memAfterStore = construction.newProj(storeA_I, Mode.getM(), Store.pnM);
+		construction.setCurrentMem(memAfterStore);
 
-        Node addrOfA__i = construction.newMember(construction.getVariable(varA, modeRef), A__i);
-        Node storeA_I = construction.newStore(construction.getCurrentMem(),  addrOfA__i, c10);
-        // update memory
-        Node memAfterStore = construction.newProj(storeA_I, Mode.getM(), Store.pnM);
-        construction.setCurrentMem(memAfterStore);
+		//
+		// int[] x = new int[10]
+		//
 
-        //
-        // int[] x = new int[10]
-        //
+		// allocate memory with calloc
+		Node num_X = construction.newConst(10, modeInt);
+		Node size_X = construction.newSize(modeInt, intType);
+		Node callocX = construction.newCall(construction.getCurrentMem(), callocAddr, new Node[] { num_X, size_X }, calloc_type);
 
-        // allocate memory with calloc
-        Node num_X = construction.newConst(10, modeInt);
-        Node size_X = construction.newSize(modeInt, intType);
-        Node callocX = construction.newCall(construction.getCurrentMem(), callocAddr, new Node[]{num_X, size_X}, calloc_type);
+		// update memory
+		Node memAfterCallocX = construction.newProj(callocX, Mode.getM(), Call.pnM);
+		construction.setCurrentMem(memAfterCallocX);
 
-        // update memory
-        Node memAfterCallocX = construction.newProj(callocX, Mode.getM(), Call.pnM);
-        construction.setCurrentMem(memAfterCallocX);
+		// save reference to new memory in x;
+		Node callocXResult = construction.newProj(callocX, Mode.getT(), Call.pnTResult);
+		Node xArrRef = construction.newProj(callocXResult, modeRef, 0);
+		construction.setVariable(varXArr, xArrRef);
 
-        // save reference to new memory in x;
-        Node callocXResult = construction.newProj(callocX, Mode.getT(), Call.pnTResult);
-        Node xArrRef = construction.newProj(callocXResult, modeRef, 0);
-        construction.setVariable(varXArr, xArrRef);
+		//
+		// x[0] = 10;
+		//
+		Node xArrPtr = construction.getVariable(varXArr, modeRef);
+		Node x_index0 = construction.newSel(xArrPtr, c0, intArrType);
+		Node storeX_index0 = construction.newStore(construction.getCurrentMem(), x_index0, c10);
+		// update memory
+		Node memAfterStoreX_index0 = construction.newProj(storeX_index0, Mode.getM(), Store.pnM);
+		construction.setCurrentMem(memAfterStoreX_index0);
 
-        //
-        // x[0] = 10;
-        //
-        Node xArrPtr = construction.getVariable(varXArr, modeRef);
-        Node x_index0 = construction.newSel(xArrPtr, c0, intArrType);
-        Node storeX_index0 = construction.newStore(construction.getCurrentMem(),  x_index0, c10);
-        // update memory
-        Node memAfterStoreX_index0 = construction.newProj(storeX_index0, Mode.getM(), Store.pnM);
-        construction.setCurrentMem(memAfterStoreX_index0);
+		//
+		// exit main
+		//
 
-        //
-        // exit main
-        //
+		Node returnNode = construction.newReturn(construction.getCurrentMem(), new Node[] {});
+		returnNode.setPred(0, construction.getCurrentMem());
+		graph.getEndBlock().addPred(returnNode);
 
-        Node returnNode = construction.newReturn(construction.getCurrentMem(), new Node[]{});
-        returnNode.setPred(0, construction.getCurrentMem());
-        graph.getEndBlock().addPred(returnNode);
-
-        construction.setUnreachable();
-        construction.finish();
-    }
+		construction.setUnreachable();
+		construction.finish();
+	}
 }

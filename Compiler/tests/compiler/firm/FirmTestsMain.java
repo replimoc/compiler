@@ -14,15 +14,15 @@ import firm.Program;
 @Ignore
 public class FirmTestsMain {
 
-	public static void main(String[] argss) throws IOException {
+	public static void main(String[] args) throws IOException {
 		FirmUtils.initFirm();
 
-//		TempFirmCode.createStaticEmptyMethod();
-//		TempFirmCode.createStaticMethodWithParam();
-//		TempFirmCode.createMethodWithLocalVar();
-//		TempFirmCode.createMethodWithReferenceToClass();
-//		TempFirmCode.createPrintIntGraph();
-        TempFirmCode.createCallocGraph();
+		// TempFirmCode.createStaticEmptyMethod();
+		// TempFirmCode.createStaticMethodWithParam();
+		// TempFirmCode.createMethodWithLocalVar();
+		// TempFirmCode.createMethodWithReferenceToClass();
+		// TempFirmCode.createPrintIntGraph();
+		TempFirmCode.createCallocGraph();
 
 		for (Graph g : Program.getGraphs()) {
 			g.check();

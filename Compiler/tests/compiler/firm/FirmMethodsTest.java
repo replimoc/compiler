@@ -16,10 +16,6 @@ import compiler.parser.Parser;
 import compiler.semantic.SemanticChecker;
 import compiler.semantic.exceptions.SemanticAnalysisException;
 
-import firm.Dump;
-import firm.Graph;
-import firm.Program;
-
 public class FirmMethodsTest {
 
 	@Test
@@ -34,10 +30,7 @@ public class FirmMethodsTest {
 			classMember.accept(firmGen);
 		}
 
-		for (Graph g : Program.getGraphs()) {
-			g.check();
-			Dump.dumpGraph(g, "--finished");
-		}
+		FirmTestUtils.assertExportEquals("firmdata/testjFirmInit");
 
 		FirmUtils.finishFirm();
 	}

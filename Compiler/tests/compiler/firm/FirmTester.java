@@ -5,6 +5,8 @@ import java.nio.file.Files;
 import java.nio.file.Paths;
 import java.util.List;
 
+import org.junit.Ignore;
+
 import compiler.StringTable;
 import compiler.lexer.Lexer;
 import compiler.parser.Parser;
@@ -18,6 +20,7 @@ import firm.Program;
 /**
  * TODO to be firm test
  */
+@Ignore
 public class FirmTester {
 
 	public static void main(String[] args) throws Exception {
