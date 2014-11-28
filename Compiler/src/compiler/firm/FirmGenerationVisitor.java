@@ -508,13 +508,14 @@ public class FirmGenerationVisitor implements AstVisitor {
 			createParameterDefinition(args, param);
 		}
 
+		// Node storeMem = currentMethod.newProj(currentMethod.getCurrentMem(), Mode.getM(), Store.pnM);
 		Node returnNode = currentMethod.newReturn(currentMethod.getCurrentMem(), new Node[] {});
 
 		if (methodDeclaration.getBlock().isEmpty()) {
 			// return block has no predecessor!
 		} else {
+			returnNode.setPred(0, currentMethod.getCurrentMem());
 			methodDeclaration.getBlock().accept(this);
-			returnNode.setPred(0, methodDeclaration.getBlock().getFirmNode());
 		}
 
 		graph.getEndBlock().addPred(returnNode);
