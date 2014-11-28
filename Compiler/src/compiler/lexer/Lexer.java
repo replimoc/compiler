@@ -407,7 +407,7 @@ public class Lexer implements TokenSuppliable {
 
 		public int getChar() throws IOException {
 			c = reader.read();
-			if (c == '\n' || c == '\r') {
+			if (c == '\n') {
 				line++;
 				character = 0;
 			} else {
