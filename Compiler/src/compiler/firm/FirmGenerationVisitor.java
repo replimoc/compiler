@@ -379,6 +379,7 @@ public class FirmGenerationVisitor implements AstVisitor {
 
 	@Override
 	public void visit(VariableAccessExpression variableAccessExpression) {
+		variableAccessExpression.setFirmNode(variableAccessExpression.getDefinition().getAstNode().getFirmNode());
 	}
 
 	@Override
@@ -467,7 +468,7 @@ public class FirmGenerationVisitor implements AstVisitor {
 	public void createParameterDefinition(Node args, ParameterDefinition parameterDefinition) {
 		Node paramProj = currentMethod.newProj(args, convertTypeToMode(parameterDefinition.getType()), currentMethodVariableCount++);
 		currentMethod.setVariable(currentMethodVariableCount, paramProj);
-		
+
 		parameterDefinition.setFirmNode(paramProj);
 	}
 
@@ -492,14 +493,15 @@ public class FirmGenerationVisitor implements AstVisitor {
 	@Override
 	public void visit(MethodDeclaration methodDeclaration) {
 		MethodType methodType = createType(methodDeclaration);
-		Entity methodEntity = new Entity(Program.getGlobalType(), currentClassPrefix + "#f#" + methodDeclaration.getIdentifier().getValue(), methodType);
-		
+		Entity methodEntity = new Entity(Program.getGlobalType(), currentClassPrefix + "#f#" + methodDeclaration.getIdentifier().getValue(),
+				methodType);
+
 		currentMethodVariableCount = 0;
 		int numberLocalVariables = 0; // TODO count variables
 		int variablesCount = 1 + methodDeclaration.getParameters().size() + numberLocalVariables;
 		Graph graph = new Graph(methodEntity, variablesCount);
 		currentMethod = new Construction(graph);
-		
+
 		// create parameters variables
 		Node args = graph.getArgs();
 		for (ParameterDefinition param : methodDeclaration.getParameters()) {
@@ -507,16 +509,16 @@ public class FirmGenerationVisitor implements AstVisitor {
 		}
 
 		Node returnNode = currentMethod.newReturn(currentMethod.getCurrentMem(), new Node[] {});
-		
+
 		if (methodDeclaration.getBlock().isEmpty()) {
 			// return block has no predecessor!
 		} else {
 			methodDeclaration.getBlock().accept(this);
 			returnNode.setPred(0, methodDeclaration.getBlock().getFirmNode());
 		}
-		
+
 		graph.getEndBlock().addPred(returnNode);
-		
+
 		currentMethod.setUnreachable();
 		currentMethod.finish();
 	}
@@ -564,7 +566,7 @@ public class FirmGenerationVisitor implements AstVisitor {
 	@Override
 	public void visit(ParameterDefinition parameterDefinition) {
 		// TODO Auto-generated method stub
-		
+
 	}
 
 }

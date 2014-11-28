@@ -5,6 +5,7 @@ class Main
   }
   
   public void method2(int a) {
+	int x = a;
   }
   
   public static void main(String[] args) {

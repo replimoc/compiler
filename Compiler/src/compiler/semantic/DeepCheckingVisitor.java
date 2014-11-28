@@ -371,7 +371,6 @@ public class DeepCheckingVisitor implements AstVisitor {
 
 		// is inner expression (no left expression)
 		if (variableAccessExpression.getExpression() == null) {
-			// shouldn't be the type of variableAccessExpression set here?
 			if (variableAccessExpression.getFieldIdentifier().isDefined()) {
 				if (isStaticMethod) {
 					if (variableAccessExpression.getFieldIdentifier().getDefinitionScope().getParentScope() == null) {
@@ -382,6 +381,7 @@ public class DeepCheckingVisitor implements AstVisitor {
 					}
 				}
 				variableAccessExpression.setType(variableAccessExpression.getFieldIdentifier().getDefinition().getType());
+				variableAccessExpression.setDefinition(variableAccessExpression.getFieldIdentifier().getDefinition());
 			} else if (currentClassScope.getFieldDefinition(variableAccessExpression.getFieldIdentifier()) != null) {
 				// no static field defined in class scope possible
 				if (isStaticMethod) {
@@ -390,9 +390,11 @@ public class DeepCheckingVisitor implements AstVisitor {
 					// continue
 				}
 				variableAccessExpression.setType(currentClassScope.getFieldDefinition(variableAccessExpression.getFieldIdentifier()).getType());
+				variableAccessExpression.setDefinition(currentClassScope.getFieldDefinition(variableAccessExpression.getFieldIdentifier()));
 				// special case is System
 			} else if (variableAccessExpression.getFieldIdentifier().getValue().equals("System")) {
 				variableAccessExpression.setType(new ClassType(null, new Symbol("System")));
+				variableAccessExpression.setDefinition(null); // TODO: fix me
 			} else {
 				throwUndefinedSymbolError(variableAccessExpression.getFieldIdentifier(), variableAccessExpression.getPosition());
 				return;
@@ -610,7 +612,7 @@ public class DeepCheckingVisitor implements AstVisitor {
 		}
 
 		symbolTable.insert(localVariableDeclaration.getIdentifier(), new Definition(localVariableDeclaration.getIdentifier(),
-				localVariableDeclaration.getType()));
+				localVariableDeclaration.getType(), localVariableDeclaration));
 
 		Expression expression = localVariableDeclaration.getExpression();
 		if (expression != null) {
@@ -632,7 +634,8 @@ public class DeepCheckingVisitor implements AstVisitor {
 			throwRedefinitionError(parameterDefinition.getIdentifier(), parameterDefinition.getPosition());
 			return;
 		}
-		symbolTable.insert(parameterDefinition.getIdentifier(), new Definition(parameterDefinition.getIdentifier(), parameterDefinition.getType()));
+		symbolTable.insert(parameterDefinition.getIdentifier(), new Definition(parameterDefinition.getIdentifier(), parameterDefinition.getType(),
+				parameterDefinition));
 	}
 
 	@Override
