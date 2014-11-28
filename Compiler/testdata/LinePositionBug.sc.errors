@@ -1,0 +1,4 @@
+error: Identifier a at position line   5, character 44 has not been defined
+error: Insert assignment operator to complete expression at line   5, character 44
+error: type error in token at position line  11, character  9: Expected return statement without type.
+error: At least one path in method 'asdf' at line  21, character 17 does not have a return statement.
