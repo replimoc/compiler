@@ -693,6 +693,8 @@ public class DeepCheckingVisitor implements AstVisitor {
 		// leave method scope.
 		currentMethodDefinition = null;
 		symbolTable.leaveAllScopes();
+
+		methodDeclaration.setNumberOfRequiredLocals(symbolTable.getRequiredLocalVariables());
 		symbolTable = null;
 	}
 }
