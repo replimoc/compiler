@@ -597,6 +597,7 @@ public class Parser {
 				token.getType().getPrecedence() >= minPrecedence) {
 			Token operationToken = token;
 			TokenType operationTokenType = operationToken.getType();
+			Position position = token != null ? token.getPosition() : null;
 			consumeToken();
 
 			int precedence = operationTokenType.getPrecedence();
@@ -605,8 +606,6 @@ public class Parser {
 			}
 
 			Expression rhs = parseExpression(precedence);
-
-			Position position = token != null ? token.getPosition() : null;
 
 			switch (operationTokenType) {
 			case NOTEQUAL:
