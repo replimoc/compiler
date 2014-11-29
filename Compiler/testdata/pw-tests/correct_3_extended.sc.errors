@@ -10,11 +10,11 @@ error: type error in token at position line  29, character 14
 error: Identifier A at position line  29, character 31 has not been defined
 error: Identifier B at position line  29, character 35 has not been defined
 error: Identifier C at position line  29, character 44 has not been defined
-error: type error in token at position line  29, character 45
 error: type error in token at position line  29, character 41
+error: type error in token at position line  29, character 36
 error: type error in token at position line  29, character 23
 error: type error in token at position line  30, character 15: 'this' is not allowed in static methods.
-error: type error in token at position line  30, character 23
+error: type error in token at position line  30, character 19
 error: Illegal access to non static member at line  32, character 13
 error: type error in token at position line  32, character  8: Array access on a non array.
 error: type error in token at position line  32, character 13
