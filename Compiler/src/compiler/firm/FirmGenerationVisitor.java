@@ -437,6 +437,7 @@ public class FirmGenerationVisitor implements AstVisitor {
 		}
 
 		// get last statement and set block firmNode to this statement
+		// FIXME A block can be empty, for example empty main!
 		Statement lastStatement = block.getStatements().get(block.getNumberOfStatements() - 1);
 		block.setFirmNode(lastStatement.getFirmNode());
 	}
