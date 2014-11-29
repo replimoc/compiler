@@ -1,7 +1,5 @@
 package compiler.firm;
 
-import java.util.List;
-
 import compiler.ast.AstNode;
 import compiler.ast.Block;
 import compiler.ast.ClassDeclaration;
@@ -47,8 +45,6 @@ import compiler.ast.type.ClassType;
 import compiler.ast.type.Type;
 import compiler.ast.visitor.AstVisitor;
 
-import firm.ArrayType;
-import firm.CompoundType;
 import firm.Construction;
 import firm.Entity;
 import firm.Graph;
@@ -67,157 +63,9 @@ public class FirmGenerationVisitor implements AstVisitor {
 	private final Mode modeInt = Mode.getIs(); // integer signed 32 bit
 	private final Mode modeBool = Mode.getBu(); // unsigned 8 bit
 	private final Mode modeRef = Mode.createReferenceMode("P64", Arithmetic.TwosComplement, 64, 64); // 64 bit pointer
-
-	/**
-	 * Create and return a {@link firm.Type} for the given {@link Type}.
-	 * 
-	 * @param type
-	 * @return
-	 */
-	private firm.Type createType(Type type) {
-		Type tmpType = type;
-		while (tmpType.getSubType() != null) {
-			tmpType = tmpType.getSubType();
-		}
-
-		firm.Type firmType = null;
-		switch (tmpType.getBasicType()) {
-		case INT:
-			firmType = new PrimitiveType(Mode.getIs());
-			break;
-		case BOOLEAN:
-			firmType = new PrimitiveType(Mode.getBu());
-			break;
-		case VOID:
-			// TODO: return null?
-			break;
-		case NULL:
-			firmType = new PrimitiveType(modeRef);
-			break;
-		case CLASS:
-		case METHOD:
-			break;
-		default:
-			// no access allowed to public static void main(String[] args)
-			// therefore no type needed for String
-			// TODO:
-			throw new RuntimeException();
-		}
-
-		if (type.getBasicType() == BasicType.ARRAY) {
-			// create composite type
-			firmType = new ArrayType(firmType);
-		}
-
-		return firmType;
-	}
-
-	/**
-	 * Create and return a method type for the given {@link FieldDeclaration}.
-	 * 
-	 * @param decl
-	 * @return
-	 */
-	private firm.Type createType(FieldDeclaration decl) {
-		firm.Type type;
-
-		if (decl.getType().getBasicType() == BasicType.CLASS) {
-			type = new firm.ClassType(decl.getType().getIdentifier().getValue());
-		} else {
-			type = createType(decl.getType());
-		}
-		return type;
-	}
-
-	/**
-	 * Create and return a method type for the given {@link ClassMember}.
-	 * 
-	 * @param decl
-	 * @return
-	 */
-	private firm.Type createType(ClassMember decl) {
-		if (decl instanceof FieldDeclaration) {
-			return createType((FieldDeclaration) decl);
-		} else {
-			return createType((MethodDeclaration) decl);
-		}
-	}
-
-	/**
-	 * Create and return a method type for the given {@link MethodDeclaration}.
-	 * 
-	 * @param decl
-	 * @return
-	 */
-	private MethodType createType(MethodDeclaration decl) {
-		List<ParameterDefinition> params = decl.getParameters();
-		firm.Type[] paramTypes = new firm.Type[params.size()];
-		for (int i = 0; i < params.size(); i++) {
-			paramTypes[i] = createType(params.get(i).getType());
-		}
-
-		firm.Type returnType = createType(decl.getType());
-
-		// check if return type is void
-		if (returnType == null) {
-			return new MethodType(paramTypes, new firm.Type[] {});
-		} else {
-			return new MethodType(paramTypes, new firm.Type[] { returnType });
-		}
-	}
-
-	/**
-	 * Create and return a {@link firm.ClassType} for the given {@link ClassDeclaration}.
-	 * 
-	 * @param decl
-	 * @return
-	 */
-	private firm.ClassType createClassType(ClassDeclaration decl) {
-		firm.ClassType classType = new firm.ClassType(decl.getIdentifier().getValue());
-		return classType;
-	}
-
-	/**
-	 * Create and return an entity for the given {@link FieldDeclaration}, that is part of the given {@link ClassDeclaration} of type
-	 * {@link CompoundType}.
-	 * 
-	 * @param decl
-	 * @param classType
-	 * @param member
-	 * @param type
-	 * @return
-	 */
-	private Entity createClassMemberEntity(ClassDeclaration decl, CompoundType classType, FieldDeclaration member, firm.Type type) {
-		String name = decl.getIdentifier().getValue() + "#" + "f" + "#" + member.getIdentifier().getValue();
-		Entity entity = new Entity(classType, name, type);
-		entity.setLdIdent(name);
-		return entity;
-	}
-
-	/**
-	 * Create and return an entity for the given {@link MethodDeclaration}, that is part of the given {@link ClassDeclaration} of type
-	 * {@link CompoundType}.
-	 * 
-	 * @param decl
-	 * @param classType
-	 * @param member
-	 * @param type
-	 * @return
-	 */
-	private Entity createClassMemberEntity(ClassDeclaration decl, CompoundType classType, MethodDeclaration member, firm.Type type) {
-		String name = decl.getIdentifier().getValue() + "#" + "m" + "#" + member.getIdentifier().getValue();
-		Entity entity = new Entity(classType, name, type);
-		entity.setLdIdent(name);
-		return entity;
-	}
-
-	private Entity createClassMemberEntity(ClassDeclaration decl, CompoundType classType, ClassMember member, firm.Type type) {
-		if (member instanceof FieldDeclaration) {
-			return createClassMemberEntity(decl, classType, (FieldDeclaration) member, type);
-		} else {
-			return createClassMemberEntity(decl, classType, (MethodDeclaration) member, type);
-		}
-	}
+	// library function print_int in global scope
+	private final Entity print_int;
+	final Entity calloc;
 
 	private firm.Mode convertTypeToMode(Type type)
 	{
@@ -233,10 +81,6 @@ public class FirmGenerationVisitor implements AstVisitor {
 			throw new RuntimeException("convertTypeToMode for " + type + " is not implemented");
 		}
 	}
-
-	// library function print_int in global scope
-	private final Entity print_int;
-	final Entity calloc;
 
 	// current definitions
 	private Construction currentMethodConstruction = null;
