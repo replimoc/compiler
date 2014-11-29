@@ -15,7 +15,7 @@ error: type error in token at position line  50, character 38
 error: Identifier x at position line  61, character 14 has already been defined.
 error: Identifier y at position line  64, character 18 has already been defined.
 error: Identifier z at position line  68, character 22 has already been defined.
-error: type error in token at position line  71, character 18
+error: type error in token at position line  71, character 12
 error: Identifier m at position line  79, character 10 has not been defined
 error: Identifier m at position line  80, character 10 has not been defined
 error: Identifier m at position line  82, character 14 has not been defined

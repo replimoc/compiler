@@ -14,6 +14,6 @@ error: type error in token at position line  80, character 43
 error: type error in token at position line  80, character 50
 error: type error in token at position line  80, character 57
 error: type error in token at position line  81, character 10
-error: type error in token at position line  81, character 20
+error: type error in token at position line  81, character 16
 error: Identifier d at position line  81, character 23 has not been defined
-error: Insert assignment operator to complete expression at line  81, character 32
+error: Insert assignment operator to complete expression at line  81, character 26

@@ -1,5 +1,7 @@
 package compiler.firm;
 
+import java.util.List;
+
 import compiler.ast.AstNode;
 import compiler.ast.Block;
 import compiler.ast.ClassDeclaration;
@@ -24,6 +26,7 @@ import compiler.ast.statement.VariableAccessExpression;
 import compiler.ast.statement.WhileStatement;
 import compiler.ast.statement.binary.AdditionExpression;
 import compiler.ast.statement.binary.AssignmentExpression;
+import compiler.ast.statement.binary.BinaryExpression;
 import compiler.ast.statement.binary.DivisionExpression;
 import compiler.ast.statement.binary.EqualityExpression;
 import compiler.ast.statement.binary.GreaterThanEqualExpression;
@@ -44,16 +47,196 @@ import compiler.ast.type.ClassType;
 import compiler.ast.type.Type;
 import compiler.ast.visitor.AstVisitor;
 
+import firm.ArrayType;
+import firm.CompoundType;
 import firm.Construction;
 import firm.Entity;
 import firm.Graph;
+import firm.MethodType;
 import firm.Mode;
+import firm.Mode.Arithmetic;
+import firm.PrimitiveType;
+import firm.Relation;
+import firm.bindings.binding_ircons.op_pin_state;
 import firm.nodes.Call;
 import firm.nodes.Node;
 
 public class FirmGenerationVisitor implements AstVisitor {
 
 	final FirmHierarchy hierarchy;
+	private final Mode modeInt = Mode.getIs(); // integer signed 32 bit
+	private final Mode modeBool = Mode.getBu(); // unsigned 8 bit
+	private final Mode modeRef = Mode.createReferenceMode("P64", Arithmetic.TwosComplement, 64, 64); // 64 bit pointer
+
+	/**
+	 * Create and return a {@link firm.Type} for the given {@link Type}.
+	 * 
+	 * @param type
+	 * @return
+	 */
+	private firm.Type createType(Type type) {
+		Type tmpType = type;
+		while (tmpType.getSubType() != null) {
+			tmpType = tmpType.getSubType();
+		}
+
+		firm.Type firmType = null;
+		switch (tmpType.getBasicType()) {
+		case INT:
+			firmType = new PrimitiveType(Mode.getIs());
+			break;
+		case BOOLEAN:
+			firmType = new PrimitiveType(Mode.getBu());
+			break;
+		case VOID:
+			// TODO: return null?
+			break;
+		case NULL:
+			firmType = new PrimitiveType(modeRef);
+			break;
+		case CLASS:
+		case METHOD:
+			break;
+		default:
+			// no access allowed to public static void main(String[] args)
+			// therefore no type needed for String
+			// TODO:
+			throw new RuntimeException();
+		}
+
+		if (type.getBasicType() == BasicType.ARRAY) {
+			// create composite type
+			firmType = new ArrayType(firmType);
+		}
+
+		return firmType;
+	}
+
+	/**
+	 * Create and return a method type for the given {@link FieldDeclaration}.
+	 * 
+	 * @param decl
+	 * @return
+	 */
+	private firm.Type createType(FieldDeclaration decl) {
+		firm.Type type;
+
+		if (decl.getType().getBasicType() == BasicType.CLASS) {
+			type = new firm.ClassType(decl.getType().getIdentifier().getValue());
+		} else {
+			type = createType(decl.getType());
+		}
+		return type;
+	}
+
+	/**
+	 * Create and return a method type for the given {@link ClassMember}.
+	 * 
+	 * @param decl
+	 * @return
+	 */
+	private firm.Type createType(ClassMember decl) {
+		if (decl instanceof FieldDeclaration) {
+			return createType((FieldDeclaration) decl);
+		} else {
+			return createType((MethodDeclaration) decl);
+		}
+	}
+
+	/**
+	 * Create and return a method type for the given {@link MethodDeclaration}.
+	 * 
+	 * @param decl
+	 * @return
+	 */
+	private MethodType createType(MethodDeclaration decl) {
+		List<ParameterDefinition> params = decl.getParameters();
+		firm.Type[] paramTypes = new firm.Type[params.size()];
+		for (int i = 0; i < params.size(); i++) {
+			paramTypes[i] = createType(params.get(i).getType());
+		}
+
+		firm.Type returnType = createType(decl.getType());
+
+		// check if return type is void
+		if (returnType == null) {
+			return new MethodType(paramTypes, new firm.Type[] {});
+		} else {
+			return new MethodType(paramTypes, new firm.Type[] { returnType });
+		}
+	}
+
+	/**
+	 * Create and return a {@link firm.ClassType} for the given {@link ClassDeclaration}.
+	 * 
+	 * @param decl
+	 * @return
+	 */
+	private firm.ClassType createClassType(ClassDeclaration decl) {
+		firm.ClassType classType = new firm.ClassType(decl.getIdentifier().getValue());
+		return classType;
+	}
+
+	/**
+	 * Create and return an entity for the given {@link FieldDeclaration}, that is part of the given {@link ClassDeclaration} of type
+	 * {@link CompoundType}.
+	 * 
+	 * @param decl
+	 * @param classType
+	 * @param member
+	 * @param type
+	 * @return
+	 */
+	private Entity createClassMemberEntity(ClassDeclaration decl, CompoundType classType, FieldDeclaration member, firm.Type type) {
+		String name = decl.getIdentifier().getValue() + "#" + "f" + "#" + member.getIdentifier().getValue();
+		Entity entity = new Entity(classType, name, type);
+		entity.setLdIdent(name);
+		return entity;
+	}
+
+	/**
+	 * Create and return an entity for the given {@link MethodDeclaration}, that is part of the given {@link ClassDeclaration} of type
+	 * {@link CompoundType}.
+	 * 
+	 * @param decl
+	 * @param classType
+	 * @param member
+	 * @param type
+	 * @return
+	 */
+	private Entity createClassMemberEntity(ClassDeclaration decl, CompoundType classType, MethodDeclaration member, firm.Type type) {
+		String name = decl.getIdentifier().getValue() + "#" + "m" + "#" + member.getIdentifier().getValue();
+		Entity entity = new Entity(classType, name, type);
+		entity.setLdIdent(name);
+		return entity;
+	}
+
+	private Entity createClassMemberEntity(ClassDeclaration decl, CompoundType classType, ClassMember member, firm.Type type) {
+		if (member instanceof FieldDeclaration) {
+			return createClassMemberEntity(decl, classType, (FieldDeclaration) member, type);
+		} else {
+			return createClassMemberEntity(decl, classType, (MethodDeclaration) member, type);
+		}
+	}
+
+	private firm.Mode convertTypeToMode(Type type)
+	{
+		switch (type.getBasicType())
+		{
+		case INT:
+			return modeInt;
+		case BOOLEAN:
+			return modeBool;
+		case CLASS:
+			return modeRef;
+		default:
+			throw new RuntimeException("convertTypeToMode for " + type + " is not implemented");
+		}
+	}
+
+	// library function print_int in global scope
+	private final Entity print_int;
+	final Entity calloc;
 
 	// current definitions
 	private Construction currentMethodConstruction = null;
@@ -61,27 +244,49 @@ public class FirmGenerationVisitor implements AstVisitor {
 
 	public FirmGenerationVisitor(FirmHierarchy hierarchy) {
 		this.hierarchy = hierarchy;
+
+		// set 64bit pointers as default
+		Mode.setDefaultModeP(modeRef);
+
+		// create library function(s)
+		MethodType print_int_type = new MethodType(new firm.Type[] { new PrimitiveType(modeInt) }, new firm.Type[] {});
+		this.print_int = new Entity(firm.Program.getGlobalType(), "#print_int", print_int_type);
+		// void* calloc (size_t num, size_t size);
+		MethodType calloc_type = new MethodType(new firm.Type[] { new PrimitiveType(modeInt), new PrimitiveType(modeInt) },
+				new firm.Type[] { new PrimitiveType(modeRef) });
+		this.calloc = new Entity(firm.Program.getGlobalType(), "#calloc", calloc_type);
 	}
 
-	@Override
-	public void visit(AdditionExpression additionExpression) {
+	private interface CreateBinaryFirmNode {
+		public Node createNode(Node operand1, Node operand2, Mode mode);
+	}
 
+	private void createFirmForBinaryOperation(BinaryExpression binaryExpression, CreateBinaryFirmNode firmNodeCreator) {
 		// get type of expression
-		Mode mode = convertAstTypeToMode(additionExpression.getType());
+		Mode mode = convertTypeToMode(binaryExpression.getType());
 
 		// get firmNode for fist operand
-		Expression operand1 = additionExpression.getOperand1();
+		Expression operand1 = binaryExpression.getOperand1();
 		operand1.accept(this);
 		Node operand1Node = operand1.getFirmNode();
 
 		// get firmNode for second operand
-		Expression operand2 = additionExpression.getOperand2();
+		Expression operand2 = binaryExpression.getOperand2();
 		operand2.accept(this);
 		Node operand2Node = operand2.getFirmNode();
 
-		// TODO read operand type from expression type
-		Node addExpr = currentMethodConstruction.newAdd(operand1Node, operand2Node, mode);
-		additionExpression.setFirmNode(addExpr);
+		Node addExpr = firmNodeCreator.createNode(operand1Node, operand2Node, mode);
+		binaryExpression.setFirmNode(addExpr);
+	}
+
+	@Override
+	public void visit(AdditionExpression additionExpression) {
+		createFirmForBinaryOperation(additionExpression, new CreateBinaryFirmNode() {
+			@Override
+			public Node createNode(Node operand1, Node operand2, Mode mode) {
+				return currentMethodConstruction.newAdd(operand1, operand2, mode);
+			}
+		});
 	}
 
 	@Override
@@ -104,14 +309,24 @@ public class FirmGenerationVisitor implements AstVisitor {
 
 	@Override
 	public void visit(DivisionExpression divisionExpression) {
-		// TODO Auto-generated method stub
-
+		createFirmForBinaryOperation(divisionExpression, new CreateBinaryFirmNode() {
+			@Override
+			public Node createNode(Node operand1, Node operand2, Mode mode) {
+				return currentMethodConstruction.newDiv(currentMethodConstruction.getCurrentMem(), operand1, operand2, mode,
+						op_pin_state.op_pin_state_pinned);
+			}
+		});
 	}
 
 	@Override
 	public void visit(EqualityExpression equalityExpression) {
-		// TODO Auto-generated method stub
-
+		createFirmForBinaryOperation(equalityExpression, new CreateBinaryFirmNode() {
+			@Override
+			public Node createNode(Node operand1, Node operand2, Mode mode) {
+				Node cmp = currentMethodConstruction.newCmp(operand1, operand2, Relation.Equal);
+				return currentMethodConstruction.newCond(cmp);
+			}
+		});
 	}
 
 	@Override
@@ -148,14 +363,23 @@ public class FirmGenerationVisitor implements AstVisitor {
 
 	@Override
 	public void visit(ModuloExpression moduloExpression) {
-		// TODO Auto-generated method stub
-
+		createFirmForBinaryOperation(moduloExpression, new CreateBinaryFirmNode() {
+			@Override
+			public Node createNode(Node operand1, Node operand2, Mode mode) {
+				return currentMethodConstruction.newMod(currentMethodConstruction.getCurrentMem(), operand1, operand2, mode,
+						op_pin_state.op_pin_state_pinned);
+			}
+		});
 	}
 
 	@Override
 	public void visit(MuliplicationExpression multiplicationExpression) {
-		// TODO Auto-generated method stub
-
+		createFirmForBinaryOperation(multiplicationExpression, new CreateBinaryFirmNode() {
+			@Override
+			public Node createNode(Node operand1, Node operand2, Mode mode) {
+				return currentMethodConstruction.newMul(operand1, operand2, mode);
+			}
+		});
 	}
 
 	@Override
@@ -166,7 +390,12 @@ public class FirmGenerationVisitor implements AstVisitor {
 
 	@Override
 	public void visit(SubtractionExpression substractionExpression) {
-		// TODO Auto-generated method stub
+		createFirmForBinaryOperation(substractionExpression, new CreateBinaryFirmNode() {
+			@Override
+			public Node createNode(Node operand1, Node operand2, Mode mode) {
+				return currentMethodConstruction.newSub(operand1, operand2, mode);
+			}
+		});
 
 	}
 
@@ -291,6 +520,7 @@ public class FirmGenerationVisitor implements AstVisitor {
 		}
 
 		// get last statement and set block firmNode to this statement
+		// FIXME A block can be empty, for example empty main!
 		Statement lastStatement = block.getStatements().get(block.getNumberOfStatements() - 1);
 		block.setFirmNode(lastStatement.getFirmNode());
 	}
@@ -326,7 +556,6 @@ public class FirmGenerationVisitor implements AstVisitor {
 			System.out.println("localVariableDeclaration without assignment");
 			System.out.println("localVariableDeclaration = [" + localVariableDeclaration + "]");
 		}
-
 	}
 
 	@Override
@@ -373,7 +602,7 @@ public class FirmGenerationVisitor implements AstVisitor {
 			returnNode = currentMethodConstruction.newReturn(currentMethodConstruction.getCurrentMem(), new Node[] {});
 			// returnNode.setPred(0, methodDeclaration.getBlock().getFirmNode());
 		} else {
-			Mode constMode = convertAstTypeToMode(methodDeclaration.getType());
+			Mode constMode = convertTypeToMode(methodDeclaration.getType());
 			Node constRet = currentMethodConstruction.newConst(0, constMode);
 			returnNode = currentMethodConstruction.newReturn(currentMethodConstruction.getCurrentMem(), new Node[] { constRet });
 
@@ -393,7 +622,7 @@ public class FirmGenerationVisitor implements AstVisitor {
 	private void createParameterDefinition(Node args, ParameterDefinition parameterDefinition) {
 		// TODO maybe this is better to do with visitor
 		// args can be called as construction.getGraph().getArgs();
-		Node paramProj = currentMethodConstruction.newProj(args, convertAstTypeToMode(parameterDefinition.getType()), currentMethodVariableCount++);
+		Node paramProj = currentMethodConstruction.newProj(args, convertTypeToMode(parameterDefinition.getType()), currentMethodVariableCount++);
 		currentMethodConstruction.setVariable(currentMethodVariableCount, paramProj);
 
 		parameterDefinition.setFirmNode(paramProj);
@@ -438,20 +667,6 @@ public class FirmGenerationVisitor implements AstVisitor {
 	public void visit(ParameterDefinition parameterDefinition) {
 		// TODO Auto-generated method stub
 
-	}
-
-	private firm.Mode convertAstTypeToMode(Type type) {
-		switch (type.getBasicType()) {
-		case INT:
-			return hierarchy.modeInt;
-		case BOOLEAN:
-			return hierarchy.modeBool;
-		case CLASS:
-		case ARRAY:
-			return hierarchy.modeRef;
-		default:
-			throw new RuntimeException("convertAstTypeToMode for " + type.getIdentifier() + " is not implemented");
-		}
 	}
 
 }

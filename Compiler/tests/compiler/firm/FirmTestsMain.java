@@ -21,8 +21,9 @@ public class FirmTestsMain {
 		// TempFirmCode.createStaticMethodWithParam();
 		// TempFirmCode.createMethodWithLocalVar();
 		// TempFirmCode.createMethodWithReferenceToClass();
+		TempFirmCode.createMethodWithComparison();
 		// TempFirmCode.createPrintIntGraph();
-		TempFirmCode.createCallocGraph();
+		// TempFirmCode.createCallocGraph();
 
 		for (Graph g : Program.getGraphs()) {
 			g.check();
