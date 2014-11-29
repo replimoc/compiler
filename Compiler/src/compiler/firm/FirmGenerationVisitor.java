@@ -45,6 +45,7 @@ import compiler.ast.type.BasicType;
 import compiler.ast.type.ClassType;
 import compiler.ast.type.Type;
 import compiler.ast.visitor.AstVisitor;
+
 import firm.ArrayType;
 import firm.CompoundType;
 import firm.Construction;
@@ -56,7 +57,6 @@ import firm.Mode.Arithmetic;
 import firm.PrimitiveType;
 import firm.Program;
 import firm.nodes.Node;
-import firm.nodes.Store;
 
 public class FirmGenerationVisitor implements AstVisitor {
 
@@ -232,7 +232,7 @@ public class FirmGenerationVisitor implements AstVisitor {
 
 	// library function print_int in global scope
 	private final Entity print_int;
-    final Entity calloc;
+	final Entity calloc;
 
 	// current definitions
 	private firm.ClassType currentClass = null;
@@ -241,12 +241,16 @@ public class FirmGenerationVisitor implements AstVisitor {
 	private int currentMethodVariableCount = 0;
 
 	public FirmGenerationVisitor() {
+		// set 64bit pointers as default
+		Mode.setDefaultModeP(modeRef);
+
 		// create library function(s)
 		MethodType print_int_type = new MethodType(new firm.Type[] { new PrimitiveType(modeInt) }, new firm.Type[] {});
 		this.print_int = new Entity(firm.Program.getGlobalType(), "#print_int", print_int_type);
-        //void* calloc (size_t num, size_t size);
-        MethodType calloc_type = new MethodType(new firm.Type[]{new PrimitiveType(modeInt),new PrimitiveType(modeInt)}, new firm.Type[]{new PrimitiveType(modeRef)});
-        this.calloc = new Entity(firm.Program.getGlobalType(), "#calloc", calloc_type);
+		// void* calloc (size_t num, size_t size);
+		MethodType calloc_type = new MethodType(new firm.Type[] { new PrimitiveType(modeInt), new PrimitiveType(modeInt) },
+				new firm.Type[] { new PrimitiveType(modeRef) });
+		this.calloc = new Entity(firm.Program.getGlobalType(), "#calloc", calloc_type);
 	}
 
 	@Override
@@ -509,8 +513,10 @@ public class FirmGenerationVisitor implements AstVisitor {
 		for (ParameterDefinition param : methodDeclaration.getParameters()) {
 			createParameterDefinition(args, param);
 		}
-		
-		Node returnNode = currentMethod.newReturn(currentMethod.getCurrentMem(), new Node[] { currentMethod.getCurrentMem()}); //TODO: in case of return, we have to add the node here
+
+		Node returnNode = currentMethod.newReturn(currentMethod.getCurrentMem(), new Node[] { currentMethod.getCurrentMem() }); // TODO: in case of
+																																// return, we have to
+																																// add the node here
 
 		if (methodDeclaration.getBlock().isEmpty()) {
 			// return block has no predecessor!
