@@ -70,13 +70,18 @@ public final class FirmTestUtils {
 		}
 	}
 
-	public static void assertExportEquals(String assertionFolder, String javaFile) throws Exception {
+	public static void assertExportEquals(String assertionFolder, String javaFile, boolean export) throws Exception {
 		compiler.ast.Program ast = TestUtils.getAstForFile(javaFile);
 		for (ClassMember classMember : ast.getClasses().get(0).getMembers()) {
 			classMember.accept(new FirmGenerationVisitor());
 		}
 
-		FirmTestUtils.assertExportEquals(assertionFolder);
+		if (export) {
+			FirmTestUtils.exportFirmProgram(assertionFolder);
+			fail("The assert export is overwritten every time: " + javaFile);
+		} else {
+			FirmTestUtils.assertExportEquals(assertionFolder);
+		}
 	}
 
 	private static void assertFilesEqual(Path expectedFile, Path actualFile) throws IOException {
