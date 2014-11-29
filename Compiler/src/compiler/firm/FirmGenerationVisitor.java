@@ -464,6 +464,7 @@ public class FirmGenerationVisitor implements AstVisitor {
 			expression.accept(this);
 		}
 
+		// FIXME: The previous if checks if expression is null. But if it is null, the next expression throws an NullPointerException
 		Node firmNode = expression.getFirmNode();
 		currentMethod.setVariable(variableNumber, firmNode);
 		Node varNode = currentMethod.getVariable(variableNumber, variableMode);
