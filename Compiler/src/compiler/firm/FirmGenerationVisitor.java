@@ -26,6 +26,7 @@ import compiler.ast.statement.VariableAccessExpression;
 import compiler.ast.statement.WhileStatement;
 import compiler.ast.statement.binary.AdditionExpression;
 import compiler.ast.statement.binary.AssignmentExpression;
+import compiler.ast.statement.binary.BinaryExpression;
 import compiler.ast.statement.binary.DivisionExpression;
 import compiler.ast.statement.binary.EqualityExpression;
 import compiler.ast.statement.binary.GreaterThanEqualExpression;
@@ -253,25 +254,36 @@ public class FirmGenerationVisitor implements AstVisitor {
 		this.calloc = new Entity(firm.Program.getGlobalType(), "#calloc", calloc_type);
 	}
 
-	@Override
-	public void visit(AdditionExpression additionExpression) {
+	private interface CreateBinaryFirmNode {
+		public Node createNode(Node operand1, Node operand2, Mode mode);
+	}
 
+	private void createFirmForBinaryOperation(BinaryExpression binaryExpression, CreateBinaryFirmNode firmNodeCreator) {
 		// get type of expression
-		Mode mode = convertTypeToMode(additionExpression.getType());
+		Mode mode = convertTypeToMode(binaryExpression.getType());
 
 		// get firmNode for fist operand
-		Expression operand1 = additionExpression.getOperand1();
+		Expression operand1 = binaryExpression.getOperand1();
 		operand1.accept(this);
 		Node operand1Node = operand1.getFirmNode();
 
 		// get firmNode for second operand
-		Expression operand2 = additionExpression.getOperand2();
+		Expression operand2 = binaryExpression.getOperand2();
 		operand2.accept(this);
 		Node operand2Node = operand2.getFirmNode();
 
-		// TODO read operand type from expression type
-		Node addExpr = currentMethod.newAdd(operand1Node, operand2Node, mode);
-		additionExpression.setFirmNode(addExpr);
+		Node addExpr = firmNodeCreator.createNode(operand1Node, operand2Node, mode);
+		binaryExpression.setFirmNode(addExpr);
+	}
+
+	@Override
+	public void visit(AdditionExpression additionExpression) {
+		createFirmForBinaryOperation(additionExpression, new CreateBinaryFirmNode() {
+			@Override
+			public Node createNode(Node operand1, Node operand2, Mode mode) {
+				return currentMethod.newAdd(operand1, operand2, mode);
+			}
+		});
 	}
 
 	@Override
@@ -283,7 +295,6 @@ public class FirmGenerationVisitor implements AstVisitor {
 
 	@Override
 	public void visit(DivisionExpression divisionExpression) {
-		// TODO Auto-generated method stub
 
 	}
 
@@ -345,7 +356,12 @@ public class FirmGenerationVisitor implements AstVisitor {
 
 	@Override
 	public void visit(SubtractionExpression substractionExpression) {
-		// TODO Auto-generated method stub
+		createFirmForBinaryOperation(substractionExpression, new CreateBinaryFirmNode() {
+			@Override
+			public Node createNode(Node operand1, Node operand2, Mode mode) {
+				return currentMethod.newSub(operand1, operand2, mode);
+			}
+		});
 
 	}
 

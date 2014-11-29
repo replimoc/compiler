@@ -19,7 +19,7 @@ public class FirmGenerationVisitorTest {
 
 	@Test
 	public void testVisitAdditionExpression() throws Exception {
-		FirmTestUtils.assertExportEquals("firmdata/testAdditionExpression", "firmdata/testAdditionExpression.java");
+		FirmTestUtils.assertExportEquals("firmdata/testAdditionExpression", "firmdata/testAdditionExpression.java", false);
 	}
 
 	@Test
@@ -38,8 +38,8 @@ public class FirmGenerationVisitorTest {
 	}
 
 	@Test
-	public void testVisitSubtractionExpression() {
-		fail("Not yet implemented"); // TODO
+	public void testVisitSubtractionExpression() throws Exception {
+		FirmTestUtils.assertExportEquals("firmdata/testSubtractionExpression", "firmdata/testSubtractionExpression.java", false);
 	}
 
 }
