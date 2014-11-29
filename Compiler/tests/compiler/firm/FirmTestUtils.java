@@ -18,6 +18,9 @@ import java.util.UUID;
 
 import org.junit.Ignore;
 
+import compiler.ast.ClassMember;
+import compiler.utils.TestUtils;
+
 import firm.Dump;
 import firm.Graph;
 import firm.Program;
@@ -65,6 +68,15 @@ public final class FirmTestUtils {
 		} catch (IOException ex) {
 			throw new RuntimeException(ex);
 		}
+	}
+
+	public static void assertExportEquals(String assertionFolder, String javaFile) throws Exception {
+		compiler.ast.Program ast = TestUtils.getAstForFile(javaFile);
+		for (ClassMember classMember : ast.getClasses().get(0).getMembers()) {
+			classMember.accept(new FirmGenerationVisitor());
+		}
+
+		FirmTestUtils.assertExportEquals(assertionFolder);
 	}
 
 	private static void assertFilesEqual(Path expectedFile, Path actualFile) throws IOException {
