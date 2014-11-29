@@ -13,7 +13,7 @@ public class FirmMethodsTest {
 	public void testjFirmInit() throws Exception {
 		FirmUtils.initFirm();
 
-		compiler.ast.Program ast = TestUtils.getAstForFile("firmdata/methodstest.java");
+		compiler.ast.Program ast = TestUtils.getAstForFile("firmdata/methodsTest.java");
 		assertEquals(1, ast.getClasses().size());
 
 		FirmGenerationVisitor firmGen = new FirmGenerationVisitor();
