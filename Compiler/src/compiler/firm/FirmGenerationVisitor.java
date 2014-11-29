@@ -1,8 +1,41 @@
 package compiler.firm;
 
-import compiler.ast.*;
-import compiler.ast.statement.*;
-import compiler.ast.statement.binary.*;
+import compiler.ast.AstNode;
+import compiler.ast.Block;
+import compiler.ast.ClassDeclaration;
+import compiler.ast.ClassMember;
+import compiler.ast.FieldDeclaration;
+import compiler.ast.MethodDeclaration;
+import compiler.ast.ParameterDefinition;
+import compiler.ast.StaticMethodDeclaration;
+import compiler.ast.statement.ArrayAccessExpression;
+import compiler.ast.statement.BooleanConstantExpression;
+import compiler.ast.statement.Expression;
+import compiler.ast.statement.IfStatement;
+import compiler.ast.statement.IntegerConstantExpression;
+import compiler.ast.statement.LocalVariableDeclaration;
+import compiler.ast.statement.MethodInvocationExpression;
+import compiler.ast.statement.NewArrayExpression;
+import compiler.ast.statement.NewObjectExpression;
+import compiler.ast.statement.NullExpression;
+import compiler.ast.statement.Statement;
+import compiler.ast.statement.ThisExpression;
+import compiler.ast.statement.VariableAccessExpression;
+import compiler.ast.statement.WhileStatement;
+import compiler.ast.statement.binary.AdditionExpression;
+import compiler.ast.statement.binary.AssignmentExpression;
+import compiler.ast.statement.binary.DivisionExpression;
+import compiler.ast.statement.binary.EqualityExpression;
+import compiler.ast.statement.binary.GreaterThanEqualExpression;
+import compiler.ast.statement.binary.GreaterThanExpression;
+import compiler.ast.statement.binary.LessThanEqualExpression;
+import compiler.ast.statement.binary.LessThanExpression;
+import compiler.ast.statement.binary.LogicalAndExpression;
+import compiler.ast.statement.binary.LogicalOrExpression;
+import compiler.ast.statement.binary.ModuloExpression;
+import compiler.ast.statement.binary.MuliplicationExpression;
+import compiler.ast.statement.binary.NonEqualityExpression;
+import compiler.ast.statement.binary.SubtractionExpression;
 import compiler.ast.statement.unary.LogicalNotExpression;
 import compiler.ast.statement.unary.NegateExpression;
 import compiler.ast.statement.unary.ReturnStatement;
@@ -10,6 +43,7 @@ import compiler.ast.type.BasicType;
 import compiler.ast.type.ClassType;
 import compiler.ast.type.Type;
 import compiler.ast.visitor.AstVisitor;
+
 import firm.Construction;
 import firm.Entity;
 import firm.Graph;
@@ -82,22 +116,22 @@ public class FirmGenerationVisitor implements AstVisitor {
 
 	@Override
 	public void visit(GreaterThanEqualExpression greaterThanEqualExpression) {
-// TODO Auto-generated method stub
+		// TODO Auto-generated method stub
 	}
 
 	@Override
 	public void visit(GreaterThanExpression greaterThanExpression) {
-// TODO Auto-generated method stub
+		// TODO Auto-generated method stub
 	}
 
 	@Override
 	public void visit(LessThanEqualExpression lessThanEqualExpression) {
-// TODO Auto-generated method stub
+		// TODO Auto-generated method stub
 	}
 
 	@Override
 	public void visit(LessThanExpression lessThanExpression) {
-// TODO Auto-generated method stub
+		// TODO Auto-generated method stub
 	}
 
 	@Override
@@ -173,7 +207,7 @@ public class FirmGenerationVisitor implements AstVisitor {
 		Node callocClass = currentMethodConstruction.newCall(
 				currentMethodConstruction.getCurrentMem(),
 				currentMethodConstruction.newAddress(hierarchy.calloc),
-				new Node[]{numberOfElements, sizeofClass}, hierarchy.calloc.getType());
+				new Node[] { numberOfElements, sizeofClass }, hierarchy.calloc.getType());
 		// update memory
 		currentMethodConstruction.setCurrentMem(currentMethodConstruction.newProj(callocClass, Mode.getM(), Call.pnM));
 		// set FirmNode to returned reference
@@ -193,7 +227,7 @@ public class FirmGenerationVisitor implements AstVisitor {
 		Node callocClass = currentMethodConstruction.newCall(
 				currentMethodConstruction.getCurrentMem(),
 				currentMethodConstruction.newAddress(hierarchy.calloc),
-				new Node[]{numberOfElements, sizeofClass}, hierarchy.calloc.getType());
+				new Node[] { numberOfElements, sizeofClass }, hierarchy.calloc.getType());
 		// update memory
 		currentMethodConstruction.setCurrentMem(currentMethodConstruction.newProj(callocClass, Mode.getM(), Call.pnM));
 		// set FirmNode to returned reference
@@ -277,7 +311,7 @@ public class FirmGenerationVisitor implements AstVisitor {
 	public void visit(LocalVariableDeclaration localVariableDeclaration) {
 		int variableNumber = currentMethodVariableCount++;
 		localVariableDeclaration.setFirmVariableNumber(variableNumber);
-//        Mode variableMode = convertAstTypeToMode(localVariableDeclaration.getType());
+		// Mode variableMode = convertAstTypeToMode(localVariableDeclaration.getType());
 
 		Expression expression = localVariableDeclaration.getExpression();
 		if (expression != null) {
@@ -294,7 +328,6 @@ public class FirmGenerationVisitor implements AstVisitor {
 		}
 
 	}
-
 
 	@Override
 	public void visit(ClassDeclaration classDeclaration) {
@@ -318,7 +351,7 @@ public class FirmGenerationVisitor implements AstVisitor {
 
 		currentMethodVariableCount = 0;
 		int numberLocalVariables = methodDeclaration.getNumberOfLocalVariables();
-		int variablesCount = 1 /*this*/ + methodDeclaration.getParameters().size() + numberLocalVariables;
+		int variablesCount = 1 /* this */+ methodDeclaration.getParameters().size() + numberLocalVariables;
 		Graph graph = new Graph(methodEntity, variablesCount);
 		currentMethodConstruction = new Construction(graph);
 
@@ -331,18 +364,18 @@ public class FirmGenerationVisitor implements AstVisitor {
 		}
 
 		// TODO block
-//        methodDeclaration.getBlock().accept(this);
+		// methodDeclaration.getBlock().accept(this);
 
 		Node returnNode;
 
 		// TODO temporary code for this week's assignment
 		if (methodDeclaration.getType().getBasicType() == BasicType.VOID) {
-			returnNode = currentMethodConstruction.newReturn(currentMethodConstruction.getCurrentMem(), new Node[]{});
-//            returnNode.setPred(0, methodDeclaration.getBlock().getFirmNode());
+			returnNode = currentMethodConstruction.newReturn(currentMethodConstruction.getCurrentMem(), new Node[] {});
+			// returnNode.setPred(0, methodDeclaration.getBlock().getFirmNode());
 		} else {
 			Mode constMode = convertAstTypeToMode(methodDeclaration.getType());
 			Node constRet = currentMethodConstruction.newConst(0, constMode);
-			returnNode = currentMethodConstruction.newReturn(currentMethodConstruction.getCurrentMem(), new Node[]{constRet});
+			returnNode = currentMethodConstruction.newReturn(currentMethodConstruction.getCurrentMem(), new Node[] { constRet });
 
 		}
 
@@ -358,7 +391,7 @@ public class FirmGenerationVisitor implements AstVisitor {
 	}
 
 	private void createParameterDefinition(Node args, ParameterDefinition parameterDefinition) {
-		//TODO maybe this is better to do with visitor
+		// TODO maybe this is better to do with visitor
 		// args can be called as construction.getGraph().getArgs();
 		Node paramProj = currentMethodConstruction.newProj(args, convertAstTypeToMode(parameterDefinition.getType()), currentMethodVariableCount++);
 		currentMethodConstruction.setVariable(currentMethodVariableCount, paramProj);
@@ -386,7 +419,7 @@ public class FirmGenerationVisitor implements AstVisitor {
 		// TODO: and if it does, get it, otherwise return "void" as here
 		// TODO: (if I understood correctly )if method returns void it is necessary to link last statement with return
 		// TODO: otherwise it won't appear in graph
-		Node returnNode = currentMethodConstruction.newReturn(currentMethodConstruction.getCurrentMem(), new Node[]{});
+		Node returnNode = currentMethodConstruction.newReturn(currentMethodConstruction.getCurrentMem(), new Node[] {});
 		if (staticMethodDeclaration.getBlock().getFirmNode() != null) // TODO
 			returnNode.setPred(0, staticMethodDeclaration.getBlock().getFirmNode()); // TODO
 		mainGraph.getEndBlock().addPred(returnNode);
@@ -409,15 +442,15 @@ public class FirmGenerationVisitor implements AstVisitor {
 
 	private firm.Mode convertAstTypeToMode(Type type) {
 		switch (type.getBasicType()) {
-			case INT:
-				return hierarchy.modeInt;
-			case BOOLEAN:
-				return hierarchy.modeBool;
-			case CLASS:
-			case ARRAY:
-				return hierarchy.modeRef;
-			default:
-				throw new RuntimeException("convertAstTypeToMode for " + type.getIdentifier() + " is not implemented");
+		case INT:
+			return hierarchy.modeInt;
+		case BOOLEAN:
+			return hierarchy.modeBool;
+		case CLASS:
+		case ARRAY:
+			return hierarchy.modeRef;
+		default:
+			throw new RuntimeException("convertAstTypeToMode for " + type.getIdentifier() + " is not implemented");
 		}
 	}
 

@@ -1,15 +1,45 @@
 package compiler.firm;
 
-import compiler.ast.*;
-import compiler.ast.statement.*;
-import compiler.ast.statement.binary.*;
+import compiler.ast.Block;
+import compiler.ast.ClassDeclaration;
+import compiler.ast.ClassMember;
+import compiler.ast.FieldDeclaration;
+import compiler.ast.MethodDeclaration;
+import compiler.ast.ParameterDefinition;
+import compiler.ast.Program;
+import compiler.ast.StaticMethodDeclaration;
+import compiler.ast.statement.ArrayAccessExpression;
+import compiler.ast.statement.BooleanConstantExpression;
+import compiler.ast.statement.IfStatement;
+import compiler.ast.statement.IntegerConstantExpression;
+import compiler.ast.statement.LocalVariableDeclaration;
+import compiler.ast.statement.MethodInvocationExpression;
+import compiler.ast.statement.NewArrayExpression;
+import compiler.ast.statement.NewObjectExpression;
+import compiler.ast.statement.NullExpression;
+import compiler.ast.statement.ThisExpression;
+import compiler.ast.statement.VariableAccessExpression;
+import compiler.ast.statement.WhileStatement;
+import compiler.ast.statement.binary.AdditionExpression;
+import compiler.ast.statement.binary.AssignmentExpression;
+import compiler.ast.statement.binary.DivisionExpression;
+import compiler.ast.statement.binary.EqualityExpression;
+import compiler.ast.statement.binary.GreaterThanEqualExpression;
+import compiler.ast.statement.binary.GreaterThanExpression;
+import compiler.ast.statement.binary.LessThanEqualExpression;
+import compiler.ast.statement.binary.LessThanExpression;
+import compiler.ast.statement.binary.LogicalAndExpression;
+import compiler.ast.statement.binary.LogicalOrExpression;
+import compiler.ast.statement.binary.ModuloExpression;
+import compiler.ast.statement.binary.MuliplicationExpression;
+import compiler.ast.statement.binary.NonEqualityExpression;
+import compiler.ast.statement.binary.SubtractionExpression;
 import compiler.ast.statement.unary.LogicalNotExpression;
 import compiler.ast.statement.unary.NegateExpression;
 import compiler.ast.statement.unary.ReturnStatement;
 import compiler.ast.type.ClassType;
 import compiler.ast.type.Type;
 import compiler.ast.visitor.AstVisitor;
-import firm.Entity;
 
 /**
  * Generate hierarchy of Firm Entities (fill FirmHierarchy)
@@ -17,7 +47,6 @@ import firm.Entity;
 public class FirmHierarchyGenerationVisitor implements AstVisitor {
 
 	final FirmHierarchy hierarchy;
-
 
 	public FirmHierarchyGenerationVisitor(FirmHierarchy hierarchy) {
 		this.hierarchy = hierarchy;

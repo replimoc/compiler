@@ -10,7 +10,7 @@ public class LocalVariableDeclaration extends Statement {
 	private final Symbol identifier;
 	private final Expression expression;
 
-    private int firmVariableNumber;
+	private int firmVariableNumber;
 
 	public LocalVariableDeclaration(Position position, Type type, Symbol identifier, Expression expression) {
 		super(position);
@@ -35,15 +35,15 @@ public class LocalVariableDeclaration extends Statement {
 		return expression;
 	}
 
-    public int getFirmVariableNumber() {
-        return firmVariableNumber;
-    }
+	public int getFirmVariableNumber() {
+		return firmVariableNumber;
+	}
 
-    public void setFirmVariableNumber(int firmVariableNumber) {
-        this.firmVariableNumber = firmVariableNumber;
-    }
+	public void setFirmVariableNumber(int firmVariableNumber) {
+		this.firmVariableNumber = firmVariableNumber;
+	}
 
-    @Override
+	@Override
 	public void accept(AstVisitor visitor) {
 		visitor.visit(this);
 	}
