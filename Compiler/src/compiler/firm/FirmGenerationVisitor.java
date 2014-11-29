@@ -385,7 +385,7 @@ public class FirmGenerationVisitor implements AstVisitor {
 	public void visit(LocalVariableDeclaration localVariableDeclaration) {
 		int variableNumber = currentMethodVariableCount++;
 		localVariableDeclaration.setFirmVariableNumber(variableNumber);
-		// Mode variableMode = convertAstTypeToMode(localVariableDeclaration.getType());
+		Mode variableMode = convertAstTypeToMode(localVariableDeclaration.getType());
 
 		Expression expression = localVariableDeclaration.getExpression();
 		if (expression != null) {
@@ -395,7 +395,10 @@ public class FirmGenerationVisitor implements AstVisitor {
 			Node firmNode = expression.getFirmNode();
 			assert firmNode != null;
 			currentMethodConstruction.setVariable(variableNumber, firmNode);
-			localVariableDeclaration.setFirmNode(currentMethodConstruction.getCurrentMem());
+			// TODO FIX
+			Node var = currentMethodConstruction.getVariable(variableNumber, variableMode);
+			localVariableDeclaration.setFirmNode(var);
+//			localVariableDeclaration.setFirmNode(currentMethodConstruction.getCurrentMem());
 		} else {
 			System.out.println("localVariableDeclaration without assignment");
 			System.out.println("localVariableDeclaration = [" + localVariableDeclaration + "]");
