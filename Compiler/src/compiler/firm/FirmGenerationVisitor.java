@@ -57,6 +57,7 @@ import firm.Mode;
 import firm.Mode.Arithmetic;
 import firm.PrimitiveType;
 import firm.Program;
+import firm.Relation;
 import firm.bindings.binding_ircons.op_pin_state;
 import firm.nodes.Node;
 
@@ -306,8 +307,13 @@ public class FirmGenerationVisitor implements AstVisitor {
 
 	@Override
 	public void visit(EqualityExpression equalityExpression) {
-		// TODO Auto-generated method stub
-
+		createFirmForBinaryOperation(equalityExpression, new CreateBinaryFirmNode() {
+			@Override
+			public Node createNode(Node operand1, Node operand2, Mode mode) {
+				Node cmp = currentMethod.newCmp(operand1, operand2, Relation.Equal);
+				return currentMethod.newCond(cmp);
+			}
+		});
 	}
 
 	@Override

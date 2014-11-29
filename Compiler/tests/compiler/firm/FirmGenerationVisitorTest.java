@@ -40,4 +40,8 @@ public class FirmGenerationVisitorTest {
 		FirmTestUtils.assertExportEquals("firmdata/testSubtractionExpression", "firmdata/testSubtractionExpression.java", false);
 	}
 
+	@Test
+	public void testVisitEqualityExpression() throws Exception {
+		FirmTestUtils.assertExportEquals("firmdata/testEqualityExpression", "firmdata/testEqualityExpression.java", false);
+	}
 }
