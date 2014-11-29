@@ -33,8 +33,8 @@ public class FirmGenerationVisitorTest {
 	}
 
 	@Test
-	public void testVisitMuliplicationExpression() {
-		fail("Not yet implemented"); // TODO
+	public void testVisitMuliplicationExpression() throws Exception {
+		FirmTestUtils.assertExportEquals("firmdata/testMultiplicationExpression", "firmdata/testMultiplicationExpression.java", false);
 	}
 
 	@Test

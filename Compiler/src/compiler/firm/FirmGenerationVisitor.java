@@ -344,8 +344,12 @@ public class FirmGenerationVisitor implements AstVisitor {
 
 	@Override
 	public void visit(MuliplicationExpression multiplicationExpression) {
-		// TODO Auto-generated method stub
-
+		createFirmForBinaryOperation(multiplicationExpression, new CreateBinaryFirmNode() {
+			@Override
+			public Node createNode(Node operand1, Node operand2, Mode mode) {
+				return currentMethod.newMul(operand1, operand2, mode);
+			}
+		});
 	}
 
 	@Override
