@@ -57,6 +57,7 @@ import firm.Mode;
 import firm.Mode.Arithmetic;
 import firm.PrimitiveType;
 import firm.Program;
+import firm.bindings.binding_ircons.op_pin_state;
 import firm.nodes.Node;
 
 public class FirmGenerationVisitor implements AstVisitor {
@@ -295,7 +296,12 @@ public class FirmGenerationVisitor implements AstVisitor {
 
 	@Override
 	public void visit(DivisionExpression divisionExpression) {
-
+		createFirmForBinaryOperation(divisionExpression, new CreateBinaryFirmNode() {
+			@Override
+			public Node createNode(Node operand1, Node operand2, Mode mode) {
+				return currentMethod.newDiv(currentMethod.getCurrentMem(), operand1, operand2, mode, op_pin_state.op_pin_state_pinned);
+			}
+		});
 	}
 
 	@Override

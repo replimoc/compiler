@@ -23,8 +23,8 @@ public class FirmGenerationVisitorTest {
 	}
 
 	@Test
-	public void testVisitDivisionExpression() {
-		fail("Not yet implemented"); // TODO
+	public void testVisitDivisionExpression() throws Exception {
+		FirmTestUtils.assertExportEquals("firmdata/testDivisionExpression", "firmdata/testDivisionExpression.java", false);
 	}
 
 	@Test
