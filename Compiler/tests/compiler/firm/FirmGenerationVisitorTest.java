@@ -1,7 +1,5 @@
 package compiler.firm;
 
-import static org.junit.Assert.fail;
-
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
@@ -28,8 +26,8 @@ public class FirmGenerationVisitorTest {
 	}
 
 	@Test
-	public void testVisitModuloExpression() {
-		fail("Not yet implemented"); // TODO
+	public void testVisitModuloExpression() throws Exception {
+		FirmTestUtils.assertExportEquals("firmdata/testModuloExpression", "firmdata/testModuloExpression.java", false);
 	}
 
 	@Test
