@@ -7,9 +7,11 @@ import firm.Entity;
 import firm.Graph;
 import firm.MethodType;
 import firm.Mode;
+import firm.Mode.Arithmetic;
 import firm.PointerType;
 import firm.PrimitiveType;
 import firm.Program;
+import firm.Relation;
 import firm.Type;
 import firm.nodes.Call;
 import firm.nodes.Load;
@@ -98,7 +100,8 @@ public class TempFirmCode {
 		ClassType classTest = new ClassType("Test");
 
 		Mode modeInt = Mode.getIs();
-		Mode modeRef = Mode.getP();
+		Mode modeRef = Mode.createReferenceMode("P64", Arithmetic.TwosComplement, 64, 64);
+		Mode.setDefaultModeP(modeRef);
 		Type intType = new PrimitiveType(modeInt);
 		Type reference_to_A = new PointerType(classA);
 
@@ -164,6 +167,73 @@ public class TempFirmCode {
 		returnNode.setPred(0, storeMem);
 		graph.getEndBlock().addPred(returnNode);
 
+		construction.setUnreachable();
+		construction.finish();
+	}
+
+	/**
+	 * class A{
+	 *
+	 * int method([A this,] int cntr){ if(5 == 3) {return 8;} return 9;} }
+	 * 
+	 */
+	public static void createMethodWithComparison() {
+		// define class
+		ClassType classA = new ClassType("A");
+
+		Mode modeInt = Mode.getIs();
+		Mode modeRef = Mode.createReferenceMode("P64", Arithmetic.TwosComplement, 64, 64);
+		Mode.setDefaultModeP(modeRef);
+		Type intType = new PrimitiveType(modeInt);
+		PointerType reference_to_A = new PointerType(classA);
+
+		// define method "method"
+		MethodType A__method_Type = new MethodType(new Type[] { reference_to_A, intType }, new Type[] { intType });
+		Entity A__method = new Entity(classA, "methodWithComparison(A,I)V", A__method_Type);
+
+		// create graph for entity A::method
+		int varThisNum = 0;
+		int varCntrNum = varThisNum + 1;
+		int varCount = varCntrNum + 1;
+
+		Graph graph = new Graph(A__method, varCount);
+		Construction construction = new Construction(graph);
+
+		// ------------------------- method body --------------------------------------------
+
+		// load this and counter in variable
+		Node args = graph.getArgs();
+		Node projThis = construction.newProj(args, modeRef, 0);
+		Node projCntr = construction.newProj(args, modeInt, 1);
+		construction.setVariable(varThisNum, projThis);
+		construction.setVariable(varCntrNum, projCntr);
+
+		// if (5 == 3)
+		Node const3 = construction.newConst(3, modeInt);
+		Node const5 = construction.newConst(5, modeInt);
+		Node equals = construction.newCmp(const5, const3, Relation.Equal);
+		Node cond = construction.newCond(equals);
+		Node condTrue = construction.newProj(cond, Mode.getX(), 1);
+		Node condFalse = construction.newProj(cond, Mode.getX(), 0);
+
+		// true block
+		Node trueBlock = construction.newBlock(new Node[] { condTrue });
+		Node const8 = construction.newConst(8, modeInt);
+		Node trueReturn = construction.newReturn(construction.newNoMem(), new Node[] { const8 });
+		trueReturn.setPred(0, construction.getCurrentMem());
+		trueReturn.setBlock(trueBlock);
+
+		// false block
+		Node falseBlock = construction.newBlock(new Node[] { condFalse });
+		Node const9 = construction.newConst(9, modeInt);
+		Node falseReturn = construction.newReturn(construction.newNoMem(), new Node[] { const9 });
+		falseReturn.setPred(0, construction.getCurrentMem());
+		falseReturn.setBlock(falseBlock);
+
+		// ------------------------- method return statement --------------------------------
+
+		graph.getEndBlock().addPred(trueReturn);
+		graph.getEndBlock().addPred(falseReturn);
 		construction.setUnreachable();
 		construction.finish();
 	}

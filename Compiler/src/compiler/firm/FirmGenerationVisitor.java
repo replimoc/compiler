@@ -440,6 +440,7 @@ public class FirmGenerationVisitor implements AstVisitor {
 		}
 
 		// get last statement and set block firmNode to this statement
+		// FIXME A block can be empty, for example empty main!
 		Statement lastStatement = block.getStatements().get(block.getNumberOfStatements() - 1);
 		block.setFirmNode(lastStatement.getFirmNode());
 	}
@@ -466,6 +467,7 @@ public class FirmGenerationVisitor implements AstVisitor {
 			expression.accept(this);
 		}
 
+		// FIXME: The previous if checks if expression is null. But if it is null, the next expression throws an NullPointerException
 		Node firmNode = expression.getFirmNode();
 		currentMethod.setVariable(variableNumber, firmNode);
 		Node varNode = currentMethod.getVariable(variableNumber, variableMode);
