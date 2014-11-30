@@ -342,11 +342,12 @@ public class FirmGenerationVisitor implements AstVisitor {
 			Node storeElement = currentMethodConstruction.newStore(currentMethodConstruction.getCurrentMem(), arrayIndex, lastRvalueNode);
 			Node memAfterStore = currentMethodConstruction.newProj(storeElement, Mode.getM(), Store.pnM);
 			currentMethodConstruction.setCurrentMem(memAfterStore);
+			arrayAccessExpression.setFirmNode(memAfterStore);
 		} else {
 			// we have access
 			// load array element and set new memory and result
 			Node loadElement = currentMethodConstruction.newLoad(
-					currentMethodConstruction.newNoMem(), arrayIndex, arrayElementsMode);
+					currentMethodConstruction.getCurrentMem(), arrayIndex, arrayElementsMode);
 			Node loadMem = currentMethodConstruction.newProj(loadElement, Mode.getM(), Load.pnM);
 			// currentMethodConstruction.setCurrentMem(loadMem);
 			Node loadResult = currentMethodConstruction.newProj(loadElement, arrayElementsMode, Load.pnRes);
