@@ -18,7 +18,7 @@ public final class SemanticChecker {
 	private SemanticChecker() { // no objects of this class shall be created.
 	}
 
-	public static List<SemanticAnalysisException> checkSemantic(AstNode ast) {
+	public static SemanticCheckResults checkSemantic(AstNode ast) {
 		// run first analysis of class, field and method declarations.
 		PreNamingAnalysisVisitor preAnalysisVisitor = new PreNamingAnalysisVisitor();
 		ast.accept(preAnalysisVisitor);
@@ -53,6 +53,6 @@ public final class SemanticChecker {
 		ast.accept(deepCheckingVisitor);
 		exceptions.addAll(deepCheckingVisitor.getExceptions());
 
-		return exceptions;
+		return new SemanticCheckResults(exceptions, classScopes);
 	}
 }

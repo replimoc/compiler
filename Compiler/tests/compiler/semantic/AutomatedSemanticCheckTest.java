@@ -47,36 +47,37 @@ public class AutomatedSemanticCheckTest implements TestFileVisitor.FileTester {
 		Lexer lexer = new Lexer(Files.newBufferedReader(sourceFilePath, StandardCharsets.US_ASCII), new StringTable());
 		Parser parser = new Parser(lexer);
 
-		List<SemanticAnalysisException> errors = SemanticChecker.checkSemantic(parser.parse());
+		SemanticCheckResults semanticResult = SemanticChecker.checkSemantic(parser.parse());
 		if (isErrorExpected) {
-			if (errors.size() == 0)
+			if (!semanticResult.hasErrors()) {
 				Assert.fail("semantic analysis succeeded on incorrect program: " + sourceFilePath);
 
-			if (err_num == errors.size()) {
+			} else if (err_num == semanticResult.getNumberOfExceptions()) {
 				// Incorrect program produces the right errors, write them to a log file
 				File file = new File(expectedResultFilePath.toFile().getPath() + ".errors");
 				FileWriter output = new FileWriter(file, false);
-				for (SemanticAnalysisException error : errors) {
+				for (SemanticAnalysisException error : semanticResult.getExceptions()) {
 					output.append(error.toString() + "\n");
 				}
 				output.close();
 				output = null;
 				file = null;
+
 			} else {
-				for (SemanticAnalysisException error : errors) {
+				for (SemanticAnalysisException error : semanticResult.getExceptions()) {
 					System.out.println("error.toString() = " + error.toString());
 				}
 			}
 			if (err_num > 0)
 			{
-				Assert.assertEquals("wrong number of errors", err_num, errors.size());
+				Assert.assertEquals("wrong number of errors", err_num, semanticResult.getNumberOfExceptions());
 			}
 		} else {
-			if (!errors.isEmpty()) {
+			if (semanticResult.hasErrors()) {
 				System.out.println("");
 				System.out.println("----------------------------------------------------------------------------");
 				System.err.println("Test for file = " + sourceFilePath + " failed");
-				for (SemanticAnalysisException error : errors) {
+				for (SemanticAnalysisException error : semanticResult.getExceptions()) {
 					error.printStackTrace();
 				}
 				System.out.println("----------------------------------------------------------------------------");

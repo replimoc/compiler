@@ -1,10 +1,13 @@
 package compiler.firm;
 
 import java.util.HashMap;
-import java.util.List;
+import java.util.Map.Entry;
 
-import compiler.ast.ParameterDefinition;
+import compiler.Symbol;
 import compiler.ast.type.BasicType;
+import compiler.semantic.ClassScope;
+import compiler.semantic.symbolTable.Definition;
+import compiler.semantic.symbolTable.MethodDefinition;
 
 import firm.ArrayType;
 import firm.ClassType;
@@ -61,6 +64,19 @@ class FirmHierarchy {
 		this.mainMethod = new Entity(Program.getGlobalType(), "#main", mainType);
 	}
 
+	public void initialize(HashMap<Symbol, ClassScope> classScopes) {
+		for (Entry<Symbol, ClassScope> currEntry : classScopes.entrySet()) {
+			ClassScope scope = currEntry.getValue();
+
+			for (Definition currField : scope.getFieldDefinitions()) {
+				addFieldEntity(currField);
+			}
+			for (MethodDefinition currMethod : scope.getMethodDefinitions()) {
+				addMethodEntity(currMethod);
+			}
+		}
+	}
+
 	public void addClass(String className) {
 		ClassWrapper wrapper = new ClassWrapper(className);
 		definedClasses.put(className, wrapper);
@@ -72,38 +88,38 @@ class FirmHierarchy {
 		refToCurrentClass = wrapper.refToClass;
 	}
 
-	public void addFieldEntity(compiler.ast.type.Type fieldType, String fieldName) {
-		firm.Type firmType = getTypeDeclaration(fieldType);
-		String entityName = currentClass.getName() + "#" + "f" + "#" + fieldName;
+	public void addFieldEntity(Definition definition) {
+		firm.Type firmType = getTypeDeclaration(definition.getType());
+		String entityName = currentClass.getName() + "#" + "f" + "#" + definition.getSymbol().getValue();
 		System.out.println("entityName = " + entityName);
 
 		// create new entity and attach to currentClass
 		new Entity(currentClass, entityName, firmType);
 	}
 
-	public void addMethodEntity(String methodName, List<ParameterDefinition> methodParams, compiler.ast.type.Type methodReturnType) {
+	public void addMethodEntity(MethodDefinition methodDefinition) {
+		Definition[] parameterDefinitions = methodDefinition.getParameters();
 
 		// types of parameters
 		// first parameter is "this" with type referenceToClass
-		firm.Type[] parameterTypes = new firm.Type[methodParams.size() + 1];
+		firm.Type[] parameterTypes = new firm.Type[parameterDefinitions.length + 1];
 		parameterTypes[0] = refToCurrentClass;
-		for (int paramNum = 0; paramNum < methodParams.size(); paramNum++) {
-			ParameterDefinition parameterDefinition = methodParams.get(paramNum);
-			parameterTypes[paramNum + 1] = getTypeDeclaration(parameterDefinition.getType());
+		for (int paramIdx = 0; paramIdx < parameterDefinitions.length; paramIdx++) {
+			parameterTypes[paramIdx + 1] = getTypeDeclaration(parameterDefinitions[paramIdx].getType());
 		}
 
 		// return type
 		firm.Type[] returnType;
-		if (methodReturnType.getBasicType() == BasicType.VOID) {
+		if (methodDefinition.getType().getBasicType() == BasicType.VOID) {
 			returnType = new firm.Type[] {};
 		} else {
 			returnType = new firm.Type[1];
-			returnType[0] = getTypeDeclaration(methodReturnType);
+			returnType[0] = getTypeDeclaration(methodDefinition.getType());
 		}
 
 		// create methodType and methodEntity
 		MethodType methodType = new MethodType(parameterTypes, returnType);
-		String entityName = currentClass.getName() + "#" + "m" + "#" + methodName;
+		String entityName = currentClass.getName() + "#" + "m" + "#" + methodDefinition.getSymbol().getValue();
 		System.out.println("entityName = " + entityName);
 
 		// create new entity and attach to currentClass

@@ -5,7 +5,6 @@ import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
-import java.util.List;
 
 import org.apache.commons.cli.BasicParser;
 import org.apache.commons.cli.CommandLine;
@@ -22,6 +21,7 @@ import compiler.lexer.TokenType;
 import compiler.parser.Parser;
 import compiler.parser.ParsingFailedException;
 import compiler.parser.printer.PrettyPrinter;
+import compiler.semantic.SemanticCheckResults;
 import compiler.semantic.SemanticChecker;
 import compiler.semantic.exceptions.SemanticAnalysisException;
 
@@ -92,9 +92,9 @@ public final class CompilerApp {
 					}
 
 					if (cmd.hasOption(CHECK)) {
-						List<SemanticAnalysisException> errors = SemanticChecker.checkSemantic(ast);
-						if (!errors.isEmpty()) {
-							for (SemanticAnalysisException curr : errors) {
+						SemanticCheckResults semanticResult = SemanticChecker.checkSemantic(ast);
+						if (semanticResult.hasErrors()) {
+							for (SemanticAnalysisException curr : semanticResult.getExceptions()) {
 								System.out.println(curr.getMessage());
 							}
 							return 1;
