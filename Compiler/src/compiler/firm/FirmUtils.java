@@ -1,5 +1,8 @@
 package compiler.firm;
 
+import java.io.IOException;
+
+import firm.Backend;
 import firm.Firm;
 
 public final class FirmUtils {
@@ -17,6 +20,10 @@ public final class FirmUtils {
 		Firm.init();
 
 		System.out.printf("Initialized libFirm Version: %1s.%s\n", Firm.getMajorVersion(), Firm.getMinorVersion());
+	}
+
+	public static void createAssembler(String outputFileName) throws IOException {
+		Backend.createAssembler(outputFileName, "<builtin>");
 	}
 
 	public static void finishFirm() {

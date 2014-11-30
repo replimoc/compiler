@@ -108,7 +108,7 @@ public final class CompilerApp {
 					Transformation.transformToFirm(ast, semanticResult.getClassScopes());
 
 					if (cmd.hasOption(FIRM_BACKEND)) {
-						// TODO Execute FIRM Backend
+						FirmUtils.createAssembler(cmd.getOptionValue(FIRM_BACKEND));
 					}
 					FirmUtils.finishFirm();
 
