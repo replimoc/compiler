@@ -9,6 +9,8 @@ import compiler.utils.TestUtils;
 
 public class FirmMethodsTest {
 
+	private final FirmHierarchy hierarchy = new FirmHierarchy();
+
 	@Test
 	public void testjFirmInit() throws Exception {
 		FirmUtils.initFirm();
@@ -16,7 +18,7 @@ public class FirmMethodsTest {
 		compiler.ast.Program ast = TestUtils.getAstForFile("firmdata/methodsTest.java");
 		assertEquals(1, ast.getClasses().size());
 
-		FirmGenerationVisitor firmGen = new FirmGenerationVisitor();
+		FirmGenerationVisitor firmGen = new FirmGenerationVisitor(hierarchy);
 		for (ClassMember classMember : ast.getClasses().get(0).getMembers()) {
 			classMember.accept(firmGen);
 		}

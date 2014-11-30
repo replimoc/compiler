@@ -73,7 +73,8 @@ public final class FirmTestUtils {
 	public static void assertExportEquals(String assertionFolder, String javaFile, boolean export) throws Exception {
 		compiler.ast.Program ast = TestUtils.getAstForFile(javaFile);
 		for (ClassMember classMember : ast.getClasses().get(0).getMembers()) {
-			classMember.accept(new FirmGenerationVisitor());
+
+			classMember.accept(new FirmGenerationVisitor(new FirmHierarchy()));
 		}
 
 		if (export) {

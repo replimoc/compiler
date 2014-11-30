@@ -103,6 +103,7 @@ public class TempFirmCode {
 		Mode modeRef = Mode.createReferenceMode("P64", Arithmetic.TwosComplement, 64, 64);
 		Mode.setDefaultModeP(modeRef);
 		Type intType = new PrimitiveType(modeInt);
+		Type reference_to_Test = new PointerType(classTest);
 		Type reference_to_A = new PointerType(classA);
 
 		// define field y
@@ -371,6 +372,7 @@ public class TempFirmCode {
 		Mode modeRef = Mode.getP();
 		Type intType = new PrimitiveType(modeInt);
 		Type intArrType = new ArrayType(intType);
+		Type reference_to_A = new PointerType(classA);
 		Type reference_to_VoidStar = new PrimitiveType(modeRef);
 
 		// defina A.i

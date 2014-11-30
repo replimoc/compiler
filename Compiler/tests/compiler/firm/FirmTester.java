@@ -26,7 +26,7 @@ public class FirmTester {
 	public static void main(String[] args) throws Exception {
 		FirmUtils.initFirm();
 
-		String filename = "firmdata/test.java";
+		String filename = "firmdata/classes.java";
 
 		Lexer lexer = new Lexer(Files.newBufferedReader(Paths.get(filename), StandardCharsets.US_ASCII), new StringTable());
 		Parser parser = new Parser(lexer);
@@ -39,8 +39,10 @@ public class FirmTester {
 			throw new Exception("program is not semantically correct");
 		}
 
-		FirmGenerationVisitor firmGen = new FirmGenerationVisitor();
-		program.accept(firmGen);
+		Transformation.transformToFirm(program);
+
+		// FirmGenerationVisitor firmGen = new FirmGenerationVisitor();
+		// program.accept(firmGen);
 
 		for (Graph g : Program.getGraphs()) {
 			g.check();
