@@ -1,0 +1,169 @@
+graph: { title: "ir graph of C#m#c3"
+display_edge_labels: yes
+layoutalgorithm: mindepth //$ "Compilergraph"
+manhattan_edges: yes
+port_sharing: no
+orientation: bottom_to_top
+classname 1:  "intrablock Data"
+classname 2:  "Block"
+classname 3:  "Entity type"
+classname 4:  "Entity owner"
+classname 5:  "Method Param"
+classname 6:  "Method Res"
+classname 7:  "Super"
+classname 8:  "Union"
+classname 9:  "Points-to"
+classname 10: "Array Element Type"
+classname 11: "Overwrites"
+classname 12: "Member"
+classname 13: "Control Flow"
+classname 14: "intrablock Memory"
+classname 15: "Dominators"
+classname 16: "interblock Data"
+classname 17: "interblock Memory"
+classname 18: "Exception Control Flow for Interval Analysis"
+classname 19: "Postdominators"
+classname 20: "Keep Alive"
+classname 21: "Out Edges"
+classname 22: "Macro Block Edges"
+infoname 1: "Attribute"
+infoname 2: "Verification errors"
+infoname 3: "Debug info"
+colorentry 100: 204 204 204
+colorentry 101: 222 239 234
+colorentry 103: 242 242 242
+colorentry 104: 153 255 153
+colorentry 105: 153 153 255
+colorentry 106: 255 153 153
+colorentry 107: 255 255 153
+colorentry 108: 255 153 255
+colorentry 110: 127 127 127
+colorentry 111: 153 255 153
+colorentry 114: 153 153 255
+
+graph: { title: "g221" label: "C#m#c3" status:clustered color:100
+info1: "entity C#m#c3 (82)
+  type:  method:method type[81]
+  owner: class:class 'C'[71]
+  Does not overwrite other entities.
+  Is not overwritten by other entities.
+  maximum node index:   13
+  additional prop: 
+  calling convention: 
+  vtable number:        4294967295
+  linkage: constant
+  volatility:  volatility_non_volatile
+  aligned:  align_is_aligned
+  alignment:  0
+  ld_name: no yet set
+  irg = 221
+
+
+constraints:
+properties: consistent_dominance consistent_outs"
+graph: { title: "n215" label: "Start Block  215" status:clustered color:101
+ info1: "Start Block 215
+  index: 3
+  mode:    BB
+  visited: 13
+  irg:     C#m#c3
+  arity:   0
+  pred nodes:
+  Private Attributes:
+  backedges:  block visited: 7
+  block marked: 0
+  dom depth 1
+  domtree pre num 0
+  max subtree pre num 1
+"
+node: {title: "n224" label: "Return  224"  info1: "Return 224
+  index: 11
+  mode:    X
+  visited: 13
+  irg:     C#m#c3
+  arity:   2
+  pred nodes:
+    -1:    Start Block 215
+     0:    Proj 220
+     1:    Const NULL 223
+  Private Attributes:
+  return in method of type method:method type[81]
+    result 0 type: pointer:pointer to class 'A'[51]
+"
+color:106}
+node: {title: "n224b223" label: "Const NULL P64 223"  info1: "Const NULL 223
+  index: 10
+  mode:    P64
+  visited: 13
+  irg:     C#m#c3
+  arity:   0
+  pred nodes:
+    -1:    Start Block 215
+  Private Attributes:
+"
+color:107}
+edge: {sourcename: "n224" targetname: "n220" label: "0" class:14 priority:50 color:blue}
+edge: {sourcename: "n224" targetname: "n224b223" label: "1" class:1  priority:50}
+node: {title: "n220" label: "Proj M M 220"  info1: "Proj 220
+  index: 8
+  mode:    M
+  visited: 13
+  irg:     C#m#c3
+  arity:   1
+  pred nodes:
+    -1:    Start Block 215
+     0:    Start 217
+  Private Attributes:
+  proj nr: 0
+"
+color:105}
+nearedge: {sourcename: "n220" targetname: "n217" label: "0" class:14 priority:50 color:blue}
+node: {title: "n217" label: "Start  217"  info1: "Start 217
+  index: 5
+  mode:    T
+  visited: 13
+  irg:     C#m#c3
+  arity:   0
+  pred nodes:
+    -1:    Start Block 215
+  Private Attributes:
+  start of method of type method:method type[81]
+    param 0 type: pointer:pointer to class 'C'[72]
+"
+color:108}
+}
+
+graph: { title: "n213" label: "End Block  213" status:clustered color:101
+ info1: "End Block 213
+  index: 1
+  mode:    BB
+  visited: 13
+  irg:     C#m#c3
+  arity:   1
+  pred nodes:
+     0:    Return 224
+  Private Attributes:
+  backedges:
+  block visited: 7
+  block marked: 0
+  dom depth 2
+  domtree pre num 1
+  max subtree pre num 1
+"
+node: {title: "n214" label: "End  214"  info1: "End 214
+  index: 2
+  mode:    X
+  visited: 13
+  irg:     C#m#c3
+  arity:   0
+  pred nodes:
+    -1:    End Block 213
+  Private Attributes:
+"
+color:108}
+}
+
+edge: {sourcename: "n213" targetname: "n224" label: "0" class:13 priority:60 color:red}
+}
+
+}
