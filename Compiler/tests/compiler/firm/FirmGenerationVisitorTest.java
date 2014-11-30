@@ -15,33 +15,37 @@ public class FirmGenerationVisitorTest {
 		FirmUtils.finishFirm();
 	}
 
+	private void testFile(String name, boolean overwrite) throws Exception {
+		FirmTestUtils.assertExportEquals(name, name + ".java", overwrite);
+	}
+
 	@Test
 	public void testVisitAdditionExpression() throws Exception {
-		FirmTestUtils.assertExportEquals("firmdata/testAdditionExpression", "firmdata/testAdditionExpression.java", false);
+		testFile("firmdata/expression/testAdditionExpression", false);
 	}
 
 	@Test
 	public void testVisitDivisionExpression() throws Exception {
-		FirmTestUtils.assertExportEquals("firmdata/testDivisionExpression", "firmdata/testDivisionExpression.java", false);
+		testFile("firmdata/expression/testDivisionExpression", false);
 	}
 
 	@Test
 	public void testVisitModuloExpression() throws Exception {
-		FirmTestUtils.assertExportEquals("firmdata/testModuloExpression", "firmdata/testModuloExpression.java", false);
+		testFile("firmdata/expression/testModuloExpression", false);
 	}
 
 	@Test
 	public void testVisitMuliplicationExpression() throws Exception {
-		FirmTestUtils.assertExportEquals("firmdata/testMultiplicationExpression", "firmdata/testMultiplicationExpression.java", false);
+		testFile("firmdata/expression/testMultiplicationExpression", false);
 	}
 
 	@Test
 	public void testVisitSubtractionExpression() throws Exception {
-		FirmTestUtils.assertExportEquals("firmdata/testSubtractionExpression", "firmdata/testSubtractionExpression.java", false);
+		testFile("firmdata/expression/testSubtractionExpression", false);
 	}
 
 	@Test
 	public void testVisitEqualityExpression() throws Exception {
-		FirmTestUtils.assertExportEquals("firmdata/testEqualityExpression", "firmdata/testEqualityExpression.java", false);
+		testFile("firmdata/comparison/testEqualityExpression", false);
 	}
 }
