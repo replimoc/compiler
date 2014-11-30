@@ -1,1 +1,1 @@
-error: Identifier test at position line   4, character 11 has already been defined.
+error: type error in token at position line   3, character 24: The integer is out of bounds.
