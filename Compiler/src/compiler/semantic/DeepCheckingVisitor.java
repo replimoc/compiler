@@ -273,6 +273,12 @@ public class DeepCheckingVisitor implements AstVisitor {
 	@Override
 	public void visit(IntegerConstantExpression integerConstantExpression) {
 		setType(BasicType.INT, integerConstantExpression);
+
+		try {
+			Integer.parseInt(integerConstantExpression.getIntegerLiteral());
+		} catch (NumberFormatException exception) {
+			throwTypeError(integerConstantExpression, "The integer is out of bounds.");
+		}
 	}
 
 	@Override
