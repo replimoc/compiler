@@ -66,13 +66,16 @@ class FirmHierarchy {
 		for (Entry<Symbol, ClassScope> currEntry : classScopes.entrySet()) {
 			String className = currEntry.getKey().getValue();
 			addClass(className);
+
 			ClassScope scope = currEntry.getValue();
 
 			for (Definition currField : scope.getFieldDefinitions()) {
 				addFieldEntity(className, currField);
 			}
 			for (MethodDefinition currMethod : scope.getMethodDefinitions()) {
-				addMethodEntity(className, currMethod);
+				if (currMethod.isStaticMethod()) {
+					addMethodEntity(className, currMethod);
+				}
 			}
 		}
 	}
