@@ -80,8 +80,9 @@ class FirmHierarchy {
 			}
 			for (MethodDefinition currMethod : scope.getMethodDefinitions()) {
 				// main method is added separately because there is no type java.lang.String in MiniJava
-				if(!"main".equals(currMethod.getSymbol().getValue()))
+				if (!currMethod.isStaticMethod()) {
 					addMethodEntity(className, currMethod);
+				}
 			}
 		}
 	}
