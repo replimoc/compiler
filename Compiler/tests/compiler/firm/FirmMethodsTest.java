@@ -9,11 +9,11 @@ import compiler.utils.TestUtils;
 
 public class FirmMethodsTest {
 
-	private final FirmHierarchy hierarchy = new FirmHierarchy();
-
 	@Test
 	public void testjFirmInit() throws Exception {
 		FirmUtils.initFirm();
+
+		final FirmHierarchy hierarchy = new FirmHierarchy();
 
 		compiler.ast.Program ast = TestUtils.getAstForFile("firmdata/methodsTest.java");
 		assertEquals(1, ast.getClasses().size());
