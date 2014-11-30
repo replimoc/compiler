@@ -16,12 +16,12 @@ import firm.PrimitiveType;
 import firm.Program;
 
 /**
- * methods to create and access entities
+ * Methods to create and access entities
  */
 class FirmHierarchy {
 
 	final Mode modeInt = Mode.getIs(); // integer signed 32 bit
-	final Mode modeBool = Mode.getBu(); // unsigned 8 bit
+	final Mode modeBool = Mode.getBu(); // unsigned 8 bit for boolean
 	final Mode modeRef = Mode.createReferenceMode("P64", Mode.Arithmetic.TwosComplement, 64, 64); // 64 bit pointer
 
 	final Entity print_int;
@@ -50,10 +50,12 @@ class FirmHierarchy {
 		// void print_int(int);
 		MethodType print_int_type = new MethodType(new firm.Type[] { new PrimitiveType(modeInt) }, new firm.Type[] {});
 		this.print_int = new Entity(firm.Program.getGlobalType(), "#print_int", print_int_type);
+
 		// void* calloc (size_t num, size_t size);
 		MethodType calloc_type = new MethodType(new firm.Type[] { new PrimitiveType(modeInt), new PrimitiveType(modeInt) },
 				new firm.Type[] { new PrimitiveType(modeRef) });
 		this.calloc = new Entity(firm.Program.getGlobalType(), "#calloc", calloc_type);
+
 		// void main(void)
 		MethodType mainType = new MethodType(new firm.Type[] {}, new firm.Type[] {});
 		this.mainMethod = new Entity(Program.getGlobalType(), "#main", mainType);
@@ -74,9 +76,9 @@ class FirmHierarchy {
 		firm.Type firmType = getTypeDeclaration(fieldType);
 		String entityName = currentClass.getName() + "#" + "f" + "#" + fieldName;
 		System.out.println("entityName = " + entityName);
-		Entity entity = new Entity(currentClass, entityName, firmType);
 
-		// entity.setLdIdent(entityName);
+		// create new entity and attach to currentClass
+		new Entity(currentClass, entityName, firmType);
 	}
 
 	public void addMethodEntity(String methodName, List<ParameterDefinition> methodParams, compiler.ast.type.Type methodReturnType) {
@@ -103,8 +105,9 @@ class FirmHierarchy {
 		MethodType methodType = new MethodType(parameterTypes, returnType);
 		String entityName = currentClass.getName() + "#" + "m" + "#" + methodName;
 		System.out.println("entityName = " + entityName);
-		Entity methodEntity = new Entity(currentClass, entityName, methodType);
-		// entity.setLdIdent(entityName);
+
+		// create new entity and attach to currentClass
+		new Entity(currentClass, entityName, methodType);
 	}
 
 	public Entity getMethodEntity(String methodName) {
@@ -137,8 +140,7 @@ class FirmHierarchy {
 			firmType = new PrimitiveType(modeBool);
 			break;
 		case VOID:
-			// TODO: return null?
-			break;
+			return null;
 		case NULL:
 			firmType = new PrimitiveType(modeRef);
 			break;
@@ -148,6 +150,7 @@ class FirmHierarchy {
 		case METHOD:
 			break;
 		default:
+			// type STRING_ARGS
 			assert false;
 		}
 
