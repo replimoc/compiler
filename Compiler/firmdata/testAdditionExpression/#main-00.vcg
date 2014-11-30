@@ -41,9 +41,9 @@ colorentry 110: 127 127 127
 colorentry 111: 153 255 153
 colorentry 114: 153 153 255
 
-graph: { title: "g68" label: "#main" status:clustered color:100
-info1: "entity #main (48)
-  type:  method:method type[47]
+graph: { title: "g60" label: "#main" status:clustered color:100
+info1: "entity #main (49)
+  type:  method:method type[48]
   owner: class:class 'GlobalType'[22]
   Does not overwrite other entities.
   Is not overwritten by other entities.
@@ -56,13 +56,13 @@ info1: "entity #main (48)
   aligned:  align_is_aligned
   alignment:  0
   ld_name: no yet set
-  irg = 68
+  irg = 60
 
 
 constraints:
 properties: consistent_dominance consistent_outs"
-graph: { title: "n62" label: "Start Block  62" status:clustered color:101
- info1: "Start Block 62
+graph: { title: "n54" label: "Start Block  54" status:clustered color:101
+ info1: "Start Block 54
   index: 3
   mode:    BB
   visited: 7
@@ -76,68 +76,68 @@ graph: { title: "n62" label: "Start Block  62" status:clustered color:101
   domtree pre num 0
   max subtree pre num 1
 "
-node: {title: "n72" label: "Return  72"  info1: "Return 72
+node: {title: "n64" label: "Return  64"  info1: "Return 64
   index: 12
   mode:    X
   visited: 7
   irg:     #main
   arity:   1
   pred nodes:
-    -1:    Start Block 62
-     0:    Add 71
+    -1:    Start Block 54
+     0:    Add 63
   Private Attributes:
-  return in method of type method:method type[47]
+  return in method of type method:method type[48]
 "
 color:106}
-edge: {sourcename: "n72" targetname: "n71" label: "0" class:1  priority:50}
-node: {title: "n71" label: "Add Is 71"  info1: "Add 71
+edge: {sourcename: "n64" targetname: "n63" label: "0" class:1  priority:50}
+node: {title: "n63" label: "Add Is 63"  info1: "Add 63
   index: 11
   mode:    Is
   visited: 7
   irg:     #main
   arity:   2
   pred nodes:
-    -1:    Start Block 62
-     0:    Const 0x3 69
-     1:    Const 0x4 70
+    -1:    Start Block 54
+     0:    Const 0x3 61
+     1:    Const 0x4 62
   Private Attributes:
 "
 }
-node: {title: "n71b69" label: "Const 0x3 Is 69"  info1: "Const 0x3 69
+node: {title: "n63b61" label: "Const 0x3 Is 61"  info1: "Const 0x3 61
   index: 9
   mode:    Is
   visited: 7
   irg:     #main
   arity:   0
   pred nodes:
-    -1:    Start Block 62
+    -1:    Start Block 54
   Private Attributes:
 "
 color:107}
-node: {title: "n71b70" label: "Const 0x4 Is 70"  info1: "Const 0x4 70
+node: {title: "n63b62" label: "Const 0x4 Is 62"  info1: "Const 0x4 62
   index: 10
   mode:    Is
   visited: 7
   irg:     #main
   arity:   0
   pred nodes:
-    -1:    Start Block 62
+    -1:    Start Block 54
   Private Attributes:
 "
 color:107}
-edge: {sourcename: "n71" targetname: "n71b69" label: "0" class:1  priority:50}
-edge: {sourcename: "n71" targetname: "n71b70" label: "1" class:1  priority:50}
+edge: {sourcename: "n63" targetname: "n63b61" label: "0" class:1  priority:50}
+edge: {sourcename: "n63" targetname: "n63b62" label: "1" class:1  priority:50}
 }
 
-graph: { title: "n60" label: "End Block  60" status:clustered color:101
- info1: "End Block 60
+graph: { title: "n52" label: "End Block  52" status:clustered color:101
+ info1: "End Block 52
   index: 1
   mode:    BB
   visited: 7
   irg:     #main
   arity:   1
   pred nodes:
-     0:    Return 72
+     0:    Return 64
   Private Attributes:
   backedges:
   block visited: 4
@@ -146,20 +146,20 @@ graph: { title: "n60" label: "End Block  60" status:clustered color:101
   domtree pre num 1
   max subtree pre num 1
 "
-node: {title: "n61" label: "End  61"  info1: "End 61
+node: {title: "n53" label: "End  53"  info1: "End 53
   index: 2
   mode:    X
   visited: 7
   irg:     #main
   arity:   0
   pred nodes:
-    -1:    End Block 60
+    -1:    End Block 52
   Private Attributes:
 "
 color:108}
 }
 
-edge: {sourcename: "n60" targetname: "n72" label: "0" class:13 priority:60 color:red}
+edge: {sourcename: "n52" targetname: "n64" label: "0" class:13 priority:60 color:red}
 }
 
 }
