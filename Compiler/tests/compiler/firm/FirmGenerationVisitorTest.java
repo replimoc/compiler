@@ -45,6 +45,11 @@ public class FirmGenerationVisitorTest {
 	}
 
 	@Test
+	public void testVisitNegateExpression() throws Exception {
+		testFile("firmdata/expression/testNegateExpression", false);
+	}
+
+	@Test
 	public void testVisitEqualityExpression() throws Exception {
 		testFile("firmdata/comparison/testEqualityExpression", false);
 	}

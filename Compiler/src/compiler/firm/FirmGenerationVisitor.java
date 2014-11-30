@@ -304,8 +304,16 @@ public class FirmGenerationVisitor implements AstVisitor {
 
 	@Override
 	public void visit(NegateExpression negateExpression) {
-		// TODO Auto-generated method stub
+		// get type of expression
+		Mode mode = convertAstTypeToMode(negateExpression.getType());
 
+		// get firmNode for the operand
+		Expression operand = negateExpression.getOperand();
+		operand.accept(this);
+		Node operandNode = operand.getFirmNode();
+
+		Node exprNode = currentMethodConstruction.newMinus(operandNode, mode);
+		negateExpression.setFirmNode(exprNode);
 	}
 
 	@Override
