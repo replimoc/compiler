@@ -8,8 +8,11 @@
 	<property name="tests" location="tests" />
 	<property name="bin" location="bin" />
 	<property name="target" location="target" />
+	<property name="srcLibFirm" location="lib/firm" />
 
 	<property name="jarLocation" location="${target}/${ant.project.name}.jar" />
+	<property name="targetLibFirm" location="${target}/lib/firm" />
+	<property name="targetZip" location="${target}/compiler.zip" />
 
 	<property name="commons-cli" location="lib/commons-cli-1.2.jar" />
 
@@ -30,7 +33,8 @@
 
 
 
-	<target name="clean-build" depends="clean" description="clean and compile the source">
+	<target name="clean-build" depends="clean"
+		description="clean and compile the source">
 		<!-- Compile the java code from ${src} into ${bin} -->
 		<mkdir dir="${bin}" />
 		<javac srcdir="${src}" destdir="${bin}" includeantruntime="false">
@@ -69,9 +73,22 @@
 	</target>
 
 
-	<target name="all" description="clean and build everything, run tests and build jar file">
+	<!-- Build compiler.zip package -->
+	<target name="buildZip" depends="testJar">
+	    	<delete file="${targetZip}" />
+	
+		<copy todir="${targetLibFirm}">
+			<fileset dir="${srcLibFirm}" />
+		</copy>
+		<zip destfile="${targetZip}" basedir="${target}" />
+	</target>
+
+
+
+	<target name="all"
+		description="clean and build everything, run tests and build jar file">
 		<antcall target="test" />
-		<antcall target="testJar" />
+		<antcall target="buildZip" />
 	</target>
 
 
