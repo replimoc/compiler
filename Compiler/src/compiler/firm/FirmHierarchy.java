@@ -63,19 +63,25 @@ class FirmHierarchy {
 	}
 
 	public void initialize(HashMap<Symbol, ClassScope> classScopes) {
+		// first iterate over all classes -- so that forward references to classes
+		// in method parameters and return types work
 		for (Entry<Symbol, ClassScope> currEntry : classScopes.entrySet()) {
 			String className = currEntry.getKey().getValue();
 			addClass(className);
+		}
 
+		// iterate over all fields and methods and create firm entities
+		for (Entry<Symbol, ClassScope> currEntry : classScopes.entrySet()) {
+			String className = currEntry.getKey().getValue();
 			ClassScope scope = currEntry.getValue();
 
 			for (Definition currField : scope.getFieldDefinitions()) {
 				addFieldEntity(className, currField);
 			}
 			for (MethodDefinition currMethod : scope.getMethodDefinitions()) {
-				if (currMethod.isStaticMethod()) {
+				// main method is added separately because there is no type java.lang.String in MiniJava
+				if(!"main".equals(currMethod.getSymbol().getValue()))
 					addMethodEntity(className, currMethod);
-				}
 			}
 		}
 	}
