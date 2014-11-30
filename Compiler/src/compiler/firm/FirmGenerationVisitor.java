@@ -1,5 +1,8 @@
 package compiler.firm;
 
+import java.util.HashMap;
+import java.util.Map;
+
 import compiler.ast.AstNode;
 import compiler.ast.Block;
 import compiler.ast.ClassDeclaration;
@@ -61,9 +64,12 @@ public class FirmGenerationVisitor implements AstVisitor {
 	// current definitions
 	private Construction currentMethodConstruction = null;
 	private int currentMethodVariableCount = 0;
+	private Map<String, Integer> currentMethodParameters;
 
 	public FirmGenerationVisitor(FirmHierarchy hierarchy) {
 		this.hierarchy = hierarchy;
+		// create new map for param <-> variable number
+		currentMethodParameters = new HashMap<String, Integer>();
 	}
 
 	private static interface CreateBinaryFirmNode {
@@ -103,9 +109,11 @@ public class FirmGenerationVisitor implements AstVisitor {
 		int variableNumber = -1;
 		VariableAccessExpression variableAccess = (VariableAccessExpression) assignmentExpression.getOperand1();
 		AstNode variableDefinitionNode = variableAccess.getDefinition().getAstNode();
-		// TODO fix this shit
+
+		// TODO does this work?
 		if (variableDefinitionNode instanceof LocalVariableDeclaration) {
-			variableNumber = ((LocalVariableDeclaration) variableDefinitionNode).getFirmVariableNumber();
+			// get the variable number
+			variableNumber = currentMethodParameters.get(((LocalVariableDeclaration) variableDefinitionNode).getIdentifier().getValue());
 		}
 		Expression rhsExpression = assignmentExpression.getOperand2();
 		assert rhsExpression != null; // TODO is this true
@@ -349,7 +357,6 @@ public class FirmGenerationVisitor implements AstVisitor {
 	@Override
 	public void visit(LocalVariableDeclaration localVariableDeclaration) {
 		int variableNumber = currentMethodVariableCount++;
-		localVariableDeclaration.setFirmVariableNumber(variableNumber);
 		Mode variableMode = convertAstTypeToMode(localVariableDeclaration.getType());
 
 		Expression expression = localVariableDeclaration.getExpression();
@@ -360,6 +367,9 @@ public class FirmGenerationVisitor implements AstVisitor {
 			Node firmNode = expression.getFirmNode();
 			assert firmNode != null;
 			currentMethodConstruction.setVariable(variableNumber, firmNode);
+			// add local variable number to map
+			currentMethodParameters.put(localVariableDeclaration.getIdentifier().getValue(), variableNumber);
+
 			// TODO FIX
 			Node var = currentMethodConstruction.getVariable(variableNumber, variableMode);
 			localVariableDeclaration.setFirmNode(var);
@@ -423,6 +433,8 @@ public class FirmGenerationVisitor implements AstVisitor {
 		graph.getEndBlock().addPred(returnNode);
 		currentMethodConstruction.setUnreachable();
 		currentMethodConstruction.finish();
+		// clear map
+		currentMethodParameters.clear();
 	}
 
 	private void createThisParameter(Node args) {
@@ -436,6 +448,8 @@ public class FirmGenerationVisitor implements AstVisitor {
 		// args can be called as construction.getGraph().getArgs();
 		Node paramProj = currentMethodConstruction.newProj(args, convertAstTypeToMode(parameterDefinition.getType()), currentMethodVariableCount++);
 		currentMethodConstruction.setVariable(currentMethodVariableCount, paramProj);
+		// add parameter number to map
+		currentMethodParameters.put(parameterDefinition.getIdentifier().getValue(), currentMethodVariableCount);
 
 		parameterDefinition.setFirmNode(paramProj);
 	}
@@ -467,6 +481,8 @@ public class FirmGenerationVisitor implements AstVisitor {
 
 		currentMethodConstruction.setUnreachable();
 		currentMethodConstruction.finish();
+		// clear map
+		currentMethodParameters.clear();
 	}
 
 	@Override

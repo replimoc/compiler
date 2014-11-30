@@ -10,8 +10,6 @@ public class LocalVariableDeclaration extends Statement {
 	private final Symbol identifier;
 	private final Expression expression;
 
-	private int firmVariableNumber;
-
 	public LocalVariableDeclaration(Position position, Type type, Symbol identifier, Expression expression) {
 		super(position);
 		this.type = type;
@@ -33,14 +31,6 @@ public class LocalVariableDeclaration extends Statement {
 
 	public Expression getExpression() {
 		return expression;
-	}
-
-	public int getFirmVariableNumber() {
-		return firmVariableNumber;
-	}
-
-	public void setFirmVariableNumber(int firmVariableNumber) {
-		this.firmVariableNumber = firmVariableNumber;
 	}
 
 	@Override
