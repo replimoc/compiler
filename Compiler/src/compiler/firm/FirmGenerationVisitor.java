@@ -228,15 +228,16 @@ public class FirmGenerationVisitor implements AstVisitor {
 
 	@Override
 	public void visit(BooleanConstantExpression booleanConstantExpression) {
-		// TODO Auto-generated method stub
+		boolean boolValue = booleanConstantExpression.isValue();
+		int boolIntValue = boolValue? 1 : 0;
 
+		Node constant = currentMethodConstruction.newConst(boolIntValue, hierarchy.getModeBool());
+		booleanConstantExpression.setFirmNode(constant);
 	}
 
 	@Override
 	public void visit(IntegerConstantExpression integerConstantExpression) {
-		System.out.println("integerConstantExpression = [" + integerConstantExpression + "]");
-
-		// assume that Integer.parseInt doesn't fail (checked in semantic analysis
+		// assume that Integer.parseInt doesn't fail (must be checked in semantic analysis)
 		String intValue = integerConstantExpression.getIntegerLiteral();
 		int val = Integer.parseInt(intValue);
 
