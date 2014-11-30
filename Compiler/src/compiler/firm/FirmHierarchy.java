@@ -50,16 +50,24 @@ class FirmHierarchy {
 		// create library function(s)
 		// void print_int(int);
 		MethodType print_int_type = new MethodType(new firm.Type[] { new PrimitiveType(getModeInt()) }, new firm.Type[] {});
-		this.print_int = new Entity(firm.Program.getGlobalType(), "#print_int", print_int_type);
+		this.print_int = new Entity(firm.Program.getGlobalType(), "print_int", print_int_type);
 
 		// void* calloc (size_t num, size_t size);
 		MethodType calloc_type = new MethodType(new firm.Type[] { new PrimitiveType(getModeInt()), new PrimitiveType(getModeInt()) },
 				new firm.Type[] { new PrimitiveType(getModeRef()) });
-		this.calloc = new Entity(firm.Program.getGlobalType(), "#calloc", calloc_type);
+		this.calloc = new Entity(firm.Program.getGlobalType(), "calloc", calloc_type);
 
 		// void main(void)
 		MethodType mainType = new MethodType(new firm.Type[] {}, new firm.Type[] {});
-		this.mainMethod = new Entity(Program.getGlobalType(), "#main", mainType);
+		this.mainMethod = new Entity(Program.getGlobalType(), "main", mainType);
+	}
+
+	private String escapeName(String name) {
+		return name.replaceAll("_", "__");
+	}
+
+	private String escapeName(String className, String type, String suffix) {
+		return "_" + escapeName(className) + "_" + escapeName(type) + "_" + escapeName(suffix);
 	}
 
 	public void initialize(HashMap<Symbol, ClassScope> classScopes) {
@@ -94,7 +102,7 @@ class FirmHierarchy {
 
 	private void addFieldEntity(String className, Definition definition) {
 		firm.Type firmType = getTypeDeclaration(definition.getType());
-		String entityName = className + "#" + "f" + "#" + definition.getSymbol().getValue();
+		String entityName = escapeName(className, "f", definition.getSymbol().getValue());
 		System.out.println("entityName = " + entityName);
 
 		// create new entity and attach to currentClass
@@ -128,7 +136,7 @@ class FirmHierarchy {
 
 		// create methodType and methodEntity
 		MethodType methodType = new MethodType(parameterTypes, returnType);
-		String entityName = className + "#" + "m" + "#" + methodDefinition.getSymbol().getValue();
+		String entityName = escapeName(className, "m", methodDefinition.getSymbol().getValue());
 		System.out.println("entityName = " + entityName);
 
 		// create new entity and attach to currentClass
@@ -136,14 +144,14 @@ class FirmHierarchy {
 	}
 
 	public Entity getMethodEntity(String className, String methodName) {
-		String entityName = className + "#" + "m" + "#" + methodName;
+		String entityName = escapeName(className, "m", methodName);
 		Entity method = getClassType(className).getMemberByName(entityName);
 		System.out.println("method = " + method);
 		return method;
 	}
 
 	public Entity getFieldEntity(String className, String fieldName) {
-		String entityName = className + "#f#" + fieldName;
+		String entityName = escapeName(className, "f", fieldName);
 		Entity field = getClassType(className).getMemberByName(entityName);
 		System.out.println("field = " + field);
 		return field;
