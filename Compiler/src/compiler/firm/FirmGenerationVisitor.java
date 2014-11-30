@@ -55,6 +55,7 @@ import firm.Mode;
 import firm.Relation;
 import firm.bindings.binding_ircons.op_pin_state;
 import firm.nodes.Call;
+import firm.nodes.Load;
 import firm.nodes.Node;
 
 public class FirmGenerationVisitor implements AstVisitor {
@@ -65,6 +66,7 @@ public class FirmGenerationVisitor implements AstVisitor {
 	private Construction currentMethodConstruction = null;
 	private int currentMethodVariableCount = 0;
 	private Map<String, Integer> currentMethodParameters;
+	private boolean lValue;
 
 	public FirmGenerationVisitor(FirmHierarchy hierarchy) {
 		this.hierarchy = hierarchy;
@@ -117,8 +119,11 @@ public class FirmGenerationVisitor implements AstVisitor {
 	@Override
 	public void visit(AssignmentExpression assignmentExpression) {
 		int variableNumber = -1;
+		// mark lhs
+		lValue = true;
 		VariableAccessExpression variableAccess = (VariableAccessExpression) assignmentExpression.getOperand1();
 		AstNode variableDefinitionNode = variableAccess.getDefinition().getAstNode();
+		lValue = false;
 
 		// TODO does this work?
 		if (variableDefinitionNode instanceof LocalVariableDeclaration) {
@@ -287,7 +292,34 @@ public class FirmGenerationVisitor implements AstVisitor {
 
 	@Override
 	public void visit(VariableAccessExpression variableAccessExpression) {
+		// TODO:
 		variableAccessExpression.setFirmNode(variableAccessExpression.getDefinition().getAstNode().getFirmNode());
+		String fieldName = variableAccessExpression.getFieldIdentifier().getValue();
+		Node node;
+
+		if (variableAccessExpression.getExpression() == null) {
+			// this or local variable
+			int varNum = 0;
+			if (currentMethodParameters.containsKey(fieldName)) {
+				// local variable
+				varNum = currentMethodParameters.get(fieldName);
+			}
+			node = currentMethodConstruction.getVariable(varNum, hierarchy.modeRef);
+		} else {
+			variableAccessExpression.getExpression().accept(this);
+			node = variableAccessExpression.getExpression().getFirmNode();
+		}
+		if (lValue) {
+			// store
+			// TODO: store in assignment expression?
+		} else {
+			// load
+			Mode mode = convertAstTypeToMode(variableAccessExpression.getType());
+			Node load = currentMethodConstruction.newLoad(currentMethodConstruction.getCurrentMem(), node, mode);
+			Node loadResult = currentMethodConstruction.newProj(load, mode, Load.pnRes);
+			Node loadMem = currentMethodConstruction.newProj(loadResult, Mode.getM(), Load.pnM);
+			currentMethodConstruction.setCurrentMem(loadMem);
+		}
 	}
 
 	@Override
