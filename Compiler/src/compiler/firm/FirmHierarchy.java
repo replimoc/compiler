@@ -132,9 +132,9 @@ class FirmHierarchy {
 		return method;
 	}
 
-	public Entity getFieldEntity(String fieldName) {
-		String entityName = currentClass.getName() + "#f#" + fieldName;
-		Entity field = currentClass.getMemberByName(entityName);
+	public Entity getFieldEntity(String className, String fieldName) {
+		String entityName = className + "#f#" + fieldName;
+		Entity field = getClassType(className).getMemberByName(entityName);
 		System.out.println("field = " + field);
 		return field;
 	}

@@ -306,7 +306,7 @@ public class FirmGenerationVisitor implements AstVisitor {
 				// local variable
 				varNum = currentMethodParameters.get(fieldName);
 			}
-			node = currentMethodConstruction.getVariable(varNum, hierarchy.modeRef);
+			node = currentMethodConstruction.getVariable(varNum, hierarchy.getModeRef());
 		} else {
 			variableAccessExpression.getExpression().accept(this);
 			node = variableAccessExpression.getExpression().getFirmNode();
