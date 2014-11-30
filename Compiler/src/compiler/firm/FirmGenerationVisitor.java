@@ -290,8 +290,34 @@ public class FirmGenerationVisitor implements AstVisitor {
 	@Override
 	public void visit(VariableAccessExpression variableAccessExpression) {
 
-		if (variableAccessExpression.getExpression() != null) {
-			// TODO method invocation or field access or array access;
+
+		Expression objectNameForFieldAccess = variableAccessExpression.getExpression();
+		if (objectNameForFieldAccess != null) {
+			// save rvalue so that field access expression doesn't think it is an assignment
+			Node lastRvalueNode = this.lastRvalueNode;
+			this.lastRvalueNode = null;
+
+			// visit object name
+			objectNameForFieldAccess.accept(this);
+			Node object = objectNameForFieldAccess.getFirmNode();
+
+			// get entity for this field and calculate address of field
+			String objectClassName = objectNameForFieldAccess.getType().getIdentifier().getValue();
+			Entity field = hierarchy.getFieldEntity(objectClassName, variableAccessExpression.getFieldIdentifier().getValue());
+			Node addrOfField = currentMethodConstruction.newMember(object, field);
+
+			if(lastRvalueNode!=null) {
+				Node storeValue = currentMethodConstruction.newStore(currentMethodConstruction.getCurrentMem(), addrOfField, lastRvalueNode);
+				Node memAfterStore = currentMethodConstruction.newProj(storeValue, Mode.getM(), Store.pnM);
+				currentMethodConstruction.setCurrentMem(memAfterStore);
+			} else {
+				Mode fieldAccessMode =  field.getType().getMode();
+				Node loadValue = currentMethodConstruction.newLoad(currentMethodConstruction.getCurrentMem(), addrOfField, fieldAccessMode);
+				Node loadMem = currentMethodConstruction.newProj(loadValue, Mode.getM(), Load.pnM);
+				currentMethodConstruction.setCurrentMem(loadMem);
+				Node loadResult = currentMethodConstruction.newProj(loadValue, fieldAccessMode, Load.pnRes);
+				variableAccessExpression.setFirmNode(loadResult);
+			}
 		} else {
 			String variableName = variableAccessExpression.getFieldIdentifier().getValue();
 			if (currentMethodVariables.containsKey(variableName)) {
@@ -301,7 +327,6 @@ public class FirmGenerationVisitor implements AstVisitor {
 				{
 					// this is variable set expression:
 					currentMethodConstruction.setVariable(variableNumber, lastRvalueNode);
-					lastRvalueNode = null;
 					// TODO set node to variable access or current mem?
 				}
 
@@ -349,7 +374,7 @@ public class FirmGenerationVisitor implements AstVisitor {
 			Node loadElement = currentMethodConstruction.newLoad(
 					currentMethodConstruction.getCurrentMem(), arrayIndex, arrayElementsMode);
 			Node loadMem = currentMethodConstruction.newProj(loadElement, Mode.getM(), Load.pnM);
-			// currentMethodConstruction.setCurrentMem(loadMem);
+			currentMethodConstruction.setCurrentMem(loadMem);
 			Node loadResult = currentMethodConstruction.newProj(loadElement, arrayElementsMode, Load.pnRes);
 			arrayAccessExpression.setFirmNode(loadResult);
 		}
@@ -437,7 +462,7 @@ public class FirmGenerationVisitor implements AstVisitor {
 
 		Expression expression = localVariableDeclaration.getExpression();
 		if (expression != null) {
-			System.out.println("about to visit = " + expression.getClass().getName());
+			System.out.println("about to visit1 = " + expression.getClass().getName());
 			expression.accept(this);
 
 			Node firmNode = expression.getFirmNode();
