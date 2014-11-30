@@ -376,15 +376,17 @@ public class FirmGenerationVisitor implements AstVisitor {
 
 	@Override
 	public void visit(Block block) {
-		for (Statement statement : block.getStatements()) {
-			System.out.println("about to visit: = " + statement.getClass().getName());
-			statement.accept(this);
-		}
+		if(!block.isEmpty()) {
+			for (Statement statement : block.getStatements()) {
+				System.out.println("about to visit: = " + statement.getClass().getName());
+				statement.accept(this);
+			}
 
-		// get last statement and set block firmNode to this statement
-		// FIXME A block can be empty, for example empty main!
-		Statement lastStatement = block.getStatements().get(block.getNumberOfStatements() - 1);
-		block.setFirmNode(lastStatement.getFirmNode());
+			// get last statement and set block firmNode to this statement
+			// FIXME A block can be empty, for example empty main!
+			Statement lastStatement = block.getStatements().get(block.getNumberOfStatements() - 1);
+			block.setFirmNode(lastStatement.getFirmNode());
+		}
 	}
 
 	@Override
