@@ -48,4 +48,29 @@ public class FirmGenerationVisitorTest {
 	public void testVisitEqualityExpression() throws Exception {
 		testFile("firmdata/comparison/testEqualityExpression", false);
 	}
+
+	@Test
+	public void testVisitNonEqualityExpression() throws Exception {
+		testFile("firmdata/comparison/testNonEqualityExpression", false);
+	}
+
+	@Test
+	public void testVisitGreaterThanEqualExpression() throws Exception {
+		testFile("firmdata/comparison/testGreaterThanEqualExpression", false);
+	}
+
+	@Test
+	public void testVisitGreaterThanExpression() throws Exception {
+		testFile("firmdata/comparison/testGreaterThanExpression", false);
+	}
+
+	@Test
+	public void testVisitLessThanEqualExpression() throws Exception {
+		testFile("firmdata/comparison/testLessThanEqualExpression", false);
+	}
+
+	@Test
+	public void testVisitLessThanExpression() throws Exception {
+		testFile("firmdata/comparison/testLessThanExpression", false);
+	}
 }

@@ -94,6 +94,16 @@ public class FirmGenerationVisitor implements AstVisitor {
 		binaryExpression.setFirmNode(exprNode);
 	}
 
+	private void createFirmForComparisonOperation(BinaryExpression binaryExpression, final Relation comparison) {
+		createFirmForBinaryOperation(binaryExpression, new CreateBinaryFirmNode() {
+			@Override
+			public Node createNode(Node operand1, Node operand2, Mode mode) {
+				Node cmp = currentMethodConstruction.newCmp(operand1, operand2, comparison);
+				return currentMethodConstruction.newCond(cmp);
+			}
+		});
+	}
+
 	@Override
 	public void visit(AdditionExpression additionExpression) {
 		createFirmForBinaryOperation(additionExpression, new CreateBinaryFirmNode() {
@@ -137,33 +147,27 @@ public class FirmGenerationVisitor implements AstVisitor {
 
 	@Override
 	public void visit(EqualityExpression equalityExpression) {
-		createFirmForBinaryOperation(equalityExpression, new CreateBinaryFirmNode() {
-			@Override
-			public Node createNode(Node operand1, Node operand2, Mode mode) {
-				Node cmp = currentMethodConstruction.newCmp(operand1, operand2, Relation.Equal);
-				return currentMethodConstruction.newCond(cmp);
-			}
-		});
+		createFirmForComparisonOperation(equalityExpression, Relation.Equal);
 	}
 
 	@Override
 	public void visit(GreaterThanEqualExpression greaterThanEqualExpression) {
-		// TODO Auto-generated method stub
+		createFirmForComparisonOperation(greaterThanEqualExpression, Relation.GreaterEqual);
 	}
 
 	@Override
 	public void visit(GreaterThanExpression greaterThanExpression) {
-		// TODO Auto-generated method stub
+		createFirmForComparisonOperation(greaterThanExpression, Relation.Greater);
 	}
 
 	@Override
 	public void visit(LessThanEqualExpression lessThanEqualExpression) {
-		// TODO Auto-generated method stub
+		createFirmForComparisonOperation(lessThanEqualExpression, Relation.LessEqual);
 	}
 
 	@Override
 	public void visit(LessThanExpression lessThanExpression) {
-		// TODO Auto-generated method stub
+		createFirmForComparisonOperation(lessThanExpression, Relation.Less);
 	}
 
 	@Override
@@ -201,8 +205,7 @@ public class FirmGenerationVisitor implements AstVisitor {
 
 	@Override
 	public void visit(NonEqualityExpression nonEqualityExpression) {
-		// TODO Auto-generated method stub
-
+		createFirmForComparisonOperation(nonEqualityExpression, Relation.LessGreater);
 	}
 
 	@Override
