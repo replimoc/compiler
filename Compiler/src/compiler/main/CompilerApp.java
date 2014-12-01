@@ -33,7 +33,7 @@ public final class CompilerApp {
 	private static final String PRETTY_PRINT_AST = "print-ast";
 	private static final String CHECK = "check";
 	private static final String DEBUG = "debug";
-	private static final String FIRM_BACKEND = "firm-backend";
+	private static final String COMPILE_FIRM = "compile-firm";
 
 	/**
 	 * Private constructor, as no objects of this class shall be created.
@@ -56,7 +56,7 @@ public final class CompilerApp {
 		// This option (CHECK) is necessary to be compatible with the commands from the advisors.
 		options.addOption(null, CHECK, false, "checks if the given source file is valid code.");
 		options.addOption(null, DEBUG, false, "prints more detailed error messages (only useful in case of a crash)");
-		options.addOption(null, FIRM_BACKEND, true, "use the firm backend to produce amd64 code.");
+		options.addOption(null, COMPILE_FIRM, false, "use the firm backend to produce amd64 code.");
 
 		CommandLineParser commandLineParser = new BasicParser();
 		try {
@@ -107,8 +107,8 @@ public final class CompilerApp {
 					FirmUtils.initFirm();
 					FirmGraphGenerator.transformToFirm(ast, semanticResult.getClassScopes());
 
-					if (cmd.hasOption(FIRM_BACKEND)) {
-						FirmUtils.createAssembler(cmd.getOptionValue(FIRM_BACKEND));
+					if (cmd.hasOption(COMPILE_FIRM)) {
+						FirmUtils.createBinary("a.out");
 					}
 					FirmUtils.finishFirm();
 
