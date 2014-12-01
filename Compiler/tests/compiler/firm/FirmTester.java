@@ -39,7 +39,7 @@ public class FirmTester {
 			throw new Exception("program is not semantically correct");
 		}
 
-		Transformation.transformToFirm(program, semanticResults.getClassScopes());
+		FirmGraphGenerator.transformToFirm(program, semanticResults.getClassScopes());
 
 		// FirmGenerationVisitor firmGen = new FirmGenerationVisitor();
 		// program.accept(firmGen);

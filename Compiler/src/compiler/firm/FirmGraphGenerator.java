@@ -6,9 +6,9 @@ import compiler.Symbol;
 import compiler.ast.AstNode;
 import compiler.semantic.ClassScope;
 
-public class Transformation {
+public class FirmGraphGenerator {
 
-	private Transformation() {
+	private FirmGraphGenerator() {
 	}
 
 	public static void transformToFirm(AstNode ast, HashMap<Symbol, ClassScope> classScopes) {

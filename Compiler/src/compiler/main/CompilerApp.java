@@ -16,7 +16,7 @@ import org.apache.commons.cli.ParseException;
 import compiler.StringTable;
 import compiler.ast.AstNode;
 import compiler.firm.FirmUtils;
-import compiler.firm.Transformation;
+import compiler.firm.FirmGraphGenerator;
 import compiler.lexer.Lexer;
 import compiler.lexer.Token;
 import compiler.lexer.TokenType;
@@ -105,7 +105,7 @@ public final class CompilerApp {
 					}
 
 					FirmUtils.initFirm();
-					Transformation.transformToFirm(ast, semanticResult.getClassScopes());
+					FirmGraphGenerator.transformToFirm(ast, semanticResult.getClassScopes());
 
 					if (cmd.hasOption(FIRM_BACKEND)) {
 						FirmUtils.createAssembler(cmd.getOptionValue(FIRM_BACKEND));
