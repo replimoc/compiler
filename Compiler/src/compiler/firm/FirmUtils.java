@@ -3,6 +3,8 @@ package compiler.firm;
 import java.io.File;
 import java.io.IOException;
 
+import compiler.Utils;
+
 import firm.Backend;
 import firm.Firm;
 
@@ -45,29 +47,16 @@ public final class FirmUtils {
 		System.out.println(assemblerFile);
 		createAssembler(assemblerFile);
 		String gcc = "gcc";
-		if (isWindows()) {
+		if (Utils.isWindows()) {
 			gcc += ".exe";
 		}
 
-		systemExec(new String[] { gcc, "-c", assemblerFile, "-o", buildFile });
-		systemExec(new String[] { gcc, "-c", "resources/print_int.c", "-o", "resources/print_int.o" });
-		systemExec(new String[] { gcc, "-o", outputFileName, buildFile, "resources/print_int.o" });
+		Utils.systemExec(new String[] { gcc, "-c", assemblerFile, "-o", buildFile });
+		Utils.systemExec(new String[] { gcc, "-c", "resources/print_int.c", "-o", "resources/print_int.o" });
+		Utils.systemExec(new String[] { gcc, "-o", outputFileName, buildFile, "resources/print_int.o" });
 
 		assembler.delete();
 		build.delete();
-	}
-
-	public static boolean isWindows() {
-		return System.getProperty("os.name").startsWith("Windows");
-	}
-
-	public static void systemExec(String[] strings) throws IOException {
-		Process p = Runtime.getRuntime().exec(strings);
-		try {
-			p.waitFor();
-		} catch (InterruptedException e) {
-			e.printStackTrace();
-		}
 	}
 
 	public static void finishFirm() {
