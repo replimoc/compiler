@@ -1,11 +1,16 @@
 package compiler.utils;
 
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
+
 import java.io.IOException;
 import java.io.StringReader;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.util.Iterator;
+import java.util.List;
 
 import org.junit.Ignore;
 
@@ -75,5 +80,14 @@ public class TestUtils {
 		}
 
 		return program;
+	}
+
+	public static void assertLinesEqual(Path sourceFile, List<String> expected, Iterator<String> actual) {
+		int line = 1;
+		for (String expectedLine : expected) {
+			assertEquals("Error in file: " + sourceFile + " in line: " + line, expectedLine, actual.next());
+			line++;
+		}
+		assertFalse("Error in file: " + sourceFile, actual.hasNext());
 	}
 }
