@@ -58,16 +58,10 @@ public class AutomatedAstComparisionTest implements TestFileVisitor.FileTester {
 
 		try {
 			AstNode ast = parser.parse();
-
 			String printedAst = PrettyPrinter.prettyPrint(ast);
-			Scanner s = new Scanner(printedAst);
 
-			int line = 1;
-			for (String expectedLine : expectedOutput) {
-				assertEquals("Error in file: " + sourceFile + " in line: " + line, expectedLine, s.nextLine());
-				line++;
-			}
-			assertFalse(s.hasNext());
+			Scanner s = new Scanner(printedAst);
+			TestUtils.assertLinesEqual(sourceFile, expectedOutput, s);
 			s.close();
 
 			assertFalse(failingExpected);

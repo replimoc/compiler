@@ -15,8 +15,8 @@ import org.apache.commons.cli.ParseException;
 
 import compiler.StringTable;
 import compiler.ast.AstNode;
-import compiler.firm.FirmUtils;
 import compiler.firm.FirmGraphGenerator;
+import compiler.firm.FirmUtils;
 import compiler.lexer.Lexer;
 import compiler.lexer.Token;
 import compiler.lexer.TokenType;
@@ -110,7 +110,7 @@ public final class CompilerApp {
 					FirmGraphGenerator.transformToFirm(ast, semanticResult.getClassScopes());
 
 					if (cmd.hasOption(COMPILE_FIRM)) {
-						FirmUtils.createBinary("a.out");
+						FirmUtils.createBinary("a");
 					}
 
 					if (cmd.hasOption(GRAPH_FIRM)) {

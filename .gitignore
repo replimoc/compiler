@@ -13,3 +13,5 @@ bin
 /cparser
 *.o
 /Compiler/a.out
+/Compiler/tmp
+/Compiler/*.log

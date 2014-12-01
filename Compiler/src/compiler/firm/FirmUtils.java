@@ -39,9 +39,10 @@ public final class FirmUtils {
 	 * 
 	 * @param outputFileName
 	 *            File for the binary executable.
+	 * @return
 	 * @throws IOException
 	 */
-	public static void createBinary(String outputFileName) throws IOException {
+	public static String createBinary(String outputFileName) throws IOException {
 		File assembler = File.createTempFile("assembler", ".s");
 		assembler.deleteOnExit();
 		File build = File.createTempFile("build", ".o");
@@ -52,9 +53,17 @@ public final class FirmUtils {
 
 		createAssembler(assemblerFile);
 
+		if (Utils.isWindows()) {
+			outputFileName += ".exe";
+		} else {
+			outputFileName += ".out";
+		}
+
 		Utils.systemExec("gcc", "-c", assemblerFile, "-o", buildFile);
 		Utils.systemExec("gcc", "-c", "resources/print_int.c", "-o", "resources/print_int.o");
 		Utils.systemExec("gcc", "-o", outputFileName, buildFile, "resources/print_int.o");
+
+		return outputFileName;
 	}
 
 	public static void createFirmGraph() {
