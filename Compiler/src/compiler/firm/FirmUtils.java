@@ -6,7 +6,10 @@ import java.io.IOException;
 import compiler.Utils;
 
 import firm.Backend;
+import firm.Dump;
 import firm.Firm;
+import firm.Graph;
+import firm.Program;
 
 public final class FirmUtils {
 
@@ -57,6 +60,13 @@ public final class FirmUtils {
 
 		assembler.delete();
 		build.delete();
+	}
+
+	public static void createFirmGraph() {
+		for (Graph graph : Program.getGraphs()) {
+			graph.check();
+			Dump.dumpGraph(graph, "generated");
+		}
 	}
 
 	public static void finishFirm() {
