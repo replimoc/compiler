@@ -4,14 +4,14 @@ import compiler.Symbol;
 import compiler.ast.statement.unary.PostfixExpression;
 import compiler.ast.visitor.AstVisitor;
 import compiler.lexer.Position;
-import compiler.semantic.symbolTable.Definition;
+import compiler.semantic.symbolTable.MethodDefinition;
 
 public class MethodInvocationExpression extends PostfixExpression {
 
 	private final Symbol methodIdent;
 	private final Expression expression;
 	private final Expression[] parameters;
-	private Definition definition;
+	private MethodDefinition methodDefinition;
 
 	public MethodInvocationExpression(Position position, Expression leftExpression, Symbol methodIdent, Expression[] parameters) {
 		super(position, leftExpression);
@@ -41,11 +41,11 @@ public class MethodInvocationExpression extends PostfixExpression {
 		visitor.visit(this);
 	}
 
-	public Definition getDefinition() {
-		return definition;
+	public MethodDefinition getMethodDefinition() {
+		return methodDefinition;
 	}
 
-	public void setDefinition(Definition newDef) {
-		definition = newDef;
+	public void setMethodDefinition(MethodDefinition methodDefinition) {
+		this.methodDefinition = methodDefinition;
 	}
 }

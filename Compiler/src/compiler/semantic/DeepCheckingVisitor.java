@@ -359,7 +359,7 @@ public class DeepCheckingVisitor implements AstVisitor {
 		}
 
 		methodInvocationExpression.setType(methodDefinition.getType());
-
+		methodInvocationExpression.setMethodDefinition(methodDefinition);
 	}
 
 	@Override

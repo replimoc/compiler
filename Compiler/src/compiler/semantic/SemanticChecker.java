@@ -12,6 +12,7 @@ import compiler.lexer.Position;
 import compiler.semantic.exceptions.SemanticAnalysisException;
 import compiler.semantic.symbolTable.Definition;
 import compiler.semantic.symbolTable.MethodDefinition;
+import compiler.semantic.symbolTable.PrintMethodDefinition;
 import compiler.semantic.symbolTable.Scope;
 
 public final class SemanticChecker {
@@ -36,7 +37,7 @@ public final class SemanticChecker {
 			Symbol printLineSymbol = new Symbol("println");
 			Definition[] definitions = new Definition[1];
 			definitions[0] = new Definition(new Symbol("arg"), new Type(null, BasicType.INT), null);
-			psMethods.put(printLineSymbol, new MethodDefinition(printLineSymbol, new Type(null, BasicType.VOID), definitions, null));
+			psMethods.put(printLineSymbol, new PrintMethodDefinition(printLineSymbol, new Type(null, BasicType.VOID), definitions, null));
 			ClassScope printStreamScope = new ClassScope(new HashMap<Symbol, Definition>(), psMethods);
 			classScopes.put(printStream, printStreamScope);
 

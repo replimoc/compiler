@@ -46,6 +46,7 @@ import compiler.ast.type.BasicType;
 import compiler.ast.type.ClassType;
 import compiler.ast.type.Type;
 import compiler.ast.visitor.AstVisitor;
+import compiler.semantic.symbolTable.PrintMethodDefinition;
 
 import firm.Construction;
 import firm.Entity;
@@ -260,7 +261,7 @@ public class FirmGenerationVisitor implements AstVisitor {
 		MethodType firmMethodType;
 
 		// special case - System.out.println which is PrintStream::println()
-		if ("PrintStream".equals(className) && "println".equals(methodName)) {
+		if (methodInvocationExpression.getMethodDefinition() instanceof PrintMethodDefinition) {
 			paramNodes = new Node[1];
 			methodInvocationExpression.getParameters()[0].accept(this);
 			paramNodes[0] = methodInvocationExpression.getParameters()[0].getFirmNode();
@@ -272,7 +273,7 @@ public class FirmGenerationVisitor implements AstVisitor {
 			if (isObjThis) {
 				methodObject = currentMethodConstruction.getVariable(0, hierarchy.getModeRef());
 			} else {
-			methodInvocationExpression.getMethodExpression().accept(this);
+				methodInvocationExpression.getMethodExpression().accept(this);
 				System.out.println("methodInvocationExpression = " + methodInvocationExpression.getMethodExpression());
 				methodObject = methodInvocationExpression.getMethodExpression().getFirmNode();
 				System.out.println("methodObject = " + methodObject);
@@ -417,9 +418,9 @@ public class FirmGenerationVisitor implements AstVisitor {
 					currentMethodConstruction.setCurrentMem(loadMem);
 					Node loadResult = currentMethodConstruction.newProj(loadValue, fieldAccessMode, Load.pnRes);
 					variableAccessExpression.setFirmNode(loadResult);
+				}
 			}
 		}
-	}
 	}
 
 	@Override
