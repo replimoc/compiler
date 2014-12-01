@@ -206,10 +206,9 @@ public class FirmGenerationVisitor implements AstVisitor {
 		boolean isObjThis = false;
 		String className;
 
-		if(methodInvocationExpression.getMethodExpression()!= null) {
+		if (methodInvocationExpression.getMethodExpression() != null) {
 			className = methodInvocationExpression.getMethodExpression().getType().getIdentifier().getValue();
-		}
-		else {
+		} else {
 			className = currentClassName;
 			isObjThis = true;
 		}
@@ -232,7 +231,7 @@ public class FirmGenerationVisitor implements AstVisitor {
 			paramNodes = new Node[methodInvocationExpression.getParameters().length + 1];
 			// evaluate method object
 			Node methodObject;
-			if(isObjThis) {
+			if (isObjThis) {
 				methodObject = currentMethodConstruction.getVariable(0, hierarchy.getModeRef());
 			} else {
 				methodInvocationExpression.getMethodExpression().accept(this);
@@ -288,7 +287,7 @@ public class FirmGenerationVisitor implements AstVisitor {
 		Node callocClass = currentMethodConstruction.newCall(
 				currentMethodConstruction.getCurrentMem(),
 				currentMethodConstruction.newAddress(hierarchy.getCalloc()),
-				new Node[]{numberOfElements, sizeofClass}, hierarchy.getCalloc().getType());
+				new Node[] { numberOfElements, sizeofClass }, hierarchy.getCalloc().getType());
 		// update memory
 		currentMethodConstruction.setCurrentMem(currentMethodConstruction.newProj(callocClass, Mode.getM(), Call.pnM));
 		// set FirmNode to returned reference
@@ -308,7 +307,7 @@ public class FirmGenerationVisitor implements AstVisitor {
 		Node callocClass = currentMethodConstruction.newCall(
 				currentMethodConstruction.getCurrentMem(),
 				currentMethodConstruction.newAddress(hierarchy.getCalloc()),
-				new Node[]{numberOfElements, sizeofClass}, hierarchy.getCalloc().getType());
+				new Node[] { numberOfElements, sizeofClass }, hierarchy.getCalloc().getType());
 		// update memory
 		currentMethodConstruction.setCurrentMem(currentMethodConstruction.newProj(callocClass, Mode.getM(), Call.pnM));
 		// set FirmNode to returned reference
@@ -513,7 +512,6 @@ public class FirmGenerationVisitor implements AstVisitor {
 			System.out.println("variableNumber = " + variableNumber);
 			currentMethodConstruction.setVariable(variableNumber, firmNode);
 
-
 			// TODO TEMPORARY SET LAST NODE TO VARIABLE ACCESS
 			Mode variableMode = convertAstTypeToMode(localVariableDeclaration.getType());
 			Node var = currentMethodConstruction.getVariable(variableNumber, variableMode);
@@ -566,12 +564,12 @@ public class FirmGenerationVisitor implements AstVisitor {
 
 		// TODO temporary code for this week's assignment
 		if (methodDeclaration.getType().getBasicType() == BasicType.VOID) {
-			returnNode = currentMethodConstruction.newReturn(currentMethodConstruction.getCurrentMem(), new Node[]{});
+			returnNode = currentMethodConstruction.newReturn(currentMethodConstruction.getCurrentMem(), new Node[] { });
 			// returnNode.setPred(0, methodDeclaration.getBlock().getFirmNode());
 		} else {
 			Mode constMode = convertAstTypeToMode(methodDeclaration.getType());
 			Node constRet = currentMethodConstruction.newConst(0, constMode);
-			returnNode = currentMethodConstruction.newReturn(currentMethodConstruction.getCurrentMem(), new Node[]{constRet});
+			returnNode = currentMethodConstruction.newReturn(currentMethodConstruction.getCurrentMem(), new Node[] { constRet });
 
 		}
 
@@ -622,7 +620,7 @@ public class FirmGenerationVisitor implements AstVisitor {
 		// TODO: and if it does, get it, otherwise return "void" as here
 		// TODO: (if I understood correctly )if method returns void it is necessary to link last statement with return
 		// TODO: otherwise it won't appear in graph
-		Node returnNode = currentMethodConstruction.newReturn(currentMethodConstruction.getCurrentMem(), new Node[]{});
+		Node returnNode = currentMethodConstruction.newReturn(currentMethodConstruction.getCurrentMem(), new Node[] { });
 		if (staticMethodDeclaration.getBlock().getFirmNode() != null) // TODO
 			returnNode.setPred(0, staticMethodDeclaration.getBlock().getFirmNode()); // TODO
 		mainGraph.getEndBlock().addPred(returnNode);
@@ -654,15 +652,15 @@ public class FirmGenerationVisitor implements AstVisitor {
 
 	private firm.Mode convertAstTypeToMode(Type type) {
 		switch (type.getBasicType()) {
-			case INT:
-				return hierarchy.getModeInt();
-			case BOOLEAN:
-				return hierarchy.getModeBool();
-			case CLASS:
-			case ARRAY:
-				return hierarchy.getModeRef();
-			default:
-				throw new RuntimeException("convertTypeToMode for " + type + " is not implemented");
+		case INT:
+			return hierarchy.getModeInt();
+		case BOOLEAN:
+			return hierarchy.getModeBool();
+		case CLASS:
+		case ARRAY:
+			return hierarchy.getModeRef();
+		default:
+			throw new RuntimeException("convertTypeToMode for " + type + " is not implemented");
 		}
 	}
 
@@ -673,15 +671,15 @@ public class FirmGenerationVisitor implements AstVisitor {
 		}
 
 		switch (tmpType.getBasicType()) {
-			case INT:
-				return hierarchy.getModeInt();
-			case BOOLEAN:
-				return hierarchy.getModeBool();
-			case CLASS:
-			case ARRAY:
-				return hierarchy.getModeRef();
-			default:
-				throw new RuntimeException("convertTypeToMode for " + type + " is not implemented");
+		case INT:
+			return hierarchy.getModeInt();
+		case BOOLEAN:
+			return hierarchy.getModeBool();
+		case CLASS:
+		case ARRAY:
+			return hierarchy.getModeRef();
+		default:
+			throw new RuntimeException("convertTypeToMode for " + type + " is not implemented");
 		}
 	}
 
