@@ -44,16 +44,15 @@ public final class FirmUtils {
 		String assemblerFile = assembler.getAbsolutePath();
 		String buildFile = build.getAbsolutePath();
 
-		System.out.println(assemblerFile);
 		createAssembler(assemblerFile);
 		String gcc = "gcc";
 		if (Utils.isWindows()) {
 			gcc += ".exe";
 		}
 
-		Utils.systemExec(new String[] { gcc, "-c", assemblerFile, "-o", buildFile });
-		Utils.systemExec(new String[] { gcc, "-c", "resources/print_int.c", "-o", "resources/print_int.o" });
-		Utils.systemExec(new String[] { gcc, "-o", outputFileName, buildFile, "resources/print_int.o" });
+		Utils.systemExec(gcc, "-c", assemblerFile, "-o", buildFile);
+		Utils.systemExec(gcc, "-c", "resources/print_int.c", "-o", "resources/print_int.o");
+		Utils.systemExec(gcc, "-o", outputFileName, buildFile, "resources/print_int.o");
 
 		assembler.delete();
 		build.delete();
