@@ -8,6 +8,8 @@ import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.List;
 
+import org.junit.After;
+import org.junit.Before;
 import org.junit.Test;
 
 import compiler.Utils;
@@ -27,12 +29,22 @@ public class AutomatedOutputComparisonTest implements TestFileVisitor.FileTester
 
 	private static final String OUTPUT_FILE_EXTENSION = ".result";
 
+	@Before
+	public void initFirm() {
+		FirmUtils.initFirm();
+	}
+
 	@Test
 	public void testCompareOutputWithJava() throws Exception {
 		Path testDir = Paths.get("testdata");
 		TestFileVisitor parserTester = new TestFileVisitor(OUTPUT_FILE_EXTENSION, this);
 		Files.walkFileTree(testDir, parserTester);
 		parserTester.checkForFailedTests();
+	}
+
+	@After
+	public void finishFirm() {
+		FirmUtils.finishFirm();
 	}
 
 	@Override
@@ -47,10 +59,8 @@ public class AutomatedOutputComparisonTest implements TestFileVisitor.FileTester
 		semanticResults = SemanticChecker.checkSemantic(ast);
 		assertFalse(semanticResults.hasErrors());
 
-		FirmUtils.initFirm();
 		FirmGraphGenerator.transformToFirm(ast, semanticResults.getClassScopes());
 		String generatedExecutable = FirmUtils.createBinary("tmp/a");
-		FirmUtils.finishFirm();
 
 		List<String> actualOutput = Utils.systemExec(generatedExecutable);
 		List<String> expectedOutput = Files.readAllLines(expectedFile, StandardCharsets.US_ASCII);
