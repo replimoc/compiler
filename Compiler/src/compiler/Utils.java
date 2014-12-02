@@ -17,13 +17,13 @@ public class Utils {
 	}
 
 	public static List<String> systemExec(String... strings) throws IOException {
-		Process p = Runtime.getRuntime().exec(strings);
+		ProcessBuilder builder = new ProcessBuilder(strings);
+		builder.redirectErrorStream(true);
 		try {
-			p.waitFor();
+			Process process = builder.start();
+			process.waitFor();
 
-			List<String> outputLines = readOutput(p.getInputStream());
-			outputLines.addAll(readOutput(p.getErrorStream()));
-			return outputLines;
+			return readOutput(process.getInputStream());
 		} catch (InterruptedException e) {
 			e.printStackTrace();
 			return Collections.emptyList();
