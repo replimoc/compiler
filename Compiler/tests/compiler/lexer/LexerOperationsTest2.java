@@ -8,7 +8,7 @@ import compiler.utils.TestUtils;
 /**
  * Test other operators - brackets, commas, etc
  * <p/>
- * ops: ( , ), , ,  . , : , ? , ;, [ , ], { , }
+ * ops: ( , ), , , . , : , ? , ;, [ , ], { , }
  *
  * @author effenok
  */

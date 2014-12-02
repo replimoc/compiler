@@ -36,7 +36,7 @@ public class Block extends Statement {
 	public int getNumberOfStatements() {
 		return statements.size();
 	}
-	
+
 	public boolean isEmpty() {
 		return statements.isEmpty();
 	}

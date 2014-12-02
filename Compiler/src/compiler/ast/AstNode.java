@@ -9,7 +9,7 @@ public abstract class AstNode {
 
 	private final Position position;
 	private Type type;
-    private firm.nodes.Node firmNode;
+	private firm.nodes.Node firmNode;
 
 	public AstNode(Position position) {
 		this.position = position;
@@ -29,11 +29,11 @@ public abstract class AstNode {
 		this.type = type;
 	}
 
-    public Node getFirmNode() {
-        return firmNode;
-    }
+	public Node getFirmNode() {
+		return firmNode;
+	}
 
-    public void setFirmNode(Node firmNode) {
-        this.firmNode = firmNode;
-    }
+	public void setFirmNode(Node firmNode) {
+		this.firmNode = firmNode;
+	}
 }

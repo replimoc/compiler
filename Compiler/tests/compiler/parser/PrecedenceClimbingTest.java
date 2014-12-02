@@ -125,7 +125,8 @@ public class PrecedenceClimbingTest {
 	}
 
 	private String callParseExpression(Parser parser) {
-		return PrettyPrinter.prettyPrint((Expression) privateMethodCaller.call("parseExpression", parser, new Class<?>[] { int.class }, new Object[] { 0 }));
+		return PrettyPrinter.prettyPrint((Expression) privateMethodCaller.call("parseExpression", parser, new Class<?>[] { int.class },
+				new Object[] { 0 }));
 	}
 
 }

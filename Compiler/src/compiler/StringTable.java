@@ -5,21 +5,20 @@ import java.util.HashMap;
 import compiler.lexer.TokenType;
 
 /**
- * Implementation of StringTable: Data Structure storing identifiers for efficient lookup.
- * The stored object is called Symbol.
+ * Implementation of StringTable: Data Structure storing identifiers for efficient lookup. The stored object is called Symbol.
  * 
  * @author Aleksej Frank
  *
  */
 public class StringTable {
-	
+
 	/**
 	 * Entry in StringTable
 	 */
 	public class Entry {
 		private final Symbol symbol;
 		private final TokenType type;
-		
+
 		public Entry(String string, TokenType type) {
 			this.symbol = new Symbol(string);
 			this.type = type;
@@ -38,7 +37,9 @@ public class StringTable {
 
 	/**
 	 * Returns corresponding symbol for given string.
-	 * @param string String to store.
+	 * 
+	 * @param string
+	 *            String to store.
 	 * @return Symbol representing given string.
 	 */
 	public Entry insert(String string, TokenType type) {
@@ -49,6 +50,6 @@ public class StringTable {
 		}
 		return entry;
 	}
-	
-	//insert_token_type
+
+	// insert_token_type
 }
