@@ -2,9 +2,9 @@ package compiler.firm;
 
 import java.io.File;
 import java.io.IOException;
+import java.util.List;
 
 import compiler.Utils;
-
 import firm.Backend;
 import firm.Dump;
 import firm.Firm;
@@ -59,11 +59,17 @@ public final class FirmUtils {
 			outputFileName += ".out";
 		}
 
-		Utils.systemExec("gcc", "-c", assemblerFile, "-o", buildFile);
-		Utils.systemExec("gcc", "-c", "resources/print_int.c", "-o", "resources/print_int.o");
-		Utils.systemExec("gcc", "-o", outputFileName, buildFile, "resources/print_int.o");
+		printOutput(Utils.systemExec("gcc", "-c", assemblerFile, "-o", buildFile));
+		printOutput(Utils.systemExec("gcc", "-c", "resources/print_int.c", "-o", "resources/print_int.o"));
+		printOutput(Utils.systemExec("gcc", "-o", outputFileName, buildFile, "resources/print_int.o"));
 
 		return outputFileName;
+	}
+	
+	private static void printOutput(List<String> output) {
+		for (String line : output) {
+			System.out.println(line);
+		}
 	}
 
 	public static void createFirmGraph() {
