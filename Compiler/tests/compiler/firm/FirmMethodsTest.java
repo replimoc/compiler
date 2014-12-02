@@ -11,9 +11,16 @@ import compiler.utils.TestUtils;
 
 public class FirmMethodsTest {
 
+	public void setUp() {
+		FirmUtils.initFirm();
+	}
+
+	public void tearDown() {
+		FirmUtils.finishFirm();
+	}
+
 	@Test
 	public void testjFirmInit() throws Exception {
-		FirmUtils.initFirm();
 
 		compiler.ast.Program ast = TestUtils.getAstForFile("firmdata/methodsTest.java");
 		assertEquals(1, ast.getClasses().size());
@@ -30,7 +37,6 @@ public class FirmMethodsTest {
 
 		FirmTestUtils.assertExportEquals("firmdata/testjFirmInit");
 
-		FirmUtils.finishFirm();
 	}
 
 }
