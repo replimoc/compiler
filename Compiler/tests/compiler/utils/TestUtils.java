@@ -82,12 +82,14 @@ public class TestUtils {
 		return program;
 	}
 
-	public static void assertLinesEqual(Path sourceFile, List<String> expected, Iterator<String> actual) {
+	public static void assertLinesEqual(Path sourceFile, List<String> expected, Iterator<String> actualIter) {
 		int line = 1;
-		for (String expectedLine : expected) {
-			assertEquals("Error in file: " + sourceFile + " in line: " + line, expectedLine, actual.next());
+		Iterator<String> expectedIter = expected.iterator();
+		while (expectedIter.hasNext() && actualIter.hasNext()) {
+			assertEquals("Error in file: " + sourceFile + " in line: " + line, expectedIter.next(), actualIter.next());
 			line++;
 		}
-		assertFalse("Error in file: " + sourceFile, actual.hasNext());
+		assertFalse("Error in file: " + sourceFile, actualIter.hasNext());
+		assertFalse("Error in file: " + sourceFile, expectedIter.hasNext());
 	}
 }
