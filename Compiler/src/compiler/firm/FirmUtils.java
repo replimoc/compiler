@@ -2,8 +2,11 @@ package compiler.firm;
 
 import java.io.File;
 import java.io.IOException;
+import java.util.List;
 
+import compiler.utils.Pair;
 import compiler.utils.Utils;
+
 import firm.Backend;
 import firm.Dump;
 import firm.Firm;
@@ -52,13 +55,24 @@ public final class FirmUtils {
 
 		createAssembler(assemblerFile);
 
-		outputFileName = Utils.getBinaryFileName(outputFileName);
+		if (Utils.isWindows()) {
+			outputFileName += ".exe";
+		} else {
+			outputFileName += ".out";
+		}
 
-		Utils.systemExec("gcc", "-c", assemblerFile, "-o", buildFile);
-		Utils.systemExec("gcc", "-c", "resources/print_int.c", "-o", "resources/print_int.o");
-		Utils.systemExec("gcc", "-o", outputFileName, buildFile, "resources/print_int.o");
+		printOutput(Utils.systemExec("gcc", "-c", assemblerFile, "-o", buildFile));
+		printOutput(Utils.systemExec("gcc", "-c", "resources/print_int.c", "-o", "resources/print_int.o"));
+		printOutput(Utils.systemExec("gcc", "-o", outputFileName, buildFile, "resources/print_int.o"));
 
 		return outputFileName;
+	}
+
+	private static void printOutput(Pair<Integer, List<String>> executionState) {
+		System.out.println("Exit code: " + executionState.getFirst());
+		for (String line : executionState.getSecond()) {
+			System.out.println(line);
+		}
 	}
 
 	public static void createFirmGraph() {
