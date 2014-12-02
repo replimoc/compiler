@@ -15,3 +15,4 @@ bin
 /Compiler/a.out
 /Compiler/tmp
 /Compiler/*.log
+/Compiler/a.exe
