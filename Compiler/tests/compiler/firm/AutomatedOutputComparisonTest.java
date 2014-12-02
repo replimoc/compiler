@@ -54,7 +54,7 @@ public class AutomatedOutputComparisonTest implements TestFileVisitor.FileTester
 		}
 		assertEquals("compiling failed for " + sourceFile, 0, compilingState.getFirst().intValue());
 
-		Pair<Integer, List<String>> executionState = Utils.systemExec(Utils.getBinaryFileName("a"));
+		Pair<Integer, List<String>> executionState = Utils.systemExec(Utils.getBinaryFileName("./a"));
 		// assertEquals("execution of assembly failed for " + sourceFile, 0, executionState.getFirst().intValue());
 
 		List<String> expectedOutput = Files.readAllLines(expectedFile, StandardCharsets.US_ASCII);
