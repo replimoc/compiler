@@ -523,8 +523,37 @@ public class FirmGenerationVisitor implements AstVisitor {
 
 	@Override
 	public void visit(IfStatement ifStatement) {
-		// TODO Auto-generated method stub
+		Mode mode = Mode.getX();
+		Node cond = ifStatement.getCondition().getFirmNode();
 
+		Node condTrue = currentMethodConstruction.newProj(cond, mode, 1);
+		Node condFalse = currentMethodConstruction.newProj(cond, mode, 0);
+
+		// true block
+		firm.nodes.Block trueBlock = (firm.nodes.Block) currentMethodConstruction.newBlock(new Node[] { condTrue });
+		trueBlock.mature();
+		// set new block as active and visit true case
+		currentMethodConstruction.setCurrentBlock(trueBlock);
+		ifStatement.getTrueCase().accept(this);
+		Node trueJmp = currentMethodConstruction.newJmp();
+
+		// false block
+		firm.nodes.Block falseBlock = (firm.nodes.Block) currentMethodConstruction.newBlock(new Node[] { condFalse });
+		falseBlock.mature();
+		// set new block as active and visit false case
+		currentMethodConstruction.setCurrentBlock(falseBlock);
+		ifStatement.getFalseCase().accept(this);
+		Node falseJmp = currentMethodConstruction.newJmp();
+
+		// endif block
+		firm.nodes.Block endifBlock = (firm.nodes.Block) currentMethodConstruction.newBlock();
+		endifBlock.addPred(trueJmp);
+		endifBlock.addPred(falseJmp);
+		endifBlock.mature();
+		currentMethodConstruction.setCurrentBlock(endifBlock);
+
+		// TODO: set endif as firm node?
+		ifStatement.setFirmNode(endifBlock);
 	}
 
 	@Override

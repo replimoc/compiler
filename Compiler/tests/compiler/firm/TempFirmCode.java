@@ -174,7 +174,7 @@ public class TempFirmCode {
 	/**
 	 * class A{
 	 *
-	 * int method([A this,] int cntr){ if(5 == 3) {return 8;} return 9;} }
+	 * int method([A this,] int cntr){ if(5 == 3) {cntr = 6;} else {cntr = 10;}return cntr;} }
 	 * 
 	 */
 	public static void createMethodWithComparison() {
@@ -215,25 +215,33 @@ public class TempFirmCode {
 		Node cond = construction.newCond(equals);
 		Node condTrue = construction.newProj(cond, Mode.getX(), 1);
 		Node condFalse = construction.newProj(cond, Mode.getX(), 0);
+		construction.getCurrentBlock().mature();
 
 		// true block
 		Node trueBlock = construction.newBlock(new Node[] { condTrue });
-		Node const8 = construction.newConst(8, modeInt);
-		Node trueReturn = construction.newReturn(construction.newNoMem(), new Node[] { const8 });
-		trueReturn.setPred(0, construction.getCurrentMem());
-		trueReturn.setBlock(trueBlock);
+		construction.setCurrentBlock((firm.nodes.Block) trueBlock);
+		Node const6 = construction.newConst(6, modeInt);
+		construction.setVariable(varCntrNum, const6);
+		Node trueJmp = construction.newJmp();
 
 		// false block
 		Node falseBlock = construction.newBlock(new Node[] { condFalse });
-		Node const9 = construction.newConst(9, modeInt);
-		Node falseReturn = construction.newReturn(construction.newNoMem(), new Node[] { const9 });
-		falseReturn.setPred(0, construction.getCurrentMem());
-		falseReturn.setBlock(falseBlock);
+		construction.setCurrentBlock((firm.nodes.Block) falseBlock);
+		Node const10 = construction.newConst(10, modeInt);
+		construction.setVariable(varCntrNum, const10);
+		Node falseJmp = construction.newJmp();
+
+		// endif
+		firm.nodes.Block endifBlock = (firm.nodes.Block) construction.newBlock();
+		endifBlock.addPred(trueJmp);
+		endifBlock.addPred(falseJmp);
+		construction.setCurrentBlock(endifBlock);
 
 		// ------------------------- method return statement --------------------------------
 
-		graph.getEndBlock().addPred(trueReturn);
-		graph.getEndBlock().addPred(falseReturn);
+		Node node = construction.newReturn(construction.getCurrentMem(), new Node[] { construction.getVariable(varCntrNum, modeInt) });
+
+		graph.getEndBlock().addPred(node);
 		construction.setUnreachable();
 		construction.finish();
 	}
