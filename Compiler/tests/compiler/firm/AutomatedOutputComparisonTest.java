@@ -1,6 +1,6 @@
 package compiler.firm;
 
-import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertEquals;
 
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
@@ -12,13 +12,10 @@ import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
 
-import compiler.Utils;
-import compiler.ast.AstNode;
-import compiler.parser.Parser;
-import compiler.semantic.SemanticCheckResults;
-import compiler.semantic.SemanticChecker;
+import compiler.utils.Pair;
 import compiler.utils.TestFileVisitor;
 import compiler.utils.TestUtils;
+import compiler.utils.Utils;
 
 /**
  * Test case for correct output of compiler with only parse phase
@@ -51,19 +48,16 @@ public class AutomatedOutputComparisonTest implements TestFileVisitor.FileTester
 	public void testSourceFile(Path sourceFile, Path expectedFile) throws Exception {
 		System.out.println("Testing execution result of " + sourceFile);
 
-		AstNode ast;
-		SemanticCheckResults semanticResults;
-		Parser parser = TestUtils.initParser(sourceFile);
+		Pair<Integer, List<String>> compilingState = TestUtils.startCompilerApp("--compile-firm", sourceFile.toAbsolutePath().toString());
+		for (String line : compilingState.getSecond()) {
+			System.out.println(line);
+		}
+		assertEquals("compiling failed for " + sourceFile, 0, compilingState.getFirst().intValue());
 
-		ast = parser.parse();
-		semanticResults = SemanticChecker.checkSemantic(ast);
-		assertFalse(semanticResults.hasErrors());
+		Pair<Integer, List<String>> executionState = Utils.systemExec(Utils.getBinaryFileName("a"));
+		// assertEquals("execution of assembly failed for " + sourceFile, 0, executionState.getFirst().intValue());
 
-		FirmGraphGenerator.transformToFirm(ast, semanticResults.getClassScopes());
-		String generatedExecutable = FirmUtils.createBinary("tmp/a");
-
-		List<String> actualOutput = Utils.systemExec(generatedExecutable);
 		List<String> expectedOutput = Files.readAllLines(expectedFile, StandardCharsets.US_ASCII);
-		TestUtils.assertLinesEqual(sourceFile, expectedOutput, actualOutput.iterator());
+		TestUtils.assertLinesEqual(sourceFile, expectedOutput, executionState.getSecond().iterator());
 	}
 }

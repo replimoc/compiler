@@ -3,8 +3,7 @@ package compiler.firm;
 import java.io.File;
 import java.io.IOException;
 
-import compiler.Utils;
-
+import compiler.utils.Utils;
 import firm.Backend;
 import firm.Dump;
 import firm.Firm;
@@ -53,11 +52,7 @@ public final class FirmUtils {
 
 		createAssembler(assemblerFile);
 
-		if (Utils.isWindows()) {
-			outputFileName += ".exe";
-		} else {
-			outputFileName += ".out";
-		}
+		outputFileName = Utils.getBinaryFileName(outputFileName);
 
 		Utils.systemExec("gcc", "-c", assemblerFile, "-o", buildFile);
 		Utils.systemExec("gcc", "-c", "resources/print_int.c", "-o", "resources/print_int.o");

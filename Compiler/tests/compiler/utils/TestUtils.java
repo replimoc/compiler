@@ -9,6 +9,7 @@ import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
 
@@ -17,6 +18,7 @@ import org.junit.Ignore;
 import compiler.StringTable;
 import compiler.lexer.Lexer;
 import compiler.lexer.TokenType;
+import compiler.main.CompilerApp;
 import compiler.parser.Parser;
 import compiler.semantic.SemanticCheckResults;
 import compiler.semantic.SemanticChecker;
@@ -91,5 +93,18 @@ public class TestUtils {
 		}
 		assertFalse("Error in file: " + sourceFile, actualIter.hasNext());
 		assertFalse("Error in file: " + sourceFile, expectedIter.hasNext());
+	}
+
+	public static Pair<Integer, List<String>> startCompilerApp(String... args) throws IOException {
+		String classpath = System.getProperty("java.class.path");
+		List<String> arguments = new ArrayList<String>();
+		arguments.add("java");
+		arguments.add("-cp");
+		arguments.add(classpath);
+		arguments.add(CompilerApp.class.getName());
+		for (String arg : args) {
+			arguments.add(arg);
+		}
+		return Utils.runProcessBuilder(new ProcessBuilder(arguments));
 	}
 }
