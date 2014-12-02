@@ -524,6 +524,8 @@ public class FirmGenerationVisitor implements AstVisitor {
 	@Override
 	public void visit(IfStatement ifStatement) {
 		Mode mode = Mode.getX();
+		// replace with short evaluation
+		ifStatement.accept(this);
 		Node cond = ifStatement.getCondition().getFirmNode();
 
 		Node condTrue = currentMethodConstruction.newProj(cond, mode, 1);
