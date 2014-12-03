@@ -2,16 +2,20 @@ package compiler.firm;
 
 import static org.junit.Assert.assertEquals;
 
+import org.junit.After;
+import org.junit.Before;
 import org.junit.Test;
 
 import compiler.utils.TestUtils;
 
 public class FirmMethodsTest {
 
+	@Before
 	public void setUp() {
 		FirmUtils.initFirm();
 	}
 
+	@After
 	public void tearDown() {
 		FirmUtils.finishFirm();
 	}
