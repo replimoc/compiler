@@ -32,7 +32,7 @@ public class AutomatedOutputComparisonTest implements TestFileVisitor.FileTester
 	}
 
 	@Test
-	public void testCompareOutputWithJava() throws Exception {
+	public void testCompareOutputWithReference() throws Exception {
 		Path testDir = Paths.get("testdata");
 		TestFileVisitor parserTester = new TestFileVisitor(OUTPUT_FILE_EXTENSION, this);
 		Files.walkFileTree(testDir, parserTester);
