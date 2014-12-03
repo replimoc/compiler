@@ -1,7 +1,7 @@
 class Test {
 	public static void main(String[] args) {
 		int x;
-		Test test = null:
+		Test test = new Test():
 		
 		if(false && test.method()) {
 			x = 42;
@@ -12,5 +12,7 @@ class Test {
 		System.out.println(x);
 	}
 	
-	public void method() {}
+	public void method() {
+		System.out.printlnt(666);
+	}
 }
