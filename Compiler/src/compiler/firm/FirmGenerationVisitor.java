@@ -126,14 +126,15 @@ public class FirmGenerationVisitor implements AstVisitor {
 		// first evaluate rhsExpression, that let lhsExpression decide what to do with rhsExpression;
 
 		Expression rhsExpression = assignmentExpression.getOperand2();
-		assert rhsExpression != null; // TODO is this true
+		assert rhsExpression != null;
 		rhsExpression.accept(this);
 
 		lastRvalueNode = rhsExpression.getFirmNode();
 		Expression lhsExpression = assignmentExpression.getOperand1();
 		System.out.println("lhsExpression.getClass() = " + lhsExpression.getClass());
 		lhsExpression.accept(this);
-		assignmentExpression.setFirmNode(currentMethodConstruction.getCurrentMem());
+		lastRvalueNode = null;
+		assignmentExpression.setFirmNode(lhsExpression.getFirmNode());
 	}
 
 	@Override
@@ -303,9 +304,7 @@ public class FirmGenerationVisitor implements AstVisitor {
 
 		// get result
 		if (firmMethodType.getNRess() == 0) {
-			// method is void;
-			// TODO mem or void? mem leaves fewer warnings :)
-			methodInvocationExpression.setFirmNode(memAfterCall);
+			methodInvocationExpression.setFirmNode(null);
 		} else {
 			Node methodResult = currentMethodConstruction.newProj(methodCall, Mode.getT(), Call.pnTResult);
 			Node resultValue = currentMethodConstruction.newProj(methodResult, firmMethodType.getResType(0).getMode(), 0);
@@ -378,6 +377,7 @@ public class FirmGenerationVisitor implements AstVisitor {
 				Node storeValue = currentMethodConstruction.newStore(currentMethodConstruction.getCurrentMem(), addrOfField, lastRvalueNode);
 				Node memAfterStore = currentMethodConstruction.newProj(storeValue, Mode.getM(), Store.pnM);
 				currentMethodConstruction.setCurrentMem(memAfterStore);
+				variableAccessExpression.setFirmNode(lastRvalueNode);
 			} else {
 				Mode fieldAccessMode = field.getType().getMode();
 				Node loadValue = currentMethodConstruction.newLoad(currentMethodConstruction.getCurrentMem(), addrOfField, fieldAccessMode);
@@ -394,15 +394,13 @@ public class FirmGenerationVisitor implements AstVisitor {
 				if (lastRvalueNode != null) {
 					// this is variable set expression:
 					currentMethodConstruction.setVariable(variableNumber, lastRvalueNode);
-					// TODO set node to variable access or current mem?
-					// clear value
-					lastRvalueNode = null;
+					variableAccessExpression.setFirmNode(lastRvalueNode);
+				} else {
+					Type astType = variableAccessExpression.getDefinition().getType();
+					Mode accessMode = convertAstTypeToMode(astType);
+					Node node = currentMethodConstruction.getVariable(variableNumber, accessMode);
+					variableAccessExpression.setFirmNode(node);
 				}
-
-				Type astType = variableAccessExpression.getDefinition().getType();
-				Mode accessMode = convertAstTypeToMode(astType);
-				Node node = currentMethodConstruction.getVariable(variableNumber, accessMode);
-				variableAccessExpression.setFirmNode(node);
 			} else {
 				String thisClassName = currentClassName;
 				Entity field = hierarchy.getFieldEntity(thisClassName, variableAccessExpression.getFieldIdentifier().getValue());
@@ -413,6 +411,7 @@ public class FirmGenerationVisitor implements AstVisitor {
 					Node storeValue = currentMethodConstruction.newStore(currentMethodConstruction.getCurrentMem(), addrOfField, lastRvalueNode);
 					Node memAfterStore = currentMethodConstruction.newProj(storeValue, Mode.getM(), Store.pnM);
 					currentMethodConstruction.setCurrentMem(memAfterStore);
+					variableAccessExpression.setFirmNode(lastRvalueNode);
 				} else {
 					Mode fieldAccessMode = field.getType().getMode();
 					Node loadValue = currentMethodConstruction.newLoad(currentMethodConstruction.getCurrentMem(), addrOfField, fieldAccessMode);
@@ -526,48 +525,47 @@ public class FirmGenerationVisitor implements AstVisitor {
 	@Override
 	public void visit(IfStatement ifStatement) {
 		Mode mode = Mode.getX();
-		// replace with short evaluation
+		// TODO replace with short evaluation
 		ifStatement.getCondition().accept(this);
 
-		Node cond;
+		Node conditionNode;
 		// TODO: optimize boolean constants!
 		if (ifStatement.getCondition() instanceof BooleanConstantExpression) {
 			Node trueConst = currentMethodConstruction.newConst(1, hierarchy.getModeBool());
 			Node cmp = currentMethodConstruction.newCmp(ifStatement.getCondition().getFirmNode(), trueConst, Relation.Equal);
-			cond = currentMethodConstruction.newCond(cmp);
+			conditionNode = currentMethodConstruction.newCond(cmp);
 		} else {
-			cond = ifStatement.getCondition().getFirmNode();
+			conditionNode = ifStatement.getCondition().getFirmNode();
 		}
-		Node condTrue = currentMethodConstruction.newProj(cond, mode, 1);
-		Node condFalse = currentMethodConstruction.newProj(cond, mode, 0);
+		Node condTrue = currentMethodConstruction.newProj(conditionNode, mode, 1);
+		Node condFalse = currentMethodConstruction.newProj(conditionNode, mode, 0);
 
 		// true block
-		firm.nodes.Block trueBlock = (firm.nodes.Block) currentMethodConstruction.newBlock();
+		firm.nodes.Block trueBlock = currentMethodConstruction.newBlock();
+		trueBlock.addPred(condTrue);
+		trueBlock.mature();
 		// set new block as active and visit true case
 		currentMethodConstruction.setCurrentBlock(trueBlock);
 		ifStatement.getTrueCase().accept(this);
 		Node trueJmp = currentMethodConstruction.newJmp();
-		trueBlock.addPred(condTrue);
-		trueBlock.mature();
 
 		// false block
-		firm.nodes.Block falseBlock = (firm.nodes.Block) currentMethodConstruction.newBlock();
+		firm.nodes.Block falseBlock = currentMethodConstruction.newBlock();
+		falseBlock.addPred(condFalse);
+		falseBlock.mature();
 		// set new block as active and visit false case
 		currentMethodConstruction.setCurrentBlock(falseBlock);
 		ifStatement.getFalseCase().accept(this);
 		Node falseJmp = currentMethodConstruction.newJmp();
-		falseBlock.addPred(condFalse);
-		falseBlock.mature();
 
 		// endif block
-		firm.nodes.Block endifBlock = (firm.nodes.Block) currentMethodConstruction.newBlock();
+		firm.nodes.Block endifBlock = currentMethodConstruction.newBlock();
 		endifBlock.addPred(trueJmp);
 		endifBlock.addPred(falseJmp);
-		currentMethodConstruction.setCurrentBlock(endifBlock);
 		endifBlock.mature();
+		currentMethodConstruction.setCurrentBlock(endifBlock);
 
-		// TODO: what node to set?
-		ifStatement.setFirmNode(currentMethodConstruction.getCurrentMem());
+		ifStatement.setFirmNode(null);
 	}
 
 	@Override
@@ -652,7 +650,6 @@ public class FirmGenerationVisitor implements AstVisitor {
 			Mode constMode = convertAstTypeToMode(methodDeclaration.getType());
 			Node constRet = currentMethodConstruction.newConst(0, constMode);
 			returnNode = currentMethodConstruction.newReturn(currentMethodConstruction.getCurrentMem(), new Node[] { constRet });
-
 		}
 
 		graph.getEndBlock().addPred(returnNode);
@@ -702,9 +699,13 @@ public class FirmGenerationVisitor implements AstVisitor {
 		// TODO: and if it does, get it, otherwise return "void" as here
 		// TODO: (if I understood correctly )if method returns void it is necessary to link last statement with return
 		// TODO: otherwise it won't appear in graph
-		Node returnNode = currentMethodConstruction.newReturn(currentMethodConstruction.getCurrentMem(), new Node[] {});
-		if (staticMethodDeclaration.getBlock().getFirmNode() != null) // TODO
-			returnNode.setPred(0, staticMethodDeclaration.getBlock().getFirmNode()); // TODO
+		Node[] returns;
+		if (staticMethodDeclaration.getBlock().getFirmNode() != null) {
+			returns = new Node[] { staticMethodDeclaration.getBlock().getFirmNode() };
+		} else {
+			returns = new Node[] {};
+		}
+		Node returnNode = currentMethodConstruction.newReturn(currentMethodConstruction.getCurrentMem(), returns);
 		mainGraph.getEndBlock().addPred(returnNode);
 
 		currentMethodConstruction.setUnreachable();
