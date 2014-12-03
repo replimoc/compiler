@@ -61,6 +61,8 @@ public class AutomatedAstComparisionTest implements TestFileVisitor.FileTester {
 			String printedAst = PrettyPrinter.prettyPrint(ast);
 
 			Scanner s = new Scanner(printedAst);
+			s.useDelimiter("\n"); // separate at new lines
+
 			TestUtils.assertLinesEqual(sourceFile, expectedOutput, s);
 			s.close();
 
