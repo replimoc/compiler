@@ -395,6 +395,8 @@ public class FirmGenerationVisitor implements AstVisitor {
 					// this is variable set expression:
 					currentMethodConstruction.setVariable(variableNumber, lastRvalueNode);
 					// TODO set node to variable access or current mem?
+					// clear value
+					lastRvalueNode = null;
 				}
 
 				Type astType = variableAccessExpression.getDefinition().getType();
@@ -561,11 +563,11 @@ public class FirmGenerationVisitor implements AstVisitor {
 		firm.nodes.Block endifBlock = (firm.nodes.Block) currentMethodConstruction.newBlock();
 		endifBlock.addPred(trueJmp);
 		endifBlock.addPred(falseJmp);
-		endifBlock.mature();
 		currentMethodConstruction.setCurrentBlock(endifBlock);
+		endifBlock.mature();
 
 		// TODO: what node to set?
-		ifStatement.setFirmNode(null);
+		ifStatement.setFirmNode(currentMethodConstruction.getCurrentMem());
 	}
 
 	@Override
