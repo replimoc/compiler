@@ -13,6 +13,7 @@ import firm.PrimitiveType;
 import firm.Program;
 import firm.Relation;
 import firm.Type;
+import firm.nodes.Block;
 import firm.nodes.Call;
 import firm.nodes.Load;
 import firm.nodes.Node;
@@ -189,7 +190,7 @@ public class TempFirmCode {
 
 		// define method "method"
 		MethodType A__method_Type = new MethodType(new Type[] { reference_to_A, intType }, new Type[] { intType });
-		Entity A__method = new Entity(classA, "methodWithComparison(A,I)V", A__method_Type);
+		Entity A__method = new Entity(classA, "methodWithComparison(A,I)I", A__method_Type);
 
 		// create graph for entity A::method
 		int varThisNum = 0;
@@ -218,28 +219,33 @@ public class TempFirmCode {
 		construction.getCurrentBlock().mature();
 
 		// true block
-		Node trueBlock = construction.newBlock(new Node[] { condTrue });
-		construction.setCurrentBlock((firm.nodes.Block) trueBlock);
+		Block trueBlock = construction.newBlock();
+		trueBlock.addPred(condTrue);
+		trueBlock.mature();
+		construction.setCurrentBlock(trueBlock);
 		Node const6 = construction.newConst(6, modeInt);
 		construction.setVariable(varCntrNum, const6);
 		Node trueJmp = construction.newJmp();
 
 		// false block
-		Node falseBlock = construction.newBlock(new Node[] { condFalse });
-		construction.setCurrentBlock((firm.nodes.Block) falseBlock);
+		Block falseBlock = construction.newBlock();
+		falseBlock.addPred(condFalse);
+		falseBlock.mature();
+		construction.setCurrentBlock(falseBlock);
 		Node const10 = construction.newConst(10, modeInt);
 		construction.setVariable(varCntrNum, const10);
 		Node falseJmp = construction.newJmp();
 
 		// endif
-		firm.nodes.Block endifBlock = (firm.nodes.Block) construction.newBlock();
+		firm.nodes.Block endifBlock = construction.newBlock();
 		endifBlock.addPred(trueJmp);
 		endifBlock.addPred(falseJmp);
+		endifBlock.mature();
 		construction.setCurrentBlock(endifBlock);
 
 		// ------------------------- method return statement --------------------------------
 
-		Node node = construction.newReturn(construction.getCurrentMem(), new Node[] { construction.getVariable(varCntrNum, modeInt) });
+		Node node = construction.newReturn(construction.getCurrentMem(), new Node[] {construction.getVariable(varCntrNum, modeInt)});
 
 		graph.getEndBlock().addPred(node);
 		construction.setUnreachable();
