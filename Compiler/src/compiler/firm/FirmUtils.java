@@ -49,6 +49,8 @@ public final class FirmUtils {
 		assembler.deleteOnExit();
 		File build = File.createTempFile("build", ".o");
 		build.deleteOnExit();
+		String printIntO = "resources/print_int.o";
+		new File(printIntO).deleteOnExit();
 
 		String assemblerFile = assembler.getAbsolutePath();
 		String buildFile = build.getAbsolutePath();
@@ -62,8 +64,8 @@ public final class FirmUtils {
 		}
 
 		printOutput(Utils.systemExec("gcc", "-c", assemblerFile, "-o", buildFile));
-		printOutput(Utils.systemExec("gcc", "-c", "resources/print_int.c", "-o", "resources/print_int.o"));
-		printOutput(Utils.systemExec("gcc", "-o", outputFileName, buildFile, "resources/print_int.o"));
+		printOutput(Utils.systemExec("gcc", "-c", "resources/print_int.c", "-o", printIntO));
+		printOutput(Utils.systemExec("gcc", "-o", outputFileName, buildFile, printIntO));
 
 		return outputFileName;
 	}
