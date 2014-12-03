@@ -226,6 +226,7 @@ public class TempFirmCode {
 		Node const6 = construction.newConst(6, modeInt);
 		construction.setVariable(varCntrNum, const6);
 		Node trueJmp = construction.newJmp();
+		construction.getCurrentBlock().mature();
 
 		// false block
 		Block falseBlock = construction.newBlock();
@@ -235,6 +236,7 @@ public class TempFirmCode {
 		Node const10 = construction.newConst(10, modeInt);
 		construction.setVariable(varCntrNum, const10);
 		Node falseJmp = construction.newJmp();
+		construction.getCurrentBlock().mature();
 
 		// endif
 		firm.nodes.Block endifBlock = construction.newBlock();
@@ -242,6 +244,7 @@ public class TempFirmCode {
 		endifBlock.addPred(falseJmp);
 		endifBlock.mature();
 		construction.setCurrentBlock(endifBlock);
+		construction.getCurrentBlock().mature();
 
 		// ------------------------- method return statement --------------------------------
 
