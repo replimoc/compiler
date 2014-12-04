@@ -59,5 +59,7 @@ public class AutomatedOutputComparisonTest implements TestFileVisitor.FileTester
 
 		List<String> expectedOutput = Files.readAllLines(expectedFile, StandardCharsets.US_ASCII);
 		TestUtils.assertLinesEqual(sourceFile, expectedOutput, executionState.getSecond().iterator());
+
+		System.out.println(sourceFile + " passed ------------------------------------------------------------------------\n");
 	}
 }
