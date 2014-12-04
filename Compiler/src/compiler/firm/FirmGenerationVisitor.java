@@ -401,12 +401,10 @@ public class FirmGenerationVisitor implements AstVisitor {
 		if (objectNameForFieldAccess != null) {
 			// Get object for variable access
 			objectNameForFieldAccess.accept(this);
-			Node object = objectNameForFieldAccess.getFirmNode();
 
-			// get entity for this field and calculate address of field
 			String objectClassName = objectNameForFieldAccess.getType().getIdentifier().getValue();
 
-			memberAccess(variableAccessExpression, objectClassName, object);
+			memberAccess(variableAccessExpression, objectClassName, objectNameForFieldAccess.getFirmNode());
 		} else {
 			String variableName = variableAccessExpression.getFieldIdentifier().getValue();
 			if (state.methodVariables.containsKey(variableName)) {
