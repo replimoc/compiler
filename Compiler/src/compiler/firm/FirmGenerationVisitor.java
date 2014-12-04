@@ -398,26 +398,17 @@ public class FirmGenerationVisitor implements AstVisitor {
 
 	@Override
 	public void visit(VariableAccessExpression variableAccessExpression) {
-		System.out.println("variable name = " + variableAccessExpression.getFieldIdentifier());
-
 		Expression objectNameForFieldAccess = variableAccessExpression.getExpression();
-		if (objectNameForFieldAccess != null) {
-			// Get object for variable access
-			objectNameForFieldAccess.accept(this);
-
-			String objectClassName = getClassName(objectNameForFieldAccess);
-
-			memberAccess(variableAccessExpression, objectClassName, objectNameForFieldAccess.getFirmNode());
-		} else {
+		if (objectNameForFieldAccess == null) {
 			String variableName = variableAccessExpression.getFieldIdentifier().getValue();
 			if (state.methodVariables.containsKey(variableName)) {
-				// Local variable
 				variableAccess(variableAccessExpression, variableName);
 			} else {
-				// Load this pointer
-				Node object = getThisPointer();
-				memberAccess(variableAccessExpression, state.className, object);
+				memberAccess(variableAccessExpression, state.className, getThisPointer());
 			}
+		} else {
+			objectNameForFieldAccess.accept(this);
+			memberAccess(variableAccessExpression, getClassName(objectNameForFieldAccess), objectNameForFieldAccess.getFirmNode());
 		}
 	}
 
