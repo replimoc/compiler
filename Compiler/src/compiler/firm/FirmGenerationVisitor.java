@@ -466,28 +466,28 @@ public class FirmGenerationVisitor implements AstVisitor {
 		Node lastRvalueNode = this.lastRvalueNode;
 		this.lastRvalueNode = null;
 
-		// load array variable
-		arrayAccessExpression.getArrayExpression().accept(this);
-		Node refToArray = arrayAccessExpression.getArrayExpression().getFirmNode();
-		System.out.println("refToArray = " + refToArray);
-		// load array index
-		arrayAccessExpression.getIndexExpression().accept(this);
-		Node arrayIndexExpression = arrayAccessExpression.getIndexExpression().getFirmNode();
+		Expression arrayExpression = arrayAccessExpression.getArrayExpression();
+		Expression indexExpression = arrayAccessExpression.getIndexExpression();
 
-		// ask developers of firm about this line
-		firm.Mode arrayElementsMode = convertAstArrayTypeToElementMode(arrayAccessExpression.getArrayExpression().getType());
-		firm.Type arrayType = state.hierarchy.getType(arrayAccessExpression.getArrayExpression().getType());
+		arrayExpression.accept(this);
+		indexExpression.accept(this);
 
 		// calculate index offset
-		Node arrayIndex = state.methodConstruction.newSel(refToArray, arrayIndexExpression, arrayType);
+		Node arrayIndex = state.methodConstruction
+				.newSel(arrayExpression.getFirmNode(), indexExpression.getFirmNode(), getArrayType(arrayExpression));
 
 		Node result = null;
 		if (lastRvalueNode != null) {
 			result = memberAssign(arrayIndex, lastRvalueNode);
 		} else {
-			result = memberGet(arrayIndex, arrayElementsMode);
+			// TODO ask developers of firm about convertAstArrayTypeToElementMode
+			result = memberGet(arrayIndex, convertAstArrayTypeToElementMode(arrayExpression.getType()));
 		}
 		arrayAccessExpression.setFirmNode(result);
+	}
+
+	private firm.Type getArrayType(Expression expression) {
+		return state.hierarchy.getType(expression.getType());
 	}
 
 	@Override
