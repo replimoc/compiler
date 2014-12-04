@@ -524,21 +524,27 @@ public class FirmGenerationVisitor implements AstVisitor {
 		}
 	}
 
+	private Node getConditionNode(Expression expression) {
+		Node conditionNode;
+		if (expression instanceof BooleanConstantExpression) {
+			Node trueConst = currentMethodConstruction.newConst(1, hierarchy.getModeBool());
+			Node cmp = currentMethodConstruction.newCmp(expression.getFirmNode(), trueConst, Relation.Equal);
+			conditionNode = currentMethodConstruction.newCond(cmp);
+		} else {
+			conditionNode = expression.getFirmNode();
+		}
+		return conditionNode;
+	}
+
 	@Override
 	public void visit(IfStatement ifStatement) {
 		Mode mode = Mode.getX();
 		// TODO replace with short evaluation
 		ifStatement.getCondition().accept(this);
 
-		Node conditionNode;
+		Node conditionNode = getConditionNode(ifStatement.getCondition());
 		// TODO: optimize boolean constants!
-		if (ifStatement.getCondition() instanceof BooleanConstantExpression) {
-			Node trueConst = currentMethodConstruction.newConst(1, hierarchy.getModeBool());
-			Node cmp = currentMethodConstruction.newCmp(ifStatement.getCondition().getFirmNode(), trueConst, Relation.Equal);
-			conditionNode = currentMethodConstruction.newCond(cmp);
-		} else {
-			conditionNode = ifStatement.getCondition().getFirmNode();
-		}
+
 		Node condTrue = currentMethodConstruction.newProj(conditionNode, mode, 1);
 		Node condFalse = currentMethodConstruction.newProj(conditionNode, mode, 0);
 
