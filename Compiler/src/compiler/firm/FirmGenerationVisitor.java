@@ -500,7 +500,6 @@ public class FirmGenerationVisitor implements AstVisitor {
 			Node loadResult = state.methodConstruction.newProj(loadElement, arrayElementsMode, Load.pnRes);
 			arrayAccessExpression.setFirmNode(loadResult);
 		}
-
 	}
 
 	@Override
@@ -545,7 +544,8 @@ public class FirmGenerationVisitor implements AstVisitor {
 
 	@Override
 	public void visit(NullExpression nullExpression) {
-		// TODO Auto-generated method stub
+		Node cNull = state.methodConstruction.newConst(0, state.hierarchy.getModeRef());
+		nullExpression.setFirmNode(cNull);
 
 	}
 
@@ -571,7 +571,7 @@ public class FirmGenerationVisitor implements AstVisitor {
 	}
 
 	private Node getConditionNode(Expression expression) {
-		// TODO: optimize boolean constants and refactor!
+		// TODO: optimize boolean constants!
 		Node conditionNode;
 		if (expression.getFirmNode() != null && !expression.getFirmNode().getMode().equals(Mode.getT())) {
 			// booleans and boolean constants
