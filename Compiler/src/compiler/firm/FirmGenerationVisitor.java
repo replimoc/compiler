@@ -437,15 +437,13 @@ public class FirmGenerationVisitor implements AstVisitor {
 		Node addressOfField = state.methodConstruction.newMember(object, field);
 
 		if (lastRvalueNode != null) {
-			Node storeValue = state.methodConstruction.newStore(state.methodConstruction.getCurrentMem(), addressOfField,
-					lastRvalueNode);
+			Node storeValue = state.methodConstruction.newStore(state.methodConstruction.getCurrentMem(), addressOfField, lastRvalueNode);
 			Node memoryAfterStore = state.methodConstruction.newProj(storeValue, Mode.getM(), Store.pnM);
 			state.methodConstruction.setCurrentMem(memoryAfterStore);
 			variableAccessExpression.setFirmNode(lastRvalueNode);
 		} else {
 			Mode fieldAccessMode = field.getType().getMode();
-			Node loadValue = state.methodConstruction.newLoad(state.methodConstruction.getCurrentMem(), addressOfField,
-					fieldAccessMode);
+			Node loadValue = state.methodConstruction.newLoad(state.methodConstruction.getCurrentMem(), addressOfField, fieldAccessMode);
 			Node loadMememory = state.methodConstruction.newProj(loadValue, Mode.getM(), Load.pnM);
 			state.methodConstruction.setCurrentMem(loadMememory);
 			Node loadResult = state.methodConstruction.newProj(loadValue, fieldAccessMode, Load.pnRes);
@@ -483,8 +481,7 @@ public class FirmGenerationVisitor implements AstVisitor {
 		} else {
 			// we have access
 			// load array element and set new memory and result
-			Node loadElement = state.methodConstruction.newLoad(
-					state.methodConstruction.getCurrentMem(), arrayIndex, arrayElementsMode);
+			Node loadElement = state.methodConstruction.newLoad(state.methodConstruction.getCurrentMem(), arrayIndex, arrayElementsMode);
 			Node loadMem = state.methodConstruction.newProj(loadElement, Mode.getM(), Load.pnM);
 			state.methodConstruction.setCurrentMem(loadMem);
 			Node loadResult = state.methodConstruction.newProj(loadElement, arrayElementsMode, Load.pnRes);
