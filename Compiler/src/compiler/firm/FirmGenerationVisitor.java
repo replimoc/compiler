@@ -283,73 +283,77 @@ public class FirmGenerationVisitor implements AstVisitor {
 
 	@Override
 	public void visit(MethodInvocationExpression methodInvocationExpression) {
-		boolean isObjThis = false;
-		String className;
-
-		if (methodInvocationExpression.getMethodExpression() != null) {
-			className = getClassName(methodInvocationExpression.getMethodExpression());
-		} else {
-			className = state.className;
-			isObjThis = true;
-		}
-		String methodName = methodInvocationExpression.getMethodIdent().getValue();
-
-		System.out.println("className = " + className);
-		System.out.println("methodName = " + methodName);
-
-		Node[] paramNodes;
-		Entity method;
-		MethodType firmMethodType;
+		MethodCallInformation methodCallInformation = new MethodCallInformation();
 
 		// special case - System.out.println which is PrintStream::println()
 		if (methodInvocationExpression.getMethodDefinition() instanceof PrintMethodDefinition) {
-			paramNodes = new Node[1];
-			methodInvocationExpression.getParameters()[0].accept(this);
-			paramNodes[0] = methodInvocationExpression.getParameters()[0].getFirmNode();
-			method = state.hierarchy.getPrint_int();
-		} else {
-			paramNodes = new Node[methodInvocationExpression.getParameters().length + 1];
-			// evaluate method object
-			Node methodObject;
-			if (isObjThis) {
-				methodObject = getThisPointer();
-			} else {
-				methodInvocationExpression.getMethodExpression().accept(this);
-				System.out.println("methodInvocationExpression = " + methodInvocationExpression.getMethodExpression());
-				methodObject = methodInvocationExpression.getMethodExpression().getFirmNode();
-				System.out.println("methodObject = " + methodObject);
-			}
-			System.out.println("methodExpression = " + methodObject);
-			paramNodes[0] = methodObject;
-
-			// evaluate method parameters
-			for (int j = 0; j < methodInvocationExpression.getParameters().length; j++) {
-				Expression paramExpression = methodInvocationExpression.getParameters()[j];
-				paramExpression.accept(this);
-				paramNodes[j + 1] = paramExpression.getFirmNode();
-				System.out.println("paramNode = " + paramNodes[j + 1]);
-			}
-			// get method entity
-			method = state.hierarchy.getMethodEntity(className, methodName);
+			methodCallInformation = new PrintMethodCallInformation();
 		}
 
-		firmMethodType = (MethodType) method.getType();
+		methodCallInformation.generate(methodInvocationExpression, this);
+		methodInvocationExpression.setFirmNode(callMethod(methodCallInformation));
+	}
 
-		// call method
-		Node addrOfMethod = state.methodConstruction.newAddress(method);
-		Node methodCall = state.methodConstruction.newCall(state.methodConstruction.getCurrentMem(),
-				addrOfMethod, paramNodes, firmMethodType);
+	private class MethodCallInformation {
+		Node[] parameterNodes;
+		Entity method;
+
+		public void generate(MethodInvocationExpression methodInvocationExpression, AstVisitor visitor) {
+			String className;
+			Node methodObject;
+
+			// Generate method name
+			Expression methodExpression = methodInvocationExpression.getMethodExpression();
+			if (methodExpression != null) {
+				methodExpression.accept(visitor);
+
+				className = getClassName(methodExpression);
+				methodObject = methodExpression.getFirmNode();
+			} else {
+				className = state.className;
+				methodObject = getThisPointer();
+			}
+			String methodName = methodInvocationExpression.getMethodIdent().getValue();
+			method = state.hierarchy.getMethodEntity(className, methodName);
+
+			// Generate parameter list
+			Expression[] parameters = methodInvocationExpression.getParameters();
+			parameterNodes = new Node[parameters.length + 1];
+			parameterNodes[0] = methodObject;
+
+			for (int j = 0; j < parameters.length; j++) {
+				Expression paramExpression = parameters[j];
+				paramExpression.accept(visitor);
+				parameterNodes[j + 1] = paramExpression.getFirmNode();
+			}
+		}
+	}
+
+	private class PrintMethodCallInformation extends MethodCallInformation {
+		public void generate(MethodInvocationExpression methodInvocationExpression, AstVisitor visitor) {
+			methodInvocationExpression.getParameters()[0].accept(visitor);
+			parameterNodes = new Node[1];
+			parameterNodes[0] = methodInvocationExpression.getParameters()[0].getFirmNode();
+			method = state.hierarchy.getPrint_int();
+		}
+	}
+
+	private Node callMethod(MethodCallInformation info) {
+		MethodType firmMethodType = (MethodType) info.method.getType();
+
+		Node addressOfMethod = state.methodConstruction.newAddress(info.method);
+		Node methodCall = state.methodConstruction.newCall(state.methodConstruction.getCurrentMem(), addressOfMethod, info.parameterNodes,
+				firmMethodType);
 		Node memAfterCall = state.methodConstruction.newProj(methodCall, Mode.getM(), Call.pnM);
 		state.methodConstruction.setCurrentMem(memAfterCall);
 
 		// get result
-		if (firmMethodType.getNRess() == 0) {
-			methodInvocationExpression.setFirmNode(null);
-		} else {
+		Node resultValue = null;
+		if (firmMethodType.getNRess() != 0) {
 			Node methodResult = state.methodConstruction.newProj(methodCall, Mode.getT(), Call.pnTResult);
-			Node resultValue = state.methodConstruction.newProj(methodResult, firmMethodType.getResType(0).getMode(), 0);
-			methodInvocationExpression.setFirmNode(resultValue);
+			resultValue = state.methodConstruction.newProj(methodResult, firmMethodType.getResType(0).getMode(), 0);
 		}
+		return resultValue;
 	}
 
 	@Override
