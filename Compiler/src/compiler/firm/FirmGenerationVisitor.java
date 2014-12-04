@@ -96,6 +96,14 @@ public class FirmGenerationVisitor implements AstVisitor {
 		this.falseDestination = falseDestination;
 	}
 
+	private Node getThisPointer() {
+		return state.methodConstruction.getVariable(0, state.hierarchy.getModeRef());
+	}
+
+	private String getClassName(Expression expression) {
+		return expression.getType().getIdentifier().getValue();
+	}
+
 	private static interface CreateBinaryFirmNode {
 		public Node createNode(Node operand1, Node operand2, Mode mode);
 	}
@@ -279,7 +287,7 @@ public class FirmGenerationVisitor implements AstVisitor {
 		String className;
 
 		if (methodInvocationExpression.getMethodExpression() != null) {
-			className = methodInvocationExpression.getMethodExpression().getType().getIdentifier().getValue();
+			className = getClassName(methodInvocationExpression.getMethodExpression());
 		} else {
 			className = state.className;
 			isObjThis = true;
@@ -304,7 +312,7 @@ public class FirmGenerationVisitor implements AstVisitor {
 			// evaluate method object
 			Node methodObject;
 			if (isObjThis) {
-				methodObject = state.methodConstruction.getVariable(0, state.hierarchy.getModeRef());
+				methodObject = getThisPointer();
 			} else {
 				methodInvocationExpression.getMethodExpression().accept(this);
 				System.out.println("methodInvocationExpression = " + methodInvocationExpression.getMethodExpression());
@@ -373,8 +381,7 @@ public class FirmGenerationVisitor implements AstVisitor {
 
 	@Override
 	public void visit(NewObjectExpression newObjectExpression) {
-		String className = newObjectExpression.getType().getIdentifier().getValue();
-		firm.ClassType classType = state.hierarchy.getClassEntity(className);
+		firm.ClassType classType = state.hierarchy.getClassEntity(getClassName(newObjectExpression));
 
 		// TODO: Alignment?
 		Node callocSpace = state.methodConstruction.newCall(state.methodConstruction.getCurrentMem(),
@@ -391,75 +398,56 @@ public class FirmGenerationVisitor implements AstVisitor {
 
 	@Override
 	public void visit(VariableAccessExpression variableAccessExpression) {
-		System.out.println("variable name = " + variableAccessExpression.getFieldIdentifier());
-
 		Expression objectNameForFieldAccess = variableAccessExpression.getExpression();
-		if (objectNameForFieldAccess != null) {
-			// save rvalue so that field access expression doesn't think it is an assignment
-			Node lastRvalueNode = this.lastRvalueNode;
-			this.lastRvalueNode = null;
-
-			// visit object name
-			objectNameForFieldAccess.accept(this);
-			Node object = objectNameForFieldAccess.getFirmNode();
-
-			// get entity for this field and calculate address of field
-			String objectClassName = objectNameForFieldAccess.getType().getIdentifier().getValue();
-			Entity field = state.hierarchy.getFieldEntity(objectClassName, variableAccessExpression.getFieldIdentifier().getValue());
-			Node addrOfField = state.methodConstruction.newMember(object, field);
-
-			if (lastRvalueNode != null) {
-				Node storeValue = state.methodConstruction.newStore(state.methodConstruction.getCurrentMem(), addrOfField,
-						lastRvalueNode);
-				Node memAfterStore = state.methodConstruction.newProj(storeValue, Mode.getM(), Store.pnM);
-				state.methodConstruction.setCurrentMem(memAfterStore);
-				variableAccessExpression.setFirmNode(lastRvalueNode);
-			} else {
-				Mode fieldAccessMode = field.getType().getMode();
-				Node loadValue = state.methodConstruction.newLoad(state.methodConstruction.getCurrentMem(), addrOfField,
-						fieldAccessMode);
-				Node loadMem = state.methodConstruction.newProj(loadValue, Mode.getM(), Load.pnM);
-				state.methodConstruction.setCurrentMem(loadMem);
-				Node loadResult = state.methodConstruction.newProj(loadValue, fieldAccessMode, Load.pnRes);
-				variableAccessExpression.setFirmNode(loadResult);
-			}
-		} else {
+		if (objectNameForFieldAccess == null) {
 			String variableName = variableAccessExpression.getFieldIdentifier().getValue();
 			if (state.methodVariables.containsKey(variableName)) {
-				int variableNumber = state.methodVariables.get(variableName);
-
-				if (lastRvalueNode != null) {
-					// this is variable set expression:
-					state.methodConstruction.setVariable(variableNumber, lastRvalueNode);
-					variableAccessExpression.setFirmNode(lastRvalueNode);
-				} else {
-					Type astType = variableAccessExpression.getDefinition().getType();
-					Mode accessMode = convertAstTypeToMode(astType);
-					Node node = state.methodConstruction.getVariable(variableNumber, accessMode);
-					variableAccessExpression.setFirmNode(node);
-				}
+				variableAccess(variableAccessExpression, variableName);
 			} else {
-				String thisClassName = state.className;
-				Entity field = state.hierarchy.getFieldEntity(thisClassName, variableAccessExpression.getFieldIdentifier().getValue());
-				Node thisObject = state.methodConstruction.getVariable(0, state.hierarchy.getModeRef());
-				Node addrOfField = state.methodConstruction.newMember(thisObject, field);
-
-				if (lastRvalueNode != null) {
-					Node storeValue = state.methodConstruction.newStore(state.methodConstruction.getCurrentMem(), addrOfField,
-							lastRvalueNode);
-					Node memAfterStore = state.methodConstruction.newProj(storeValue, Mode.getM(), Store.pnM);
-					state.methodConstruction.setCurrentMem(memAfterStore);
-					variableAccessExpression.setFirmNode(lastRvalueNode);
-				} else {
-					Mode fieldAccessMode = field.getType().getMode();
-					Node loadValue = state.methodConstruction.newLoad(state.methodConstruction.getCurrentMem(), addrOfField,
-							fieldAccessMode);
-					Node loadMem = state.methodConstruction.newProj(loadValue, Mode.getM(), Load.pnM);
-					state.methodConstruction.setCurrentMem(loadMem);
-					Node loadResult = state.methodConstruction.newProj(loadValue, fieldAccessMode, Load.pnRes);
-					variableAccessExpression.setFirmNode(loadResult);
-				}
+				memberAccess(variableAccessExpression, state.className, getThisPointer());
 			}
+		} else {
+			objectNameForFieldAccess.accept(this);
+			memberAccess(variableAccessExpression, getClassName(objectNameForFieldAccess), objectNameForFieldAccess.getFirmNode());
+		}
+	}
+
+	private void variableAccess(VariableAccessExpression variableAccessExpression, String variableName) {
+		int variableNumber = state.methodVariables.get(variableName);
+
+		if (lastRvalueNode != null) {
+			// this is variable set expression:
+			state.methodConstruction.setVariable(variableNumber, lastRvalueNode);
+			variableAccessExpression.setFirmNode(lastRvalueNode);
+		} else {
+			Type astType = variableAccessExpression.getDefinition().getType();
+			Mode accessMode = convertAstTypeToMode(astType);
+			Node node = state.methodConstruction.getVariable(variableNumber, accessMode);
+			variableAccessExpression.setFirmNode(node);
+		}
+	}
+
+	private void memberAccess(VariableAccessExpression variableAccessExpression, String objectClassName, Node object) {
+		Entity field = state.hierarchy.getFieldEntity(objectClassName, variableAccessExpression.getFieldIdentifier().getValue());
+
+		// save rvalue so that field access expression doesn't think it is an assignment
+		Node lastRvalueNode = this.lastRvalueNode;
+		this.lastRvalueNode = null;
+
+		Node addressOfField = state.methodConstruction.newMember(object, field);
+
+		if (lastRvalueNode != null) {
+			Node storeValue = state.methodConstruction.newStore(state.methodConstruction.getCurrentMem(), addressOfField, lastRvalueNode);
+			Node memoryAfterStore = state.methodConstruction.newProj(storeValue, Mode.getM(), Store.pnM);
+			state.methodConstruction.setCurrentMem(memoryAfterStore);
+			variableAccessExpression.setFirmNode(lastRvalueNode);
+		} else {
+			Mode fieldAccessMode = field.getType().getMode();
+			Node loadValue = state.methodConstruction.newLoad(state.methodConstruction.getCurrentMem(), addressOfField, fieldAccessMode);
+			Node loadMememory = state.methodConstruction.newProj(loadValue, Mode.getM(), Load.pnM);
+			state.methodConstruction.setCurrentMem(loadMememory);
+			Node loadResult = state.methodConstruction.newProj(loadValue, fieldAccessMode, Load.pnRes);
+			variableAccessExpression.setFirmNode(loadResult);
 		}
 	}
 
@@ -493,8 +481,7 @@ public class FirmGenerationVisitor implements AstVisitor {
 		} else {
 			// we have access
 			// load array element and set new memory and result
-			Node loadElement = state.methodConstruction.newLoad(
-					state.methodConstruction.getCurrentMem(), arrayIndex, arrayElementsMode);
+			Node loadElement = state.methodConstruction.newLoad(state.methodConstruction.getCurrentMem(), arrayIndex, arrayElementsMode);
 			Node loadMem = state.methodConstruction.newProj(loadElement, Mode.getM(), Load.pnM);
 			state.methodConstruction.setCurrentMem(loadMem);
 			Node loadResult = state.methodConstruction.newProj(loadElement, arrayElementsMode, Load.pnRes);
@@ -539,7 +526,7 @@ public class FirmGenerationVisitor implements AstVisitor {
 
 	@Override
 	public void visit(ThisExpression thisExpression) {
-		thisExpression.setFirmNode(state.methodConstruction.getVariable(0, state.hierarchy.getModeRef()));
+		thisExpression.setFirmNode(getThisPointer());
 	}
 
 	@Override
