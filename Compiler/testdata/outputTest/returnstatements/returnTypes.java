@@ -9,7 +9,7 @@ class Test {
 			System.out.println(t.method(6));
 		}
 
-		if(referenceNull() == reference()) {
+		if(t.referenceNull() == t.reference()) {
 			System.out.println(t.method(3));
 		} else {
 			System.out.println(t.method(6));
