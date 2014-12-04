@@ -16,3 +16,4 @@ bin
 /Compiler/tmp
 /Compiler/*.log
 /Compiler/a.exe
+/progpar_compiler
