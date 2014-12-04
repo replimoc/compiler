@@ -195,16 +195,22 @@ public class FirmGenerationVisitor implements AstVisitor {
 		firm.nodes.Block leftTrueBlock = state.methodConstruction.newBlock();
 		evaluateBooleanExpression(logicalAndExpression.getOperand1(), leftTrueBlock, falseDestination);
 
-		firm.nodes.Block currentBlock = state.methodConstruction.getCurrentBlock();
-		state.methodConstruction.setCurrentBlock(leftTrueBlock);
-		evaluateBooleanExpression(logicalAndExpression.getOperand2(), trueDestination, falseDestination);
-		state.methodConstruction.setCurrentBlock(currentBlock);
+		shortEvaluationRightOperand(logicalAndExpression, leftTrueBlock);
 	}
 
 	@Override
 	public void visit(LogicalOrExpression logicalOrExpression) {
-		// TODO Auto-generated method stub
+		firm.nodes.Block leftFalseBlock = state.methodConstruction.newBlock();
+		evaluateBooleanExpression(logicalOrExpression.getOperand1(), trueDestination, leftFalseBlock);
 
+		shortEvaluationRightOperand(logicalOrExpression, leftFalseBlock);
+	}
+
+	private void shortEvaluationRightOperand(BinaryExpression binaryExpression, firm.nodes.Block block) {
+		firm.nodes.Block currentBlock = state.methodConstruction.getCurrentBlock();
+		state.methodConstruction.setCurrentBlock(block);
+		evaluateBooleanExpression(binaryExpression.getOperand2(), trueDestination, falseDestination);
+		state.methodConstruction.setCurrentBlock(currentBlock);
 	}
 
 	@Override
