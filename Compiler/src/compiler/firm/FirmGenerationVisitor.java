@@ -697,17 +697,7 @@ public class FirmGenerationVisitor implements AstVisitor {
 
 		staticMethodDeclaration.getBlock().accept(this);
 
-		// TODO: here it is necessary to check whether block contains return statements
-		// TODO: and if it does, get it, otherwise return "void" as here
-		// TODO: (if I understood correctly )if method returns void it is necessary to link last statement with return
-		// TODO: otherwise it won't appear in graph
-		Node[] returns;
-		if (staticMethodDeclaration.getBlock().getFirmNode() != null) {
-			returns = new Node[] { staticMethodDeclaration.getBlock().getFirmNode() };
-		} else {
-			returns = new Node[] {};
-		}
-		Node returnNode = currentMethodConstruction.newReturn(currentMethodConstruction.getCurrentMem(), returns);
+		Node returnNode = currentMethodConstruction.newReturn(currentMethodConstruction.getCurrentMem(), new Node[] {});
 		mainGraph.getEndBlock().addPred(returnNode);
 
 		currentMethodConstruction.setUnreachable();
