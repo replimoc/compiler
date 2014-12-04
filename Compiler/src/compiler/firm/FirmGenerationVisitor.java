@@ -621,8 +621,30 @@ public class FirmGenerationVisitor implements AstVisitor {
 
 	@Override
 	public void visit(WhileStatement whileStatement) {
-		// TODO Auto-generated method stub
+		Node startJump = state.methodConstruction.newJmp();
 
+		firm.nodes.Block loopBlock = state.methodConstruction.newBlock();
+		firm.nodes.Block endBlock = state.methodConstruction.newBlock();
+		firm.nodes.Block startBlock = state.methodConstruction.newBlock();
+		startBlock.addPred(startJump);
+
+		state.methodConstruction.setCurrentBlock(startBlock);
+		evaluateBooleanExpression(whileStatement.getCondition(), loopBlock, endBlock);
+		loopBlock.mature();
+		endBlock.mature();
+
+		state.methodConstruction.setCurrentBlock(loopBlock);
+		state.methodConstruction.getCurrentMem();
+
+		whileStatement.getBody().accept(this);
+		Node loopJump = state.methodConstruction.newJmp();
+		startBlock.addPred(loopJump);
+		startBlock.mature();
+
+		state.methodConstruction.setCurrentBlock(endBlock);
+		state.methodConstruction.getGraph().keepAlive(startBlock);
+
+		whileStatement.setFirmNode(null);
 	}
 
 	@Override
