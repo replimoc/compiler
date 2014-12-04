@@ -430,15 +430,11 @@ public class FirmGenerationVisitor implements AstVisitor {
 	private void memberAccess(VariableAccessExpression variableAccessExpression, String objectClassName, Node object) {
 		Entity field = state.hierarchy.getFieldEntity(objectClassName, variableAccessExpression.getFieldIdentifier().getValue());
 
-		// save rvalue so that field access expression doesn't think it is an assignment
-		Node content = this.lastRvalueNode;
-		this.lastRvalueNode = null;
-
 		Node addressOfField = state.methodConstruction.newMember(object, field);
 
-		if (content != null) {
-			memberAssign(addressOfField, content);
-			variableAccessExpression.setFirmNode(content);
+		if (this.lastRvalueNode != null) {
+			memberAssign(addressOfField, this.lastRvalueNode);
+			variableAccessExpression.setFirmNode(this.lastRvalueNode);
 		} else {
 			Mode fieldAccessMode = field.getType().getMode();
 			Node member = memberGet(addressOfField, fieldAccessMode);
