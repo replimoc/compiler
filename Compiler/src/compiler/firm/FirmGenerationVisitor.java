@@ -142,9 +142,9 @@ public class FirmGenerationVisitor implements AstVisitor {
 		createFirmForBinaryOperation(divisionExpression, new CreateBinaryFirmNode() {
 			@Override
 			public Node createNode(Node operand1, Node operand2, Mode mode) {
-				Node node = currentMethodConstruction.newDiv(currentMethodConstruction.getCurrentMem(), operand1, operand2, mode,
+				Node tupleNode = currentMethodConstruction.newDiv(currentMethodConstruction.getCurrentMem(), operand1, operand2, mode,
 						op_pin_state.op_pin_state_pinned);
-				return currentMethodConstruction.newProj(node, mode, Call.pnTResult);
+				return currentMethodConstruction.newProj(tupleNode, mode, Call.pnTResult);
 			}
 		});
 	}
@@ -191,9 +191,9 @@ public class FirmGenerationVisitor implements AstVisitor {
 		createFirmForBinaryOperation(moduloExpression, new CreateBinaryFirmNode() {
 			@Override
 			public Node createNode(Node operand1, Node operand2, Mode mode) {
-				Node node = currentMethodConstruction.newMod(currentMethodConstruction.getCurrentMem(), operand1, operand2, mode,
+				Node tupleNode = currentMethodConstruction.newMod(currentMethodConstruction.getCurrentMem(), operand1, operand2, mode,
 						op_pin_state.op_pin_state_pinned);
-				return currentMethodConstruction.newProj(node, mode, Call.pnTResult);
+				return currentMethodConstruction.newProj(tupleNode, mode, Call.pnTResult);
 			}
 		});
 	}
