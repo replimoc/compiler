@@ -560,13 +560,15 @@ public class FirmGenerationVisitor implements AstVisitor {
 	}
 
 	private Node getConditionNode(Expression expression) {
-		// TODO: optimize boolean constants!
+		// TODO: optimize boolean constants and refactor!
 		Node conditionNode;
-		if (expression instanceof BooleanConstantExpression) {
+		if (expression.getFirmNode() != null && !expression.getFirmNode().getMode().equals(Mode.getT())) {
+			// booleans and boolean constants
 			Node trueConst = state.methodConstruction.newConst(1, state.hierarchy.getModeBool());
 			Node cmp = state.methodConstruction.newCmp(expression.getFirmNode(), trueConst, Relation.Equal);
 			conditionNode = state.methodConstruction.newCond(cmp);
 		} else {
+			// the result is already the right tuple
 			conditionNode = expression.getFirmNode();
 		}
 		return conditionNode;
