@@ -17,7 +17,7 @@ class Test {
 			System.out.println(y+z);
 		}
 		
-		t.emptyMethod();
+		t.method();
 	}
 	
 	public void method() {
