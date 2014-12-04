@@ -4,7 +4,7 @@ class Test {
 		
 		while(x > 0) {
 			System.out.println(x);
-			x--;
+			x = x - 1;
 		}
 	}
 
