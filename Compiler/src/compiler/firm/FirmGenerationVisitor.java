@@ -80,13 +80,17 @@ public class FirmGenerationVisitor implements AstVisitor {
 	}
 
 	private final State state;
+	private firm.nodes.Block trueDestination;
+	private firm.nodes.Block falseDestination;
 
 	public FirmGenerationVisitor(FirmHierarchy hierarchy) {
 		this.state = new State(hierarchy);
 	}
 
-	public FirmGenerationVisitor(State state) {
+	public FirmGenerationVisitor(State state, firm.nodes.Block trueDestination, firm.nodes.Block falseDestination) {
 		this.state = state;
+		this.trueDestination = trueDestination;
+		this.falseDestination = falseDestination;
 	}
 
 	private static interface CreateBinaryFirmNode {
@@ -188,8 +192,13 @@ public class FirmGenerationVisitor implements AstVisitor {
 
 	@Override
 	public void visit(LogicalAndExpression logicalAndExpression) {
-		// TODO Auto-generated method stub
+		firm.nodes.Block leftTrueBlock = state.methodConstruction.newBlock();
+		evaluateBooleanExpression(logicalAndExpression.getOperand1(), leftTrueBlock, falseDestination);
 
+		firm.nodes.Block currentBlock = state.methodConstruction.getCurrentBlock();
+		state.methodConstruction.setCurrentBlock(leftTrueBlock);
+		evaluateBooleanExpression(logicalAndExpression.getOperand2(), trueDestination, falseDestination);
+		state.methodConstruction.setCurrentBlock(currentBlock);
 	}
 
 	@Override
@@ -554,15 +563,19 @@ public class FirmGenerationVisitor implements AstVisitor {
 	}
 
 	private void evaluateBooleanExpression(Expression condition, firm.nodes.Block trueBlock, firm.nodes.Block falseBlock) {
-		condition.accept(this);
+		FirmGenerationVisitor visitor = new FirmGenerationVisitor(state, trueBlock, falseBlock);
+		condition.accept(visitor);
 
 		Node conditionNode = getConditionNode(condition);
-		Mode mode = Mode.getX();
 
-		Node condTrue = state.methodConstruction.newProj(conditionNode, mode, 1);
-		trueBlock.addPred(condTrue);
-		Node condFalse = state.methodConstruction.newProj(conditionNode, mode, 0);
-		falseBlock.addPred(condFalse);
+		if (conditionNode != null) { // For logical and and logical or this is already done, ignore it.
+			Mode mode = Mode.getX();
+
+			Node condTrue = state.methodConstruction.newProj(conditionNode, mode, 1);
+			trueBlock.addPred(condTrue);
+			Node condFalse = state.methodConstruction.newProj(conditionNode, mode, 0);
+			falseBlock.addPred(condFalse);
+		}
 	}
 
 	@Override
