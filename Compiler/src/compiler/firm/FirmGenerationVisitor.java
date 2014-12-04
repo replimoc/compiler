@@ -493,8 +493,7 @@ public class FirmGenerationVisitor implements AstVisitor {
 
 	@Override
 	public void visit(LogicalNotExpression logicalNotExpression) {
-		// TODO Auto-generated method stub
-
+		evaluateBooleanExpression(logicalNotExpression.getOperand(), falseDestination, trueDestination);
 	}
 
 	@Override
