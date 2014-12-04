@@ -534,12 +534,6 @@ public class FirmGenerationVisitor implements AstVisitor {
 	}
 
 	@Override
-	public void visit(Type type) {
-		// TODO Auto-generated method stub
-
-	}
-
-	@Override
 	public void visit(Block block) {
 		if (!block.isEmpty()) {
 			for (Statement statement : block.getStatements()) {
@@ -734,6 +728,12 @@ public class FirmGenerationVisitor implements AstVisitor {
 		state.methodVariableCount++;
 	}
 
+	@Override
+	public void visit(ParameterDefinition parameterDefinition) {
+		// TODO Auto-generated method stub
+
+	}
+
 	private void createParameterDefinition(Node args, ParameterDefinition parameterDefinition) {
 		// TODO maybe this is better to do with visitor
 		// args can be called as construction.getGraph().getArgs();
@@ -782,18 +782,6 @@ public class FirmGenerationVisitor implements AstVisitor {
 		this.state.methodReturns.clear();
 	}
 
-	@Override
-	public void visit(ClassType classType) {
-		// TODO Auto-generated method stub
-
-	}
-
-	@Override
-	public void visit(ParameterDefinition parameterDefinition) {
-		// TODO Auto-generated method stub
-
-	}
-
 	private firm.Mode convertAstTypeToMode(Type type) {
 		switch (type.getBasicType()) {
 		case INT:
@@ -825,6 +813,16 @@ public class FirmGenerationVisitor implements AstVisitor {
 		default:
 			throw new RuntimeException("convertTypeToMode for " + type + " is not implemented");
 		}
+	}
+
+	@Override
+	public void visit(Type type) {
+		// Type is never been visited
+	}
+
+	@Override
+	public void visit(ClassType classType) {
+		// ClassType is never been visited
 	}
 
 }
