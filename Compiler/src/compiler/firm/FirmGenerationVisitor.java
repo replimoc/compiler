@@ -729,15 +729,14 @@ public class FirmGenerationVisitor implements AstVisitor {
 
 		methodDeclaration.getBlock().accept(this);
 
+		// add all collected return nodes
+		for (Node returnNode : state.methodReturns) {
+			graph.getEndBlock().addPred(returnNode);
+		}
 		if (methodDeclaration.getType().getBasicType() == BasicType.VOID) {
 			// return void
 			Node returnNode = state.methodConstruction.newReturn(state.methodConstruction.getCurrentMem(), new Node[] {});
 			graph.getEndBlock().addPred(returnNode);
-		} else {
-			// add all collected return nodes
-			for (Node returnNode : state.methodReturns) {
-				graph.getEndBlock().addPred(returnNode);
-			}
 		}
 
 		state.methodConstruction.setUnreachable();
