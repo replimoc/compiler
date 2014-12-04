@@ -367,21 +367,24 @@ public class FirmGenerationVisitor implements AstVisitor {
 
 	}
 
+	private Node intToNode(int i) {
+		return state.methodConstruction.newConst(i, state.hierarchy.getModeInt());
+	}
+
 	@Override
 	public void visit(NewObjectExpression newObjectExpression) {
 		String className = newObjectExpression.getType().getIdentifier().getValue();
 		firm.ClassType classType = state.hierarchy.getClassEntity(className);
 
-		Node numberOfElements = state.methodConstruction.newConst(1, state.hierarchy.getModeInt());
-		Node sizeofClass = state.methodConstruction.newSize(state.hierarchy.getModeInt(), classType);
-		Node callocClass = state.methodConstruction.newCall(
-				state.methodConstruction.getCurrentMem(),
+		// TODO: Alignment?
+		Node callocSpace = state.methodConstruction.newCall(state.methodConstruction.getCurrentMem(),
 				state.methodConstruction.newAddress(state.hierarchy.getCalloc()),
-				new Node[] { numberOfElements, sizeofClass }, state.hierarchy.getCalloc().getType());
+				new Node[] { intToNode(1), intToNode(classType.getSizeBytes()) }, state.hierarchy.getCalloc().getType());
+
 		// update memory
-		state.methodConstruction.setCurrentMem(state.methodConstruction.newProj(callocClass, Mode.getM(), Call.pnM));
+		state.methodConstruction.setCurrentMem(state.methodConstruction.newProj(callocSpace, Mode.getM(), Call.pnM));
 		// set FirmNode to returned reference
-		Node callocResult = state.methodConstruction.newProj(callocClass, Mode.getT(), Call.pnTResult);
+		Node callocResult = state.methodConstruction.newProj(callocSpace, Mode.getT(), Call.pnTResult);
 		Node referenceToObject = state.methodConstruction.newProj(callocResult, state.hierarchy.getModeRef(), 0);
 		newObjectExpression.setFirmNode(referenceToObject);
 	}
