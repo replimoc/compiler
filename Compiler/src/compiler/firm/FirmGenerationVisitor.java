@@ -100,6 +100,10 @@ public class FirmGenerationVisitor implements AstVisitor {
 		return state.methodConstruction.getVariable(0, state.hierarchy.getModeRef());
 	}
 
+	private String getClassName(Expression expression) {
+		return expression.getType().getIdentifier().getValue();
+	}
+
 	private static interface CreateBinaryFirmNode {
 		public Node createNode(Node operand1, Node operand2, Mode mode);
 	}
@@ -283,7 +287,7 @@ public class FirmGenerationVisitor implements AstVisitor {
 		String className;
 
 		if (methodInvocationExpression.getMethodExpression() != null) {
-			className = methodInvocationExpression.getMethodExpression().getType().getIdentifier().getValue();
+			className = getClassName(methodInvocationExpression.getMethodExpression());
 		} else {
 			className = state.className;
 			isObjThis = true;
@@ -377,8 +381,7 @@ public class FirmGenerationVisitor implements AstVisitor {
 
 	@Override
 	public void visit(NewObjectExpression newObjectExpression) {
-		String className = newObjectExpression.getType().getIdentifier().getValue();
-		firm.ClassType classType = state.hierarchy.getClassEntity(className);
+		firm.ClassType classType = state.hierarchy.getClassEntity(getClassName(newObjectExpression));
 
 		// TODO: Alignment?
 		Node callocSpace = state.methodConstruction.newCall(state.methodConstruction.getCurrentMem(),
@@ -402,7 +405,7 @@ public class FirmGenerationVisitor implements AstVisitor {
 			// Get object for variable access
 			objectNameForFieldAccess.accept(this);
 
-			String objectClassName = objectNameForFieldAccess.getType().getIdentifier().getValue();
+			String objectClassName = getClassName(objectNameForFieldAccess);
 
 			memberAccess(variableAccessExpression, objectClassName, objectNameForFieldAccess.getFirmNode());
 		} else {
