@@ -521,9 +521,17 @@ public class FirmGenerationVisitor implements AstVisitor {
 
 	@Override
 	public void visit(ReturnStatement returnStatement) {
-		returnStatement.getOperand().accept(this);
-		Node exprNode = returnStatement.getOperand().getFirmNode();
-		Node returnNode = state.methodConstruction.newReturn(state.methodConstruction.getCurrentMem(), new Node[] { exprNode });
+		boolean hasOperand = returnStatement.getOperand() != null;
+		Node returnNode;
+		if (hasOperand) {
+			returnStatement.getOperand().accept(this);
+			Node exprNode = returnStatement.getOperand().getFirmNode();
+			returnNode = state.methodConstruction.newReturn(state.methodConstruction.getCurrentMem(), new Node[] { exprNode });
+		} else {
+			// return void
+			returnNode = state.methodConstruction.newReturn(state.methodConstruction.getCurrentMem(), new Node[] {});
+		}
+
 		state.methodReturns.add(returnNode);
 	}
 
