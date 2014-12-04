@@ -1,11 +1,10 @@
 class Test {
 	public static void main(String[] args) {
-		int x=1;
+		int x = 0;
 		
-		if(false) {
-			x = 42;
-		} else {
-			x = 17;
+		while(x < 3) {
+			System.out.println(x);
+			x = x + 2;
 		}
 		
 		System.out.println(x);
