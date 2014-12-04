@@ -592,6 +592,7 @@ public class FirmGenerationVisitor implements AstVisitor {
 
 	@Override
 	public void visit(IfStatement ifStatement) {
+		boolean hasElseBlock = ifStatement.getFalseCase() != null;
 
 		firm.nodes.Block trueBlock = state.methodConstruction.newBlock();
 		firm.nodes.Block falseBlock = state.methodConstruction.newBlock();
@@ -608,7 +609,9 @@ public class FirmGenerationVisitor implements AstVisitor {
 
 		// set new block as active and visit false case
 		state.methodConstruction.setCurrentBlock(falseBlock);
-		ifStatement.getFalseCase().accept(this);
+		if (hasElseBlock) {
+			ifStatement.getFalseCase().accept(this);
+		}
 		Node falseJmp = state.methodConstruction.newJmp();
 
 		// endif block
