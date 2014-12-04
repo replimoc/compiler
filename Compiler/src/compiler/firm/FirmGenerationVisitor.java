@@ -96,6 +96,10 @@ public class FirmGenerationVisitor implements AstVisitor {
 		this.falseDestination = falseDestination;
 	}
 
+	private Node getThisPointer() {
+		return state.methodConstruction.getVariable(0, state.hierarchy.getModeRef());
+	}
+
 	private static interface CreateBinaryFirmNode {
 		public Node createNode(Node operand1, Node operand2, Mode mode);
 	}
@@ -304,7 +308,7 @@ public class FirmGenerationVisitor implements AstVisitor {
 			// evaluate method object
 			Node methodObject;
 			if (isObjThis) {
-				methodObject = state.methodConstruction.getVariable(0, state.hierarchy.getModeRef());
+				methodObject = getThisPointer();
 			} else {
 				methodInvocationExpression.getMethodExpression().accept(this);
 				System.out.println("methodInvocationExpression = " + methodInvocationExpression.getMethodExpression());
@@ -410,7 +414,7 @@ public class FirmGenerationVisitor implements AstVisitor {
 				variableAccess(variableAccessExpression, variableName);
 			} else {
 				// Load this pointer
-				Node object = state.methodConstruction.getVariable(0, state.hierarchy.getModeRef());
+				Node object = getThisPointer();
 				memberAccess(variableAccessExpression, state.className, object);
 			}
 		}
@@ -533,7 +537,7 @@ public class FirmGenerationVisitor implements AstVisitor {
 
 	@Override
 	public void visit(ThisExpression thisExpression) {
-		thisExpression.setFirmNode(state.methodConstruction.getVariable(0, state.hierarchy.getModeRef()));
+		thisExpression.setFirmNode(getThisPointer());
 	}
 
 	@Override
