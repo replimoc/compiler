@@ -525,6 +525,7 @@ public class FirmGenerationVisitor implements AstVisitor {
 	}
 
 	private Node getConditionNode(Expression expression) {
+		// TODO: optimize boolean constants!
 		Node conditionNode;
 		if (expression instanceof BooleanConstantExpression) {
 			Node trueConst = currentMethodConstruction.newConst(1, hierarchy.getModeBool());
@@ -536,31 +537,34 @@ public class FirmGenerationVisitor implements AstVisitor {
 		return conditionNode;
 	}
 
-	@Override
-	public void visit(IfStatement ifStatement) {
-		Mode mode = Mode.getX();
-		// TODO replace with short evaluation
-		ifStatement.getCondition().accept(this);
+	private void evaluateBooleanExpression(Expression condition, firm.nodes.Block trueBlock, firm.nodes.Block falseBlock) {
+		condition.accept(this);
 
-		Node conditionNode = getConditionNode(ifStatement.getCondition());
-		// TODO: optimize boolean constants!
+		Node conditionNode = getConditionNode(condition);
+		Mode mode = Mode.getX();
 
 		Node condTrue = currentMethodConstruction.newProj(conditionNode, mode, 1);
-		Node condFalse = currentMethodConstruction.newProj(conditionNode, mode, 0);
-
-		// true block
-		firm.nodes.Block trueBlock = currentMethodConstruction.newBlock();
 		trueBlock.addPred(condTrue);
+		Node condFalse = currentMethodConstruction.newProj(conditionNode, mode, 0);
+		falseBlock.addPred(condFalse);
+	}
+
+	@Override
+	public void visit(IfStatement ifStatement) {
+
+		firm.nodes.Block trueBlock = currentMethodConstruction.newBlock();
+		firm.nodes.Block falseBlock = currentMethodConstruction.newBlock();
+
+		evaluateBooleanExpression(ifStatement.getCondition(), trueBlock, falseBlock);
+
+		falseBlock.mature();
 		trueBlock.mature();
+
 		// set new block as active and visit true case
 		currentMethodConstruction.setCurrentBlock(trueBlock);
 		ifStatement.getTrueCase().accept(this);
 		Node trueJmp = currentMethodConstruction.newJmp();
 
-		// false block
-		firm.nodes.Block falseBlock = currentMethodConstruction.newBlock();
-		falseBlock.addPred(condFalse);
-		falseBlock.mature();
 		// set new block as active and visit false case
 		currentMethodConstruction.setCurrentBlock(falseBlock);
 		ifStatement.getFalseCase().accept(this);
