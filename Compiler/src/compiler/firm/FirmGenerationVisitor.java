@@ -1,6 +1,8 @@
 package compiler.firm;
 
+import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 
 import compiler.ast.Block;
@@ -68,6 +70,7 @@ public class FirmGenerationVisitor implements AstVisitor {
 		// current definitions
 		Construction methodConstruction = null;
 		int methodVariableCount = 0;
+		List<Node> methodReturns = new ArrayList<Node>();
 
 		// create new map for param <-> variable number
 		final Map<String, Integer> methodVariables = new HashMap<>();
@@ -518,8 +521,10 @@ public class FirmGenerationVisitor implements AstVisitor {
 
 	@Override
 	public void visit(ReturnStatement returnStatement) {
-		// TODO Auto-generated method stub
-
+		returnStatement.getOperand().accept(this);
+		Node exprNode = returnStatement.getOperand().getFirmNode();
+		Node returnNode = state.methodConstruction.newReturn(state.methodConstruction.getCurrentMem(), new Node[] { exprNode });
+		state.methodReturns.add(returnNode);
 	}
 
 	@Override
@@ -686,19 +691,17 @@ public class FirmGenerationVisitor implements AstVisitor {
 
 		methodDeclaration.getBlock().accept(this);
 
-		Node returnNode;
-
-		// TODO temporary code for this week's assignment
 		if (methodDeclaration.getType().getBasicType() == BasicType.VOID) {
-			returnNode = state.methodConstruction.newReturn(state.methodConstruction.getCurrentMem(), new Node[] {});
-			// returnNode.setPred(0, methodDeclaration.getBlock().getFirmNode());
+			// return void
+			Node returnNode = state.methodConstruction.newReturn(state.methodConstruction.getCurrentMem(), new Node[] {});
+			graph.getEndBlock().addPred(returnNode);
 		} else {
-			Mode constMode = convertAstTypeToMode(methodDeclaration.getType());
-			Node constRet = state.methodConstruction.newConst(0, constMode);
-			returnNode = state.methodConstruction.newReturn(state.methodConstruction.getCurrentMem(), new Node[] { constRet });
+			// add all collected return nodes
+			for (Node returnNode : state.methodReturns) {
+				graph.getEndBlock().addPred(returnNode);
+			}
 		}
 
-		graph.getEndBlock().addPred(returnNode);
 		state.methodConstruction.setUnreachable();
 		state.methodConstruction.finish();
 		// clearState map
@@ -756,6 +759,7 @@ public class FirmGenerationVisitor implements AstVisitor {
 		this.state.methodConstruction = null;
 		this.state.methodVariables.clear();
 		this.state.methodVariableCount = 0;
+		this.state.methodReturns.clear();
 	}
 
 	@Override
