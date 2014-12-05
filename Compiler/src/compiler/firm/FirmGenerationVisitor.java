@@ -411,7 +411,6 @@ public class FirmGenerationVisitor implements AstVisitor {
 
 		Node referenceToObject = callCalloc(elementsCount.getFirmNode(), intToNode(elementsSize));
 		newArrayExpression.setFirmNode(referenceToObject);
-
 	}
 
 	private Node intToNode(int i) {
@@ -472,7 +471,7 @@ public class FirmGenerationVisitor implements AstVisitor {
 			firm.Mode fieldAccessMode = field.getType().getMode();
 			// primitive types have modes, Pointer types don't and there is no method to set it
 			// for minijava it is safe to set all pointers to reference
-			if(fieldAccessMode == null)
+			if (fieldAccessMode == null)
 				fieldAccessMode = state.hierarchy.getModeRef();
 			Node member = memberGet(addressOfField, fieldAccessMode);
 			variableAccessExpression.setFirmNode(member);
@@ -690,7 +689,6 @@ public class FirmGenerationVisitor implements AstVisitor {
 			startBlock.addPred(loopJump);
 		}
 		startBlock.mature();
-
 		state.methodConstruction.setCurrentBlock(endBlock);
 		state.methodConstruction.getGraph().keepAlive(startBlock);
 
@@ -782,11 +780,11 @@ public class FirmGenerationVisitor implements AstVisitor {
 
 		Node parameterProj = state.methodConstruction.newProj(reference,
 				convertAstTypeToMode(type),
-				state.methodVariableCount++);
+				state.methodVariableCount);
 
 		state.methodConstruction.setVariable(state.methodVariableCount, parameterProj);
 		// add parameter number to map
-		state.methodVariables.put(parameterDefinition.getIdentifier().getValue(), state.methodVariableCount);
+		state.methodVariables.put(parameterDefinition.getIdentifier().getValue(), state.methodVariableCount++);
 
 		parameterDefinition.setFirmNode(parameterProj);
 	}
