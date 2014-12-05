@@ -481,7 +481,6 @@ public class FirmGenerationVisitor implements AstVisitor {
 		if (assignment != null) {
 			result = memberAssign(arrayIndex, assignment);
 		} else {
-			// TODO ask developers of firm about convertAstArrayTypeToElementMode
 			result = memberGet(arrayIndex, convertAstArrayTypeToElementMode(arrayExpression.getType()));
 		}
 		arrayAccessExpression.setFirmNode(result);
