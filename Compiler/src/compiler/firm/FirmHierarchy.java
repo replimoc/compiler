@@ -166,13 +166,9 @@ class FirmHierarchy {
 	}
 
 	private firm.Type getTypeDeclaration(compiler.ast.type.Type type) {
-		compiler.ast.type.Type tmpType = type;
-		while (tmpType.getSubType() != null) {
-			tmpType = tmpType.getSubType();
-		}
 
 		firm.Type firmType = null;
-		switch (tmpType.getBasicType()) {
+		switch (type.getBasicType()) {
 		case INT:
 			firmType = new PrimitiveType(getModeInt());
 			break;
@@ -187,16 +183,14 @@ class FirmHierarchy {
 		case CLASS:
 			firmType = definedClasses.get(type.getIdentifier().getValue()).refToClass;
 			break;
+		case ARRAY:
+			firmType = new ArrayType(getTypeDeclaration(type.getSubType()));
+			break;
 		case METHOD:
 			break;
 		default:
 			// type STRING_ARGS
 			assert false;
-		}
-
-		if (type.getBasicType() == BasicType.ARRAY) {
-			// create composite type
-			firmType = new ArrayType(firmType);
 		}
 
 		return firmType;

@@ -160,7 +160,6 @@ public class FirmGenerationVisitor implements AstVisitor {
 		rightExpression.accept(this);
 
 		state.assignmentRightNode = rightExpression.getFirmNode();
-		System.out.println("lhsExpression.getClass() = " + leftExpression.getClass());
 		leftExpression.accept(this);
 		state.assignmentRightNode = null;
 		assignmentExpression.setFirmNode(leftExpression.getFirmNode());
@@ -377,17 +376,12 @@ public class FirmGenerationVisitor implements AstVisitor {
 
 	@Override
 	public void visit(NewArrayExpression newArrayExpression) {
-		firm.Type elementsType = state.hierarchy.getType(newArrayExpression.getType().getSubType());
+		int elementsSize = state.hierarchy.getType(newArrayExpression.getType().getSubType()).getSizeBytes();
 
 		Expression elementsCount = newArrayExpression.getFirstDimension();
 		elementsCount.accept(this);
 
-		Node numberOfElements = elementsCount.getFirmNode();
-		assert numberOfElements != null;
-		// FIXME a size node is wrong, integer is expected!
-		Node sizeofClass = state.methodConstruction.newSize(state.hierarchy.getModeInt(), elementsType);
-
-		Node referenceToObject = callCalloc(numberOfElements, sizeofClass);
+		Node referenceToObject = callCalloc(elementsCount.getFirmNode(), intToNode(elementsSize));
 		newArrayExpression.setFirmNode(referenceToObject);
 
 	}
@@ -405,27 +399,30 @@ public class FirmGenerationVisitor implements AstVisitor {
 
 	@Override
 	public void visit(VariableAccessExpression variableAccessExpression) {
+		Node assignment = this.state.assignmentRightNode;
+		this.state.assignmentRightNode = null;
+
 		Expression objectNameForFieldAccess = variableAccessExpression.getExpression();
 		if (objectNameForFieldAccess == null) {
 			String variableName = variableAccessExpression.getFieldIdentifier().getValue();
 			if (state.methodVariables.containsKey(variableName)) {
-				variableAccess(variableAccessExpression, variableName);
+				variableAccess(variableAccessExpression, variableName, assignment);
 			} else {
-				memberAccess(variableAccessExpression, state.className, getThisPointer());
+				memberAccess(variableAccessExpression, state.className, getThisPointer(), assignment);
 			}
 		} else {
 			objectNameForFieldAccess.accept(this);
-			memberAccess(variableAccessExpression, getClassName(objectNameForFieldAccess), objectNameForFieldAccess.getFirmNode());
+			memberAccess(variableAccessExpression, getClassName(objectNameForFieldAccess), objectNameForFieldAccess.getFirmNode(), assignment);
 		}
 	}
 
-	private void variableAccess(VariableAccessExpression variableAccessExpression, String variableName) {
+	private void variableAccess(VariableAccessExpression variableAccessExpression, String variableName, Node assignment) {
 		int variableNumber = state.methodVariables.get(variableName);
 
-		if (state.assignmentRightNode != null) {
+		if (assignment != null) {
 			// this is variable set expression:
-			state.methodConstruction.setVariable(variableNumber, state.assignmentRightNode);
-			variableAccessExpression.setFirmNode(state.assignmentRightNode);
+			state.methodConstruction.setVariable(variableNumber, assignment);
+			variableAccessExpression.setFirmNode(assignment);
 		} else {
 			Type astType = variableAccessExpression.getDefinition().getType();
 			Mode accessMode = convertAstTypeToMode(astType);
@@ -434,15 +431,15 @@ public class FirmGenerationVisitor implements AstVisitor {
 		}
 	}
 
-	private void memberAccess(VariableAccessExpression variableAccessExpression, String objectClassName, Node object) {
+	private void memberAccess(VariableAccessExpression variableAccessExpression, String objectClassName, Node object, Node assignment) {
 		String attribute = variableAccessExpression.getFieldIdentifier().getValue();
 		Entity field = state.hierarchy.getFieldEntity(objectClassName, attribute);
 
 		Node addressOfField = state.methodConstruction.newMember(object, field);
 
-		if (this.state.assignmentRightNode != null) {
-			memberAssign(addressOfField, this.state.assignmentRightNode);
-			variableAccessExpression.setFirmNode(this.state.assignmentRightNode);
+		if (assignment != null) {
+			memberAssign(addressOfField, assignment);
+			variableAccessExpression.setFirmNode(assignment);
 		} else {
 			Mode fieldAccessMode = field.getType().getMode();
 			Node member = memberGet(addressOfField, fieldAccessMode);
@@ -467,7 +464,7 @@ public class FirmGenerationVisitor implements AstVisitor {
 	@Override
 	public void visit(ArrayAccessExpression arrayAccessExpression) {
 		// save rvalue so that variable access expression doesn't think it is a store
-		Node lastRvalueNode = this.state.assignmentRightNode;
+		Node assignment = this.state.assignmentRightNode;
 		this.state.assignmentRightNode = null;
 
 		Expression arrayExpression = arrayAccessExpression.getArrayExpression();
@@ -481,11 +478,10 @@ public class FirmGenerationVisitor implements AstVisitor {
 				.newSel(arrayExpression.getFirmNode(), indexExpression.getFirmNode(), getArrayType(arrayExpression));
 
 		Node result = null;
-		if (lastRvalueNode != null) {
-			result = memberAssign(arrayIndex, lastRvalueNode);
+		if (assignment != null) {
+			result = memberAssign(arrayIndex, assignment);
 		} else {
-			// TODO ask developers of firm about convertAstArrayTypeToElementMode
-			result = memberGet(arrayIndex, convertAstArrayTypeToElementMode(arrayExpression.getType()));
+			result = memberGet(arrayIndex, convertAstTypeToMode(arrayExpression.getType().getSubType()));
 		}
 		arrayAccessExpression.setFirmNode(result);
 	}
@@ -609,10 +605,6 @@ public class FirmGenerationVisitor implements AstVisitor {
 
 		evaluateBooleanExpression(ifStatement.getCondition(), trueBlock, falseBlock);
 
-		if (hasElseBlock) {
-			// only mature if else block is present
-			falseBlock.mature();
-		}
 		trueBlock.mature();
 
 		// set new block as active and visit true case
@@ -624,6 +616,9 @@ public class FirmGenerationVisitor implements AstVisitor {
 			endifBlock.addPred(trueJmp);
 		}
 		if (hasElseBlock) {
+			// only mature if else block is present
+			falseBlock.mature();
+
 			// set new block as active and visit false case
 			state.methodConstruction.setCurrentBlock(falseBlock);
 			ifStatement.getFalseCase().accept(this);
@@ -632,8 +627,8 @@ public class FirmGenerationVisitor implements AstVisitor {
 				Node falseJmp = state.methodConstruction.newJmp();
 				endifBlock.addPred(falseJmp);
 			}
-			endifBlock.mature();
 		}
+		endifBlock.mature();
 
 		state.methodConstruction.setCurrentBlock(endifBlock);
 
@@ -761,14 +756,21 @@ public class FirmGenerationVisitor implements AstVisitor {
 
 	@Override
 	public void visit(ParameterDefinition parameterDefinition) {
-		Node paramProj = state.methodConstruction.newProj(state.methodConstruction.getGraph().getArgs(),
-				convertAstTypeToMode(parameterDefinition.getType()),
+		Type type = parameterDefinition.getType();
+		Node reference = state.methodConstruction.getGraph().getArgs();
+		if (BasicType.ARRAY.equals(type.getBasicType())) {
+			// TODO: Convert pointer to array.
+		}
+
+		Node parameterProj = state.methodConstruction.newProj(reference,
+				convertAstTypeToMode(type),
 				state.methodVariableCount++);
-		state.methodConstruction.setVariable(state.methodVariableCount, paramProj);
+
+		state.methodConstruction.setVariable(state.methodVariableCount, parameterProj);
 		// add parameter number to map
 		state.methodVariables.put(parameterDefinition.getIdentifier().getValue(), state.methodVariableCount);
 
-		parameterDefinition.setFirmNode(paramProj);
+		parameterDefinition.setFirmNode(parameterProj);
 	}
 
 	@Override
@@ -816,25 +818,6 @@ public class FirmGenerationVisitor implements AstVisitor {
 
 	private firm.Mode convertAstTypeToMode(Type type) {
 		switch (type.getBasicType()) {
-		case INT:
-			return state.hierarchy.getModeInt();
-		case BOOLEAN:
-			return state.hierarchy.getModeBool();
-		case CLASS:
-		case ARRAY:
-			return state.hierarchy.getModeRef();
-		default:
-			throw new RuntimeException("convertTypeToMode for " + type + " is not implemented");
-		}
-	}
-
-	private firm.Mode convertAstArrayTypeToElementMode(Type type) {
-		compiler.ast.type.Type tmpType = type;
-		while (tmpType.getSubType() != null) {
-			tmpType = tmpType.getSubType();
-		}
-
-		switch (tmpType.getBasicType()) {
 		case INT:
 			return state.hierarchy.getModeInt();
 		case BOOLEAN:
