@@ -1,6 +1,6 @@
 class FortyFive {
 
-	int foo(int a) {
+	public int foo(int a) {
 		if (a == 0 || a == 1)
 			return a;
 		return foo(a-1) + foo(a-2); 

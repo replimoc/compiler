@@ -1,6 +1,6 @@
 class FortyFour {
 
-	int[] arr;
+	public int[] arr;
 
 	public static void main(String[] args) {
 		FortyFour f44 = new FortyFour();

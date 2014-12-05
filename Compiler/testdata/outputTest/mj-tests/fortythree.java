@@ -1,5 +1,5 @@
 class Fortys {
-	int a;
+	public int a;
 
 	public static void main(String[] args) {
 		Fortys ft = new Fortys();
