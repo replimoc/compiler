@@ -34,6 +34,7 @@ public final class CompilerApp {
 	private static final String CHECK = "check";
 	private static final String DEBUG = "debug";
 	private static final String GRAPH_FIRM = "graph-firm";
+	private static final String OUTPUT_ASSEMBLER = "assembler";
 	private static final String COMPILE_FIRM = "compile-firm";
 
 	/**
@@ -58,6 +59,9 @@ public final class CompilerApp {
 		options.addOption(null, CHECK, false, "checks if the given source file is valid code.");
 		options.addOption(null, DEBUG, false, "prints more detailed error messages (only useful in case of a crash)");
 		options.addOption(null, GRAPH_FIRM, false, "dump a firm graph to the current directory.");
+		options.addOption(null, OUTPUT_ASSEMBLER, false, "outputs the generated assembler into file assembler.s (only to be used with --"
+				+ COMPILE_FIRM
+				+ ")");
 		options.addOption(null, COMPILE_FIRM, false, "use the firm backend to produce amd64 code.");
 
 		CommandLineParser commandLineParser = new BasicParser();
@@ -116,7 +120,7 @@ public final class CompilerApp {
 					}
 
 					if (cmd.hasOption(COMPILE_FIRM)) {
-						FirmUtils.createBinary("a");
+						FirmUtils.createBinary("a", cmd.hasOption(OUTPUT_ASSEMBLER));
 					}
 
 					FirmUtils.finishFirm();
