@@ -109,6 +109,8 @@ public final class CompilerApp {
 					FirmUtils.initFirm();
 					FirmGraphGenerator.transformToFirm(ast, semanticResult.getClassScopes());
 
+					FirmUtils.highToLowLevel();
+
 					if (cmd.hasOption(GRAPH_FIRM)) {
 						FirmUtils.createFirmGraph();
 					}
