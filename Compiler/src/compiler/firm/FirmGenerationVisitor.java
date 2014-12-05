@@ -158,30 +158,7 @@ public class FirmGenerationVisitor implements AstVisitor {
 		Expression rightExpression = assignmentExpression.getOperand2();
 		assert rightExpression != null;
 		if (rightExpression.getType().getBasicType() == BasicType.BOOLEAN) {
-			firm.nodes.Block trueBlock = state.methodConstruction.newBlock();
-			firm.nodes.Block falseBlock = state.methodConstruction.newBlock();
-			firm.nodes.Block afterBlock = state.methodConstruction.newBlock();
-
-			evaluateBooleanExpression(rightExpression, trueBlock, falseBlock);
-			int tempVariableIdx = state.methodConstruction.getGraph().getnLocalVars() - 1;
-
-			// create true block assigning true to temp variable
-			trueBlock.mature();
-			state.methodConstruction.setCurrentBlock(trueBlock);
-			state.methodConstruction.setVariable(tempVariableIdx, createBooleanConstantNode(true));
-			Node trueJump = state.methodConstruction.newJmp();
-			afterBlock.addPred(trueJump);
-
-			// create false block assigning false to temp variable
-			falseBlock.mature();
-			state.methodConstruction.setCurrentBlock(falseBlock);
-			state.methodConstruction.setVariable(tempVariableIdx, createBooleanConstantNode(false));
-			Node falseJump = state.methodConstruction.newJmp();
-			afterBlock.addPred(falseJump);
-
-			afterBlock.mature();
-			state.methodConstruction.setCurrentBlock(afterBlock);
-			state.assignmentRightNode = state.methodConstruction.getVariable(tempVariableIdx, state.hierarchy.getModeBool());
+			state.assignmentRightNode = createBooleanNodeFromBinaryExpression(rightExpression);
 		} else {
 			rightExpression.accept(this);
 			state.assignmentRightNode = rightExpression.getFirmNode();
@@ -189,6 +166,33 @@ public class FirmGenerationVisitor implements AstVisitor {
 		leftExpression.accept(this);
 		state.assignmentRightNode = null;
 		assignmentExpression.setFirmNode(rightExpression.getFirmNode());
+	}
+
+	private Node createBooleanNodeFromBinaryExpression(Expression expression) {
+		firm.nodes.Block trueBlock = state.methodConstruction.newBlock();
+		firm.nodes.Block falseBlock = state.methodConstruction.newBlock();
+		firm.nodes.Block afterBlock = state.methodConstruction.newBlock();
+
+		evaluateBooleanExpression(expression, trueBlock, falseBlock);
+		int tempVariableIdx = state.methodConstruction.getGraph().getnLocalVars() - 1;
+
+		// create true block assigning true to temp variable
+		trueBlock.mature();
+		state.methodConstruction.setCurrentBlock(trueBlock);
+		state.methodConstruction.setVariable(tempVariableIdx, createBooleanConstantNode(true));
+		Node trueJump = state.methodConstruction.newJmp();
+		afterBlock.addPred(trueJump);
+
+		// create false block assigning false to temp variable
+		falseBlock.mature();
+		state.methodConstruction.setCurrentBlock(falseBlock);
+		state.methodConstruction.setVariable(tempVariableIdx, createBooleanConstantNode(false));
+		Node falseJump = state.methodConstruction.newJmp();
+		afterBlock.addPred(falseJump);
+
+		afterBlock.mature();
+		state.methodConstruction.setCurrentBlock(afterBlock);
+		return state.methodConstruction.getVariable(tempVariableIdx, state.hierarchy.getModeBool());
 	}
 
 	@Override
@@ -353,30 +357,7 @@ public class FirmGenerationVisitor implements AstVisitor {
 			for (int j = 0; j < parameters.length; j++) {
 				Expression paramExpression = parameters[j];
 				if (paramExpression.getType().getBasicType() == BasicType.BOOLEAN) {
-					firm.nodes.Block trueBlock = state.methodConstruction.newBlock();
-					firm.nodes.Block falseBlock = state.methodConstruction.newBlock();
-					firm.nodes.Block afterBlock = state.methodConstruction.newBlock();
-
-					evaluateBooleanExpression(paramExpression, trueBlock, falseBlock);
-					int tempVariableIdx = state.methodConstruction.getGraph().getnLocalVars() - 1;
-
-					// create true block assigning true to temp variable
-					trueBlock.mature();
-					state.methodConstruction.setCurrentBlock(trueBlock);
-					state.methodConstruction.setVariable(tempVariableIdx, createBooleanConstantNode(true));
-					Node trueJump = state.methodConstruction.newJmp();
-					afterBlock.addPred(trueJump);
-
-					// create false block assigning false to temp variable
-					falseBlock.mature();
-					state.methodConstruction.setCurrentBlock(falseBlock);
-					state.methodConstruction.setVariable(tempVariableIdx, createBooleanConstantNode(false));
-					Node falseJump = state.methodConstruction.newJmp();
-					afterBlock.addPred(falseJump);
-
-					afterBlock.mature();
-					state.methodConstruction.setCurrentBlock(afterBlock);
-					parameterNodes[j + 1] = state.methodConstruction.getVariable(tempVariableIdx, state.hierarchy.getModeBool());
+					parameterNodes[j + 1] = createBooleanNodeFromBinaryExpression(paramExpression);
 				} else {
 					paramExpression.accept(visitor);
 					Node paramNode = paramExpression.getFirmNode();
