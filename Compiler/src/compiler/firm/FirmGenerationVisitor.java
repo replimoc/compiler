@@ -699,24 +699,13 @@ public class FirmGenerationVisitor implements AstVisitor {
 		// add variable number to hash map
 		String variableName = localVariableDeclaration.getIdentifier().getValue();
 		state.methodVariables.put(variableName, variableNumber);
-		System.out.println("variableName = " + variableName);
+		System.out.println("variableName = " + variableName + " (" + variableNumber + ")");
 
 		Expression expression = localVariableDeclaration.getExpression();
 		if (expression != null) {
-			System.out.println("about to visit1 = " + expression.getClass().getName());
-			expression.accept(this);
-
-			Node firmNode = expression.getFirmNode();
-			assert firmNode != null;
-			System.out.println("variableNumber = " + variableNumber);
-			state.methodConstruction.setVariable(variableNumber, firmNode);
-
-			// TODO TEMPORARY SET LAST NODE TO VARIABLE ACCESS
-			Mode variableMode = convertAstTypeToMode(localVariableDeclaration.getType());
-			Node var = state.methodConstruction.getVariable(variableNumber, variableMode);
-			localVariableDeclaration.setFirmNode(var);
-			// this should be the right one:
-			// localVariableDeclaration.setFirmNode(currentMethodConstruction.getCurrentMem());
+			AssignmentExpression assignment = new AssignmentExpression(null, new VariableAccessExpression(null, null,
+					localVariableDeclaration.getIdentifier()), expression);
+			assignment.accept(this);
 		} else {
 			System.out.println("localVariableDeclaration without assignment");
 		}
