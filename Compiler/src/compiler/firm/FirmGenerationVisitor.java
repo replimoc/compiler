@@ -353,7 +353,36 @@ public class FirmGenerationVisitor implements AstVisitor {
 			for (int j = 0; j < parameters.length; j++) {
 				Expression paramExpression = parameters[j];
 				paramExpression.accept(visitor);
-				parameterNodes[j + 1] = paramExpression.getFirmNode();
+				Node paramNode = paramExpression.getFirmNode();
+				if (paramExpression.getType().getBasicType() == BasicType.BOOLEAN) {
+					// TODO: is there a more elegant way to do this?
+					Node trueNode = state.methodConstruction.newProj(paramNode, Mode.getX(), 1);
+					Node falseNode = state.methodConstruction.newProj(paramNode, Mode.getX(), 0);
+					// true block
+					firm.nodes.Block trueBlock = state.methodConstruction.newBlock();
+					state.methodConstruction.setCurrentBlock(trueBlock);
+					Node trueConst = state.methodConstruction.newConst(1, state.hierarchy.getModeBool());
+					Node trueJmp = state.methodConstruction.newJmp();
+					trueBlock.addPred(trueNode);
+
+					// false block
+					firm.nodes.Block falseBlock = state.methodConstruction.newBlock();
+					state.methodConstruction.setCurrentBlock(falseBlock);
+					Node falseConst = state.methodConstruction.newConst(0, state.hierarchy.getModeBool());
+					Node falseJmp = state.methodConstruction.newJmp();
+					falseBlock.addPred(falseNode);
+
+					// end block
+					firm.nodes.Block endBlock = state.methodConstruction.newBlock();
+					state.methodConstruction.setCurrentBlock(endBlock);
+					endBlock.addPred(trueJmp);
+					endBlock.addPred(falseJmp);
+					// check which block was taken
+					Node phi = state.methodConstruction.newPhi(new Node[] { trueConst, falseConst }, state.hierarchy.getModeBool());
+					parameterNodes[j + 1] = phi;
+				} else {
+					parameterNodes[j + 1] = paramNode;
+				}
 			}
 		}
 	}
