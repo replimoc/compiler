@@ -160,7 +160,6 @@ public class FirmGenerationVisitor implements AstVisitor {
 		rightExpression.accept(this);
 
 		state.assignmentRightNode = rightExpression.getFirmNode();
-		System.out.println("lhsExpression.getClass() = " + leftExpression.getClass());
 		leftExpression.accept(this);
 		state.assignmentRightNode = null;
 		assignmentExpression.setFirmNode(leftExpression.getFirmNode());
@@ -405,27 +404,30 @@ public class FirmGenerationVisitor implements AstVisitor {
 
 	@Override
 	public void visit(VariableAccessExpression variableAccessExpression) {
+		Node assignment = this.state.assignmentRightNode;
+		this.state.assignmentRightNode = null;
+
 		Expression objectNameForFieldAccess = variableAccessExpression.getExpression();
 		if (objectNameForFieldAccess == null) {
 			String variableName = variableAccessExpression.getFieldIdentifier().getValue();
 			if (state.methodVariables.containsKey(variableName)) {
-				variableAccess(variableAccessExpression, variableName);
+				variableAccess(variableAccessExpression, variableName, assignment);
 			} else {
-				memberAccess(variableAccessExpression, state.className, getThisPointer());
+				memberAccess(variableAccessExpression, state.className, getThisPointer(), assignment);
 			}
 		} else {
 			objectNameForFieldAccess.accept(this);
-			memberAccess(variableAccessExpression, getClassName(objectNameForFieldAccess), objectNameForFieldAccess.getFirmNode());
+			memberAccess(variableAccessExpression, getClassName(objectNameForFieldAccess), objectNameForFieldAccess.getFirmNode(), assignment);
 		}
 	}
 
-	private void variableAccess(VariableAccessExpression variableAccessExpression, String variableName) {
+	private void variableAccess(VariableAccessExpression variableAccessExpression, String variableName, Node assignment) {
 		int variableNumber = state.methodVariables.get(variableName);
 
-		if (state.assignmentRightNode != null) {
+		if (assignment != null) {
 			// this is variable set expression:
-			state.methodConstruction.setVariable(variableNumber, state.assignmentRightNode);
-			variableAccessExpression.setFirmNode(state.assignmentRightNode);
+			state.methodConstruction.setVariable(variableNumber, assignment);
+			variableAccessExpression.setFirmNode(assignment);
 		} else {
 			Type astType = variableAccessExpression.getDefinition().getType();
 			Mode accessMode = convertAstTypeToMode(astType);
@@ -434,15 +436,15 @@ public class FirmGenerationVisitor implements AstVisitor {
 		}
 	}
 
-	private void memberAccess(VariableAccessExpression variableAccessExpression, String objectClassName, Node object) {
+	private void memberAccess(VariableAccessExpression variableAccessExpression, String objectClassName, Node object, Node assignment) {
 		String attribute = variableAccessExpression.getFieldIdentifier().getValue();
 		Entity field = state.hierarchy.getFieldEntity(objectClassName, attribute);
 
 		Node addressOfField = state.methodConstruction.newMember(object, field);
 
-		if (this.state.assignmentRightNode != null) {
-			memberAssign(addressOfField, this.state.assignmentRightNode);
-			variableAccessExpression.setFirmNode(this.state.assignmentRightNode);
+		if (assignment != null) {
+			memberAssign(addressOfField, assignment);
+			variableAccessExpression.setFirmNode(assignment);
 		} else {
 			Mode fieldAccessMode = field.getType().getMode();
 			Node member = memberGet(addressOfField, fieldAccessMode);
