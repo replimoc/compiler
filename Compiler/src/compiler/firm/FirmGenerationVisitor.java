@@ -481,7 +481,7 @@ public class FirmGenerationVisitor implements AstVisitor {
 		if (assignment != null) {
 			result = memberAssign(arrayIndex, assignment);
 		} else {
-			result = memberGet(arrayIndex, convertAstArrayTypeToElementMode(arrayExpression.getType()));
+			result = memberGet(arrayIndex, convertAstTypeToMode(arrayExpression.getType().getSubType()));
 		}
 		arrayAccessExpression.setFirmNode(result);
 	}
@@ -756,14 +756,14 @@ public class FirmGenerationVisitor implements AstVisitor {
 
 	@Override
 	public void visit(ParameterDefinition parameterDefinition) {
-		Node paramProj = state.methodConstruction.newProj(state.methodConstruction.getGraph().getArgs(),
+		Node parameterProj = state.methodConstruction.newProj(state.methodConstruction.getGraph().getArgs(),
 				convertAstTypeToMode(parameterDefinition.getType()),
 				state.methodVariableCount++);
-		state.methodConstruction.setVariable(state.methodVariableCount, paramProj);
+		state.methodConstruction.setVariable(state.methodVariableCount, parameterProj);
 		// add parameter number to map
 		state.methodVariables.put(parameterDefinition.getIdentifier().getValue(), state.methodVariableCount);
 
-		parameterDefinition.setFirmNode(paramProj);
+		parameterDefinition.setFirmNode(parameterProj);
 	}
 
 	@Override
@@ -811,23 +811,6 @@ public class FirmGenerationVisitor implements AstVisitor {
 
 	private firm.Mode convertAstTypeToMode(Type type) {
 		switch (type.getBasicType()) {
-		case INT:
-			return state.hierarchy.getModeInt();
-		case BOOLEAN:
-			return state.hierarchy.getModeBool();
-		case CLASS:
-		case ARRAY:
-			return state.hierarchy.getModeRef();
-		default:
-			throw new RuntimeException("convertTypeToMode for " + type + " is not implemented");
-		}
-	}
-
-	private firm.Mode convertAstArrayTypeToElementMode(Type type) {
-		compiler.ast.type.Type tmpType = type;
-		tmpType = tmpType.getSubType();
-
-		switch (tmpType.getBasicType()) {
 		case INT:
 			return state.hierarchy.getModeInt();
 		case BOOLEAN:
