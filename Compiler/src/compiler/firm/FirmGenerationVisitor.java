@@ -596,14 +596,12 @@ public class FirmGenerationVisitor implements AstVisitor {
 		boolean hasElseBlock = ifStatement.getFalseCase() != null;
 
 		firm.nodes.Block trueBlock = state.methodConstruction.newBlock();
-		firm.nodes.Block falseBlock;
+		firm.nodes.Block falseBlock = state.methodConstruction.newBlock();
 		firm.nodes.Block endifBlock = state.methodConstruction.newBlock();
-		// create else block only if necessary
-		if (hasElseBlock) {
-			falseBlock = state.methodConstruction.newBlock();
-		} else {
-			falseBlock = endifBlock;
-		}
+
+		System.out.println(trueBlock.toString());
+		System.out.println(endifBlock.toString());
+
 		evaluateBooleanExpression(ifStatement.getCondition(), trueBlock, falseBlock);
 
 		falseBlock.mature();
@@ -613,7 +611,7 @@ public class FirmGenerationVisitor implements AstVisitor {
 		state.methodConstruction.setCurrentBlock(trueBlock);
 		ifStatement.getTrueCase().accept(this);
 		// prevent a second control flow instruction from being set for this block
-		if (!state.methodReturns.containsKey(trueBlock)) {
+		if (!state.methodReturns.containsKey(state.methodConstruction.getCurrentBlock())) {
 			Node trueJmp = state.methodConstruction.newJmp();
 			endifBlock.addPred(trueJmp);
 		}
@@ -622,13 +620,17 @@ public class FirmGenerationVisitor implements AstVisitor {
 			state.methodConstruction.setCurrentBlock(falseBlock);
 			ifStatement.getFalseCase().accept(this);
 			// prevent a second control flow instruction from being set for this block
-			if (!state.methodReturns.containsKey(falseBlock)) {
+			if (!state.methodReturns.containsKey(state.methodConstruction.getCurrentBlock())) {
 				Node falseJmp = state.methodConstruction.newJmp();
 				endifBlock.addPred(falseJmp);
 			}
-			endifBlock.mature();
-			state.methodConstruction.setCurrentBlock(endifBlock);
+		} else {
+			state.methodConstruction.setCurrentBlock(falseBlock);
+			Node falseJmp = state.methodConstruction.newJmp();
+			endifBlock.addPred(falseJmp);
 		}
+		endifBlock.mature();
+		state.methodConstruction.setCurrentBlock(endifBlock);
 
 		ifStatement.setFirmNode(null);
 	}
@@ -651,7 +653,7 @@ public class FirmGenerationVisitor implements AstVisitor {
 		state.methodConstruction.getCurrentMem();
 
 		whileStatement.getBody().accept(this);
-		if (!state.methodReturns.containsKey(loopBlock)) {
+		if (!state.methodReturns.containsKey(state.methodConstruction.getCurrentBlock())) {
 			Node loopJump = state.methodConstruction.newJmp();
 			startBlock.addPred(loopJump);
 		}
