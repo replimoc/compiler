@@ -1,8 +1,6 @@
 package compiler.firm;
 
-import java.util.ArrayList;
 import java.util.HashMap;
-import java.util.List;
 import java.util.Map;
 
 import compiler.ast.Block;
@@ -70,7 +68,7 @@ public class FirmGenerationVisitor implements AstVisitor {
 		// current definitions
 		Construction methodConstruction = null;
 		int methodVariableCount = 0;
-		List<Node> methodReturns = new ArrayList<Node>();
+		final Map<firm.nodes.Block, Node> methodReturns = new HashMap<firm.nodes.Block, Node>();
 
 		// create new map for param <-> variable number
 		final Map<String, Integer> methodVariables = new HashMap<>();
@@ -516,17 +514,20 @@ public class FirmGenerationVisitor implements AstVisitor {
 	@Override
 	public void visit(ReturnStatement returnStatement) {
 		boolean hasOperand = returnStatement.getOperand() != null;
-		Node returnNode;
-		if (hasOperand) {
-			returnStatement.getOperand().accept(this);
-			Node exprNode = returnStatement.getOperand().getFirmNode();
-			returnNode = state.methodConstruction.newReturn(state.methodConstruction.getCurrentMem(), new Node[] { exprNode });
-		} else {
-			// return void
-			returnNode = state.methodConstruction.newReturn(state.methodConstruction.getCurrentMem(), new Node[] {});
-		}
+		// prevent a second return from being set for this block
+		if (!state.methodReturns.containsKey((firm.nodes.Block) state.methodConstruction.getCurrentBlock())) {
+			Node returnNode;
+			if (hasOperand) {
+				returnStatement.getOperand().accept(this);
+				Node exprNode = returnStatement.getOperand().getFirmNode();
+				returnNode = state.methodConstruction.newReturn(state.methodConstruction.getCurrentMem(), new Node[] { exprNode });
+			} else {
+				// return void
+				returnNode = state.methodConstruction.newReturn(state.methodConstruction.getCurrentMem(), new Node[] {});
+			}
 
-		state.methodReturns.add(returnNode);
+			state.methodReturns.put((firm.nodes.Block) state.methodConstruction.getCurrentBlock(), returnNode);
+		}
 	}
 
 	@Override
@@ -545,8 +546,11 @@ public class FirmGenerationVisitor implements AstVisitor {
 	public void visit(Block block) {
 		if (!block.isEmpty()) {
 			for (Statement statement : block.getStatements()) {
-				System.out.println("about to visit: = " + statement.getClass().getName());
-				statement.accept(this);
+				// do not visit blocks which already have a return
+				if (!state.methodReturns.containsKey((firm.nodes.Block) state.methodConstruction.getCurrentBlock())) {
+					System.out.println("about to visit: = " + statement.getClass().getName());
+					statement.accept(this);
+				}
 			}
 
 			// get last statement and set block firmNode to this statement
@@ -591,8 +595,14 @@ public class FirmGenerationVisitor implements AstVisitor {
 		boolean hasElseBlock = ifStatement.getFalseCase() != null;
 
 		firm.nodes.Block trueBlock = state.methodConstruction.newBlock();
-		firm.nodes.Block falseBlock = state.methodConstruction.newBlock();
-
+		firm.nodes.Block falseBlock;
+		firm.nodes.Block endifBlock = state.methodConstruction.newBlock();
+		// create else block only if necessary
+		if (hasElseBlock) {
+			falseBlock = state.methodConstruction.newBlock();
+		} else {
+			falseBlock = endifBlock;
+		}
 		evaluateBooleanExpression(ifStatement.getCondition(), trueBlock, falseBlock);
 
 		falseBlock.mature();
@@ -601,19 +611,21 @@ public class FirmGenerationVisitor implements AstVisitor {
 		// set new block as active and visit true case
 		state.methodConstruction.setCurrentBlock(trueBlock);
 		ifStatement.getTrueCase().accept(this);
-		Node trueJmp = state.methodConstruction.newJmp();
-
-		// set new block as active and visit false case
-		state.methodConstruction.setCurrentBlock(falseBlock);
-		if (hasElseBlock) {
-			ifStatement.getFalseCase().accept(this);
+		// prevent a second control flow instruction from being set for this block
+		if (!state.methodReturns.containsKey(trueBlock)) {
+			Node trueJmp = state.methodConstruction.newJmp();
+			endifBlock.addPred(trueJmp);
 		}
-		Node falseJmp = state.methodConstruction.newJmp();
-
-		// endif block
-		firm.nodes.Block endifBlock = state.methodConstruction.newBlock();
-		endifBlock.addPred(trueJmp);
-		endifBlock.addPred(falseJmp);
+		if (hasElseBlock) {
+			// set new block as active and visit false case
+			state.methodConstruction.setCurrentBlock(falseBlock);
+			ifStatement.getFalseCase().accept(this);
+			// prevent a second control flow instruction from being set for this block
+			if (!state.methodReturns.containsKey(falseBlock)) {
+				Node falseJmp = state.methodConstruction.newJmp();
+				endifBlock.addPred(falseJmp);
+			}
+		}
 		endifBlock.mature();
 		state.methodConstruction.setCurrentBlock(endifBlock);
 
@@ -638,8 +650,10 @@ public class FirmGenerationVisitor implements AstVisitor {
 		state.methodConstruction.getCurrentMem();
 
 		whileStatement.getBody().accept(this);
-		Node loopJump = state.methodConstruction.newJmp();
-		startBlock.addPred(loopJump);
+		if (!state.methodReturns.containsKey(loopBlock)) {
+			Node loopJump = state.methodConstruction.newJmp();
+			startBlock.addPred(loopJump);
+		}
 		startBlock.mature();
 
 		state.methodConstruction.setCurrentBlock(endBlock);
@@ -715,11 +729,12 @@ public class FirmGenerationVisitor implements AstVisitor {
 		methodDeclaration.getBlock().accept(this);
 
 		// add all collected return nodes
-		for (Node returnNode : state.methodReturns) {
+		for (Node returnNode : state.methodReturns.values()) {
 			graph.getEndBlock().addPred(returnNode);
 		}
-		if (methodDeclaration.getType().getBasicType() == BasicType.VOID) {
-			// return void
+		if (methodDeclaration.getType().getBasicType() == BasicType.VOID
+				&& !state.methodReturns.containsKey((firm.nodes.Block) state.methodConstruction.getCurrentBlock())) {
+			// return void if no return was specified yet
 			Node returnNode = state.methodConstruction.newReturn(state.methodConstruction.getCurrentMem(), new Node[] {});
 			graph.getEndBlock().addPred(returnNode);
 		}
@@ -767,8 +782,15 @@ public class FirmGenerationVisitor implements AstVisitor {
 
 		staticMethodDeclaration.getBlock().accept(this);
 
-		Node returnNode = state.methodConstruction.newReturn(state.methodConstruction.getCurrentMem(), new Node[] {});
-		mainGraph.getEndBlock().addPred(returnNode);
+		// add all collected return nodes
+		for (Node returnNode : state.methodReturns.values()) {
+			mainGraph.getEndBlock().addPred(returnNode);
+		}
+		if (!state.methodReturns.containsKey((firm.nodes.Block) state.methodConstruction.getCurrentBlock())) {
+			// return void if no return was specified yet
+			Node returnNode = state.methodConstruction.newReturn(state.methodConstruction.getCurrentMem(), new Node[] {});
+			mainGraph.getEndBlock().addPred(returnNode);
+		}
 
 		state.methodConstruction.setUnreachable();
 		state.methodConstruction.finish();
