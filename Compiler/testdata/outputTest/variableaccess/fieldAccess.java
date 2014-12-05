@@ -4,30 +4,35 @@ class Test {
 	public Test t;
 	
 	public static void main(String[] args) {
-		x = 10;
-		System.out.println(x);
-		x = x + 2;
-		System.out.println(x);
+		Test t = new Test();
 		
-		y = true;
-		
-		if(y) {
-			System.out.println(14);
-		} else {
-			System.out.println(16);
-		}
-		
-		y = false;
-		
-		if(y) {
-			System.out.println(14);
-		} else {
-			System.out.println(16);
-		}
-		
-		t = new Test();
-		t.x = x + 6;
+		t.x = 10;
 		System.out.println(t.x);
+		t.x = t.x + 2;
+		System.out.println(t.x);
+		
+		t.y = true;
+		
+		if(t.y) {
+			System.out.println(14);
+		} else {
+			System.out.println(16);
+		}
+		
+		t.y = false;
+		
+		if(t.y) {
+			System.out.println(14);
+		} else {
+			System.out.println(16);
+		}
+		
+		t.t = new Test();
+		System.out.println(67);
+		t.t.x = t.x + 6;
+		System.out.println(68);
+		System.out.println(t.t.x);
+		System.out.println(69);
 	}
 	
 }
