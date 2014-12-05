@@ -376,17 +376,12 @@ public class FirmGenerationVisitor implements AstVisitor {
 
 	@Override
 	public void visit(NewArrayExpression newArrayExpression) {
-		firm.Type elementsType = state.hierarchy.getType(newArrayExpression.getType().getSubType());
+		int elementsSize = state.hierarchy.getType(newArrayExpression.getType().getSubType()).getSizeBytes();
 
 		Expression elementsCount = newArrayExpression.getFirstDimension();
 		elementsCount.accept(this);
 
-		Node numberOfElements = elementsCount.getFirmNode();
-		assert numberOfElements != null;
-		// FIXME a size node is wrong, integer is expected!
-		Node sizeofClass = state.methodConstruction.newSize(state.hierarchy.getModeInt(), elementsType);
-
-		Node referenceToObject = callCalloc(numberOfElements, sizeofClass);
+		Node referenceToObject = callCalloc(elementsCount.getFirmNode(), intToNode(elementsSize));
 		newArrayExpression.setFirmNode(referenceToObject);
 
 	}
@@ -469,7 +464,7 @@ public class FirmGenerationVisitor implements AstVisitor {
 	@Override
 	public void visit(ArrayAccessExpression arrayAccessExpression) {
 		// save rvalue so that variable access expression doesn't think it is a store
-		Node lastRvalueNode = this.state.assignmentRightNode;
+		Node assignment = this.state.assignmentRightNode;
 		this.state.assignmentRightNode = null;
 
 		Expression arrayExpression = arrayAccessExpression.getArrayExpression();
@@ -483,8 +478,8 @@ public class FirmGenerationVisitor implements AstVisitor {
 				.newSel(arrayExpression.getFirmNode(), indexExpression.getFirmNode(), getArrayType(arrayExpression));
 
 		Node result = null;
-		if (lastRvalueNode != null) {
-			result = memberAssign(arrayIndex, lastRvalueNode);
+		if (assignment != null) {
+			result = memberAssign(arrayIndex, assignment);
 		} else {
 			// TODO ask developers of firm about convertAstArrayTypeToElementMode
 			result = memberGet(arrayIndex, convertAstArrayTypeToElementMode(arrayExpression.getType()));
@@ -832,9 +827,7 @@ public class FirmGenerationVisitor implements AstVisitor {
 
 	private firm.Mode convertAstArrayTypeToElementMode(Type type) {
 		compiler.ast.type.Type tmpType = type;
-		while (tmpType.getSubType() != null) {
-			tmpType = tmpType.getSubType();
-		}
+		tmpType = tmpType.getSubType();
 
 		switch (tmpType.getBasicType()) {
 		case INT:
