@@ -188,7 +188,7 @@ public class FirmGenerationVisitor implements AstVisitor {
 		}
 		leftExpression.accept(this);
 		state.assignmentRightNode = null;
-		assignmentExpression.setFirmNode(leftExpression.getFirmNode());
+		assignmentExpression.setFirmNode(rightExpression.getFirmNode());
 	}
 
 	@Override
@@ -472,7 +472,7 @@ public class FirmGenerationVisitor implements AstVisitor {
 			firm.Mode fieldAccessMode = field.getType().getMode();
 			// primitive types have modes, Pointer types don't and there is no method to set it
 			// for minijava it is safe to set all pointers to reference
-			if(fieldAccessMode == null)
+			if (fieldAccessMode == null)
 				fieldAccessMode = state.hierarchy.getModeRef();
 			Node member = memberGet(addressOfField, fieldAccessMode);
 			variableAccessExpression.setFirmNode(member);
