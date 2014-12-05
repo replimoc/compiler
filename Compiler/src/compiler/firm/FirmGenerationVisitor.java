@@ -469,7 +469,11 @@ public class FirmGenerationVisitor implements AstVisitor {
 			memberAssign(addressOfField, assignment);
 			variableAccessExpression.setFirmNode(assignment);
 		} else {
-			Mode fieldAccessMode = field.getType().getMode();
+			firm.Mode fieldAccessMode = field.getType().getMode();
+			// primitive types have modes, Pointer types don't and there is no method to set it
+			// for minijava it is safe to set all pointers to reference
+			if(fieldAccessMode == null)
+				fieldAccessMode = state.hierarchy.getModeRef();
 			Node member = memberGet(addressOfField, fieldAccessMode);
 			variableAccessExpression.setFirmNode(member);
 		}
@@ -515,7 +519,7 @@ public class FirmGenerationVisitor implements AstVisitor {
 	}
 
 	private firm.Type getArrayType(Expression expression) {
-		return state.hierarchy.getType(expression.getType());
+		return state.hierarchy.getTypeDeclaration(expression.getType(), false);
 	}
 
 	@Override
@@ -775,9 +779,6 @@ public class FirmGenerationVisitor implements AstVisitor {
 	public void visit(ParameterDefinition parameterDefinition) {
 		Type type = parameterDefinition.getType();
 		Node reference = state.methodConstruction.getGraph().getArgs();
-		if (BasicType.ARRAY.equals(type.getBasicType())) {
-			// TODO: Convert pointer to array.
-		}
 
 		Node parameterProj = state.methodConstruction.newProj(reference,
 				convertAstTypeToMode(type),

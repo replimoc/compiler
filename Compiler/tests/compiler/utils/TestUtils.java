@@ -13,6 +13,7 @@ import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
 
+import org.junit.Assert;
 import org.junit.Ignore;
 
 import compiler.StringTable;
@@ -91,8 +92,13 @@ public class TestUtils {
 			assertEquals("Error in file: " + sourceFile + " in line: " + line, expectedIter.next(), actualIter.next());
 			line++;
 		}
-		assertFalse("Error in file: " + sourceFile, actualIter.hasNext());
-		assertFalse("Error in file: " + sourceFile, expectedIter.hasNext());
+		if(actualIter.hasNext()){
+			Assert.fail("Error in file: " + sourceFile + " : extra line in actual file: " + actualIter.next() );
+		}
+
+		if(expectedIter.hasNext()){
+			Assert.fail("Error in file: " + sourceFile + " : extra line in actual file: " + expectedIter.next() );
+		}
 	}
 
 	public static Pair<Integer, List<String>> startCompilerApp(String... args) throws IOException {

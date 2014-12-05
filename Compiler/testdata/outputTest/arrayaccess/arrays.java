@@ -8,12 +8,20 @@ class Main
 		arr[0] = 1;
 		int z = arr[0];
 
-		/*int[] arr2 = arr;*/
+		System.out.println(z);
+
+		int[] arr2 = arr;
+
+		System.out.println(arr2[0]);
 
 		Element[] elements = new Element[2];
 		elements[z] = new Element();
 		Element e = elements[z];
+
+		System.out.println(e.x);
 	}
 }
 
-class Element {}
+class Element {
+	public int x;
+}
