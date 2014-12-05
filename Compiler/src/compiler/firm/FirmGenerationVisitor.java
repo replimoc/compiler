@@ -152,14 +152,40 @@ public class FirmGenerationVisitor implements AstVisitor {
 
 	@Override
 	public void visit(AssignmentExpression assignmentExpression) {
-		// first evaluate rhsExpression, that let lhsExpression decide what to do with rhsExpression;
+		// first evaluate rhsExpression, than let lhsExpression decide what to do with rhsExpression;
 
 		Expression leftExpression = assignmentExpression.getOperand1();
 		Expression rightExpression = assignmentExpression.getOperand2();
 		assert rightExpression != null;
-		rightExpression.accept(this);
+		if (rightExpression.getType().getBasicType() == BasicType.BOOLEAN) {
+			firm.nodes.Block trueBlock = state.methodConstruction.newBlock();
+			firm.nodes.Block falseBlock = state.methodConstruction.newBlock();
+			firm.nodes.Block afterBlock = state.methodConstruction.newBlock();
 
-		state.assignmentRightNode = rightExpression.getFirmNode();
+			evaluateBooleanExpression(rightExpression, trueBlock, falseBlock);
+			int tempVariableIdx = state.methodConstruction.getGraph().getnLocalVars() - 1;
+
+			// create true block assigning true to temp variable
+			trueBlock.mature();
+			state.methodConstruction.setCurrentBlock(trueBlock);
+			state.methodConstruction.setVariable(tempVariableIdx, createBooleanConstantNode(true));
+			Node trueJump = state.methodConstruction.newJmp();
+			afterBlock.addPred(trueJump);
+
+			// create false block assigning false to temp variable
+			falseBlock.mature();
+			state.methodConstruction.setCurrentBlock(falseBlock);
+			state.methodConstruction.setVariable(tempVariableIdx, createBooleanConstantNode(false));
+			Node falseJump = state.methodConstruction.newJmp();
+			afterBlock.addPred(falseJump);
+
+			afterBlock.mature();
+			state.methodConstruction.setCurrentBlock(afterBlock);
+			state.assignmentRightNode = state.methodConstruction.getVariable(tempVariableIdx, state.hierarchy.getModeBool());
+		} else {
+			rightExpression.accept(this);
+			state.assignmentRightNode = rightExpression.getFirmNode();
+		}
 		leftExpression.accept(this);
 		state.assignmentRightNode = null;
 		assignmentExpression.setFirmNode(leftExpression.getFirmNode());
@@ -265,11 +291,13 @@ public class FirmGenerationVisitor implements AstVisitor {
 
 	@Override
 	public void visit(BooleanConstantExpression booleanConstantExpression) {
-		boolean boolValue = booleanConstantExpression.isValue();
-		int boolIntValue = boolValue ? 1 : 0;
-
-		Node constant = state.methodConstruction.newConst(boolIntValue, state.hierarchy.getModeBool());
+		Node constant = createBooleanConstantNode(booleanConstantExpression.isValue());
 		booleanConstantExpression.setFirmNode(constant);
+	}
+
+	private Node createBooleanConstantNode(boolean boolValue) {
+		int boolIntValue = boolValue ? 1 : 0;
+		return state.methodConstruction.newConst(boolIntValue, state.hierarchy.getModeBool());
 	}
 
 	@Override
@@ -671,24 +699,13 @@ public class FirmGenerationVisitor implements AstVisitor {
 		// add variable number to hash map
 		String variableName = localVariableDeclaration.getIdentifier().getValue();
 		state.methodVariables.put(variableName, variableNumber);
-		System.out.println("variableName = " + variableName);
+		System.out.println("variableName = " + variableName + " (" + variableNumber + ")");
 
 		Expression expression = localVariableDeclaration.getExpression();
 		if (expression != null) {
-			System.out.println("about to visit1 = " + expression.getClass().getName());
-			expression.accept(this);
-
-			Node firmNode = expression.getFirmNode();
-			assert firmNode != null;
-			System.out.println("variableNumber = " + variableNumber);
-			state.methodConstruction.setVariable(variableNumber, firmNode);
-
-			// TODO TEMPORARY SET LAST NODE TO VARIABLE ACCESS
-			Mode variableMode = convertAstTypeToMode(localVariableDeclaration.getType());
-			Node var = state.methodConstruction.getVariable(variableNumber, variableMode);
-			localVariableDeclaration.setFirmNode(var);
-			// this should be the right one:
-			// localVariableDeclaration.setFirmNode(currentMethodConstruction.getCurrentMem());
+			AssignmentExpression assignment = new AssignmentExpression(null, new VariableAccessExpression(null, null,
+					localVariableDeclaration.getIdentifier()), expression);
+			assignment.accept(this);
 		} else {
 			System.out.println("localVariableDeclaration without assignment");
 		}
@@ -717,7 +734,7 @@ public class FirmGenerationVisitor implements AstVisitor {
 		System.out.println("methodEntity = " + methodEntity);
 
 		int numberLocalVariables = methodDeclaration.getNumberOfLocalVariables();
-		int variablesCount = 1 /* this */+ methodDeclaration.getParameters().size() + numberLocalVariables;
+		int variablesCount = 1 /* this */+ methodDeclaration.getParameters().size() + numberLocalVariables /* boolean assignments */+ 1;
 		Graph graph = new Graph(methodEntity, variablesCount);
 		state.methodConstruction = new Construction(graph);
 
@@ -785,7 +802,7 @@ public class FirmGenerationVisitor implements AstVisitor {
 
 		clearState();
 
-		int variablesCount = staticMethodDeclaration.getNumberOfLocalVariables();
+		int variablesCount = staticMethodDeclaration.getNumberOfLocalVariables()/* boolean assignments */+ 1;
 		System.out.println("num local vars in main = " + variablesCount);
 		Graph mainGraph = new Graph(state.hierarchy.getMainMethod(), variablesCount);
 		this.state.methodConstruction = new Construction(mainGraph);
