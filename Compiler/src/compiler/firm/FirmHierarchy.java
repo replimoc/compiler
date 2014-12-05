@@ -191,7 +191,7 @@ class FirmHierarchy {
 			if (arrayAsReference) {
 				firmType = new PrimitiveType(getModeRef());
 			} else {
-				firmType = new ArrayType(getTypeDeclaration(type.getSubType(), false));
+				firmType = new ArrayType(getTypeDeclaration(type.getSubType(), true));
 			}
 			break;
 		case METHOD:
