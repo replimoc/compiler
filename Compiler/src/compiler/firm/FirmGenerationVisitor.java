@@ -75,6 +75,8 @@ public class FirmGenerationVisitor implements AstVisitor {
 
 		String className;
 
+		Node assignmentRightNode = null;
+
 		State(FirmHierarchy hierarchy) {
 			this.hierarchy = hierarchy;
 		}
@@ -148,22 +150,20 @@ public class FirmGenerationVisitor implements AstVisitor {
 		});
 	}
 
-	private Node lastRvalueNode = null;
-
 	@Override
 	public void visit(AssignmentExpression assignmentExpression) {
 		// first evaluate rhsExpression, that let lhsExpression decide what to do with rhsExpression;
 
-		Expression rhsExpression = assignmentExpression.getOperand2();
-		assert rhsExpression != null;
-		rhsExpression.accept(this);
+		Expression leftExpression = assignmentExpression.getOperand1();
+		Expression rightExpression = assignmentExpression.getOperand2();
+		assert rightExpression != null;
+		rightExpression.accept(this);
 
-		lastRvalueNode = rhsExpression.getFirmNode();
-		Expression lhsExpression = assignmentExpression.getOperand1();
-		System.out.println("lhsExpression.getClass() = " + lhsExpression.getClass());
-		lhsExpression.accept(this);
-		lastRvalueNode = null;
-		assignmentExpression.setFirmNode(lhsExpression.getFirmNode());
+		state.assignmentRightNode = rightExpression.getFirmNode();
+		System.out.println("lhsExpression.getClass() = " + leftExpression.getClass());
+		leftExpression.accept(this);
+		state.assignmentRightNode = null;
+		assignmentExpression.setFirmNode(leftExpression.getFirmNode());
 	}
 
 	@Override
@@ -422,10 +422,10 @@ public class FirmGenerationVisitor implements AstVisitor {
 	private void variableAccess(VariableAccessExpression variableAccessExpression, String variableName) {
 		int variableNumber = state.methodVariables.get(variableName);
 
-		if (lastRvalueNode != null) {
+		if (state.assignmentRightNode != null) {
 			// this is variable set expression:
-			state.methodConstruction.setVariable(variableNumber, lastRvalueNode);
-			variableAccessExpression.setFirmNode(lastRvalueNode);
+			state.methodConstruction.setVariable(variableNumber, state.assignmentRightNode);
+			variableAccessExpression.setFirmNode(state.assignmentRightNode);
 		} else {
 			Type astType = variableAccessExpression.getDefinition().getType();
 			Mode accessMode = convertAstTypeToMode(astType);
@@ -435,13 +435,14 @@ public class FirmGenerationVisitor implements AstVisitor {
 	}
 
 	private void memberAccess(VariableAccessExpression variableAccessExpression, String objectClassName, Node object) {
-		Entity field = state.hierarchy.getFieldEntity(objectClassName, variableAccessExpression.getFieldIdentifier().getValue());
+		String attribute = variableAccessExpression.getFieldIdentifier().getValue();
+		Entity field = state.hierarchy.getFieldEntity(objectClassName, attribute);
 
 		Node addressOfField = state.methodConstruction.newMember(object, field);
 
-		if (this.lastRvalueNode != null) {
-			memberAssign(addressOfField, this.lastRvalueNode);
-			variableAccessExpression.setFirmNode(this.lastRvalueNode);
+		if (this.state.assignmentRightNode != null) {
+			memberAssign(addressOfField, this.state.assignmentRightNode);
+			variableAccessExpression.setFirmNode(this.state.assignmentRightNode);
 		} else {
 			Mode fieldAccessMode = field.getType().getMode();
 			Node member = memberGet(addressOfField, fieldAccessMode);
@@ -466,8 +467,8 @@ public class FirmGenerationVisitor implements AstVisitor {
 	@Override
 	public void visit(ArrayAccessExpression arrayAccessExpression) {
 		// save rvalue so that variable access expression doesn't think it is a store
-		Node lastRvalueNode = this.lastRvalueNode;
-		this.lastRvalueNode = null;
+		Node lastRvalueNode = this.state.assignmentRightNode;
+		this.state.assignmentRightNode = null;
 
 		Expression arrayExpression = arrayAccessExpression.getArrayExpression();
 		Expression indexExpression = arrayAccessExpression.getIndexExpression();
@@ -806,7 +807,7 @@ public class FirmGenerationVisitor implements AstVisitor {
 	}
 
 	private void clearState() {
-		this.lastRvalueNode = null;
+		this.state.assignmentRightNode = null;
 		this.state.methodConstruction = null;
 		this.state.methodVariables.clear();
 		this.state.methodVariableCount = 0;
