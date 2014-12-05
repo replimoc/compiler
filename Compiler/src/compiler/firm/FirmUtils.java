@@ -83,9 +83,11 @@ public final class FirmUtils {
 	 * @return
 	 * @throws IOException
 	 */
-	public static String createBinary(String outputFileName) throws IOException {
-		File assembler = File.createTempFile("assembler", ".s");
-		assembler.deleteOnExit();
+	public static String createBinary(String outputFileName, boolean keepAssembler) throws IOException {
+		File assembler = new File("assembler.s");
+		if (!keepAssembler) {
+			assembler.deleteOnExit();
+		}
 		File build = File.createTempFile("build", ".o");
 		build.deleteOnExit();
 		String printIntO = "resources/print_int.o";
@@ -103,7 +105,7 @@ public final class FirmUtils {
 		}
 
 		printOutput(Utils.systemExec("gcc", "-c", assemblerFile, "-o", buildFile));
-		printOutput(Utils.systemExec("gcc", "-c", "resources/print_int.c", "-o", printIntO));
+		printOutput(Utils.systemExec("gcc", "-c", "resources/standardlib.c", "-o", printIntO));
 		printOutput(Utils.systemExec("gcc", "-o", outputFileName, buildFile, printIntO));
 
 		return outputFileName;

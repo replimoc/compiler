@@ -52,10 +52,10 @@ class FirmHierarchy {
 		MethodType print_int_type = new MethodType(new firm.Type[] { new PrimitiveType(getModeInt()) }, new firm.Type[] {});
 		this.print_int = new Entity(firm.Program.getGlobalType(), "print_int", print_int_type);
 
-		// void* calloc (size_t num, size_t size);
+		// void* calloc_proxy (size_t num, size_t size);
 		MethodType calloc_type = new MethodType(new firm.Type[] { new PrimitiveType(getModeInt()), new PrimitiveType(getModeInt()) },
 				new firm.Type[] { new PrimitiveType(getModeRef()) });
-		this.calloc = new Entity(firm.Program.getGlobalType(), "calloc", calloc_type);
+		this.calloc = new Entity(firm.Program.getGlobalType(), "calloc_proxy", calloc_type);
 
 		// void main(void)
 		MethodType mainType = new MethodType(new firm.Type[] {}, new firm.Type[] {});
