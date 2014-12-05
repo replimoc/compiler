@@ -779,14 +779,14 @@ public class FirmGenerationVisitor implements AstVisitor {
 	public void visit(ParameterDefinition parameterDefinition) {
 		Type type = parameterDefinition.getType();
 		Node reference = state.methodConstruction.getGraph().getArgs();
+		int variableNumber = state.methodVariableCount++;
 
 		Node parameterProj = state.methodConstruction.newProj(reference,
-				convertAstTypeToMode(type),
-				state.methodVariableCount++);
+				convertAstTypeToMode(type), variableNumber);
 
-		state.methodConstruction.setVariable(state.methodVariableCount, parameterProj);
+		state.methodConstruction.setVariable(variableNumber, parameterProj);
 		// add parameter number to map
-		state.methodVariables.put(parameterDefinition.getIdentifier().getValue(), state.methodVariableCount);
+		state.methodVariables.put(parameterDefinition.getIdentifier().getValue(), variableNumber);
 
 		parameterDefinition.setFirmNode(parameterProj);
 	}
