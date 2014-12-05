@@ -756,9 +756,16 @@ public class FirmGenerationVisitor implements AstVisitor {
 
 	@Override
 	public void visit(ParameterDefinition parameterDefinition) {
-		Node parameterProj = state.methodConstruction.newProj(state.methodConstruction.getGraph().getArgs(),
-				convertAstTypeToMode(parameterDefinition.getType()),
+		Type type = parameterDefinition.getType();
+		Node reference = state.methodConstruction.getGraph().getArgs();
+		if (BasicType.ARRAY.equals(type.getBasicType())) {
+			// TODO: Convert pointer to array.
+		}
+
+		Node parameterProj = state.methodConstruction.newProj(reference,
+				convertAstTypeToMode(type),
 				state.methodVariableCount++);
+
 		state.methodConstruction.setVariable(state.methodVariableCount, parameterProj);
 		// add parameter number to map
 		state.methodVariables.put(parameterDefinition.getIdentifier().getValue(), state.methodVariableCount);
