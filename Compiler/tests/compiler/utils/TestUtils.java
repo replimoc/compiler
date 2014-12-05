@@ -1,7 +1,6 @@
 package compiler.utils;
 
 import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
 
 import java.io.IOException;
 import java.io.StringReader;
@@ -92,12 +91,12 @@ public class TestUtils {
 			assertEquals("Error in file: " + sourceFile + " in line: " + line, expectedIter.next(), actualIter.next());
 			line++;
 		}
-		if(actualIter.hasNext()){
-			Assert.fail("Error in file: " + sourceFile + " : extra line in actual file: " + actualIter.next() );
+		if (actualIter.hasNext()) {
+			Assert.fail("Error in file: " + sourceFile + " : extra line in actual file: " + actualIter.next());
 		}
 
-		if(expectedIter.hasNext()){
-			Assert.fail("Error in file: " + sourceFile + " : extra line in actual file: " + expectedIter.next() );
+		if (expectedIter.hasNext()) {
+			Assert.fail("Error in file: " + sourceFile + " : extra line in actual file: " + expectedIter.next());
 		}
 	}
 
