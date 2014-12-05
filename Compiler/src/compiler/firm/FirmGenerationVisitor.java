@@ -709,7 +709,7 @@ public class FirmGenerationVisitor implements AstVisitor {
 		createThisParameter(args);
 		// create parameters variables
 		for (ParameterDefinition param : methodDeclaration.getParameters()) {
-			createParameterDefinition(args, param);
+			param.accept(this);
 		}
 
 		methodDeclaration.getBlock().accept(this);
@@ -738,14 +738,8 @@ public class FirmGenerationVisitor implements AstVisitor {
 
 	@Override
 	public void visit(ParameterDefinition parameterDefinition) {
-		// TODO Auto-generated method stub
-
-	}
-
-	private void createParameterDefinition(Node args, ParameterDefinition parameterDefinition) {
-		// TODO maybe this is better to do with visitor
-		// args can be called as construction.getGraph().getArgs();
-		Node paramProj = state.methodConstruction.newProj(args, convertAstTypeToMode(parameterDefinition.getType()),
+		Node paramProj = state.methodConstruction.newProj(state.methodConstruction.getGraph().getArgs(),
+				convertAstTypeToMode(parameterDefinition.getType()),
 				state.methodVariableCount++);
 		state.methodConstruction.setVariable(state.methodVariableCount, paramProj);
 		// add parameter number to map
