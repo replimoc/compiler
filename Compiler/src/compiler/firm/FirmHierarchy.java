@@ -92,6 +92,10 @@ class FirmHierarchy {
 					addMethodEntity(className, currMethod);
 				}
 			}
+
+			ClassType classType = getClassEntity(className);
+			classType.layoutFields();
+			classType.finishLayout();
 		}
 	}
 
