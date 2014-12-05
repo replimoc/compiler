@@ -519,7 +519,7 @@ public class FirmGenerationVisitor implements AstVisitor {
 	}
 
 	private firm.Type getArrayType(Expression expression) {
-		return state.hierarchy.getType(expression.getType());
+		return state.hierarchy.getTypeDeclaration(expression.getType(), false);
 	}
 
 	@Override
@@ -779,9 +779,6 @@ public class FirmGenerationVisitor implements AstVisitor {
 	public void visit(ParameterDefinition parameterDefinition) {
 		Type type = parameterDefinition.getType();
 		Node reference = state.methodConstruction.getGraph().getArgs();
-		if (BasicType.ARRAY.equals(type.getBasicType())) {
-			// TODO: Convert pointer to array.
-		}
 
 		Node parameterProj = state.methodConstruction.newProj(reference,
 				convertAstTypeToMode(type),

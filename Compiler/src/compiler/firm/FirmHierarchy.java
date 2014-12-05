@@ -105,7 +105,7 @@ class FirmHierarchy {
 	}
 
 	private void addFieldEntity(String className, Definition definition) {
-		firm.Type firmType = getTypeDeclaration(definition.getType());
+		firm.Type firmType = getTypeDeclaration(definition.getType(), true);
 		String entityName = escapeName(className, "f", definition.getSymbol().getValue());
 		System.out.println("entityName = " + entityName);
 
@@ -126,7 +126,7 @@ class FirmHierarchy {
 		firm.Type[] parameterTypes = new firm.Type[parameterDefinitions.length + 1];
 		parameterTypes[0] = classWrapper.refToClass;
 		for (int paramIdx = 0; paramIdx < parameterDefinitions.length; paramIdx++) {
-			parameterTypes[paramIdx + 1] = getTypeDeclaration(parameterDefinitions[paramIdx].getType());
+			parameterTypes[paramIdx + 1] = getTypeDeclaration(parameterDefinitions[paramIdx].getType(), true);
 		}
 
 		// return type
@@ -135,7 +135,7 @@ class FirmHierarchy {
 			returnType = new firm.Type[] {};
 		} else {
 			returnType = new firm.Type[1];
-			returnType[0] = getTypeDeclaration(methodDefinition.getType());
+			returnType[0] = getTypeDeclaration(methodDefinition.getType(), true);
 		}
 
 		// create methodType and methodEntity
@@ -166,10 +166,10 @@ class FirmHierarchy {
 	}
 
 	public firm.Type getType(compiler.ast.type.Type type) {
-		return getTypeDeclaration(type);
+		return getTypeDeclaration(type, false);
 	}
 
-	private firm.Type getTypeDeclaration(compiler.ast.type.Type type) {
+	public firm.Type getTypeDeclaration(compiler.ast.type.Type type, boolean arrayAsReference) {
 
 		firm.Type firmType = null;
 		switch (type.getBasicType()) {
@@ -188,7 +188,11 @@ class FirmHierarchy {
 			firmType = definedClasses.get(type.getIdentifier().getValue()).refToClass;
 			break;
 		case ARRAY:
-			firmType = new ArrayType(getTypeDeclaration(type.getSubType()));
+			if (arrayAsReference) {
+				firmType = new PrimitiveType(getModeRef());
+			} else {
+				firmType = new ArrayType(getTypeDeclaration(type.getSubType(), false));
+			}
 			break;
 		case METHOD:
 			break;
