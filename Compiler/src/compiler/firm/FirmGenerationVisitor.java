@@ -72,6 +72,7 @@ public class FirmGenerationVisitor implements AstVisitor {
 
 		// create new map for param <-> variable number
 		final Map<String, Integer> methodVariables = new HashMap<>();
+		Node activePhiNode;
 
 		String className;
 
@@ -118,13 +119,24 @@ public class FirmGenerationVisitor implements AstVisitor {
 
 		// get firmNode for fist operand
 		Expression operand1 = binaryExpression.getOperand1();
-		operand1.accept(this);
-		Node operand1Node = operand1.getFirmNode();
-
+		Node operand1Node;
+		if (operand1.getType().getBasicType() == BasicType.BOOLEAN) {
+			// maybe additional blocks need to be created
+			operand1Node = createBooleanNodeFromBinaryExpression(operand1);
+		} else {
+			operand1.accept(this);
+			operand1Node = operand1.getFirmNode();
+		}
 		// get firmNode for second operand
 		Expression operand2 = binaryExpression.getOperand2();
-		operand2.accept(this);
-		Node operand2Node = operand2.getFirmNode();
+		Node operand2Node;
+		if (operand1.getType().getBasicType() == BasicType.BOOLEAN) {
+			// maybe additional blocks need to be created
+			operand2Node = createBooleanNodeFromBinaryExpression(operand2);
+		} else {
+			operand2.accept(this);
+			operand2Node = operand2.getFirmNode();
+		}
 
 		Node exprNode = firmNodeCreator.createNode(operand1Node, operand2Node, mode);
 		binaryExpression.setFirmNode(exprNode);
@@ -169,30 +181,35 @@ public class FirmGenerationVisitor implements AstVisitor {
 	}
 
 	private Node createBooleanNodeFromBinaryExpression(Expression expression) {
-		firm.nodes.Block trueBlock = state.methodConstruction.newBlock();
-		firm.nodes.Block falseBlock = state.methodConstruction.newBlock();
-		firm.nodes.Block afterBlock = state.methodConstruction.newBlock();
+		if (expression instanceof BooleanConstantExpression) {
+			expression.accept(this);
+			return expression.getFirmNode();
+		} else {
+			firm.nodes.Block trueBlock = state.methodConstruction.newBlock();
+			firm.nodes.Block falseBlock = state.methodConstruction.newBlock();
+			firm.nodes.Block afterBlock = state.methodConstruction.newBlock();
 
-		evaluateBooleanExpression(expression, trueBlock, falseBlock);
-		int tempVariableIdx = state.methodConstruction.getGraph().getnLocalVars() - 1;
+			evaluateBooleanExpression(expression, trueBlock, falseBlock);
+			// create true block assigning true to temp variable
+			trueBlock.mature();
+			state.methodConstruction.setCurrentBlock(trueBlock);
+			Node trueConst = state.methodConstruction.newConst(1, state.hierarchy.getModeBool());
+			Node trueJump = state.methodConstruction.newJmp();
+			afterBlock.addPred(trueJump);
 
-		// create true block assigning true to temp variable
-		trueBlock.mature();
-		state.methodConstruction.setCurrentBlock(trueBlock);
-		state.methodConstruction.setVariable(tempVariableIdx, createBooleanConstantNode(true));
-		Node trueJump = state.methodConstruction.newJmp();
-		afterBlock.addPred(trueJump);
+			// create false block assigning false to temp variable
+			falseBlock.mature();
+			state.methodConstruction.setCurrentBlock(falseBlock);
+			Node falseConst = state.methodConstruction.newConst(0, state.hierarchy.getModeBool());
+			Node falseJump = state.methodConstruction.newJmp();
+			afterBlock.addPred(falseJump);
 
-		// create false block assigning false to temp variable
-		falseBlock.mature();
-		state.methodConstruction.setCurrentBlock(falseBlock);
-		state.methodConstruction.setVariable(tempVariableIdx, createBooleanConstantNode(false));
-		Node falseJump = state.methodConstruction.newJmp();
-		afterBlock.addPred(falseJump);
-
-		afterBlock.mature();
-		state.methodConstruction.setCurrentBlock(afterBlock);
-		return state.methodConstruction.getVariable(tempVariableIdx, state.hierarchy.getModeBool());
+			afterBlock.mature();
+			state.methodConstruction.setCurrentBlock(afterBlock);
+			Node phi = state.methodConstruction.newPhi(new Node[] { trueConst, falseConst }, state.hierarchy.getModeBool());
+			state.activePhiNode = phi;
+			return phi;
+		}
 	}
 
 	@Override
@@ -454,6 +471,7 @@ public class FirmGenerationVisitor implements AstVisitor {
 
 	private void variableAccess(VariableAccessExpression variableAccessExpression, String variableName, Node assignment) {
 		int variableNumber = state.methodVariables.get(variableName);
+		state.methodConstruction.getCurrentMem();
 
 		if (assignment != null) {
 			// this is variable set expression:
@@ -617,10 +635,21 @@ public class FirmGenerationVisitor implements AstVisitor {
 		condition.accept(visitor);
 
 		Node conditionNode = getConditionNode(condition);
+		Mode mode = Mode.getX();
 
-		if (conditionNode != null) { // For logical and and logical or this is already done, ignore it.
-			Mode mode = Mode.getX();
-
+		if (conditionNode != null && !conditionNode.getBlock().equals(state.methodConstruction.getCurrentBlock())) {
+			// TODO: find a more elegant way to do this!
+			// we reference a condition node that is not in the current block, get the last set phi node instead
+			// create a new condition node for that phi node
+			Node trueConst = state.methodConstruction.newConst(1, state.hierarchy.getModeBool());
+			Node cmp = state.methodConstruction.newCmp(state.activePhiNode, trueConst, Relation.Equal);
+			conditionNode = state.methodConstruction.newCond(cmp);
+			Node condTrue = state.methodConstruction.newProj(conditionNode, mode, 1);
+			trueBlock.addPred(condTrue);
+			Node condFalse = state.methodConstruction.newProj(conditionNode, mode, 0);
+			falseBlock.addPred(condFalse);
+			state.activePhiNode = null;
+		} else if (conditionNode != null) { // For logical and and logical or this is already done, ignore it.
 			Node condTrue = state.methodConstruction.newProj(conditionNode, mode, 1);
 			trueBlock.addPred(condTrue);
 			Node condFalse = state.methodConstruction.newProj(conditionNode, mode, 0);
@@ -644,7 +673,6 @@ public class FirmGenerationVisitor implements AstVisitor {
 		}
 
 		evaluateBooleanExpression(ifStatement.getCondition(), trueBlock, falseBlock);
-
 		trueBlock.mature();
 
 		// set new block as active and visit true case
@@ -838,6 +866,7 @@ public class FirmGenerationVisitor implements AstVisitor {
 		this.state.methodVariables.clear();
 		this.state.methodVariableCount = 0;
 		this.state.methodReturns.clear();
+		this.state.activePhiNode = null;
 	}
 
 	private firm.Mode convertAstTypeToMode(Type type) {
