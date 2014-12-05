@@ -605,10 +605,6 @@ public class FirmGenerationVisitor implements AstVisitor {
 
 		evaluateBooleanExpression(ifStatement.getCondition(), trueBlock, falseBlock);
 
-		if (hasElseBlock) {
-			// only mature if else block is present
-			falseBlock.mature();
-		}
 		trueBlock.mature();
 
 		// set new block as active and visit true case
@@ -620,6 +616,9 @@ public class FirmGenerationVisitor implements AstVisitor {
 			endifBlock.addPred(trueJmp);
 		}
 		if (hasElseBlock) {
+			// only mature if else block is present
+			falseBlock.mature();
+
 			// set new block as active and visit false case
 			state.methodConstruction.setCurrentBlock(falseBlock);
 			ifStatement.getFalseCase().accept(this);
@@ -628,8 +627,8 @@ public class FirmGenerationVisitor implements AstVisitor {
 				Node falseJmp = state.methodConstruction.newJmp();
 				endifBlock.addPred(falseJmp);
 			}
-			endifBlock.mature();
 		}
+		endifBlock.mature();
 
 		state.methodConstruction.setCurrentBlock(endifBlock);
 
