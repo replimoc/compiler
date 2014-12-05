@@ -430,7 +430,7 @@ public class FirmGenerationVisitor implements AstVisitor {
 
 	@Override
 	public void visit(NewArrayExpression newArrayExpression) {
-		int elementsSize = state.hierarchy.getType(newArrayExpression.getType().getSubType()).getSizeBytes();
+		int elementsSize = state.hierarchy.getTypeDeclaration(newArrayExpression.getType().getSubType(), true).getSizeBytes();
 
 		Expression elementsCount = newArrayExpression.getFirstDimension();
 		elementsCount.accept(this);
