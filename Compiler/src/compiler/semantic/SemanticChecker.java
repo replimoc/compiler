@@ -30,7 +30,13 @@ public final class SemanticChecker {
 		Symbol systemSymbol = new Symbol("System");
 		if (classScopes.containsKey(systemSymbol) == false) {
 			// create PrintStream class
-			Symbol printStream = new Symbol("PrintStream");
+			int printStreamNum = 0;
+
+			Symbol printStream;
+			do {
+				printStream = new Symbol("PrintStream" + printStreamNum);
+			} while (classScopes.containsKey(printStream));
+
 			Definition printStreamDefinition = new Definition(printStream, new ClassType(new Position(-1, -1), printStream), null);
 
 			HashMap<Symbol, MethodDefinition> psMethods = new HashMap<Symbol, MethodDefinition>();

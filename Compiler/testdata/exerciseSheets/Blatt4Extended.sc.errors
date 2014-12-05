@@ -1,4 +1,4 @@
-error: Member foo at position line   7, character  9 is not available in object PrintStream defined at line  -1, character -1
+error: Member foo at position line   7, character  9 is not available in object PrintStream0 defined at line  -1, character -1
 error: Illegal access to non static member at line  11, character 19
 error: Illegal access to non static member at line  15, character 18
 error: type error in token at position line  25, character 13: Array access on a non array.
