@@ -332,6 +332,7 @@ public class FirmGenerationVisitor implements AstVisitor {
 	}
 
 	private class PrintMethodCallInformation extends MethodCallInformation {
+		@Override
 		public void generate(MethodInvocationExpression methodInvocationExpression, AstVisitor visitor) {
 			methodInvocationExpression.getParameters()[0].accept(visitor);
 			parameterNodes = new Node[1];
@@ -515,7 +516,7 @@ public class FirmGenerationVisitor implements AstVisitor {
 	public void visit(ReturnStatement returnStatement) {
 		boolean hasOperand = returnStatement.getOperand() != null;
 		// prevent a second return from being set for this block
-		if (!state.methodReturns.containsKey((firm.nodes.Block) state.methodConstruction.getCurrentBlock())) {
+		if (!state.methodReturns.containsKey(state.methodConstruction.getCurrentBlock())) {
 			Node returnNode;
 			if (hasOperand) {
 				returnStatement.getOperand().accept(this);
@@ -526,7 +527,7 @@ public class FirmGenerationVisitor implements AstVisitor {
 				returnNode = state.methodConstruction.newReturn(state.methodConstruction.getCurrentMem(), new Node[] {});
 			}
 
-			state.methodReturns.put((firm.nodes.Block) state.methodConstruction.getCurrentBlock(), returnNode);
+			state.methodReturns.put(state.methodConstruction.getCurrentBlock(), returnNode);
 		}
 	}
 
@@ -547,7 +548,7 @@ public class FirmGenerationVisitor implements AstVisitor {
 		if (!block.isEmpty()) {
 			for (Statement statement : block.getStatements()) {
 				// do not visit blocks which already have a return
-				if (!state.methodReturns.containsKey((firm.nodes.Block) state.methodConstruction.getCurrentBlock())) {
+				if (!state.methodReturns.containsKey(state.methodConstruction.getCurrentBlock())) {
 					System.out.println("about to visit: = " + statement.getClass().getName());
 					statement.accept(this);
 				}
@@ -625,9 +626,9 @@ public class FirmGenerationVisitor implements AstVisitor {
 				Node falseJmp = state.methodConstruction.newJmp();
 				endifBlock.addPred(falseJmp);
 			}
+			endifBlock.mature();
+			state.methodConstruction.setCurrentBlock(endifBlock);
 		}
-		endifBlock.mature();
-		state.methodConstruction.setCurrentBlock(endifBlock);
 
 		ifStatement.setFirmNode(null);
 	}
@@ -733,7 +734,7 @@ public class FirmGenerationVisitor implements AstVisitor {
 			graph.getEndBlock().addPred(returnNode);
 		}
 		if (methodDeclaration.getType().getBasicType() == BasicType.VOID
-				&& !state.methodReturns.containsKey((firm.nodes.Block) state.methodConstruction.getCurrentBlock())) {
+				&& !state.methodReturns.containsKey(state.methodConstruction.getCurrentBlock())) {
 			// return void if no return was specified yet
 			Node returnNode = state.methodConstruction.newReturn(state.methodConstruction.getCurrentMem(), new Node[] {});
 			graph.getEndBlock().addPred(returnNode);
@@ -786,7 +787,7 @@ public class FirmGenerationVisitor implements AstVisitor {
 		for (Node returnNode : state.methodReturns.values()) {
 			mainGraph.getEndBlock().addPred(returnNode);
 		}
-		if (!state.methodReturns.containsKey((firm.nodes.Block) state.methodConstruction.getCurrentBlock())) {
+		if (!state.methodReturns.containsKey(state.methodConstruction.getCurrentBlock())) {
 			// return void if no return was specified yet
 			Node returnNode = state.methodConstruction.newReturn(state.methodConstruction.getCurrentMem(), new Node[] {});
 			mainGraph.getEndBlock().addPred(returnNode);
