@@ -4,8 +4,10 @@ class Test {
 	
 	public static void main(String[] args) {
 		Test t = new Test();
+		System.out.println(66);
 		t.t = new Test();
-		
+
+		System.out.println(67);
 		t.t.x = 3;
 		
 		System.out.println(68);
