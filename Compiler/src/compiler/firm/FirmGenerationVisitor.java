@@ -80,7 +80,7 @@ public class FirmGenerationVisitor implements AstVisitor {
 
 		String className;
 
-		Node assignmentRightNode = null;
+		Expression assignmentRightSide = null;
 
 		State(FirmHierarchy hierarchy) {
 			this.hierarchy = hierarchy;
@@ -173,15 +173,23 @@ public class FirmGenerationVisitor implements AstVisitor {
 		Expression leftExpression = assignmentExpression.getOperand1();
 		Expression rightExpression = assignmentExpression.getOperand2();
 		assert rightExpression != null;
+		state.assignmentRightSide = rightExpression;
+		leftExpression.accept(this);
+		state.assignmentRightSide = null;
+		assignmentExpression.setFirmNode(rightExpression.getFirmNode());
+	}
+
+	private Node getRightSideOfAssignment(Expression rightExpression) {
+		if (rightExpression.getFirmNode() != null) {
+			return rightExpression.getFirmNode();
+		}
+
 		if (rightExpression.getType().getBasicType() == BasicType.BOOLEAN) {
-			state.assignmentRightNode = createBooleanNodeFromBinaryExpression(rightExpression);
+			return createBooleanNodeFromBinaryExpression(rightExpression);
 		} else {
 			rightExpression.accept(this);
-			state.assignmentRightNode = rightExpression.getFirmNode();
+			return rightExpression.getFirmNode();
 		}
-		leftExpression.accept(this);
-		state.assignmentRightNode = null;
-		assignmentExpression.setFirmNode(rightExpression.getFirmNode());
 	}
 
 	private Node createBooleanNodeFromBinaryExpression(Expression expression) {
@@ -456,8 +464,8 @@ public class FirmGenerationVisitor implements AstVisitor {
 
 	@Override
 	public void visit(VariableAccessExpression variableAccessExpression) {
-		Node assignment = this.state.assignmentRightNode;
-		this.state.assignmentRightNode = null;
+		Expression assignmentRightSide = this.state.assignmentRightSide;
+		this.state.assignmentRightSide = null;
 
 		Expression objectNameForFieldAccess = variableAccessExpression.getExpression();
 		if (objectNameForFieldAccess == null) {
@@ -470,24 +478,26 @@ public class FirmGenerationVisitor implements AstVisitor {
 			}
 			DefinitionKey variableDef = new DefinitionKey(def.getSymbol(), def.getType(), def.getAstNode());
 			if (state.methodVariables.containsKey(variableDef)) {
-				variableAccess(variableAccessExpression, variableDef, assignment);
+				variableAccess(variableAccessExpression, variableDef, assignmentRightSide);
 			} else {
-				memberAccess(variableAccessExpression, state.className, getThisPointer(), assignment);
+				memberAccess(variableAccessExpression, state.className, getThisPointer(), assignmentRightSide);
 			}
 		} else {
 			objectNameForFieldAccess.accept(this);
-			memberAccess(variableAccessExpression, getClassName(objectNameForFieldAccess), objectNameForFieldAccess.getFirmNode(), assignment);
+			memberAccess(variableAccessExpression, getClassName(objectNameForFieldAccess), objectNameForFieldAccess.getFirmNode(),
+					assignmentRightSide);
 		}
 	}
 
-	private void variableAccess(VariableAccessExpression variableAccessExpression, DefinitionKey variableDef, Node assignment) {
+	private void variableAccess(VariableAccessExpression variableAccessExpression, DefinitionKey variableDef, Expression assignmentRightSide) {
 		int variableNumber = state.methodVariables.get(variableDef);
 		state.methodConstruction.getCurrentMem();
 
-		if (assignment != null) {
+		if (assignmentRightSide != null) {
+			Node rightSideNode = getRightSideOfAssignment(assignmentRightSide);
 			// this is variable set expression:
-			state.methodConstruction.setVariable(variableNumber, assignment);
-			variableAccessExpression.setFirmNode(assignment);
+			state.methodConstruction.setVariable(variableNumber, rightSideNode);
+			variableAccessExpression.setFirmNode(rightSideNode);
 		} else {
 			Type astType = variableAccessExpression.getDefinition().getType();
 			Mode accessMode = convertAstTypeToMode(astType);
@@ -496,15 +506,15 @@ public class FirmGenerationVisitor implements AstVisitor {
 		}
 	}
 
-	private void memberAccess(VariableAccessExpression variableAccessExpression, String objectClassName, Node object, Node assignment) {
+	private void memberAccess(VariableAccessExpression variableAccessExpression, String objectClassName, Node object, Expression assignmentRightSide) {
 		String attribute = variableAccessExpression.getFieldIdentifier().getValue();
 		Entity field = state.hierarchy.getFieldEntity(objectClassName, attribute);
 
 		Node addressOfField = state.methodConstruction.newMember(object, field);
 
-		if (assignment != null) {
-			memberAssign(addressOfField, assignment);
-			variableAccessExpression.setFirmNode(assignment);
+		if (assignmentRightSide != null) {
+			memberAssign(addressOfField, assignmentRightSide);
+			variableAccessExpression.setFirmNode(assignmentRightSide.getFirmNode());
 		} else {
 			firm.Mode fieldAccessMode = field.getType().getMode();
 			// primitive types have modes, Pointer types don't and there is no method to set it
@@ -516,8 +526,9 @@ public class FirmGenerationVisitor implements AstVisitor {
 		}
 	}
 
-	private Node memberAssign(Node addressOfField, Node content) {
-		Node storeValue = state.methodConstruction.newStore(state.methodConstruction.getCurrentMem(), addressOfField, content);
+	private Node memberAssign(Node addressOfField, Expression content) {
+		Node contentNode = getRightSideOfAssignment(content);
+		Node storeValue = state.methodConstruction.newStore(state.methodConstruction.getCurrentMem(), addressOfField, contentNode);
 		Node memoryAfterStore = state.methodConstruction.newProj(storeValue, Mode.getM(), Store.pnM);
 		state.methodConstruction.setCurrentMem(memoryAfterStore);
 		return memoryAfterStore;
@@ -533,8 +544,8 @@ public class FirmGenerationVisitor implements AstVisitor {
 	@Override
 	public void visit(ArrayAccessExpression arrayAccessExpression) {
 		// save rvalue so that variable access expression doesn't think it is a store
-		Node assignment = this.state.assignmentRightNode;
-		this.state.assignmentRightNode = null;
+		Expression assignmentRightSide = this.state.assignmentRightSide;
+		this.state.assignmentRightSide = null;
 
 		Expression arrayExpression = arrayAccessExpression.getArrayExpression();
 		Expression indexExpression = arrayAccessExpression.getIndexExpression();
@@ -547,8 +558,8 @@ public class FirmGenerationVisitor implements AstVisitor {
 				.newSel(arrayExpression.getFirmNode(), indexExpression.getFirmNode(), getArrayType(arrayExpression));
 
 		Node result = null;
-		if (assignment != null) {
-			result = memberAssign(arrayIndex, assignment);
+		if (assignmentRightSide != null) {
+			result = memberAssign(arrayIndex, assignmentRightSide);
 		} else {
 			result = memberGet(arrayIndex, convertAstTypeToMode(arrayExpression.getType().getSubType()));
 		}
@@ -876,7 +887,7 @@ public class FirmGenerationVisitor implements AstVisitor {
 	}
 
 	private void clearState() {
-		this.state.assignmentRightNode = null;
+		this.state.assignmentRightSide = null;
 		this.state.methodConstruction = null;
 		this.state.methodVariables.clear();
 		this.state.methodVariableCount = 0;
