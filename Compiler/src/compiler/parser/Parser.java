@@ -682,13 +682,9 @@ public class Parser {
 			consumeToken();
 			return new LogicalNotExpression(pos, parseUnaryExpression());
 		case SUBTRACT:
-			if (tokenSupplier.getLookAhead().getType() == TokenType.INTEGER) {
-				return parsePostfixExpression();
-			} else {
-				pos = token.getPosition();
-				consumeToken();
-				return new NegateExpression(pos, parseUnaryExpression());
-			}
+			pos = token.getPosition();
+			consumeToken();
+			return new NegateExpression(pos, parseUnaryExpression());
 		default:
 			throw new ParserException(token);
 		}
@@ -710,7 +706,6 @@ public class Parser {
 		case IDENTIFIER:
 		case LP:
 		case NEW:
-		case SUBTRACT:
 			Expression expr = parsePrimaryExpression();
 			while (isTokenType(TokenType.LSQUAREBRACKET, TokenType.POINT)) {
 				expr = parsePostfixOp(expr);
@@ -851,12 +846,6 @@ public class Parser {
 		case TRUE:
 			consumeToken();
 			return new BooleanConstantExpression(pos, true);
-		case SUBTRACT:
-			String prefix = token.getTokenString();
-			consumeToken();
-			symbol = token.getSymbol();
-			consumeToken();
-			return new IntegerConstantExpression(pos, prefix + symbol.getValue());
 		case INTEGER:
 			consumeToken();
 			return new IntegerConstantExpression(pos, symbol.getValue());
