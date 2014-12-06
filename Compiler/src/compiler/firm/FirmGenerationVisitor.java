@@ -3,6 +3,8 @@ package compiler.firm;
 import java.util.HashMap;
 import java.util.Map;
 
+import compiler.Symbol;
+import compiler.ast.AstNode;
 import compiler.ast.Block;
 import compiler.ast.ClassDeclaration;
 import compiler.ast.ClassMember;
@@ -46,6 +48,7 @@ import compiler.ast.type.BasicType;
 import compiler.ast.type.ClassType;
 import compiler.ast.type.Type;
 import compiler.ast.visitor.AstVisitor;
+import compiler.semantic.symbolTable.Definition;
 import compiler.semantic.symbolTable.PrintMethodDefinition;
 
 import firm.Construction;
@@ -71,8 +74,9 @@ public class FirmGenerationVisitor implements AstVisitor {
 		final Map<firm.nodes.Block, Node> methodReturns = new HashMap<firm.nodes.Block, Node>();
 
 		// create new map for param <-> variable number
-		final Map<String, Integer> methodVariables = new HashMap<>();
+		final Map<DefinitionKey, Integer> methodVariables = new HashMap<>();
 		Node activePhiNode;
+		AstNode activeLocalVariableDeclaration = null;
 
 		String className;
 
@@ -457,9 +461,16 @@ public class FirmGenerationVisitor implements AstVisitor {
 
 		Expression objectNameForFieldAccess = variableAccessExpression.getExpression();
 		if (objectNameForFieldAccess == null) {
-			String variableName = variableAccessExpression.getFieldIdentifier().getValue();
-			if (state.methodVariables.containsKey(variableName)) {
-				variableAccess(variableAccessExpression, variableName, assignment);
+			Definition def = variableAccessExpression.getDefinition();
+			if (def == null) {
+				// definition not set yet because it is a declaration + assignment
+				// e.g. int x = 10;
+				def = new Definition(variableAccessExpression.getFieldIdentifier(), state.activeLocalVariableDeclaration.getType(),
+						state.activeLocalVariableDeclaration);
+			}
+			DefinitionKey variableDef = new DefinitionKey(def.getSymbol(), def.getType(), def.getAstNode());
+			if (state.methodVariables.containsKey(variableDef)) {
+				variableAccess(variableAccessExpression, variableDef, assignment);
 			} else {
 				memberAccess(variableAccessExpression, state.className, getThisPointer(), assignment);
 			}
@@ -469,8 +480,8 @@ public class FirmGenerationVisitor implements AstVisitor {
 		}
 	}
 
-	private void variableAccess(VariableAccessExpression variableAccessExpression, String variableName, Node assignment) {
-		int variableNumber = state.methodVariables.get(variableName);
+	private void variableAccess(VariableAccessExpression variableAccessExpression, DefinitionKey variableDef, Node assignment) {
+		int variableNumber = state.methodVariables.get(variableDef);
 		state.methodConstruction.getCurrentMem();
 
 		if (assignment != null) {
@@ -736,9 +747,11 @@ public class FirmGenerationVisitor implements AstVisitor {
 	public void visit(LocalVariableDeclaration localVariableDeclaration) {
 		int variableNumber = state.methodVariableCount++;
 		// add variable number to hash map
-		String variableName = localVariableDeclaration.getIdentifier().getValue();
-		state.methodVariables.put(variableName, variableNumber);
-		System.out.println("variableName = " + variableName + " (" + variableNumber + ")");
+		DefinitionKey variableDef = new DefinitionKey(localVariableDeclaration.getIdentifier(), localVariableDeclaration.getType(),
+				localVariableDeclaration);
+		state.methodVariables.put(variableDef, variableNumber);
+		System.out.println("variableName = " + variableDef + " (" + variableNumber + ")");
+		state.activeLocalVariableDeclaration = localVariableDeclaration;
 
 		Expression expression = localVariableDeclaration.getExpression();
 		if (expression != null) {
@@ -748,6 +761,7 @@ public class FirmGenerationVisitor implements AstVisitor {
 		} else {
 			System.out.println("localVariableDeclaration without assignment");
 		}
+		state.activeLocalVariableDeclaration = null;
 	}
 
 	@Override
@@ -821,7 +835,8 @@ public class FirmGenerationVisitor implements AstVisitor {
 
 		state.methodConstruction.setVariable(variableNumber, parameterProj);
 		// add parameter number to map
-		state.methodVariables.put(parameterDefinition.getIdentifier().getValue(), variableNumber);
+		state.methodVariables.put(new DefinitionKey(parameterDefinition.getIdentifier(), parameterDefinition.getType(),
+				parameterDefinition), variableNumber);
 		parameterDefinition.setFirmNode(parameterProj);
 	}
 
@@ -867,6 +882,7 @@ public class FirmGenerationVisitor implements AstVisitor {
 		this.state.methodVariableCount = 0;
 		this.state.methodReturns.clear();
 		this.state.activePhiNode = null;
+		this.state.activeLocalVariableDeclaration = null;
 	}
 
 	private firm.Mode convertAstTypeToMode(Type type) {
@@ -891,6 +907,56 @@ public class FirmGenerationVisitor implements AstVisitor {
 	@Override
 	public void visit(ClassType classType) {
 		// ClassType is never been visited
+	}
+
+	private class DefinitionKey {
+		private final Symbol ident;
+		private final Type type;
+		private final AstNode node;
+
+		private DefinitionKey(Symbol ident, Type type, AstNode node) {
+			this.ident = ident;
+			this.type = type;
+			this.node = node;
+		}
+
+		@Override
+		public int hashCode() {
+			final int prime = 31;
+			int result = 1;
+			result = prime * result + ((ident == null) ? 0 : ident.hashCode());
+			result = prime * result + ((node == null) ? 0 : node.hashCode());
+			result = prime * result + ((type == null) ? 0 : type.hashCode());
+			return result;
+		}
+
+		@Override
+		public boolean equals(Object obj) {
+			if (this == obj)
+				return true;
+			if (obj == null)
+				return false;
+			if (getClass() != obj.getClass())
+				return false;
+			DefinitionKey other = (DefinitionKey) obj;
+			if (ident == null) {
+				if (other.ident != null)
+					return false;
+			} else if (!ident.equals(other.ident))
+				return false;
+			if (node == null) {
+				if (other.node != null)
+					return false;
+			} else if (!node.equals(other.node))
+				return false;
+			if (type == null) {
+				if (other.type != null)
+					return false;
+			} else if (!type.equals(other.type))
+				return false;
+			return true;
+		}
+
 	}
 
 }
