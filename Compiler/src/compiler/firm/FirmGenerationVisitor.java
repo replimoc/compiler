@@ -382,21 +382,18 @@ public class FirmGenerationVisitor implements AstVisitor {
 
 		Node addressOfMethod = methodConstruction.newAddress(info.method);
 
-		return callMethod(addressOfMethod, info.parameterNodes, firmMethodType, firmMethodType);
+		return callMethod(addressOfMethod, info.parameterNodes, firmMethodType);
 	}
 
-	private Node callMethod(Node addressOfMethod, Node[] parameterNodes, firm.Type type, MethodType firmMethodType) {
+	private Node callMethod(Node addressOfMethod, Node[] parameterNodes, MethodType firmMethodType) {
 		Node methodCall = methodConstruction.newCall(methodConstruction.getCurrentMem(), addressOfMethod, parameterNodes,
-				type);
+				firmMethodType);
 		Node memoryAfterCall = methodConstruction.newProj(methodCall, Mode.getM(), Call.pnM);
 		methodConstruction.setCurrentMem(memoryAfterCall);
 
 		// get result
 		Node resultValue = null;
-		if (firmMethodType == null) { // Generate reference, this is an calloc call
-			Node methodResult = methodConstruction.newProj(methodCall, Mode.getT(), Call.pnTResult);
-			resultValue = methodConstruction.newProj(methodResult, hierarchy.getModeRef(), 0);
-		} else if (firmMethodType.getNRess() != 0) {
+		if (firmMethodType.getNRess() != 0) {
 			Node methodResult = methodConstruction.newProj(methodCall, Mode.getT(), Call.pnTResult);
 			resultValue = methodConstruction.newProj(methodResult, firmMethodType.getResType(0).getMode(), 0);
 		}
@@ -404,10 +401,7 @@ public class FirmGenerationVisitor implements AstVisitor {
 	}
 
 	private Node callCalloc(Node numberOfElements, Node sizeofClass) {
-		return callMethod(getCallocAddress(),
-				new Node[] { numberOfElements, sizeofClass },
-				hierarchy.getCalloc().getType(),
-				null);
+		return callMethod(getCallocAddress(), new Node[] { numberOfElements, sizeofClass }, (MethodType) hierarchy.getCalloc().getType());
 	}
 
 	@Override
