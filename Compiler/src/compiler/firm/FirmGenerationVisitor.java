@@ -104,32 +104,27 @@ public class FirmGenerationVisitor implements AstVisitor {
 		public Node createNode(Node operand1, Node operand2, Mode mode);
 	}
 
+	private Node getNodeForExpression(Expression expression) {
+		Node operand;
+		if (expression.getType().getBasicType() == BasicType.BOOLEAN) {
+			// maybe additional blocks need to be created
+			operand = createBooleanNodeFromBinaryExpression(expression);
+		} else {
+			expression.accept(this);
+			operand = expression.getFirmNode();
+		}
+		return operand;
+	}
+
 	private void createFirmForBinaryOperation(BinaryExpression binaryExpression, CreateBinaryFirmNode firmNodeCreator) {
 		// get type of expression
 		Mode mode = convertAstTypeToMode(binaryExpression.getType());
 
-		// get firmNode for fist operand
-		Expression operand1 = binaryExpression.getOperand1();
-		Node operand1Node;
-		if (operand1.getType().getBasicType() == BasicType.BOOLEAN) {
-			// maybe additional blocks need to be created
-			operand1Node = createBooleanNodeFromBinaryExpression(operand1);
-		} else {
-			operand1.accept(this);
-			operand1Node = operand1.getFirmNode();
-		}
-		// get firmNode for second operand
-		Expression operand2 = binaryExpression.getOperand2();
-		Node operand2Node;
-		if (operand1.getType().getBasicType() == BasicType.BOOLEAN) {
-			// maybe additional blocks need to be created
-			operand2Node = createBooleanNodeFromBinaryExpression(operand2);
-		} else {
-			operand2.accept(this);
-			operand2Node = operand2.getFirmNode();
-		}
+		// get firmNode for operands
+		Node operand1 = getNodeForExpression(binaryExpression.getOperand1());
+		Node operand2 = getNodeForExpression(binaryExpression.getOperand2());
 
-		Node exprNode = firmNodeCreator.createNode(operand1Node, operand2Node, mode);
+		Node exprNode = firmNodeCreator.createNode(operand1, operand2, mode);
 		binaryExpression.setFirmNode(exprNode);
 	}
 
@@ -171,12 +166,7 @@ public class FirmGenerationVisitor implements AstVisitor {
 			return rightExpression.getFirmNode();
 		}
 
-		if (rightExpression.getType().getBasicType() == BasicType.BOOLEAN) {
-			return createBooleanNodeFromBinaryExpression(rightExpression);
-		} else {
-			rightExpression.accept(this);
-			return rightExpression.getFirmNode();
-		}
+		return getNodeForExpression(rightExpression);
 	}
 
 	private Node createBooleanNodeFromBinaryExpression(Expression expression) {
@@ -372,13 +362,7 @@ public class FirmGenerationVisitor implements AstVisitor {
 
 			for (int j = 0; j < parameters.length; j++) {
 				Expression paramExpression = parameters[j];
-				if (paramExpression.getType().getBasicType() == BasicType.BOOLEAN) {
-					parameterNodes[j + 1] = createBooleanNodeFromBinaryExpression(paramExpression);
-				} else {
-					paramExpression.accept(visitor);
-					Node paramNode = paramExpression.getFirmNode();
-					parameterNodes[j + 1] = paramNode;
-				}
+				parameterNodes[j + 1] = getNodeForExpression(paramExpression);
 			}
 		}
 	}
@@ -398,22 +382,18 @@ public class FirmGenerationVisitor implements AstVisitor {
 
 		Node addressOfMethod = methodConstruction.newAddress(info.method);
 
-		return callMethod(addressOfMethod, info.parameterNodes, firmMethodType, firmMethodType);
+		return callMethod(addressOfMethod, info.parameterNodes, firmMethodType);
 	}
 
-	private Node callMethod(Node addressOfMethod, Node[] parameterNodes, firm.Type type, MethodType firmMethodType) {
+	private Node callMethod(Node addressOfMethod, Node[] parameterNodes, MethodType firmMethodType) {
 		Node methodCall = methodConstruction.newCall(methodConstruction.getCurrentMem(), addressOfMethod, parameterNodes,
-				type);
+				firmMethodType);
 		Node memoryAfterCall = methodConstruction.newProj(methodCall, Mode.getM(), Call.pnM);
 		methodConstruction.setCurrentMem(memoryAfterCall);
 
 		// get result
 		Node resultValue = null;
-		if (firmMethodType == null) { // Generate reference, this is an calloc call
-			// TODO: I'm note sure, but this is maybe wrong!
-			Node methodResult = methodConstruction.newProj(methodCall, Mode.getT(), Call.pnTResult);
-			resultValue = methodConstruction.newProj(methodResult, hierarchy.getModeRef(), 0);
-		} else if (firmMethodType.getNRess() != 0) {
+		if (firmMethodType.getNRess() != 0) {
 			Node methodResult = methodConstruction.newProj(methodCall, Mode.getT(), Call.pnTResult);
 			resultValue = methodConstruction.newProj(methodResult, firmMethodType.getResType(0).getMode(), 0);
 		}
@@ -421,10 +401,7 @@ public class FirmGenerationVisitor implements AstVisitor {
 	}
 
 	private Node callCalloc(Node numberOfElements, Node sizeofClass) {
-		return callMethod(getCallocAddress(),
-				new Node[] { numberOfElements, sizeofClass },
-				hierarchy.getCalloc().getType(),
-				null);
+		return callMethod(getCallocAddress(), new Node[] { numberOfElements, sizeofClass }, (MethodType) hierarchy.getCalloc().getType());
 	}
 
 	@Override
