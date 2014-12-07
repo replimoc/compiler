@@ -32,10 +32,18 @@ public class AutomatedOutputComparisonTest implements TestFileVisitor.FileTester
 	}
 
 	@Test
-	public void testCompareOutputWithReference() throws Exception {
+	public void testCompareJavaOutputWithResultReference() throws Exception {
 		Path testDir = Paths.get("testdata");
 		// TestFileVisitor parserTester = new TestFileVisitor(OUTPUT_FILE_EXTENSION, this, "Simon_085");
 		TestFileVisitor parserTester = new TestFileVisitor(OUTPUT_FILE_EXTENSION, this);
+		Files.walkFileTree(testDir, parserTester);
+		parserTester.checkForFailedTests();
+	}
+
+	@Test
+	public void testCompareMJOutputWithCheckReference() throws Exception {
+		Path testDir = Paths.get("testdata");
+		TestFileVisitor parserTester = new TestFileVisitor(".mj", ".check", this);
 		Files.walkFileTree(testDir, parserTester);
 		parserTester.checkForFailedTests();
 	}

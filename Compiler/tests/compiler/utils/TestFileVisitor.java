@@ -43,8 +43,7 @@ public class TestFileVisitor extends SimpleFileVisitor<Path> {
 		this(JAVA_EXTENSION, expectedResultFileExtension, fileTester, sourceFile);
 	}
 
-	public TestFileVisitor(String sourceFileExtension, String expectedResultFileExtension,
-			FileTester fileTester) {
+	public TestFileVisitor(String sourceFileExtension, String expectedResultFileExtension, FileTester fileTester) {
 		this(sourceFileExtension, expectedResultFileExtension, fileTester, null);
 	}
 
