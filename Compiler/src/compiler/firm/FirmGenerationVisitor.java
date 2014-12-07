@@ -610,6 +610,8 @@ public class FirmGenerationVisitor implements AstVisitor {
 	@Override
 	public void visit(Block block) {
 		if (!block.isEmpty()) {
+			int oldMethodVariableCount = this.methodVariableCount;
+
 			for (Statement statement : block.getStatements()) {
 				// do not visit blocks which already have a return
 				if (!methodReturns.containsKey(methodConstruction.getCurrentBlock())) {
@@ -620,6 +622,8 @@ public class FirmGenerationVisitor implements AstVisitor {
 			// get last statement and set block firmNode to this statement
 			Statement lastStatement = block.getStatements().get(block.getNumberOfStatements() - 1);
 			block.setFirmNode(lastStatement.getFirmNode());
+
+			this.methodVariableCount = oldMethodVariableCount;
 		}
 	}
 
@@ -761,8 +765,32 @@ public class FirmGenerationVisitor implements AstVisitor {
 			AssignmentExpression assignment = new AssignmentExpression(null, new VariableAccessExpression(null, null,
 					localVariableDeclaration.getIdentifier()), expression);
 			assignment.accept(this);
+		} else {
+			assignDefaultValue(localVariableDeclaration.getIdentifier(), localVariableDeclaration.getType());
 		}
 		activeLocalVariableDeclaration = null;
+	}
+
+	private void assignDefaultValue(Symbol identifier, Type type) {
+		Expression expression;
+		switch (type.getBasicType()) {
+		case INT:
+			expression = new IntegerConstantExpression(null, "0");
+			break;
+		case BOOLEAN:
+			expression = new BooleanConstantExpression(null, false);
+			break;
+		case ARRAY:
+		case CLASS:
+			expression = new NullExpression(null);
+			break;
+		default:
+			throw new RuntimeException("Internal Compiler Error: This should never happen!");
+		}
+
+		expression.setType(type);
+		AssignmentExpression assignment = new AssignmentExpression(null, new VariableAccessExpression(null, null, identifier), expression);
+		assignment.accept(this);
 	}
 
 	@Override
@@ -842,8 +870,6 @@ public class FirmGenerationVisitor implements AstVisitor {
 
 	@Override
 	public void visit(FieldDeclaration fieldDeclaration) {
-		// TODO Auto-generated method stub
-
 	}
 
 	@Override
