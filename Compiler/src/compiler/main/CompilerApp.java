@@ -26,6 +26,7 @@ import compiler.parser.printer.PrettyPrinter;
 import compiler.semantic.SemanticCheckResults;
 import compiler.semantic.SemanticChecker;
 import compiler.semantic.exceptions.SemanticAnalysisException;
+import compiler.utils.Utils;
 
 public final class CompilerApp {
 
@@ -59,10 +60,11 @@ public final class CompilerApp {
 		options.addOption(null, CHECK, false, "checks if the given source file is valid code.");
 		options.addOption(null, DEBUG, false, "prints more detailed error messages (only useful in case of a crash)");
 		options.addOption(null, GRAPH_FIRM, false, "dump a firm graph to the current directory.");
-		options.addOption(null, OUTPUT_ASSEMBLER, false, "outputs the generated assembler into file assembler.s (only to be used with --"
-				+ COMPILE_FIRM
-				+ ")");
+		options.addOption(null, OUTPUT_ASSEMBLER, false, "outputs the generated assembler into file assembler.s. (Only to be used with --"
+				+ COMPILE_FIRM + ")");
 		options.addOption(null, COMPILE_FIRM, false, "use the firm backend to produce amd64 code.");
+		options.addOption("o", null, true, "Used to define the filename/path of the generated executable. (Only to be used with --"
+				+ COMPILE_FIRM + ")");
 
 		CommandLineParser commandLineParser = new BasicParser();
 		try {
@@ -121,7 +123,14 @@ public final class CompilerApp {
 
 					int result = 0;
 					if (cmd.hasOption(COMPILE_FIRM)) {
-						result = FirmUtils.createBinary("a", cmd.hasOption(OUTPUT_ASSEMBLER));
+						String outputFile;
+						if (cmd.hasOption('o')) {
+							outputFile = cmd.getOptionValue('o');
+						} else {
+							outputFile = Utils.getBinaryFileName("a");
+						}
+
+						result = FirmUtils.createBinary(outputFile, cmd.hasOption(OUTPUT_ASSEMBLER));
 					}
 
 					FirmUtils.finishFirm();

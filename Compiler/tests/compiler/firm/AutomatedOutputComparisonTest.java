@@ -2,6 +2,7 @@ package compiler.firm;
 
 import static org.junit.Assert.assertEquals;
 
+import java.io.File;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -56,15 +57,18 @@ public class AutomatedOutputComparisonTest implements TestFileVisitor.FileTester
 	@Override
 	public void testSourceFile(Path sourceFile, Path expectedFile) throws Exception {
 		System.out.println("Testing execution result of " + sourceFile);
+		File binarFile = File.createTempFile("executable", Utils.getBinaryFileName(""));
+		binarFile.deleteOnExit();
 
-		Pair<Integer, List<String>> compilingState = TestUtils.startCompilerApp("--compile-firm", sourceFile.toAbsolutePath().toString());
+		Pair<Integer, List<String>> compilingState = TestUtils.startCompilerApp("-o", binarFile.toString(), "--compile-firm",
+				sourceFile.toAbsolutePath().toString());
 		for (String line : compilingState.getSecond()) {
 			System.out.println(line);
 		}
 		assertEquals("compiling failed for " + sourceFile, 0, compilingState.getFirst().intValue());
 
-		Pair<Integer, List<String>> executionState = Utils.systemExec(Utils.getBinaryFileName("./a"));
-		// assertEquals("execution of assembly failed for " + sourceFile, 0, executionState.getFirst().intValue());
+		Pair<Integer, List<String>> executionState = Utils.systemExec(binarFile.toString());
+		assertEquals("execution of assembly failed for " + sourceFile, 0, executionState.getFirst().intValue());
 
 		List<String> expectedOutput = Files.readAllLines(expectedFile, StandardCharsets.US_ASCII);
 		TestUtils.assertLinesEqual(sourceFile, expectedOutput, executionState.getSecond().iterator());

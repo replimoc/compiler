@@ -2,6 +2,7 @@ package compiler.firm;
 
 import java.io.File;
 import java.io.IOException;
+import java.nio.file.Files;
 import java.util.List;
 
 import compiler.utils.Pair;
@@ -91,15 +92,13 @@ public final class FirmUtils {
 		File build = File.createTempFile("build", ".o");
 		build.deleteOnExit();
 
-		String standardlibO = base + "resources/standardlib.o";
+		String standardlibO = Files.createTempFile("standardlib", ".o").toString();
 		new File(standardlibO).deleteOnExit();
 
 		String assemblerFile = assembler.getAbsolutePath();
 		String buildFile = build.getAbsolutePath();
 
 		createAssembler(assemblerFile);
-
-		outputFileName += Utils.isWindows() ? ".exe" : ".out";
 
 		int result = 0;
 		result = printOutput(Utils.systemExec("gcc", "-c", assemblerFile, "-o", buildFile));

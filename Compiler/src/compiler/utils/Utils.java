@@ -46,11 +46,7 @@ public class Utils {
 	}
 
 	public static String getBinaryFileName(String fileName) {
-		if (isWindows()) {
-			return fileName + ".exe";
-		} else {
-			return fileName + ".out";
-		}
+		return fileName + (isWindows() ? ".exe" : ".out");
 	}
 
 	public static String getJarLocation() {

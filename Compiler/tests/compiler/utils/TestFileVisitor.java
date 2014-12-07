@@ -11,6 +11,9 @@ import java.util.AbstractMap.SimpleEntry;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map.Entry;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.util.concurrent.TimeUnit;
 
 import org.junit.Assert;
 import org.junit.Ignore;
@@ -35,6 +38,10 @@ public class TestFileVisitor extends SimpleFileVisitor<Path> {
 	private final FileTester fileTester;
 	private final List<Entry<Path, Throwable>> failedTestsList = new ArrayList<>();
 
+	private final ExecutorService threadPool = Executors.newFixedThreadPool(12);
+
+	private int numberOfTests = 0;
+
 	public TestFileVisitor(String expectedResultFileExtension, FileTester fileTester) {
 		this(JAVA_EXTENSION, expectedResultFileExtension, fileTester, null);
 	}
@@ -47,8 +54,7 @@ public class TestFileVisitor extends SimpleFileVisitor<Path> {
 		this(sourceFileExtension, expectedResultFileExtension, fileTester, null);
 	}
 
-	private TestFileVisitor(String sourceFileExtension, String expectedResultFileExtension,
-			FileTester fileTester, String sourceFile) {
+	private TestFileVisitor(String sourceFileExtension, String expectedResultFileExtension, FileTester fileTester, String sourceFile) {
 		this.expectedResultFileExtension = expectedResultFileExtension;
 		this.sourceFile = sourceFile;
 		if (this.sourceFile == null) {
@@ -61,29 +67,53 @@ public class TestFileVisitor extends SimpleFileVisitor<Path> {
 	}
 
 	@Override
-	public FileVisitResult visitFile(Path file, BasicFileAttributes attrs) {
-		Path name = file.getFileName();
+	public FileVisitResult visitFile(final Path file, BasicFileAttributes attrs) {
+		final Path name = file.getFileName();
+
 		if (name != null && matcher.matches(name)) {
-			String parseFilename = name.toString();
-			String sourceFilename = parseFilename.replace(expectedResultFileExtension, sourceFileExtension);
+			numberOfTests++;
 
-			Path sourceFilePath = file.getParent().resolve(sourceFilename);
-
-			try {
-				if (!Files.exists(sourceFilePath)) {
-					Assert.fail("cannot find program to output " + sourceFilePath);
+			Runnable task = new Runnable() {
+				@Override
+				public void run() {
+					testFile(file, name.toString());
 				}
-
-				fileTester.testSourceFile(sourceFilePath, file);
-			} catch (Throwable e) {
-				printException(sourceFilePath, e);
-				failedTestsList.add(new SimpleEntry<Path, Throwable>(sourceFilePath, e));
-			}
+			};
+			threadPool.submit(task);
 		}
+
 		return FileVisitResult.CONTINUE;
 	}
 
+	private void testFile(Path file, String fileName) {
+		String sourceFilename = fileName.replace(expectedResultFileExtension, sourceFileExtension);
+
+		Path sourceFilePath = file.getParent().resolve(sourceFilename);
+
+		try {
+			if (!Files.exists(sourceFilePath)) {
+				Assert.fail("cannot find program to output " + sourceFilePath);
+			}
+
+			fileTester.testSourceFile(sourceFilePath, file);
+		} catch (Throwable e) {
+			testFailed(sourceFilePath, e);
+		}
+	}
+
+	private void testFailed(Path sourceFilePath, Throwable e) {
+		printException(sourceFilePath, e);
+		failedTestsList.add(new SimpleEntry<Path, Throwable>(sourceFilePath, e));
+	}
+
 	public void checkForFailedTests() {
+		try {
+			threadPool.shutdown();
+			threadPool.awaitTermination(100, TimeUnit.SECONDS);
+		} catch (InterruptedException e) {
+			e.printStackTrace();
+		}
+
 		printFailedTestsMessages();
 		if (failedTestsList.size() != 0) {
 			Assert.fail("Tests for " + failedTestsList.size() + " test(s) failed");
@@ -94,7 +124,7 @@ public class TestFileVisitor extends SimpleFileVisitor<Path> {
 		for (Entry<Path, Throwable> curr : failedTestsList) {
 			printException(curr.getKey(), curr.getValue());
 		}
-		System.out.println("Tests fail for following files:");
+		System.out.printf("Tests fail for following files (%d of %d):\n", failedTestsList.size(), numberOfTests);
 		for (Entry<Path, Throwable> curr : failedTestsList) {
 			System.out.println("* " + curr.getKey());
 		}
