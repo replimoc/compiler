@@ -74,7 +74,8 @@
 		<exec executable="java">
 			<arg value="-jar" />
 			<arg value="${jarLocation}" />
-			<arg value="--help" />
+			<arg value="--compile-firm" />
+			<arg value="./testdata/math/IterativeFibonacci.java" />
 		</exec>
 	</target>
 
