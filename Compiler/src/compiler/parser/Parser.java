@@ -852,11 +852,10 @@ public class Parser {
 			consumeToken();
 			return new BooleanConstantExpression(pos, true);
 		case SUBTRACT:
-			String prefix = token.getTokenString();
 			consumeToken();
 			symbol = token.getSymbol();
 			consumeToken();
-			return new IntegerConstantExpression(pos, prefix + symbol.getValue());
+			return new IntegerConstantExpression(pos, symbol.getValue(), true);
 		case INTEGER:
 			consumeToken();
 			return new IntegerConstantExpression(pos, symbol.getValue());
