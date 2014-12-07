@@ -83,7 +83,7 @@ public final class FirmUtils {
 	 * @return
 	 * @throws IOException
 	 */
-	public static String createBinary(String outputFileName, boolean keepAssembler) throws IOException {
+	public static int createBinary(String outputFileName, boolean keepAssembler) throws IOException {
 		String base = Utils.getJarLocation() + File.separator;
 		File assembler = new File("assembler.s");
 		if (!keepAssembler) {
@@ -103,20 +103,27 @@ public final class FirmUtils {
 
 		outputFileName += Utils.isWindows() ? ".exe" : ".out";
 
-		printOutput(Utils.systemExec("gcc", "-c", assemblerFile, "-o", buildFile));
-		printOutput(Utils.systemExec("gcc", "-c", base + "resources/standardlib.c", "-o", standardlibO));
-		printOutput(Utils.systemExec("gcc", "-o", outputFileName, buildFile, standardlibO));
+		int result = 0;
+		result = printOutput(Utils.systemExec("gcc", "-c", assemblerFile, "-o", buildFile));
+		if (result != 0)
+			return result;
+		result = printOutput(Utils.systemExec("gcc", "-c", base + "resources/standardlib.c", "-o", standardlibO));
+		if (result != 0)
+			return result;
+		result = printOutput(Utils.systemExec("gcc", "-o", outputFileName, buildFile, standardlibO));
 
-		return outputFileName;
+		return result;
 	}
 
-	private static void printOutput(Pair<Integer, List<String>> executionState) {
+	private static int printOutput(Pair<Integer, List<String>> executionState) {
+		int exitCode = 0;
 		if (!executionState.getSecond().isEmpty())
-			System.out.println("Exit code: " + executionState.getFirst());
+			exitCode = executionState.getFirst();
 
 		for (String line : executionState.getSecond()) {
 			System.out.println(line);
 		}
+		return exitCode;
 	}
 
 	public static void createFirmGraph() {
