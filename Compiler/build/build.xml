@@ -51,6 +51,9 @@
 	<target name="clean" description="clean up">
 		<delete dir="${bin}" />
 		<delete file="${jarLocation}" />
+		<delete file="${targetZip}" />
+		<delete dir="${targetLibFirm}" />
+		<delete dir="${targetResources}" />
 	</target>
 
 
@@ -70,18 +73,16 @@
 
 
 	<!-- Builds the jar file and tries to execute it as a simple test -->
-	<target name="testJar" depends="buildJar">
-		<exec executable="java">
-			<arg value="-jar" />
+	<target name="testJar" depends="buildJar,copyResources">
+		<exec executable="java" resultproperty="returnCode" failonerror="true">
+		<arg value="-jar" />
 			<arg value="${jarLocation}" />
 			<arg value="--compile-firm" />
 			<arg value="./testdata/math/IterativeFibonacci.java" />
 		</exec>
 	</target>
 
-
-	<!-- Build compiler.zip package -->
-	<target name="buildZip" depends="testJar">
+	<target name="copyResources" depends="buildJar">
 		<delete file="${targetZip}" />
 
 		<copy todir="${targetLibFirm}">
@@ -90,6 +91,11 @@
 		<copy todir="${targetResources}">
 			<fileset dir="${srcResources}" />
 		</copy>
+		<echo message="Resources copied." />
+	</target>
+
+	<!-- Build compiler.zip package -->
+	<target name="buildZip" depends="testJar,copyResources">
 		<zip destfile="${targetZip}" basedir="${target}" />
 	</target>
 
