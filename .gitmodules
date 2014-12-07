@@ -1,0 +1,3 @@
+[submodule "Compiler/testdata/mj-test"]
+	path = Compiler/testdata/mj-test
+	url = https://github.com/MiniJavaInScala/mj-test
