@@ -84,15 +84,17 @@ public final class FirmUtils {
 	 * @throws IOException
 	 */
 	public static String createBinary(String outputFileName, boolean keepAssembler) throws IOException {
+		String base = Utils.getJarLocation() + File.separator;
 		File assembler = new File("assembler.s");
 		if (!keepAssembler) {
+			assembler = File.createTempFile("assembler", ".s");
 			assembler.deleteOnExit();
 		}
 		File build = File.createTempFile("build", ".o");
 		build.deleteOnExit();
 
-		String printIntO = "resources/print_int.o";
-		new File(printIntO).deleteOnExit();
+		String standardlibO = base + "resources/standardlib.o";
+		new File(standardlibO).deleteOnExit();
 
 		String assemblerFile = assembler.getAbsolutePath();
 		String buildFile = build.getAbsolutePath();
@@ -102,8 +104,8 @@ public final class FirmUtils {
 		outputFileName += Utils.isWindows() ? ".exe" : ".out";
 
 		printOutput(Utils.systemExec("gcc", "-c", assemblerFile, "-o", buildFile));
-		printOutput(Utils.systemExec("gcc", "-c", "resources/standardlib.c", "-o", printIntO));
-		printOutput(Utils.systemExec("gcc", "-o", outputFileName, buildFile, printIntO));
+		printOutput(Utils.systemExec("gcc", "-c", base + "resources/standardlib.c", "-o", standardlibO));
+		printOutput(Utils.systemExec("gcc", "-o", outputFileName, buildFile, standardlibO));
 
 		return outputFileName;
 	}
