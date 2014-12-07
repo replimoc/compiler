@@ -394,7 +394,6 @@ public class FirmGenerationVisitor implements AstVisitor {
 		// get result
 		Node resultValue = null;
 		if (firmMethodType == null) { // Generate reference, this is an calloc call
-			// TODO: I'm note sure, but this is maybe wrong!
 			Node methodResult = methodConstruction.newProj(methodCall, Mode.getT(), Call.pnTResult);
 			resultValue = methodConstruction.newProj(methodResult, hierarchy.getModeRef(), 0);
 		} else if (firmMethodType.getNRess() != 0) {

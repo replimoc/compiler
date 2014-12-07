@@ -41,8 +41,6 @@ public final class FirmUtils {
 			if (type instanceof ClassType) {
 				layoutClass((ClassType) type);
 			}
-			// FIXME It fails on finishLayout(). Why?
-			// type.finishLayout();
 		}
 
 		for (Entity entity : Program.getGlobalType().getMembers()) {
