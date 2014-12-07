@@ -613,7 +613,6 @@ public class FirmGenerationVisitor implements AstVisitor {
 			for (Statement statement : block.getStatements()) {
 				// do not visit blocks which already have a return
 				if (!methodReturns.containsKey(methodConstruction.getCurrentBlock())) {
-					System.out.println("about to visit: = " + statement.getClass().getName());
 					statement.accept(this);
 				}
 			}
@@ -755,7 +754,6 @@ public class FirmGenerationVisitor implements AstVisitor {
 		DefinitionKey variableDef = new DefinitionKey(localVariableDeclaration.getIdentifier(), localVariableDeclaration.getType(),
 				localVariableDeclaration);
 		methodVariables.put(variableDef, variableNumber);
-		System.out.println("variableName = " + variableDef + " (" + variableNumber + ")");
 		activeLocalVariableDeclaration = localVariableDeclaration;
 
 		Expression expression = localVariableDeclaration.getExpression();
@@ -763,8 +761,6 @@ public class FirmGenerationVisitor implements AstVisitor {
 			AssignmentExpression assignment = new AssignmentExpression(null, new VariableAccessExpression(null, null,
 					localVariableDeclaration.getIdentifier()), expression);
 			assignment.accept(this);
-		} else {
-			System.out.println("localVariableDeclaration without assignment");
 		}
 		activeLocalVariableDeclaration = null;
 	}
@@ -789,7 +785,6 @@ public class FirmGenerationVisitor implements AstVisitor {
 		clearState();
 
 		Entity methodEntity = hierarchy.getMethodEntity(this.className, methodDeclaration.getIdentifier().getValue());
-		System.out.println("methodEntity = " + methodEntity);
 
 		int numberLocalVariables = methodDeclaration.getNumberOfLocalVariables();
 		int variablesCount = 1 /* this */+ methodDeclaration.getParameters().size() + numberLocalVariables /* boolean assignments */+ 1;
@@ -858,7 +853,6 @@ public class FirmGenerationVisitor implements AstVisitor {
 		clearState();
 
 		int variablesCount = staticMethodDeclaration.getNumberOfLocalVariables()/* boolean assignments */+ 1;
-		System.out.println("num local vars in main = " + variablesCount);
 		Graph mainGraph = new Graph(hierarchy.getMainMethod(), variablesCount);
 		this.methodConstruction = new Construction(mainGraph);
 
