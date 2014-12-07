@@ -177,6 +177,12 @@ public class Lexer implements TokenSuppliable {
 		return t;
 	}
 
+	private void lexCommentToNewLine() throws IOException {
+		while (c != '\n' && c != -1) {
+			nextChar();
+		}
+	}
+
 	private Token lexOperatorAndComment() throws IOException {
 		Token t = null;
 		switch (c) {
@@ -190,6 +196,8 @@ public class Lexer implements TokenSuppliable {
 			} else if (c == '=') { // /=
 				nextChar();
 				t = token(TokenType.DIVIDEASSIGN);
+			} else if (c == '/') { // Single line comment
+				lexCommentToNewLine();
 			} else { // /
 				t = token(TokenType.DIVIDE);
 			}
