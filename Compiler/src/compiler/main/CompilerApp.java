@@ -120,7 +120,8 @@ public final class CompilerApp {
 					}
 
 					if (cmd.hasOption(COMPILE_FIRM)) {
-						FirmUtils.createBinary("a", cmd.hasOption(OUTPUT_ASSEMBLER));
+						String binary = FirmUtils.createBinary("a", cmd.hasOption(OUTPUT_ASSEMBLER));
+						System.out.println("Binary " + binary + " created successfully.");
 					}
 
 					FirmUtils.finishFirm();

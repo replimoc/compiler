@@ -33,7 +33,7 @@ public final class FirmUtils {
 		}
 		Firm.init();
 
-		System.out.printf("Initialized libFirm Version: %1s.%s\n", Firm.getMajorVersion(), Firm.getMinorVersion());
+		// System.out.printf("Initialized libFirm Version: %1s.%s\n", Firm.getMajorVersion(), Firm.getMinorVersion());
 	}
 
 	public static void highToLowLevel() {
@@ -109,7 +109,9 @@ public final class FirmUtils {
 	}
 
 	private static void printOutput(Pair<Integer, List<String>> executionState) {
-		System.out.println("Exit code: " + executionState.getFirst());
+		if (!executionState.getSecond().isEmpty())
+			System.out.println("Exit code: " + executionState.getFirst());
+
 		for (String line : executionState.getSecond()) {
 			System.out.println(line);
 		}

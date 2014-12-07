@@ -107,7 +107,6 @@ class FirmHierarchy {
 	private void addFieldEntity(String className, Definition definition) {
 		firm.Type firmType = getTypeDeclaration(definition.getType(), true);
 		String entityName = escapeName(className, "f", definition.getSymbol().getValue());
-		System.out.println("entityName = " + entityName);
 
 		// create new entity and attach to currentClass
 		new Entity(getClassType(className), entityName, firmType);
@@ -141,7 +140,6 @@ class FirmHierarchy {
 		// create methodType and methodEntity
 		MethodType methodType = new MethodType(parameterTypes, returnType);
 		String entityName = escapeName(className, "m", methodDefinition.getSymbol().getValue());
-		System.out.println("entityName = " + entityName);
 
 		// create new entity and attach to currentClass
 		new Entity(classWrapper.classType, entityName, methodType);
@@ -149,16 +147,12 @@ class FirmHierarchy {
 
 	public Entity getMethodEntity(String className, String methodName) {
 		String entityName = escapeName(className, "m", methodName);
-		Entity method = getClassType(className).getMemberByName(entityName);
-		System.out.println("method = " + method);
-		return method;
+		return getClassType(className).getMemberByName(entityName);
 	}
 
 	public Entity getFieldEntity(String className, String fieldName) {
 		String entityName = escapeName(className, "f", fieldName);
-		Entity field = getClassType(className).getMemberByName(entityName);
-		System.out.println("field = " + field);
-		return field;
+		return getClassType(className).getMemberByName(entityName);
 	}
 
 	public ClassType getClassEntity(String className) {
