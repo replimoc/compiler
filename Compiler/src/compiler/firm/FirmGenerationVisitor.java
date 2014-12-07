@@ -104,32 +104,27 @@ public class FirmGenerationVisitor implements AstVisitor {
 		public Node createNode(Node operand1, Node operand2, Mode mode);
 	}
 
+	private Node getNodeForExpression(Expression expression) {
+		Node operand;
+		if (expression.getType().getBasicType() == BasicType.BOOLEAN) {
+			// maybe additional blocks need to be created
+			operand = createBooleanNodeFromBinaryExpression(expression);
+		} else {
+			expression.accept(this);
+			operand = expression.getFirmNode();
+		}
+		return operand;
+	}
+
 	private void createFirmForBinaryOperation(BinaryExpression binaryExpression, CreateBinaryFirmNode firmNodeCreator) {
 		// get type of expression
 		Mode mode = convertAstTypeToMode(binaryExpression.getType());
 
-		// get firmNode for fist operand
-		Expression operand1 = binaryExpression.getOperand1();
-		Node operand1Node;
-		if (operand1.getType().getBasicType() == BasicType.BOOLEAN) {
-			// maybe additional blocks need to be created
-			operand1Node = createBooleanNodeFromBinaryExpression(operand1);
-		} else {
-			operand1.accept(this);
-			operand1Node = operand1.getFirmNode();
-		}
-		// get firmNode for second operand
-		Expression operand2 = binaryExpression.getOperand2();
-		Node operand2Node;
-		if (operand1.getType().getBasicType() == BasicType.BOOLEAN) {
-			// maybe additional blocks need to be created
-			operand2Node = createBooleanNodeFromBinaryExpression(operand2);
-		} else {
-			operand2.accept(this);
-			operand2Node = operand2.getFirmNode();
-		}
+		// get firmNode for operands
+		Node operand1 = getNodeForExpression(binaryExpression.getOperand1());
+		Node operand2 = getNodeForExpression(binaryExpression.getOperand2());
 
-		Node exprNode = firmNodeCreator.createNode(operand1Node, operand2Node, mode);
+		Node exprNode = firmNodeCreator.createNode(operand1, operand2, mode);
 		binaryExpression.setFirmNode(exprNode);
 	}
 
@@ -171,12 +166,7 @@ public class FirmGenerationVisitor implements AstVisitor {
 			return rightExpression.getFirmNode();
 		}
 
-		if (rightExpression.getType().getBasicType() == BasicType.BOOLEAN) {
-			return createBooleanNodeFromBinaryExpression(rightExpression);
-		} else {
-			rightExpression.accept(this);
-			return rightExpression.getFirmNode();
-		}
+		return getNodeForExpression(rightExpression);
 	}
 
 	private Node createBooleanNodeFromBinaryExpression(Expression expression) {
@@ -372,13 +362,7 @@ public class FirmGenerationVisitor implements AstVisitor {
 
 			for (int j = 0; j < parameters.length; j++) {
 				Expression paramExpression = parameters[j];
-				if (paramExpression.getType().getBasicType() == BasicType.BOOLEAN) {
-					parameterNodes[j + 1] = createBooleanNodeFromBinaryExpression(paramExpression);
-				} else {
-					paramExpression.accept(visitor);
-					Node paramNode = paramExpression.getFirmNode();
-					parameterNodes[j + 1] = paramNode;
-				}
+				parameterNodes[j + 1] = getNodeForExpression(paramExpression);
 			}
 		}
 	}
