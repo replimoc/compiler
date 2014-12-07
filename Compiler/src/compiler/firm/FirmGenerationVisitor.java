@@ -386,9 +386,9 @@ public class FirmGenerationVisitor implements AstVisitor {
 	private class PrintMethodCallInformation extends MethodCallInformation {
 		@Override
 		public void generate(MethodInvocationExpression methodInvocationExpression, AstVisitor visitor) {
-			methodInvocationExpression.getParameters()[0].accept(visitor);
-			parameterNodes = new Node[1];
-			parameterNodes[0] = methodInvocationExpression.getParameters()[0].getFirmNode();
+			Expression parameter = methodInvocationExpression.getParameters()[0];
+			parameter.accept(visitor);
+			parameterNodes = new Node[] { parameter.getFirmNode() };
 			method = hierarchy.getPrint_int();
 		}
 	}
