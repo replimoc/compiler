@@ -329,7 +329,7 @@ public class FirmGenerationVisitor implements AstVisitor {
 			methodCallInformation = new PrintMethodCallInformation();
 		}
 
-		methodCallInformation.generate(methodInvocationExpression, this);
+		methodCallInformation.generate(methodInvocationExpression);
 		methodInvocationExpression.setFirmNode(callMethod(methodCallInformation));
 	}
 
@@ -337,14 +337,14 @@ public class FirmGenerationVisitor implements AstVisitor {
 		Node[] parameterNodes;
 		Entity method;
 
-		public void generate(MethodInvocationExpression methodInvocationExpression, AstVisitor visitor) {
+		public void generate(MethodInvocationExpression methodInvocationExpression) {
 			String className;
 			Node methodObject;
 
 			// Generate method name
 			Expression methodExpression = methodInvocationExpression.getMethodExpression();
 			if (methodExpression != null) {
-				methodExpression.accept(visitor);
+				methodExpression.accept(FirmGenerationVisitor.this);
 
 				className = getClassName(methodExpression);
 				methodObject = methodExpression.getFirmNode();
@@ -361,17 +361,16 @@ public class FirmGenerationVisitor implements AstVisitor {
 			parameterNodes[0] = methodObject;
 
 			for (int j = 0; j < parameters.length; j++) {
-				Expression paramExpression = parameters[j];
-				parameterNodes[j + 1] = getNodeForExpression(paramExpression);
+				parameterNodes[j + 1] = getNodeForExpression(parameters[j]);
 			}
 		}
 	}
 
 	private class PrintMethodCallInformation extends MethodCallInformation {
 		@Override
-		public void generate(MethodInvocationExpression methodInvocationExpression, AstVisitor visitor) {
+		public void generate(MethodInvocationExpression methodInvocationExpression) {
 			Expression parameter = methodInvocationExpression.getParameters()[0];
-			parameter.accept(visitor);
+			parameter.accept(FirmGenerationVisitor.this);
 			parameterNodes = new Node[] { parameter.getFirmNode() };
 			method = hierarchy.getPrint_int();
 		}
