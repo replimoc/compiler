@@ -59,7 +59,7 @@ class FirmHierarchy {
 
 		// void main(void)
 		MethodType mainType = new MethodType(new firm.Type[] {}, new firm.Type[] {});
-		this.mainMethod = new Entity(Program.getGlobalType(), "__main", mainType);
+		this.mainMethod = new Entity(Program.getGlobalType(), "_main", mainType);
 	}
 
 	private String escapeName(String name) {
