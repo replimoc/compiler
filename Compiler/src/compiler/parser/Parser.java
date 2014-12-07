@@ -597,6 +597,7 @@ public class Parser {
 				token.getType().getPrecedence() >= minPrecedence) {
 			Token operationToken = token;
 			TokenType operationTokenType = operationToken.getType();
+			Position position = token != null ? token.getPosition() : null;
 			consumeToken();
 
 			int precedence = operationTokenType.getPrecedence();
@@ -605,8 +606,6 @@ public class Parser {
 			}
 
 			Expression rhs = parseExpression(precedence);
-
-			Position position = token != null ? token.getPosition() : null;
 
 			switch (operationTokenType) {
 			case NOTEQUAL:
@@ -683,9 +682,13 @@ public class Parser {
 			consumeToken();
 			return new LogicalNotExpression(pos, parseUnaryExpression());
 		case SUBTRACT:
-			pos = token.getPosition();
-			consumeToken();
-			return new NegateExpression(pos, parseUnaryExpression());
+			if (tokenSupplier.getLookAhead().getType() == TokenType.INTEGER) {
+				return parsePostfixExpression();
+			} else {
+				pos = token.getPosition();
+				consumeToken();
+				return new NegateExpression(pos, parseUnaryExpression());
+			}
 		default:
 			throw new ParserException(token);
 		}
@@ -707,6 +710,7 @@ public class Parser {
 		case IDENTIFIER:
 		case LP:
 		case NEW:
+		case SUBTRACT:
 			Expression expr = parsePrimaryExpression();
 			while (isTokenType(TokenType.LSQUAREBRACKET, TokenType.POINT)) {
 				expr = parsePostfixOp(expr);
@@ -847,6 +851,11 @@ public class Parser {
 		case TRUE:
 			consumeToken();
 			return new BooleanConstantExpression(pos, true);
+		case SUBTRACT:
+			consumeToken();
+			symbol = token.getSymbol();
+			consumeToken();
+			return new IntegerConstantExpression(pos, symbol.getValue(), true);
 		case INTEGER:
 			consumeToken();
 			return new IntegerConstantExpression(pos, symbol.getValue());

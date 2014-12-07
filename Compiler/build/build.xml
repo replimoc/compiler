@@ -8,15 +8,22 @@
 	<property name="tests" location="tests" />
 	<property name="bin" location="bin" />
 	<property name="target" location="target" />
+	<property name="srcLibFirm" location="lib/firm" />
+	<property name="srcResources" location="resources" />
 
 	<property name="jarLocation" location="${target}/${ant.project.name}.jar" />
+	<property name="targetLibFirm" location="${target}/lib/firm" />
+	<property name="targetZip" location="${target}/compiler.zip" />
+	<property name="targetResources" location="${target}/resources" />
 
 	<property name="commons-cli" location="lib/commons-cli-1.2.jar" />
+	<property name="jfirm" location="lib/jfirm.jar" />
+	<property name="jna" location="lib/jna.jar" />
 
 	<path id="classpath.base">
 		<pathelement location="${commons-cli}" />
-		<pathelement location="lib/jfirm.jar" />
-		<pathelement location="lib/jna.jar" />
+		<pathelement location="${jfirm}" />
+		<pathelement location="${jna}" />
 	</path>
 
 
@@ -30,7 +37,8 @@
 
 
 
-	<target name="clean-build" depends="clean" description="clean and compile the source">
+	<target name="clean-build" depends="clean"
+		description="clean and compile the source">
 		<!-- Compile the java code from ${src} into ${bin} -->
 		<mkdir dir="${bin}" />
 		<javac srcdir="${src}" destdir="${bin}" includeantruntime="false">
@@ -55,6 +63,8 @@
 			</manifest>
 			<fileset dir="${bin}" />
 			<zipfileset excludes="META-INF/*.SF" src="${commons-cli}" />
+			<zipfileset excludes="META-INF/*.SF" src="${jfirm}" />
+			<zipfileset excludes="META-INF/*.SF" src="${jna}" />
 		</jar>
 	</target>
 
@@ -64,14 +74,31 @@
 		<exec executable="java">
 			<arg value="-jar" />
 			<arg value="${jarLocation}" />
-			<arg value="--help" />
+			<arg value="--compile-firm" />
+			<arg value="./testdata/math/IterativeFibonacci.java" />
 		</exec>
 	</target>
 
 
-	<target name="all" description="clean and build everything, run tests and build jar file">
+	<!-- Build compiler.zip package -->
+	<target name="buildZip" depends="testJar">
+		<delete file="${targetZip}" />
+
+		<copy todir="${targetLibFirm}">
+			<fileset dir="${srcLibFirm}" />
+		</copy>
+		<copy todir="${targetResources}">
+			<fileset dir="${srcResources}" />
+		</copy>
+		<zip destfile="${targetZip}" basedir="${target}" />
+	</target>
+
+
+
+	<target name="all"
+		description="clean and build everything, run tests and build jar file">
 		<antcall target="test" />
-		<antcall target="testJar" />
+		<antcall target="buildZip" />
 	</target>
 
 

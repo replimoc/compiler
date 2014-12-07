@@ -13,6 +13,7 @@ public class MethodDeclaration extends ClassMember {
 	private final Type returnType;
 	private final List<ParameterDefinition> parameters = new ArrayList<ParameterDefinition>();
 	private Block block;
+	private int numberOfLocalVariables;
 
 	public MethodDeclaration(Position position, Symbol identifier, Type returnType) {
 		super(position, identifier);
@@ -54,5 +55,17 @@ public class MethodDeclaration extends ClassMember {
 	@Override
 	protected int getSortPriority() {
 		return 0;
+	}
+
+	public void setNumberOfRequiredLocals(int numberOfLocals) {
+		this.setNumberOfLocalVariables(numberOfLocals);
+	}
+
+	public int getNumberOfLocalVariables() {
+		return numberOfLocalVariables;
+	}
+
+	public void setNumberOfLocalVariables(int numberOfLocalVariables) {
+		this.numberOfLocalVariables = numberOfLocalVariables;
 	}
 }

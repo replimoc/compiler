@@ -1,16 +1,19 @@
 package compiler.semantic.symbolTable;
 
 import compiler.Symbol;
+import compiler.ast.AstNode;
 import compiler.ast.type.Type;
 
 public class Definition {
 
 	private final Symbol symbol;
 	private final Type type;
+	private final AstNode node;
 
-	public Definition(Symbol symbol, Type type) {
+	public Definition(Symbol symbol, Type type, AstNode node) {
 		this.symbol = symbol;
 		this.type = type;
+		this.node = node;
 	}
 
 	public Type getType() {
@@ -19,6 +22,10 @@ public class Definition {
 
 	public Symbol getSymbol() {
 		return symbol;
+	}
+
+	public AstNode getAstNode() {
+		return node;
 	}
 
 	@Override

@@ -184,7 +184,15 @@ public class PrettyPrinterVisitor implements AstVisitor {
 
 	@Override
 	public void visit(IntegerConstantExpression integerConstantExpression) {
+		boolean withBrackets = precedence > 0 && integerConstantExpression.isNegative();
+
+		if (withBrackets)
+			stringBuffer.append('(');
+
 		stringBuffer.append(integerConstantExpression.getIntegerLiteral());
+
+		if (withBrackets)
+			stringBuffer.append(')');
 	}
 
 	@Override

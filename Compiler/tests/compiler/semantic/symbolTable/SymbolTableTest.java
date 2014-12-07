@@ -12,6 +12,7 @@ import org.junit.Test;
 
 import compiler.StringTable;
 import compiler.Symbol;
+import compiler.ast.AstNode;
 import compiler.ast.type.BasicType;
 import compiler.ast.type.Type;
 import compiler.lexer.TokenType;
@@ -23,18 +24,19 @@ public class SymbolTableTest {
 	@Test
 	public void testSymbolTable() throws Exception {
 		symbolTable.enterScope();
-		assertTrue(enterDefinition(getSymbol("number"), BasicType.INT));
+		assertTrue(enterDefinition(getSymbol("number"), BasicType.INT, null));
 
-		assertFalse(enterDefinition(getSymbol("number"), BasicType.INT));
-		assertFalse(enterDefinition(getSymbol("number"), BasicType.INT));
+		assertFalse(enterDefinition(getSymbol("number"), BasicType.INT, null));
+		assertFalse(enterDefinition(getSymbol("number"), BasicType.INT, null));
 
-		assertTrue(enterDefinition(getSymbol("number1"), BasicType.INT));
+		assertTrue(enterDefinition(getSymbol("number1"), BasicType.INT, null));
 
 		assertTrue(symbolTable.isDefinedInCurrentScope(getSymbol("number")));
 		assertFalse(symbolTable.isDefinedInCurrentScope(getSymbol("asdf")));
 		assertTrue(symbolTable.isDefinedInCurrentScope(getSymbol("number1")));
 
 		symbolTable.leaveScope();
+		assertEquals(2, symbolTable.getRequiredLocalVariables());
 
 		Field privChangeStack = SymbolTable.class.getDeclaredField("changeStack");
 		privChangeStack.setAccessible(true);
@@ -43,17 +45,18 @@ public class SymbolTableTest {
 		assertTrue(cs.isEmpty());
 		privChangeStack.setAccessible(false);
 
-		assertEquals(getSymbol("number").getDefinitionScope(), null);
-		assertEquals(getSymbol("number").getDefinition(), null);
+		assertNull(getSymbol("number").getDefinitionScope());
+		assertNull(getSymbol("number").getDefinition());
 
-		assertEquals(getSymbol("number1").getDefinitionScope(), null);
-		assertEquals(getSymbol("number1").getDefinition(), null);
+		assertNull(getSymbol("number1").getDefinitionScope());
+		assertNull(getSymbol("number1").getDefinition());
 
 		symbolTable.enterScope();
 
-		assertTrue(enterDefinition(getSymbol("number"), BasicType.INT));
+		assertTrue(enterDefinition(getSymbol("number"), BasicType.INT, null));
 
 		symbolTable.leaveScope();
+		assertEquals(2, symbolTable.getRequiredLocalVariables());
 
 		// we are at top level scope: currentScope is null, so this must return true
 		assertTrue(symbolTable.isDefinedInCurrentScope(getSymbol("number")));
@@ -64,22 +67,23 @@ public class SymbolTableTest {
 	public void testLeaveAllScopes() throws Exception {
 		symbolTable.enterScope();
 		symbolTable.enterScope();
-		assertTrue(enterDefinition(getSymbol("number"), BasicType.INT));
+		assertTrue(enterDefinition(getSymbol("number"), BasicType.INT, null));
 
-		assertFalse(enterDefinition(getSymbol("number"), BasicType.INT));
-		assertFalse(enterDefinition(getSymbol("number"), BasicType.INT));
-		assertTrue(enterDefinition(getSymbol("number1"), BasicType.INT));
+		assertFalse(enterDefinition(getSymbol("number"), BasicType.INT, null));
+		assertFalse(enterDefinition(getSymbol("number"), BasicType.INT, null));
+		assertTrue(enterDefinition(getSymbol("number1"), BasicType.INT, null));
 
 		assertTrue(symbolTable.isDefinedInCurrentScope(getSymbol("number")));
 		assertFalse(symbolTable.isDefinedInCurrentScope(getSymbol("asdf")));
 		assertTrue(symbolTable.isDefinedInCurrentScope(getSymbol("number1")));
 
 		symbolTable.enterScope();
-		assertTrue(enterDefinition(getSymbol("number"), BasicType.INT));
+		assertTrue(enterDefinition(getSymbol("number"), BasicType.INT, null));
 		symbolTable.enterScope();
 		symbolTable.enterScope();
 
 		symbolTable.leaveAllScopes();
+		assertEquals(3, symbolTable.getRequiredLocalVariables());
 
 		Field privChangeStack = SymbolTable.class.getDeclaredField("changeStack");
 		privChangeStack.setAccessible(true);
@@ -95,15 +99,15 @@ public class SymbolTableTest {
 		assertNull(getSymbol("number1").getDefinition());
 	}
 
-	private boolean enterDefinition(Symbol symbol, BasicType basicType) {
-		return enterDefinition(symbol, new Type(null, basicType));
+	private boolean enterDefinition(Symbol symbol, BasicType basicType, AstNode node) {
+		return enterDefinition(symbol, new Type(null, basicType), node);
 	}
 
-	private boolean enterDefinition(Symbol symbol, Type type) {
+	private boolean enterDefinition(Symbol symbol, Type type, AstNode node) {
 		if (symbolTable.isDefinedInCurrentScope(symbol)) {
 			return false;
 		}
-		symbolTable.insert(symbol, new Definition(symbol, type));
+		symbolTable.insert(symbol, new Definition(symbol, type, node));
 		return true;
 	}
 

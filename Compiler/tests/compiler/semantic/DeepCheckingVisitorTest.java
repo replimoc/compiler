@@ -35,222 +35,204 @@ public class DeepCheckingVisitorTest {
 	public void testFromString() throws IOException, ParsingFailedException {
 		Parser parser = TestUtils
 				.initParser("class Class { public static void main(String[] args) {} public void function(Class param) {} }");
-		List<SemanticAnalysisException> errors = SemanticChecker
-				.checkSemantic(parser.parse());
-		assertEquals(0, errors.size());
+		SemanticCheckResults semanticResult = SemanticChecker.checkSemantic(parser.parse());
+		assertNumberOfErrors(0, semanticResult);
 
 		parser = TestUtils
 				.initParser("class Class { public static void main(String[] args) {} public void function(ClassB param) {} }");
-		errors = SemanticChecker.checkSemantic(parser.parse());
-		assertEquals(1, errors.size());
-		assertNotNull(errors.get(0));
+		semanticResult = SemanticChecker.checkSemantic(parser.parse());
+		assertNumberOfErrors(1, semanticResult);
 
 		parser = TestUtils
 				.initParser("class Class { public static void main(String[] args) {} public void function(Class param, int param) {} }");
-		errors = SemanticChecker.checkSemantic(parser.parse());
-		assertEquals(1, errors.size());
-		assertNotNull(errors.get(0));
+		semanticResult = SemanticChecker.checkSemantic(parser.parse());
+		assertNumberOfErrors(1, semanticResult);
 
 		parser = TestUtils
 				.initParser("class Class { public static void main(String[] args) {} public void function(Class param) { paramA; } }");
-		errors = SemanticChecker.checkSemantic(parser.parse());
-		assertEquals(2, errors.size());
-		assertNotNull(errors.get(0));
-		assertNotNull(errors.get(1));
+		semanticResult = SemanticChecker.checkSemantic(parser.parse());
+		assertNumberOfErrors(2, semanticResult);
 
 		parser = TestUtils
 				.initParser("class Class { public static void main(String[] args) {} public void function(Class param) { param.asdf; } }");
-		errors = SemanticChecker.checkSemantic(parser.parse());
-		assertEquals(2, errors.size());
-		assertNotNull(errors.get(0));
-		assertNotNull(errors.get(1));
+		semanticResult = SemanticChecker.checkSemantic(parser.parse());
+		assertNumberOfErrors(2, semanticResult);
 
 		parser = TestUtils
 				.initParser("class Class { public int memberInt; public static void main(String[] args) {} public void function(Class param) { param.memberInt=1; } }");
-		errors = SemanticChecker.checkSemantic(parser.parse());
-		assertEquals(0, errors.size());
+		semanticResult = SemanticChecker.checkSemantic(parser.parse());
+		assertNumberOfErrors(0, semanticResult);
 
 		parser = TestUtils
 				.initParser("class Class { public Class memberClass; public static void main(String[] args) {} public void function(Class param) { param.memberClass.memberClass.asdf=null; } }");
-		errors = SemanticChecker.checkSemantic(parser.parse());
-		assertEquals(1, errors.size());
-		assertNotNull(errors.get(0));
+		semanticResult = SemanticChecker.checkSemantic(parser.parse());
+		assertNumberOfErrors(1, semanticResult);
 
 		parser = TestUtils
 				.initParser("class Class { public Class memberClass; public static void main(String[] args) {} public void function(Class param) { int param; } }");
-		errors = SemanticChecker.checkSemantic(parser.parse());
-		assertEquals(1, errors.size());
-		assertNotNull(errors.get(0));
+		semanticResult = SemanticChecker.checkSemantic(parser.parse());
+		assertNumberOfErrors(1, semanticResult);
 
 		parser = TestUtils
 				.initParser("class Class { public Class memberClass; public static void main(String[] args) {} public void function(Class param) { int locVarInt; locVarInt.asdf=1; } }");
-		errors = SemanticChecker.checkSemantic(parser.parse());
-		assertEquals(1, errors.size());
-		assertNotNull(errors.get(0));
+		semanticResult = SemanticChecker.checkSemantic(parser.parse());
+		assertNumberOfErrors(1, semanticResult);
 
 		parser = TestUtils
 				.initParser("class Class { public Class memberClass; public static void main(String[] args) {} public void function(Class param) { Class locVarClass; locVarClass.memberClass=null; } }");
-		errors = SemanticChecker.checkSemantic(parser.parse());
-		assertEquals(0, errors.size());
+		semanticResult = SemanticChecker.checkSemantic(parser.parse());
+		assertNumberOfErrors(0, semanticResult);
 
 		parser = TestUtils
 				.initParser("class Class { public void method() {}  public static void main(String[] args) {} public void function(Class param) { method(); } }");
-		errors = SemanticChecker.checkSemantic(parser.parse());
-		assertEquals(0, errors.size());
+		semanticResult = SemanticChecker.checkSemantic(parser.parse());
+		assertNumberOfErrors(0, semanticResult);
 
 		parser = TestUtils
 				.initParser("class Class { public void method() {}  public static void main(String[] args) {} public void function(Class param) { param.method(); } }");
-		errors = SemanticChecker.checkSemantic(parser.parse());
-		assertEquals(0, errors.size());
+		semanticResult = SemanticChecker.checkSemantic(parser.parse());
+		assertNumberOfErrors(0, semanticResult);
 
 		parser = TestUtils
 				.initParser("class Class { public void method() {}  public static void main(String[] args) {} public void function(Class param) { param.methodA(); } }");
-		errors = SemanticChecker.checkSemantic(parser.parse());
-		assertEquals(1, errors.size());
-		assertNotNull(errors.get(0));
+		semanticResult = SemanticChecker.checkSemantic(parser.parse());
+		assertNumberOfErrors(1, semanticResult);
 
 		parser = TestUtils
 				.initParser("class Class { public void method() {}  public static void main(String[] args) {} public void function(Class param) { param.method().asdf=null; } }");
-		errors = SemanticChecker.checkSemantic(parser.parse());
-		assertEquals(1, errors.size());
-		assertNotNull(errors.get(0));
+		semanticResult = SemanticChecker.checkSemantic(parser.parse());
+		assertNumberOfErrors(1, semanticResult);
 
 		parser = TestUtils
 				.initParser("class Class { public int asdf; public Class method() { return null; }  public static void main(String[] args) {} public void function(Class param) { param.method().asdf=1; } }");
-		errors = SemanticChecker.checkSemantic(parser.parse());
-		assertEquals(0, errors.size());
+		semanticResult = SemanticChecker.checkSemantic(parser.parse());
+		assertNumberOfErrors(0, semanticResult);
 
 		parser = TestUtils
 				.initParser("class Class { public int asdf; public Class method(int a, int b) { return null; }  public static void main(String[] args) {} public void function(Class param) { param.method(1, 1).asdf=1; } }");
-		errors = SemanticChecker.checkSemantic(parser.parse());
-		assertEquals(0, errors.size());
+		semanticResult = SemanticChecker.checkSemantic(parser.parse());
+		assertNumberOfErrors(0, semanticResult);
 
 		parser = TestUtils
 				.initParser("class Class { public int asdf; public Class method(int a, int b) { return null; }  public static void main(String[] args) {} public void function(Class param) { param.method(1, 1, 1).asdf=1; } }");
-		errors = SemanticChecker.checkSemantic(parser.parse());
-		assertEquals(1, errors.size());
-		assertNotNull(errors.get(0));
+		semanticResult = SemanticChecker.checkSemantic(parser.parse());
+		assertNumberOfErrors(1, semanticResult);
 
 		parser = TestUtils
 				.initParser("class Class { public int asdf; public Class method(int a, int b) { return null; }  public static void main(String[] args) {} public void function(Class param) { param.method(1, 1, 1).asdf=1; } }");
-		errors = SemanticChecker.checkSemantic(parser.parse());
-		assertEquals(1, errors.size());
-		assertNotNull(errors.get(0));
+		semanticResult = SemanticChecker.checkSemantic(parser.parse());
+		assertNumberOfErrors(1, semanticResult);
 
 		parser = TestUtils
 				.initParser("class Class { public int asdf; public Class method(int a, int b) { return null; }  public static void main(String[] args) {} public void function() { this.asdf=1; this.method(12,12); } }");
-		errors = SemanticChecker.checkSemantic(parser.parse());
-		assertEquals(0, errors.size());
+		semanticResult = SemanticChecker.checkSemantic(parser.parse());
+		assertNumberOfErrors(0, semanticResult);
 
 		parser = TestUtils
 				.initParser("class Class { public int asdf; public Class method(int a, int b) { return null; }  public static void main(String[] args) {} public void function() { this.asdf3=1; this.method(12,12).asdf=1; } }");
-		errors = SemanticChecker.checkSemantic(parser.parse());
-		assertEquals(1, errors.size());
-		assertNotNull(errors.get(0));
+		semanticResult = SemanticChecker.checkSemantic(parser.parse());
+		assertNumberOfErrors(1, semanticResult);
 
 		parser = TestUtils
 				.initParser("class Class { public static void main(String[] args) {} public void function() { System.out.println(42); } }");
-		errors = SemanticChecker.checkSemantic(parser.parse());
-		assertEquals(0, errors.size());
+		semanticResult = SemanticChecker.checkSemantic(parser.parse());
+		assertNumberOfErrors(0, semanticResult);
 
 		parser = TestUtils
 				.initParser("class Class { public static void main(String[] args) {} public void function() { boolean args = true; System.out.println(args); } }");
-		errors = SemanticChecker.checkSemantic(parser.parse());
-		assertEquals(1, errors.size());
-		// assertNotNull((NoSuchMemberException) errors.get(0));
+		semanticResult = SemanticChecker.checkSemantic(parser.parse());
+		assertNumberOfErrors(1, semanticResult);
 
 		parser = TestUtils
 				.initParser("class Class { public static void main(String[] args) {} public void function() { boolean b = true; System.out.println(false); } }");
-		errors = SemanticChecker.checkSemantic(parser.parse());
-		assertEquals(1, errors.size());
+		semanticResult = SemanticChecker.checkSemantic(parser.parse());
+		assertNumberOfErrors(1, semanticResult);
 
 		parser = TestUtils
 				.initParser("class Class { public static void main(String[] args) {} public void function() { boolean b = true; System.out.println(new Class()); } }");
-		errors = SemanticChecker.checkSemantic(parser.parse());
-		assertEquals(1, errors.size());
+		semanticResult = SemanticChecker.checkSemantic(parser.parse());
+		assertNumberOfErrors(1, semanticResult);
 
 		parser = TestUtils
 				.initParser("class Class { public static void main(String[] args) {} public int m; public void m() { } }");
-		errors = SemanticChecker.checkSemantic(parser.parse());
-		assertEquals(0, errors.size());
+		semanticResult = SemanticChecker.checkSemantic(parser.parse());
+		assertNumberOfErrors(0, semanticResult);
 
 		parser = TestUtils
 				.initParser("class Class { public static void main(String[] args) {} public Class System; public void bla() { System.out.println(); } }");
-		errors = SemanticChecker.checkSemantic(parser.parse());
-		assertEquals(1, errors.size());
+		semanticResult = SemanticChecker.checkSemantic(parser.parse());
+		assertNumberOfErrors(1, semanticResult);
 
 		parser = TestUtils
 				.initParser("class Class { public static void main(String[] args) {} public void bla() { this.bla(); } }");
-		errors = SemanticChecker.checkSemantic(parser.parse());
-		assertEquals(0, errors.size());
+		semanticResult = SemanticChecker.checkSemantic(parser.parse());
+		assertNumberOfErrors(0, semanticResult);
 
 		parser = TestUtils
 				.initParser("class Class { public static void main(String[] args) {} public Class classA; public void bla(Class classB) { { Class classB; } } }");
-		errors = SemanticChecker.checkSemantic(parser.parse());
-		assertEquals(1, errors.size());
+		semanticResult = SemanticChecker.checkSemantic(parser.parse());
+		assertNumberOfErrors(1, semanticResult);
 
 		parser = TestUtils
 				.initParser("class Main{public static void main(String[] vargs){vargs[5]=null;}}");
-		errors = SemanticChecker.checkSemantic(parser.parse());
-		assertEquals(2, errors.size());
+		semanticResult = SemanticChecker.checkSemantic(parser.parse());
+		assertNumberOfErrors(2, semanticResult);
 
 		parser = TestUtils
 				.initParser("class Main{public static void main(String[] vargs){int a = a;}}");
-		errors = SemanticChecker.checkSemantic(parser.parse());
-		assertEquals(0, errors.size());
+		semanticResult = SemanticChecker.checkSemantic(parser.parse());
+		assertNumberOfErrors(0, semanticResult);
 
 		parser = TestUtils
 				.initParser("class Main{public static void asdf(String[] vargs){return 0;}}");
-		errors = SemanticChecker.checkSemantic(parser.parse());
-		assertEquals(2, errors.size());
+		semanticResult = SemanticChecker.checkSemantic(parser.parse());
+		assertNumberOfErrors(2, semanticResult);
 
 		parser = TestUtils
 				.initParser("class Main{public void asdf; public static void main(String[] vargs){}}");
-		errors = SemanticChecker.checkSemantic(parser.parse());
-		assertEquals(1, errors.size());
+		semanticResult = SemanticChecker.checkSemantic(parser.parse());
+		assertNumberOfErrors(1, semanticResult);
 
 		parser = TestUtils
 				.initParser("class Main{public void[] asdf() { return null; } public static void main(String[] vargs){}}");
-		errors = SemanticChecker.checkSemantic(parser.parse());
-		assertEquals(1, errors.size());
+		semanticResult = SemanticChecker.checkSemantic(parser.parse());
+		assertNumberOfErrors(1, semanticResult);
 
 		parser = TestUtils
 				.initParser("class Main{public __0_ _0__ (_0I_ _oO0) { return null; } public static void main(String[] vargs){}}");
-		errors = SemanticChecker.checkSemantic(parser.parse());
-		assertEquals(2, errors.size());
+		semanticResult = SemanticChecker.checkSemantic(parser.parse());
+		assertNumberOfErrors(2, semanticResult);
 
 		parser = TestUtils
 				.initParser("class Main{public void asdf() { this.asdf(classA); } public static void main(String[] vargs){}}");
-		errors = SemanticChecker.checkSemantic(parser.parse());
-		assertEquals(1, errors.size());
+		semanticResult = SemanticChecker.checkSemantic(parser.parse());
+		assertNumberOfErrors(1, semanticResult);
 
 		parser = TestUtils
 				.initParser("class Main{public int asdf() { return this * 42; } public static void main(String[] vargs){}}");
-		errors = SemanticChecker.checkSemantic(parser.parse());
-		assertEquals(2, errors.size());
+		semanticResult = SemanticChecker.checkSemantic(parser.parse());
+		assertNumberOfErrors(2, semanticResult);
 	}
 
 	@Test
 	public void testVoidParams() throws IOException, ParsingFailedException {
 		Parser parser = TestUtils
 				.initParser("class Main{public void asdf(void a, void b, void c) { return; } public static void main(String[] vargs){}}");
-		List<SemanticAnalysisException> errors = SemanticChecker
-				.checkSemantic(parser.parse());
-		assertEquals(3, errors.size());
+		SemanticCheckResults semanticResult = SemanticChecker.checkSemantic(parser.parse());
+		assertNumberOfErrors(3, semanticResult);
 	}
 
 	@Test
 	public void testSitzung6Errors() throws IOException, ParsingFailedException {
 		Parser parser = TestUtils
 				.initParser("class Main{public void a() { return b(); } public void b() {} public static void main(String[] vargs){}}");
-		List<SemanticAnalysisException> errors = SemanticChecker
-				.checkSemantic(parser.parse());
-		assertEquals(1, errors.size());
+		SemanticCheckResults semanticResult = SemanticChecker.checkSemantic(parser.parse());
+		assertNumberOfErrors(1, semanticResult);
 
 		parser = TestUtils
 				.initParser("class Main{public void a(int a, int a, int a) { } public static void main(String[] vargs){}}");
-		errors = SemanticChecker.checkSemantic(parser.parse());
-		assertEquals(2, errors.size());
+		semanticResult = SemanticChecker.checkSemantic(parser.parse());
+		assertNumberOfErrors(2, semanticResult);
 	}
 
 	@Test
@@ -258,8 +240,14 @@ public class DeepCheckingVisitorTest {
 			ParsingFailedException {
 		Parser parser = TestUtils
 				.initParser("class main{public static void main(String[] a){}} class System { public System System; public System out; public void println(){System.out.println();}}");
-		List<SemanticAnalysisException> errors = SemanticChecker
-				.checkSemantic(parser.parse());
-		assertEquals(0, errors.size());
+		SemanticCheckResults semanticResult = SemanticChecker.checkSemantic(parser.parse());
+		assertNumberOfErrors(0, semanticResult);
+	}
+
+	private void assertNumberOfErrors(int expectedErrors, SemanticCheckResults semanticResult) {
+		assertEquals(expectedErrors, semanticResult.getNumberOfExceptions());
+		for (SemanticAnalysisException curr : semanticResult.getExceptions()) {
+			assertNotNull(curr);
+		}
 	}
 }

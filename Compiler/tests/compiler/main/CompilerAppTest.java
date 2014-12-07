@@ -43,7 +43,7 @@ public class CompilerAppTest {
 
 	@Test
 	public void testParseFile() throws IOException {
-		assertEquals(0, callExecute("./testdata/parser5/CorrectGrammar5.java"));
+		assertEquals(0, callExecute("./testdata/outputTest/LinkedListInsertion.java"));
 	}
 
 	@Test

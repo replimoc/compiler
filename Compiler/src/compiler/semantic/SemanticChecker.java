@@ -12,13 +12,14 @@ import compiler.lexer.Position;
 import compiler.semantic.exceptions.SemanticAnalysisException;
 import compiler.semantic.symbolTable.Definition;
 import compiler.semantic.symbolTable.MethodDefinition;
+import compiler.semantic.symbolTable.PrintMethodDefinition;
 import compiler.semantic.symbolTable.Scope;
 
 public final class SemanticChecker {
 	private SemanticChecker() { // no objects of this class shall be created.
 	}
 
-	public static List<SemanticAnalysisException> checkSemantic(AstNode ast) {
+	public static SemanticCheckResults checkSemantic(AstNode ast) {
 		// run first analysis of class, field and method declarations.
 		PreNamingAnalysisVisitor preAnalysisVisitor = new PreNamingAnalysisVisitor();
 		ast.accept(preAnalysisVisitor);
@@ -29,18 +30,24 @@ public final class SemanticChecker {
 		Symbol systemSymbol = new Symbol("System");
 		if (classScopes.containsKey(systemSymbol) == false) {
 			// create PrintStream class
-			Symbol printStream = new Symbol("PrintStream");
-			Definition printStreamDefinition = new Definition(printStream, new ClassType(new Position(-1, -1), printStream));
+			int printStreamNum = 0;
+
+			Symbol printStream;
+			do {
+				printStream = new Symbol("PrintStream" + printStreamNum);
+			} while (classScopes.containsKey(printStream));
+
+			Definition printStreamDefinition = new Definition(printStream, new ClassType(new Position(-1, -1), printStream), null);
 
 			HashMap<Symbol, MethodDefinition> psMethods = new HashMap<Symbol, MethodDefinition>();
 			Symbol printLineSymbol = new Symbol("println");
 			Definition[] definitions = new Definition[1];
-			definitions[0] = new Definition(new Symbol("arg"), new Type(null, BasicType.INT));
-			psMethods.put(printLineSymbol, new MethodDefinition(printLineSymbol, new Type(null, BasicType.VOID), definitions));
+			definitions[0] = new Definition(new Symbol("arg"), new Type(null, BasicType.INT), null);
+			psMethods.put(printLineSymbol, new PrintMethodDefinition(printLineSymbol, new Type(null, BasicType.VOID), definitions, null));
 			ClassScope printStreamScope = new ClassScope(new HashMap<Symbol, Definition>(), psMethods);
 			classScopes.put(printStream, printStreamScope);
 
-			systemSymbol.setDefintion(new Scope(null, 0), new Definition(systemSymbol, new ClassType(null, systemSymbol)));
+			systemSymbol.setDefintion(new Scope(null, 0), new Definition(systemSymbol, new ClassType(null, systemSymbol), null));
 			HashMap<Symbol, Definition> fields = new HashMap<Symbol, Definition>();
 			fields.put(new Symbol("out"), printStreamDefinition);
 			HashMap<Symbol, MethodDefinition> methods = new HashMap<Symbol, MethodDefinition>();
@@ -53,6 +60,6 @@ public final class SemanticChecker {
 		ast.accept(deepCheckingVisitor);
 		exceptions.addAll(deepCheckingVisitor.getExceptions());
 
-		return exceptions;
+		return new SemanticCheckResults(exceptions, classScopes);
 	}
 }

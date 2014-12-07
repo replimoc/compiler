@@ -2,7 +2,7 @@ error: No 'public static void main(String[] args)' method has been found.
 error: type error in token at position line   2, character 30
 error: type error in token at position line   3, character 35: Left side of assignment expression should variable or array.
 error: type error in token at position line   3, character 27: Left side of assignment expression should variable or array.
-error: type error in token at position line   3, character 42
+error: type error in token at position line   3, character 29
 error: type error in token at position line   4, character 15
 error: At least one path in method 'foo' at line   2, character 34 does not have a return statement.
 error: type error in token at position line   7, character 17
@@ -11,6 +11,6 @@ error: type error in token at position line  13, character 27
 error: Member _ at position line  26, character 58 is not available in object _ defined at line  11, character 17
 error: Insert assignment operator to complete expression at line  26, character 58
 error: Member _ at position line  28, character 54 is not available in object _ defined at line  11, character 17
-error: type error in token at position line  58, character 32
+error: type error in token at position line  58, character 26
 error: type error in token at position line  58, character 24
 error: type error in token at position line  61, character 19

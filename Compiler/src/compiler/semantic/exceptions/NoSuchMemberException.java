@@ -26,7 +26,7 @@ public class NoSuchMemberException extends SemanticAnalysisException {
 	public Symbol getMemberIdentifier() {
 		return member;
 	}
-	
+
 	public Position getObjectDefinition() {
 		return objDefinition;
 	}
@@ -36,6 +36,7 @@ public class NoSuchMemberException extends SemanticAnalysisException {
 	}
 
 	public static String buildMessage(Symbol object, Position objDefinition, Symbol member, Position memberDefinition) {
-		return "error: Member " + member + " at position " + memberDefinition + " is not available in object " + object + " defined at " + objDefinition;
+		return "error: Member " + member + " at position " + memberDefinition + " is not available in object " + object + " defined at "
+				+ objDefinition;
 	}
 }
