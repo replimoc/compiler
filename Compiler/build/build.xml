@@ -99,6 +99,9 @@
 		<zip destfile="${targetZip}" basedir="${target}" />
 	</target>
 
+	<target name="build" depends="testJar,copyResources">
+		<echo message="Build done." />
+	</target>
 
 
 	<target name="all"
