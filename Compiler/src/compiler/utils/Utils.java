@@ -1,7 +1,9 @@
 package compiler.utils;
 
+import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
+import java.net.URISyntaxException;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Scanner;
@@ -49,5 +51,14 @@ public class Utils {
 		} else {
 			return fileName + ".out";
 		}
+	}
+
+	public static String getJarLocation() {
+		try {
+			File file = new File(Utils.class.getProtectionDomain().getCodeSource().getLocation().toURI().getPath());
+			return file.getParent();
+		} catch (URISyntaxException e) {
+		}
+		return "";
 	}
 }
