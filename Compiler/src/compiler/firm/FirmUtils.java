@@ -90,6 +90,7 @@ public final class FirmUtils {
 		}
 		File build = File.createTempFile("build", ".o");
 		build.deleteOnExit();
+
 		String printIntO = "resources/print_int.o";
 		new File(printIntO).deleteOnExit();
 
@@ -98,11 +99,7 @@ public final class FirmUtils {
 
 		createAssembler(assemblerFile);
 
-		if (Utils.isWindows()) {
-			outputFileName += ".exe";
-		} else {
-			outputFileName += ".out";
-		}
+		outputFileName += Utils.isWindows() ? ".exe" : ".out";
 
 		printOutput(Utils.systemExec("gcc", "-c", assemblerFile, "-o", buildFile));
 		printOutput(Utils.systemExec("gcc", "-c", "resources/standardlib.c", "-o", printIntO));
