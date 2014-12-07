@@ -119,14 +119,14 @@ public final class CompilerApp {
 						FirmUtils.createFirmGraph();
 					}
 
+					int result = 0;
 					if (cmd.hasOption(COMPILE_FIRM)) {
-						String binary = FirmUtils.createBinary("a", cmd.hasOption(OUTPUT_ASSEMBLER));
-						System.out.println("Binary '" + binary + "' successfully created.");
+						result = FirmUtils.createBinary("a", cmd.hasOption(OUTPUT_ASSEMBLER));
 					}
 
 					FirmUtils.finishFirm();
 
-					return 0;
+					return result;
 				} catch (IOException e) {
 					System.err.println("Error accessing file " + file + ": " + e.getMessage());
 				}
