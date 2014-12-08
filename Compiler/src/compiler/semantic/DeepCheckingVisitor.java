@@ -47,6 +47,7 @@ import compiler.ast.statement.unary.LogicalNotExpression;
 import compiler.ast.statement.unary.NegateExpression;
 import compiler.ast.statement.unary.ReturnStatement;
 import compiler.ast.statement.unary.UnaryExpression;
+import compiler.ast.type.ArrayType;
 import compiler.ast.type.BasicType;
 import compiler.ast.type.ClassType;
 import compiler.ast.type.Type;
@@ -512,25 +513,37 @@ public class DeepCheckingVisitor implements AstVisitor {
 	@Override
 	public void visit(Type type) {
 		type.setType(type);
-
-		if (type.getBasicType() == BasicType.ARRAY && searchForVoidSubtype(type)) {
-			throwTypeError(type);
-		}
-	}
-
-	private boolean searchForVoidSubtype(Type type) {
-		while (type != null && type.getBasicType() == BasicType.ARRAY) {
-			type = type.getSubType();
-		}
-		return type == null || type.getBasicType() == BasicType.VOID;
 	}
 
 	@Override
 	public void visit(ClassType classType) {
-		if (classScopes.containsKey(classType.getIdentifier()) == false) {
+		if (!classScopes.containsKey(classType.getIdentifier())) {
 			throwTypeError(classType);
 			return;
 		}
+		classType.setType(classType);
+	}
+
+	@Override
+	public void visit(ArrayType arrayType) {
+		Type finalSubtype = arrayType.getFinalSubtype();
+		switch (finalSubtype.getBasicType()) {
+		case VOID:
+			throwTypeError(arrayType, "Can't create void arrays.");
+			return;
+		case CLASS:
+			if (!classScopes.containsKey(arrayType.getIdentifier())) {
+				throwTypeError(arrayType);
+				return;
+			}
+			break;
+		case ARRAY:
+			throw new RuntimeException("Internal Compiler Error: This should never happen.");
+		default:
+			break;
+		}
+
+		arrayType.setType(arrayType);
 	}
 
 	@Override
@@ -631,7 +644,13 @@ public class DeepCheckingVisitor implements AstVisitor {
 
 	@Override
 	public void visit(ParameterDefinition parameterDefinition) {
-		parameterDefinition.getType().accept(this);
+		Type type = parameterDefinition.getType();
+
+		if (isStaticMethod) { // special case for String[] args
+			type.setType(type);
+		} else {
+			type.accept(this);
+		}
 
 		if (hasType(BasicType.VOID, parameterDefinition)) {
 			throwTypeError(parameterDefinition);
@@ -642,7 +661,7 @@ public class DeepCheckingVisitor implements AstVisitor {
 			throwRedefinitionError(parameterDefinition.getIdentifier(), parameterDefinition.getPosition());
 			return;
 		}
-		int variableNumber = symbolTable.insert(parameterDefinition.getIdentifier(), parameterDefinition.getType());
+		int variableNumber = symbolTable.insert(parameterDefinition.getIdentifier(), type);
 		parameterDefinition.setVariableNumber(variableNumber);
 	}
 

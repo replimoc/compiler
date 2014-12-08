@@ -36,6 +36,7 @@ import compiler.ast.statement.binary.SubtractionExpression;
 import compiler.ast.statement.unary.LogicalNotExpression;
 import compiler.ast.statement.unary.NegateExpression;
 import compiler.ast.statement.unary.ReturnStatement;
+import compiler.ast.type.ArrayType;
 import compiler.ast.type.ClassType;
 import compiler.ast.type.Type;
 
@@ -92,8 +93,6 @@ public interface AstVisitor {
 
 	public void visit(NullExpression nullExpression);
 
-	public void visit(Type type);
-
 	public void visit(Block block);
 
 	public void visit(ClassDeclaration classDeclaration);
@@ -114,6 +113,9 @@ public interface AstVisitor {
 
 	public void visit(StaticMethodDeclaration staticMethodDeclaration);
 
+	public void visit(Type type);
+
 	public void visit(ClassType classType);
 
+	public void visit(ArrayType arrayType);
 }
