@@ -617,8 +617,7 @@ public class DeepCheckingVisitor implements AstVisitor {
 			return;
 		}
 
-		symbolTable.insert(localVariableDeclaration.getIdentifier(), new Definition(localVariableDeclaration.getIdentifier(),
-				localVariableDeclaration.getType(), localVariableDeclaration));
+		symbolTable.insert(localVariableDeclaration.getIdentifier(), localVariableDeclaration.getDefinition());
 
 		Expression expression = localVariableDeclaration.getExpression();
 		if (expression != null) {

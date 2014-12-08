@@ -75,7 +75,6 @@ public class FirmGenerationVisitor implements AstVisitor {
 	// create new map for param <-> variable number
 	private final Map<DefinitionKey, Integer> methodVariables = new HashMap<>();
 	private Node activePhiNode;
-	private AstNode activeLocalVariableDeclaration = null;
 
 	private String className;
 
@@ -433,12 +432,6 @@ public class FirmGenerationVisitor implements AstVisitor {
 		Expression objectNameForFieldAccess = variableAccessExpression.getExpression();
 		if (objectNameForFieldAccess == null) {
 			Definition def = variableAccessExpression.getDefinition();
-			if (def == null) {
-				// definition not set yet because it is a declaration + assignment
-				// e.g. int x = 10;
-				def = new Definition(variableAccessExpression.getFieldIdentifier(), activeLocalVariableDeclaration.getType(),
-						activeLocalVariableDeclaration);
-			}
 			DefinitionKey variableDef = new DefinitionKey(def.getSymbol(), def.getType(), def.getAstNode());
 			if (methodVariables.containsKey(variableDef)) {
 				variableAccess(variableAccessExpression, variableDef, assignmentRightSide);
@@ -734,22 +727,21 @@ public class FirmGenerationVisitor implements AstVisitor {
 		DefinitionKey variableDef = new DefinitionKey(localVariableDeclaration.getIdentifier(), localVariableDeclaration.getType(),
 				localVariableDeclaration);
 		methodVariables.put(variableDef, variableNumber);
-		activeLocalVariableDeclaration = localVariableDeclaration;
 
 		Expression expression = localVariableDeclaration.getExpression();
 		if (expression != null) {
-			AssignmentExpression assignment = new AssignmentExpression(null, new VariableAccessExpression(null, null,
-					localVariableDeclaration.getIdentifier()), expression);
+			VariableAccessExpression variableAccess = new VariableAccessExpression(null, null, localVariableDeclaration.getIdentifier());
+			variableAccess.setDefinition(localVariableDeclaration.getDefinition());
+			AssignmentExpression assignment = new AssignmentExpression(null, variableAccess, expression);
 			assignment.accept(this);
 		} else {
-			assignDefaultValue(localVariableDeclaration.getIdentifier(), localVariableDeclaration.getType());
+			assignDefaultValue(localVariableDeclaration.getDefinition());
 		}
-		activeLocalVariableDeclaration = null;
 	}
 
-	private void assignDefaultValue(Symbol identifier, Type type) {
+	private void assignDefaultValue(Definition definition) {
 		Expression expression;
-		switch (type.getBasicType()) {
+		switch (definition.getType().getBasicType()) {
 		case INT:
 			expression = new IntegerConstantExpression(null, "0");
 			break;
@@ -764,8 +756,10 @@ public class FirmGenerationVisitor implements AstVisitor {
 			throw new RuntimeException("Internal Compiler Error: This should never happen!");
 		}
 
-		expression.setType(type);
-		AssignmentExpression assignment = new AssignmentExpression(null, new VariableAccessExpression(null, null, identifier), expression);
+		expression.setType(definition.getType());
+		VariableAccessExpression variableAccess = new VariableAccessExpression(null, null, definition.getSymbol());
+		variableAccess.setDefinition(definition);
+		AssignmentExpression assignment = new AssignmentExpression(null, variableAccess, expression);
 		assignment.accept(this);
 	}
 
@@ -883,7 +877,6 @@ public class FirmGenerationVisitor implements AstVisitor {
 		this.methodVariableCount = 0;
 		this.methodReturns.clear();
 		this.activePhiNode = null;
-		this.activeLocalVariableDeclaration = null;
 	}
 
 	private firm.Mode convertAstTypeToMode(Type type) {
