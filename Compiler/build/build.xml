@@ -14,6 +14,7 @@
 	<property name="jarLocation" location="${target}/${ant.project.name}.jar" />
 	<property name="targetLibFirm" location="${target}/lib/firm" />
 	<property name="targetZip" location="${target}/compiler.zip" />
+	<property name="targetTar" location="${target}/compiler.tar.bz2" />
 	<property name="targetResources" location="${target}/resources" />
 
 	<property name="commons-cli" location="lib/commons-cli-1.2.jar" />
@@ -52,6 +53,7 @@
 		<delete dir="${bin}" />
 		<delete file="${jarLocation}" />
 		<delete file="${targetZip}" />
+		<delete file="${targetTar}" />
 		<delete dir="${targetLibFirm}" />
 		<delete dir="${targetResources}" />
 	</target>
@@ -83,8 +85,6 @@
 	</target>
 
 	<target name="copyResources" depends="buildJar">
-		<delete file="${targetZip}" />
-
 		<copy todir="${targetLibFirm}">
 			<fileset dir="${srcLibFirm}" />
 		</copy>
@@ -96,7 +96,20 @@
 
 	<!-- Build compiler.zip package -->
 	<target name="buildZip" depends="testJar,copyResources">
+		<delete file="${targetZip}" />
+		<delete file="${targetTar}" />
+
 		<zip destfile="${targetZip}" basedir="${target}" />
+		<tar destfile="${targetTar}" longfile="gnu" compression="bzip2">
+			<tarfileset dir="${target}" filemode="777">
+				<include name="compiler"/>
+			</tarfileset>
+			<tarfileset dir="${target}">
+				<include name="**" />
+				<exclude name="compiler"/>
+				<exclude name="*.zip"/>
+			</tarfileset>
+		</tar>
 	</target>
 
 	<target name="build" depends="testJar,copyResources">
