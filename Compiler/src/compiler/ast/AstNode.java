@@ -3,16 +3,22 @@ package compiler.ast;
 import compiler.ast.type.Type;
 import compiler.ast.visitor.AstVisitor;
 import compiler.lexer.Position;
+
 import firm.nodes.Node;
 
 public abstract class AstNode {
 
-	private final Position position;
-	private Type type;
-	private firm.nodes.Node firmNode;
+	protected final Position position;
+	protected Type type;
+	protected firm.nodes.Node firmNode;
 
 	public AstNode(Position position) {
 		this.position = position;
+	}
+
+	public AstNode(Position position, Type type) {
+		this.position = position;
+		this.type = type;
 	}
 
 	public Position getPosition() {

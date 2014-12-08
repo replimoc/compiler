@@ -37,17 +37,17 @@ public final class SemanticChecker {
 				printStream = new Symbol("PrintStream" + printStreamNum);
 			} while (classScopes.containsKey(printStream));
 
-			Definition printStreamDefinition = new Definition(printStream, new ClassType(new Position(-1, -1), printStream), null);
+			Definition printStreamDefinition = new Definition(printStream, new ClassType(new Position(-1, -1), printStream));
 
 			HashMap<Symbol, MethodDefinition> psMethods = new HashMap<Symbol, MethodDefinition>();
-			Symbol printLineSymbol = new Symbol("println");
+			Symbol printLineSymbol = new Symbol("println"); // FIXME This should not work, as we should use == for symbol comparison
 			Definition[] definitions = new Definition[1];
-			definitions[0] = new Definition(new Symbol("arg"), new Type(null, BasicType.INT), null);
-			psMethods.put(printLineSymbol, new PrintMethodDefinition(printLineSymbol, new Type(null, BasicType.VOID), definitions, null));
+			definitions[0] = new Definition(new Symbol("arg"), new Type(null, BasicType.INT));
+			psMethods.put(printLineSymbol, new PrintMethodDefinition(printLineSymbol, new Type(null, BasicType.VOID), definitions));
 			ClassScope printStreamScope = new ClassScope(new HashMap<Symbol, Definition>(), psMethods);
 			classScopes.put(printStream, printStreamScope);
 
-			systemSymbol.setDefintion(new Scope(null, 0), new Definition(systemSymbol, new ClassType(null, systemSymbol), null));
+			systemSymbol.setDefintion(new Scope(null, 0), new Definition(systemSymbol, new ClassType(null, systemSymbol)));
 			HashMap<Symbol, Definition> fields = new HashMap<Symbol, Definition>();
 			fields.put(new Symbol("out"), printStreamDefinition);
 			HashMap<Symbol, MethodDefinition> methods = new HashMap<Symbol, MethodDefinition>();

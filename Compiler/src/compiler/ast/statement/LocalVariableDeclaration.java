@@ -4,16 +4,17 @@ import compiler.Symbol;
 import compiler.ast.type.Type;
 import compiler.ast.visitor.AstVisitor;
 import compiler.lexer.Position;
-import compiler.semantic.symbolTable.Definition;
+import compiler.semantic.symbolTable.LocalVariableDefinition;
 
 public class LocalVariableDeclaration extends Statement {
 
-	private final Definition definition;
 	private final Expression expression;
+	private final Symbol identifier;
+	private int variableNumber;
 
 	public LocalVariableDeclaration(Position position, Type type, Symbol identifier, Expression expression) {
-		super(position);
-		this.definition = new Definition(identifier, type, this);
+		super(position, type);
+		this.identifier = identifier;
 		this.expression = expression;
 	}
 
@@ -21,13 +22,8 @@ public class LocalVariableDeclaration extends Statement {
 		this(position, type, identifier, null);
 	}
 
-	@Override
-	public Type getType() {
-		return definition.getType();
-	}
-
 	public Symbol getIdentifier() {
-		return definition.getSymbol();
+		return identifier;
 	}
 
 	public Expression getExpression() {
@@ -39,8 +35,11 @@ public class LocalVariableDeclaration extends Statement {
 		visitor.visit(this);
 	}
 
-	public Definition getDefinition() {
-		return definition;
+	public LocalVariableDefinition getDefinition() {
+		return new LocalVariableDefinition(identifier, type, variableNumber);
 	}
 
+	public void setVariableNumber(int variableNumber) {
+		this.variableNumber = variableNumber;
+	}
 }

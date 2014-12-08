@@ -119,19 +119,18 @@ public class PreNamingAnalysisVisitor implements AstVisitor {
 
 		int i = 0;
 		for (ParameterDefinition currParameter : methodDeclaration.getParameters()) {
-			parameterDefinitions[i] = new Definition(currParameter.getIdentifier(), currParameter.getType(), methodDeclaration);
+			parameterDefinitions[i] = new Definition(currParameter.getIdentifier(), currParameter.getType());
 			i++;
 		}
 
-		MethodDefinition methodDefinition = new MethodDefinition(identifier, returnType, parameterDefinitions, methodDeclaration);
+		MethodDefinition methodDefinition = new MethodDefinition(identifier, returnType, parameterDefinitions);
 
 		checkAndInsertDefinition(methodDefinition, methodDeclaration.getPosition());
 	}
 
 	@Override
 	public void visit(FieldDeclaration fieldDeclaration) {
-		checkAndInsertDefinition(new Definition(fieldDeclaration.getIdentifier(), fieldDeclaration.getType(), fieldDeclaration),
-				fieldDeclaration.getPosition());
+		checkAndInsertDefinition(new Definition(fieldDeclaration.getIdentifier(), fieldDeclaration.getType()), fieldDeclaration.getPosition());
 	}
 
 	@Override
@@ -169,9 +168,9 @@ public class PreNamingAnalysisVisitor implements AstVisitor {
 		Position position = staticMethodDeclaration.getPosition();
 
 		Definition[] parameterTypes = new Definition[] { new Definition(parameter.getIdentifier(),
-				new Type(parameter.getPosition(), BasicType.STRING_ARGS), null) };
+				new Type(parameter.getPosition(), BasicType.STRING_ARGS)) };
 		parameter.setType(new ArrayType(parameter.getPosition(), new Type(parameter.getPosition(), BasicType.STRING_ARGS)));
-		checkAndInsertDefinition(new MethodDefinition(identifier, returnType, parameterTypes, staticMethodDeclaration), position);
+		checkAndInsertDefinition(new MethodDefinition(identifier, returnType, parameterTypes, true), position);
 	}
 
 	private void checkAndInsertDefinition(MethodDefinition definition, Position position) {

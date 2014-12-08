@@ -3,8 +3,6 @@ package compiler.semantic.symbolTable;
 import java.util.Arrays;
 
 import compiler.Symbol;
-import compiler.ast.AstNode;
-import compiler.ast.StaticMethodDeclaration;
 import compiler.ast.type.Type;
 
 public class MethodDefinition extends Definition {
@@ -12,10 +10,14 @@ public class MethodDefinition extends Definition {
 	private final Definition[] parameters;
 	private final boolean staticMethod;
 
-	public MethodDefinition(Symbol symbol, Type type, Definition[] parameters, AstNode node) {
-		super(symbol, type, node);
+	public MethodDefinition(Symbol symbol, Type type, Definition[] parameters, boolean staticMethod) {
+		super(symbol, type);
 		this.parameters = parameters;
-		this.staticMethod = (node instanceof StaticMethodDeclaration);
+		this.staticMethod = staticMethod;
+	}
+
+	public MethodDefinition(Symbol symbol, Type type, Definition[] parameters) {
+		this(symbol, type, parameters, false);
 	}
 
 	public Definition[] getParameters() {
