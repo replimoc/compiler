@@ -7,12 +7,12 @@ import java.nio.file.Paths;
 import org.junit.Ignore;
 
 import compiler.StringTable;
+import compiler.firm.generation.FirmGraphGenerator;
 import compiler.lexer.Lexer;
 import compiler.parser.Parser;
 import compiler.semantic.SemanticCheckResults;
 import compiler.semantic.SemanticChecker;
 import compiler.semantic.exceptions.SemanticAnalysisException;
-
 import firm.Dump;
 import firm.Graph;
 import firm.Program;

@@ -19,6 +19,8 @@ import java.util.UUID;
 import org.junit.Ignore;
 
 import compiler.ast.ClassMember;
+import compiler.firm.generation.FirmGenerationVisitor;
+import compiler.firm.generation.FirmHierarchy;
 import compiler.utils.TestUtils;
 
 import firm.Dump;
@@ -72,8 +74,8 @@ public final class FirmTestUtils {
 
 	public static void assertExportEquals(String assertionFolder, String javaFile, boolean export) throws Exception {
 		compiler.ast.Program ast = TestUtils.getAstForFile(javaFile);
-		for (ClassMember classMember : ast.getClasses().get(0).getMembers()) {
 
+		for (ClassMember classMember : ast.getClasses().get(0).getMembers()) {
 			classMember.accept(new FirmGenerationVisitor(new FirmHierarchy()));
 		}
 

@@ -1,4 +1,4 @@
-package compiler.firm;
+package compiler.firm.generation;
 
 import java.util.HashMap;
 import java.util.Map.Entry;
@@ -21,7 +21,7 @@ import firm.Program;
 /**
  * Methods to create and access entities
  */
-class FirmHierarchy {
+public class FirmHierarchy {
 
 	private final Mode modeInt = Mode.getIs(); // integer signed 32 bit
 	private final Mode modeBool = Mode.getBu(); // unsigned 8 bit for boolean
@@ -43,7 +43,7 @@ class FirmHierarchy {
 		firm.Type refToClass;
 	}
 
-	FirmHierarchy() {
+	public FirmHierarchy() {
 		// set 64bit pointer as default
 		Mode.setDefaultModeP(getModeRef());
 

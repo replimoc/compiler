@@ -15,8 +15,8 @@ import org.apache.commons.cli.ParseException;
 
 import compiler.StringTable;
 import compiler.ast.AstNode;
-import compiler.firm.FirmGraphGenerator;
 import compiler.firm.FirmUtils;
+import compiler.firm.generation.FirmGraphGenerator;
 import compiler.firm.optimization.FirmOptimizer;
 import compiler.lexer.Lexer;
 import compiler.lexer.Token;

@@ -1,4 +1,4 @@
-package compiler.firm;
+package compiler.firm.generation;
 
 import java.util.HashMap;
 import java.util.Map;
