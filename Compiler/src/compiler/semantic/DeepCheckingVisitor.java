@@ -373,12 +373,10 @@ public class DeepCheckingVisitor implements AstVisitor {
 	@Override
 	public void visit(VariableAccessExpression variableAccessExpression) {
 		// first step in outer left expression
-		if (variableAccessExpression.getExpression() != null) {
-			variableAccessExpression.getExpression().accept(this);
-		}
+		Expression expression = variableAccessExpression.getExpression();
 
 		// is inner expression (no left expression)
-		if (variableAccessExpression.getExpression() == null) {
+		if (expression == null) {
 			Symbol fieldIdentifier = variableAccessExpression.getFieldIdentifier();
 			Position position = variableAccessExpression.getPosition();
 			Definition definition = null;
@@ -410,13 +408,13 @@ public class DeepCheckingVisitor implements AstVisitor {
 			variableAccessExpression.setType(definition.getType());
 			variableAccessExpression.setDefinition(definition);
 		} else {
-			Expression leftExpression = variableAccessExpression.getExpression();
+			expression.accept(this);
 
-			if (leftExpression instanceof ThisExpression && isStaticMethod) {
+			if (expression instanceof ThisExpression && isStaticMethod) {
 				return;
 			}
 
-			Type leftExpressionType = leftExpression.getType();
+			Type leftExpressionType = expression.getType();
 
 			if (leftExpressionType == null) {
 				return; // left expressions failed...
