@@ -548,8 +548,13 @@ public class FirmGenerationVisitor implements AstVisitor {
 		if (!methodReturns.containsKey(methodConstruction.getCurrentBlock())) {
 			Node returnNode;
 			if (hasOperand) {
-				returnStatement.getOperand().accept(this);
-				Node exprNode = returnStatement.getOperand().getFirmNode();
+				Node exprNode;
+				if (returnStatement.getOperand().getType().getBasicType() == BasicType.BOOLEAN) {
+					exprNode = createBooleanNodeFromBinaryExpression(returnStatement.getOperand());
+				} else {
+					returnStatement.getOperand().accept(this);
+					exprNode = returnStatement.getOperand().getFirmNode();
+				}
 				returnNode = methodConstruction.newReturn(methodConstruction.getCurrentMem(), new Node[] { exprNode });
 			} else {
 				// return void
