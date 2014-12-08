@@ -1,6 +1,7 @@
 package compiler.ast.type;
 
 import compiler.Symbol;
+import compiler.ast.visitor.AstVisitor;
 import compiler.lexer.Position;
 
 public class ArrayType extends Type {
@@ -19,11 +20,20 @@ public class ArrayType extends Type {
 
 	@Override
 	public Symbol getIdentifier() {
+		return getFinalSubtype().getIdentifier();
+	}
+
+	public Type getFinalSubtype() {
 		Type tmpType = subType;
 		while (tmpType.getSubType() != null) {
 			tmpType = tmpType.getSubType();
 		}
-		return tmpType.getIdentifier();
+		return tmpType;
+	}
+
+	@Override
+	public void accept(AstVisitor visitor) {
+		visitor.visit(this);
 	}
 
 	@Override
@@ -50,4 +60,5 @@ public class ArrayType extends Type {
 			return false;
 		return true;
 	}
+
 }

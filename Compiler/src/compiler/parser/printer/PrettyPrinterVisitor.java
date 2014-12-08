@@ -44,6 +44,7 @@ import compiler.ast.statement.binary.SubtractionExpression;
 import compiler.ast.statement.unary.LogicalNotExpression;
 import compiler.ast.statement.unary.NegateExpression;
 import compiler.ast.statement.unary.ReturnStatement;
+import compiler.ast.type.ArrayType;
 import compiler.ast.type.ClassType;
 import compiler.ast.type.Type;
 import compiler.ast.visitor.AstVisitor;
@@ -360,6 +361,11 @@ public class PrettyPrinterVisitor implements AstVisitor {
 	@Override
 	public void visit(ClassType classType) {
 		visitType(classType);
+	}
+
+	@Override
+	public void visit(ArrayType arrayType) {
+		visitType(arrayType);
 	}
 
 	public void visitType(Type type) {

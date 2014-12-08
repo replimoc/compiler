@@ -42,6 +42,7 @@ import compiler.ast.statement.binary.SubtractionExpression;
 import compiler.ast.statement.unary.LogicalNotExpression;
 import compiler.ast.statement.unary.NegateExpression;
 import compiler.ast.statement.unary.ReturnStatement;
+import compiler.ast.type.ArrayType;
 import compiler.ast.type.BasicType;
 import compiler.ast.type.ClassType;
 import compiler.ast.type.Type;
@@ -49,7 +50,6 @@ import compiler.ast.visitor.AstVisitor;
 import compiler.semantic.symbolTable.Definition;
 import compiler.semantic.symbolTable.LocalVariableDefinition;
 import compiler.semantic.symbolTable.PrintMethodDefinition;
-
 import firm.Construction;
 import firm.Entity;
 import firm.Graph;
@@ -872,12 +872,17 @@ public class FirmGenerationVisitor implements AstVisitor {
 
 	@Override
 	public void visit(Type type) {
-		// Type is never been visited
+		// Type will never be visited
 	}
 
 	@Override
 	public void visit(ClassType classType) {
-		// ClassType is never been visited
+		// ClassType will never be visited
+	}
+
+	@Override
+	public void visit(ArrayType arrayType) {
+		// ArrayType will never be visited
 	}
 
 }

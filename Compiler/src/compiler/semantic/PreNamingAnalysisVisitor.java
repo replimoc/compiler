@@ -316,6 +316,14 @@ public class PreNamingAnalysisVisitor implements AstVisitor {
 	}
 
 	@Override
+	public void visit(ClassType classType) {
+	}
+
+	@Override
+	public void visit(ArrayType arrayType) {
+	}
+
+	@Override
 	public void visit(Block block) {
 	}
 
@@ -333,10 +341,6 @@ public class PreNamingAnalysisVisitor implements AstVisitor {
 
 	@Override
 	public void visit(ParameterDefinition parameterDefinition) {
-	}
-
-	@Override
-	public void visit(ClassType classType) {
 	}
 
 }
