@@ -74,13 +74,15 @@ public class DeepCheckingVisitor implements AstVisitor {
 	private ClassDeclaration currentClassDeclaration;
 	private ClassScope currentClassScope = null;
 	private MethodDefinition currentMethodDefinition = null;
+	private final Definition systemDefinition;
 
 	private boolean isStaticMethod;
 	private boolean returnOnAllPaths;
 	private boolean isExpressionStatement;
 
-	public DeepCheckingVisitor(HashMap<Symbol, ClassScope> classScopes) {
+	public DeepCheckingVisitor(HashMap<Symbol, ClassScope> classScopes, Definition systemDefinition) {
 		this.classScopes = classScopes;
+		this.systemDefinition = systemDefinition;
 	}
 
 	public List<SemanticAnalysisException> getExceptions() {
@@ -377,34 +379,36 @@ public class DeepCheckingVisitor implements AstVisitor {
 
 		// is inner expression (no left expression)
 		if (variableAccessExpression.getExpression() == null) {
-			if (variableAccessExpression.getFieldIdentifier().isDefined()) {
+			Symbol fieldIdentifier = variableAccessExpression.getFieldIdentifier();
+			Position position = variableAccessExpression.getPosition();
+			Definition definition = null;
+			if (fieldIdentifier.isDefined()) {
 				if (isStaticMethod) {
-					if (variableAccessExpression.getFieldIdentifier().getDefinitionScope().getParentScope() == null) {
+					if (fieldIdentifier.getDefinitionScope().getParentScope() == null) {
 						// class field has no parent scope since there are no inner classes
 						// there are no static fields
-						throwIllegalAccessToNonStaticMemberError(variableAccessExpression.getPosition());
+						throwIllegalAccessToNonStaticMemberError(position);
 						// continue
 					}
 				}
-				variableAccessExpression.setType(variableAccessExpression.getFieldIdentifier().getDefinition().getType());
-				variableAccessExpression.setDefinition(variableAccessExpression.getFieldIdentifier().getDefinition());
-			} else if (currentClassScope.getFieldDefinition(variableAccessExpression.getFieldIdentifier()) != null) {
+				definition = fieldIdentifier.getDefinition();
+			} else if (currentClassScope.getFieldDefinition(fieldIdentifier) != null) {
 				// no static field defined in class scope possible
 				if (isStaticMethod) {
 					// there are no static fields
-					throwIllegalAccessToNonStaticMemberError(variableAccessExpression.getPosition());
+					throwIllegalAccessToNonStaticMemberError(position);
 					// continue
 				}
-				variableAccessExpression.setType(currentClassScope.getFieldDefinition(variableAccessExpression.getFieldIdentifier()).getType());
-				variableAccessExpression.setDefinition(currentClassScope.getFieldDefinition(variableAccessExpression.getFieldIdentifier()));
+				definition = currentClassScope.getFieldDefinition(fieldIdentifier);
 				// special case is System
-			} else if (variableAccessExpression.getFieldIdentifier().getValue().equals("System")) {
-				variableAccessExpression.setType(new ClassType(null, new Symbol("System")));
-				variableAccessExpression.setDefinition(null); // TODO: fix me
+			} else if (fieldIdentifier.getValue().equals("System")) {
+				definition = systemDefinition;
 			} else {
-				throwUndefinedSymbolError(variableAccessExpression.getFieldIdentifier(), variableAccessExpression.getPosition());
+				throwUndefinedSymbolError(fieldIdentifier, position);
 				return;
 			}
+			variableAccessExpression.setType(definition.getType());
+			variableAccessExpression.setDefinition(definition);
 		} else {
 			Expression leftExpression = variableAccessExpression.getExpression();
 

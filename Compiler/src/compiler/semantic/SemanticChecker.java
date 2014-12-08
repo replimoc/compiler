@@ -28,6 +28,7 @@ public final class SemanticChecker {
 
 		// fill System.out.println: if System class isn't present
 		Symbol systemSymbol = new Symbol("System");
+		Definition systemDefinition = null;
 		if (classScopes.containsKey(systemSymbol) == false) {
 			// create PrintStream class
 			int printStreamNum = 0;
@@ -47,7 +48,8 @@ public final class SemanticChecker {
 			ClassScope printStreamScope = new ClassScope(new HashMap<Symbol, Definition>(), psMethods);
 			classScopes.put(printStream, printStreamScope);
 
-			systemSymbol.setDefintion(new Scope(null, 0), new Definition(systemSymbol, new ClassType(null, systemSymbol), null));
+			systemDefinition = new Definition(systemSymbol, new ClassType(null, systemSymbol), null);
+			systemSymbol.setDefintion(new Scope(null, 0), systemDefinition);
 			HashMap<Symbol, Definition> fields = new HashMap<Symbol, Definition>();
 			fields.put(new Symbol("out"), printStreamDefinition);
 			HashMap<Symbol, MethodDefinition> methods = new HashMap<Symbol, MethodDefinition>();
@@ -56,7 +58,7 @@ public final class SemanticChecker {
 		}
 
 		// run full semantic check
-		DeepCheckingVisitor deepCheckingVisitor = new DeepCheckingVisitor(classScopes);
+		DeepCheckingVisitor deepCheckingVisitor = new DeepCheckingVisitor(classScopes, systemDefinition);
 		ast.accept(deepCheckingVisitor);
 		exceptions.addAll(deepCheckingVisitor.getExceptions());
 

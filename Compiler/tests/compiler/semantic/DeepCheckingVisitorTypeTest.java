@@ -18,7 +18,7 @@ import compiler.semantic.exceptions.TypeErrorException;
 public class DeepCheckingVisitorTypeTest {
 
 	private HashMap<Symbol, ClassScope> classScopes = new HashMap<Symbol, ClassScope>();
-	private DeepCheckingVisitor visitor = new DeepCheckingVisitor(classScopes);
+	private DeepCheckingVisitor visitor = new DeepCheckingVisitor(classScopes, null);
 	private Position position = new Position(0, 0);
 	private IntegerConstantExpression integer = new IntegerConstantExpression(position, "42");
 	private BooleanConstantExpression btrue = new BooleanConstantExpression(position, true);

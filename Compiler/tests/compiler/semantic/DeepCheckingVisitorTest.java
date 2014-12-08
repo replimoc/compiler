@@ -19,8 +19,7 @@ import compiler.utils.TestUtils;
 public class DeepCheckingVisitorTest {
 
 	private HashMap<Symbol, ClassScope> classScopes = new HashMap<Symbol, ClassScope>();
-	private final DeepCheckingVisitor visitor = new DeepCheckingVisitor(
-			classScopes);
+	private final DeepCheckingVisitor visitor = new DeepCheckingVisitor(classScopes, null);
 
 	@Test
 	public void testEmptyProgram() {
