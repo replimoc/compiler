@@ -30,7 +30,7 @@ public final class FirmUtils {
 
 	public static void initFirm() {
 		if (System.getProperty(JNA_LIBRARY_PATH) == null) {
-			System.setProperty(JNA_LIBRARY_PATH, LIB_FIRM_FOLDER);
+			System.setProperty(JNA_LIBRARY_PATH, Utils.getJarLocation() + File.separator + LIB_FIRM_FOLDER);
 		}
 		Firm.init();
 
