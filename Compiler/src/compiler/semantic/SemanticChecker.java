@@ -29,33 +29,40 @@ public final class SemanticChecker {
 		// fill System.out.println: if System class isn't present
 		Symbol systemSymbol = new Symbol("System");
 		Definition systemDefinition = null;
-		if (classScopes.containsKey(systemSymbol) == false) {
-			// create PrintStream class
-			int printStreamNum = 0;
 
-			Symbol printStream;
+		// create System class if 'System' is already defined
+		if (classScopes.containsKey(systemSymbol)) {
+			int systemSymbolNum = 0;
 			do {
-				printStream = new Symbol("PrintStream" + printStreamNum);
-			} while (classScopes.containsKey(printStream));
-
-			Definition printStreamDefinition = new Definition(printStream, new ClassType(new Position(-1, -1), printStream));
-
-			HashMap<Symbol, MethodDefinition> psMethods = new HashMap<Symbol, MethodDefinition>();
-			Symbol printLineSymbol = new Symbol("println"); // FIXME This should not work, as we should use == for symbol comparison
-			Definition[] definitions = new Definition[1];
-			definitions[0] = new Definition(new Symbol("arg"), new Type(null, BasicType.INT));
-			psMethods.put(printLineSymbol, new PrintMethodDefinition(printLineSymbol, new Type(null, BasicType.VOID), definitions));
-			ClassScope printStreamScope = new ClassScope(new HashMap<Symbol, Definition>(), psMethods);
-			classScopes.put(printStream, printStreamScope);
-
-			systemDefinition = new Definition(systemSymbol, new ClassType(null, systemSymbol));
-			systemSymbol.setDefintion(new Scope(null, 0), systemDefinition);
-			HashMap<Symbol, Definition> fields = new HashMap<Symbol, Definition>();
-			fields.put(new Symbol("out"), printStreamDefinition);
-			HashMap<Symbol, MethodDefinition> methods = new HashMap<Symbol, MethodDefinition>();
-			ClassScope systemClassScope = new ClassScope(fields, methods);
-			classScopes.put(systemSymbol, systemClassScope);
+				systemSymbol = new Symbol("System" + systemSymbolNum);
+			} while (classScopes.containsKey(systemSymbol));
 		}
+
+		// create PrintStream class
+		int printStreamNum = 0;
+
+		Symbol printStream;
+		do {
+			printStream = new Symbol("PrintStream" + printStreamNum);
+		} while (classScopes.containsKey(printStream));
+
+		Definition printStreamDefinition = new Definition(printStream, new ClassType(new Position(-1, -1), printStream));
+
+		HashMap<Symbol, MethodDefinition> psMethods = new HashMap<Symbol, MethodDefinition>();
+		Symbol printLineSymbol = new Symbol("println"); // FIXME This should not work, as we should use == for symbol comparison
+		Definition[] definitions = new Definition[1];
+		definitions[0] = new Definition(new Symbol("arg"), new Type(null, BasicType.INT));
+		psMethods.put(printLineSymbol, new PrintMethodDefinition(printLineSymbol, new Type(null, BasicType.VOID), definitions));
+		ClassScope printStreamScope = new ClassScope(new HashMap<Symbol, Definition>(), psMethods);
+		classScopes.put(printStream, printStreamScope);
+
+		systemDefinition = new Definition(systemSymbol, new ClassType(null, systemSymbol));
+		systemSymbol.setDefintion(new Scope(null, 0), systemDefinition);
+		HashMap<Symbol, Definition> fields = new HashMap<Symbol, Definition>();
+		fields.put(new Symbol("out"), printStreamDefinition);
+		HashMap<Symbol, MethodDefinition> methods = new HashMap<Symbol, MethodDefinition>();
+		ClassScope systemClassScope = new ClassScope(fields, methods);
+		classScopes.put(systemSymbol, systemClassScope);
 
 		// run full semantic check
 		DeepCheckingVisitor deepCheckingVisitor = new DeepCheckingVisitor(classScopes, systemDefinition);
