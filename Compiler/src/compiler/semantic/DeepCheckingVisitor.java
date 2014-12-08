@@ -621,7 +621,8 @@ public class DeepCheckingVisitor implements AstVisitor {
 			return;
 		}
 
-		symbolTable.insert(localVariableDeclaration.getIdentifier(), localVariableDeclaration.getDefinition());
+		int variableNumber = symbolTable.insert(localVariableDeclaration.getIdentifier(), localVariableDeclaration.getType());
+		localVariableDeclaration.setVariableNumber(variableNumber);
 
 		Expression expression = localVariableDeclaration.getExpression();
 		if (expression != null) {
@@ -643,8 +644,8 @@ public class DeepCheckingVisitor implements AstVisitor {
 			throwRedefinitionError(parameterDefinition.getIdentifier(), parameterDefinition.getPosition());
 			return;
 		}
-		symbolTable.insert(parameterDefinition.getIdentifier(), new Definition(parameterDefinition.getIdentifier(), parameterDefinition.getType(),
-				parameterDefinition));
+		int variableNumber = symbolTable.insert(parameterDefinition.getIdentifier(), parameterDefinition.getType());
+		parameterDefinition.setVariableNumber(variableNumber);
 	}
 
 	@Override

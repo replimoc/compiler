@@ -310,11 +310,11 @@ public class PreNamingAnalysisVisitorTest {
 	}
 
 	private MethodDefinition m(String name, Type returnType, Definition... parameters) {
-		return new MethodDefinition(s(name), returnType, parameters, null);
+		return new MethodDefinition(s(name), returnType, parameters);
 	}
 
 	private Definition d(String name, Type type) {
-		return new Definition(s(name), type, null);
+		return new Definition(s(name), type);
 	}
 
 	private Type ct(String string) {
