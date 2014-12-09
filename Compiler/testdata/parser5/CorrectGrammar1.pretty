@@ -63,8 +63,8 @@ class Parameters {
 	public void i_accept_a_lot_of_params(int a, int[] vec, int[][] A, int[][][] cube) { }
 	public void i_accept_bools(boolean one, boolean two, boolean[] three_four_five) {
 		boolean a = one || two;
-		boolean b = three_four_five[0] && three_four_five[1];
-		boolean c = !three_four_five[3];
+		boolean b = (three_four_five[0]) && (three_four_five[1]);
+		boolean c = !(three_four_five[3]);
 		boolean d = ((a && b) || (c && (!b))) || (a || c);
 		boolean b_true = true;
 		boolean b_false = false;

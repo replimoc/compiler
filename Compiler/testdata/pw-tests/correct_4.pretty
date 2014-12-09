@@ -1,6 +1,6 @@
 class A {
 	public void add(B b, B bb) {
-		(this.bb)[0] = (b.add(bb));
+		((this.bb)[0]) = (b.add(bb));
 	}
 	public void compare(int a, int b) {
 		println(a < b);
@@ -15,7 +15,7 @@ class A {
 	}
 	public boolean foo() {
 		B a = new B();
-		return (((a.getBar(a))[4].baz).qux(42, false, 23, true))[1][2][3];
+		return ((((((a.getBar(a))[4]).baz).qux(42, false, 23, true))[1])[2])[3];
 	}
 	public B[] getBB() {
 		return bb;
@@ -71,7 +71,7 @@ class B {
 		B[] r = new B[i];
 		int j = 0;
 		while (j < i) {
-			(r[j].i) = (_.i);
+			((r[j]).i) = (_.i);
 			j = (j + 1);
 		}
 		return r;
@@ -83,11 +83,11 @@ class C {
 	public boolean[][][] qux(int a, boolean b, int c, boolean d) {
 		boolean rrrr = d;
 		boolean[] rrr = new boolean[c];
-		rrr[32] = rrrr;
+		(rrr[32]) = rrrr;
 		boolean[][] rr = new boolean[a][];
-		rr[2] = rrr;
+		(rr[2]) = rrr;
 		boolean[][][] r = new boolean[2][][];
-		r[1] = rr;
+		(r[1]) = rr;
 		return r;
 	}
 }

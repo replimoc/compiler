@@ -5,7 +5,7 @@ class Test {
 		int[] y = new int[len];
 		int j = 0;
 		while (j < len) {
-			y[j] = ((j * j) % j);
+			(y[j]) = ((j * j) % j);
 			j = (j + 1);
 		}
 		int dimm = 3;
@@ -13,12 +13,12 @@ class Test {
 		j = 0;
 		int k = 0;
 		while (j < dimm) {
-			E[j] = (new int[dimm]);
+			(E[j]) = (new int[dimm]);
 			while (k < dimm) {
 				if (k == j) {
-					E[j][k] = 1;
+					((E[j])[k]) = 1;
 				} else {
-					E[j][k] = 0;
+					((E[j])[k]) = 0;
 				}
 			}
 		}

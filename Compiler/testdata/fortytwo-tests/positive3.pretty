@@ -1,13 +1,13 @@
 class BowlingGame {
 	public boolean isSpare(int frameIndex) {
-		return (rolls[frameIndex] + rolls[frameIndex + 1]) == 10;
+		return ((rolls[frameIndex]) + (rolls[frameIndex + 1])) == 10;
 	}
 	public boolean isStrike(int frameIndex) {
-		return rolls[frameIndex] == 10;
+		return (rolls[frameIndex]) == 10;
 	}
 	public void roll(int pins) {
 		currentRoll = (currentRoll + 1);
-		rolls[currentRoll] = pins;
+		(rolls[currentRoll]) = pins;
 	}
 	public int score() {
 		int score = 0;
@@ -32,10 +32,10 @@ class BowlingGame {
 		return rolls[frameIndex + 2];
 	}
 	public int strikeBonus(int frameIndex) {
-		return rolls[frameIndex + 1] + rolls[frameIndex + 2];
+		return (rolls[frameIndex + 1]) + (rolls[frameIndex + 2]);
 	}
 	public int sumOfBallsInFrame(int frameIndex) {
-		return rolls[frameIndex] + rolls[frameIndex + 1];
+		return (rolls[frameIndex]) + (rolls[frameIndex + 1]);
 	}
 	public int currentRoll;
 	public int[] rolls;
