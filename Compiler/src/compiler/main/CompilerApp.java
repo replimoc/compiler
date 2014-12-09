@@ -38,6 +38,7 @@ public final class CompilerApp {
 	private static final String GRAPH_FIRM = "graph-firm";
 	private static final String OUTPUT_ASSEMBLER = "assembler";
 	private static final String COMPILE_FIRM = "compile-firm";
+	private static final String NO_OPT = "no-opt";
 
 	/**
 	 * Private constructor, as no objects of this class shall be created.
@@ -66,6 +67,7 @@ public final class CompilerApp {
 		options.addOption(null, COMPILE_FIRM, false, "use the firm backend to produce amd64 code.");
 		options.addOption("o", null, true, "Used to define the filename/path of the generated executable. (Only to be used with --"
 				+ COMPILE_FIRM + ")");
+		options.addOption(null, NO_OPT, false, "deactivate optimizations");
 
 		CommandLineParser commandLineParser = new BasicParser();
 		try {
@@ -120,7 +122,9 @@ public final class CompilerApp {
 					FirmUtils.initFirm();
 					FirmGraphGenerator.transformToFirm(ast, semanticResult.getClassScopes());
 
-					FirmOptimizer.optimize();
+					if (!cmd.hasOption(NO_OPT)) {
+						FirmOptimizer.optimize();
+					}
 
 					FirmUtils.highToLowLevel();
 
