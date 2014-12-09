@@ -35,8 +35,8 @@ public class AutomatedOutputComparisonTest implements TestFileVisitor.FileTester
 	@Test
 	public void testCompareJavaOutputWithResultReference() throws Exception {
 		Path testDir = Paths.get("testdata");
-		// TestFileVisitor parserTester = new TestFileVisitor(OUTPUT_FILE_EXTENSION, this, "Simon_085");
-		TestFileVisitor parserTester = new TestFileVisitor(OUTPUT_FILE_EXTENSION, this);
+		TestFileVisitor parserTester = new TestFileVisitor(OUTPUT_FILE_EXTENSION, this, "assignment");
+		// TestFileVisitor parserTester = new TestFileVisitor(OUTPUT_FILE_EXTENSION, this);
 		Files.walkFileTree(testDir, parserTester);
 		parserTester.checkForFailedTests();
 	}

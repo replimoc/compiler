@@ -130,9 +130,15 @@ public class OptimizationVisitor implements NodeVisitor {
 	}
 
 	@Override
-	public void visit(And arg0) {
-		// TODO Auto-generated method stub
+	public void visit(And and) {
+		TargetValue leftTarget = getTarget(and.getLeft());
+		TargetValue rightTarget = getTarget(and.getRight());
 
+		if (leftTarget != null && rightTarget != null) {
+			TargetValue newTargetValue = leftTarget.and(rightTarget);
+			setTargetValue(and, newTargetValue);
+			// TODO: add the nodes having this add as predecessor. How can we get them?
+		}
 	}
 
 	@Override
@@ -184,8 +190,9 @@ public class OptimizationVisitor implements NodeVisitor {
 
 	@Override
 	public void visit(Const constant) {
-		if (constant.getMode() == Mode.getIs())
+		if (constant.getMode().equals(Mode.getIs()) || constant.getMode().equals(Mode.getBu())) {
 			setTargetValue(constant, constant.getTarval());
+		}
 	}
 
 	@Override
@@ -207,9 +214,13 @@ public class OptimizationVisitor implements NodeVisitor {
 	}
 
 	@Override
-	public void visit(Div arg0) {
-		// TODO Auto-generated method stub
-
+	public void visit(Div div) {
+		/*
+		 * TargetValue leftTarget = getTarget(div.getLeft()); TargetValue rightTarget = getTarget(div.getRight());
+		 * 
+		 * if (leftTarget != null && rightTarget != null) { TargetValue newTargetValue = leftTarget.div(rightTarget); setTargetValue(div,
+		 * newTargetValue); }
+		 */
 	}
 
 	@Override
@@ -267,21 +278,36 @@ public class OptimizationVisitor implements NodeVisitor {
 	}
 
 	@Override
-	public void visit(Minus arg0) {
-		// TODO Auto-generated method stub
+	public void visit(Minus minus) {
+		TargetValue target = getTarget(minus.getOp());
 
+		if (target != null) {
+			TargetValue newTargetValue = target.neg();
+			setTargetValue(minus, newTargetValue);
+			// TODO: add the nodes having this add as predecessor. How can we get them?
+		}
 	}
 
 	@Override
-	public void visit(Mod arg0) {
-		// TODO Auto-generated method stub
-
+	public void visit(Mod mod) {
+		/*
+		 * TargetValue leftTarget = getTarget(mod.getLeft()); TargetValue rightTarget = getTarget(mod.getRight());
+		 * 
+		 * if (leftTarget != null && rightTarget != null) { TargetValue newTargetValue = leftTarget.mod(rightTarget); setTargetValue(mod,
+		 * newTargetValue); // TODO: add the nodes having this add as predecessor. How can we get them? }
+		 */
 	}
 
 	@Override
-	public void visit(Mul arg0) {
-		// TODO Auto-generated method stub
+	public void visit(Mul mul) {
+		TargetValue leftTarget = getTarget(mul.getLeft());
+		TargetValue rightTarget = getTarget(mul.getRight());
 
+		if (leftTarget != null && rightTarget != null) {
+			TargetValue newTargetValue = leftTarget.mul(rightTarget);
+			setTargetValue(mul, newTargetValue);
+			// TODO: add the nodes having this add as predecessor. How can we get them?
+		}
 	}
 
 	@Override
@@ -303,9 +329,14 @@ public class OptimizationVisitor implements NodeVisitor {
 	}
 
 	@Override
-	public void visit(Not arg0) {
-		// TODO Auto-generated method stub
+	public void visit(Not not) {
+		TargetValue target = getTarget(not.getOp());
 
+		if (target != null) {
+			TargetValue newTargetValue = target.not();
+			setTargetValue(not, newTargetValue);
+			// TODO: add the nodes having this add as predecessor. How can we get them?
+		}
 	}
 
 	@Override
@@ -315,9 +346,15 @@ public class OptimizationVisitor implements NodeVisitor {
 	}
 
 	@Override
-	public void visit(Or arg0) {
-		// TODO Auto-generated method stub
+	public void visit(Or or) {
+		TargetValue leftTarget = getTarget(or.getLeft());
+		TargetValue rightTarget = getTarget(or.getRight());
 
+		if (leftTarget != null && rightTarget != null) {
+			TargetValue newTargetValue = leftTarget.or(rightTarget);
+			setTargetValue(or, newTargetValue);
+			// TODO: add the nodes having this add as predecessor. How can we get them?
+		}
 	}
 
 	@Override
@@ -393,9 +430,15 @@ public class OptimizationVisitor implements NodeVisitor {
 	}
 
 	@Override
-	public void visit(Sub arg0) {
-		// TODO Auto-generated method stub
+	public void visit(Sub sub) {
+		TargetValue leftTarget = getTarget(sub.getLeft());
+		TargetValue rightTarget = getTarget(sub.getRight());
 
+		if (leftTarget != null && rightTarget != null) {
+			TargetValue newTargetValue = leftTarget.sub(rightTarget, sub.getMode());
+			setTargetValue(sub, newTargetValue);
+			// TODO: add the nodes having this add as predecessor. How can we get them?
+		}
 	}
 
 	@Override

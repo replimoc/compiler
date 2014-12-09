@@ -14,11 +14,10 @@ public final class FirmOptimizer {
 	}
 
 	public static void optimize() {
-		LinkedList<Node> workList = new LinkedList<>();
-
-		OptimizationVisitor visitor = new OptimizationVisitor(workList);
-
 		for (Graph graph : Program.getGraphs()) {
+			LinkedList<Node> workList = new LinkedList<>();
+
+			OptimizationVisitor visitor = new OptimizationVisitor(workList);
 			graph.walkTopological(visitor);
 
 			workList(workList, visitor);
@@ -39,8 +38,10 @@ public final class FirmOptimizer {
 			Node node = targetEntry.getKey();
 			TargetValue targetValue = targetEntry.getValue();
 
-			if (targetValue.isConstant()) {
-				Graph.exchange(node, graph.newConst(targetValue));
+			if (node.getPredCount() > 0) {
+				if (targetValue.isConstant()) {
+					Graph.exchange(node, graph.newConst(targetValue));
+				}
 			}
 		}
 	}
