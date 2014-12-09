@@ -55,6 +55,7 @@ import compiler.ast.visitor.AstVisitor;
 import compiler.lexer.Position;
 import compiler.semantic.exceptions.IllegalAccessToNonStaticMemberException;
 import compiler.semantic.exceptions.InvalidMethodCallException;
+import compiler.semantic.exceptions.MainNotCallableException;
 import compiler.semantic.exceptions.MissingReturnStatementOnAPathException;
 import compiler.semantic.exceptions.NoSuchMemberException;
 import compiler.semantic.exceptions.NotAnExpressionStatementException;
@@ -112,6 +113,10 @@ public class DeepCheckingVisitor implements AstVisitor {
 
 	private void throwIllegalAccessToNonStaticMemberError(Position objPos) {
 		exceptions.add(new IllegalAccessToNonStaticMemberException(objPos));
+	}
+
+	private void throwMainNotCallableError(MethodInvocationExpression methodInvocation) {
+		exceptions.add(new MainNotCallableException(methodInvocation));
 	}
 
 	private boolean hasType(Type type, AstNode astNode) {
@@ -303,59 +308,58 @@ public class DeepCheckingVisitor implements AstVisitor {
 	public void visit(MethodInvocationExpression methodInvocationExpression) {
 		// is inner expression
 		if (methodInvocationExpression.getMethodExpression() == null) {
-			if (isStaticMethod) {
-				// there are no static method
+			if (isStaticMethod) { // there are no static methods
 				throwIllegalAccessToNonStaticMemberError(methodInvocationExpression.getPosition());
 				return;
 			}
-			MethodDefinition methodDefinition = currentClassScope.getMethodDefinition(methodInvocationExpression.getMethodIdent());
-			if (methodDefinition != null) {
-				checkParameterDefinitionAndSetReturnType(methodInvocationExpression, methodDefinition);
-			} else {
-				throwNoSuchMemberError(currentClassDeclaration.getIdentifier(), currentClassDeclaration.getPosition(),
-						methodInvocationExpression.getMethodIdent(), methodInvocationExpression.getPosition());
-				return;
-			}
+			checkCallMethod(methodInvocationExpression, currentClassScope);
+
 		} else {
 			// first step in outer left expression
 			methodInvocationExpression.getMethodExpression().accept(this);
 
 			Expression leftExpression = methodInvocationExpression.getMethodExpression();
-
 			Type leftExpressionType = leftExpression.getType();
 
 			if (leftExpressionType == null) {
 				return; // left expressions failed...
 			}
 
-			// if left expression type is != class (e.g. int, boolean, void) then throw error
+			// if left expression type is != BasicType.CLASS (e.g. int, boolean, void, array) throw error
 			if (leftExpressionType.getBasicType() != BasicType.CLASS) {
 				throwNoSuchMemberError(leftExpressionType.getIdentifier(), leftExpressionType.getPosition(),
-						methodInvocationExpression.getMethodIdent(), methodInvocationExpression.getPosition());
+						methodInvocationExpression.getMethodIdentifier(), methodInvocationExpression.getPosition());
 				return;
 			}
 
 			// get class scope
 			ClassScope classScope = classScopes.get(leftExpressionType.getIdentifier());
+			if (classScope == null) {
+				throwUndefinedSymbolError(leftExpressionType.getIdentifier(), leftExpression.getPosition());
+			} else {
+				checkCallMethod(methodInvocationExpression, classScope);
+			}
+		}
+	}
 
-			MethodDefinition methodDefinition = null;
-			if (classScope != null) {
-				methodDefinition = classScope.getMethodDefinition(methodInvocationExpression.getMethodIdent());
-			}
-			// is there the specified method?
-			if (methodDefinition == null) {
-				throwNoSuchMemberError(leftExpressionType.getIdentifier(), leftExpressionType.getPosition(),
-						methodInvocationExpression.getMethodIdent(), methodInvocationExpression.getPosition());
-				return;
-			}
-			checkParameterDefinitionAndSetReturnType(methodInvocationExpression, methodDefinition);
+	private void checkCallMethod(MethodInvocationExpression methodInvocation, ClassScope classScope) {
+		Symbol methodIdentifier = methodInvocation.getMethodIdentifier();
+		MethodDefinition methodDefinition = classScope.getMethodDefinition(methodIdentifier);
+		if (methodDefinition == null) {
+			throwNoSuchMemberError(currentClassDeclaration.getIdentifier(), currentClassDeclaration.getPosition(),
+					methodIdentifier, methodInvocation.getPosition());
+		} else if (methodDefinition.isStaticMethod()) {
+			throwMainNotCallableError(methodInvocation);
+		} else {
+			checkParameterDefinitionAndSetReturnType(methodInvocation, methodDefinition);
 		}
 	}
 
 	private void checkParameterDefinitionAndSetReturnType(MethodInvocationExpression methodInvocationExpression, MethodDefinition methodDefinition) {
 		// now check params
 		if (methodDefinition.getParameters().length != methodInvocationExpression.getParameters().length) {
-			exceptions.add(new InvalidMethodCallException(methodInvocationExpression.getMethodIdent(), methodInvocationExpression.getPosition()));
+			exceptions
+					.add(new InvalidMethodCallException(methodInvocationExpression.getMethodIdentifier(), methodInvocationExpression.getPosition()));
 			return;
 		}
 

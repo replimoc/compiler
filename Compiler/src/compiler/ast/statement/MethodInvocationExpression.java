@@ -20,7 +20,7 @@ public class MethodInvocationExpression extends PostfixExpression {
 		this.expression = leftExpression;
 	}
 
-	public Symbol getMethodIdent() {
+	public Symbol getMethodIdentifier() {
 		return methodIdent;
 	}
 
