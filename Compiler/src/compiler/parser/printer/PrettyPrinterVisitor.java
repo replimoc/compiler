@@ -281,6 +281,9 @@ public class PrettyPrinterVisitor implements AstVisitor {
 
 	@Override
 	public void visit(ArrayAccessExpression arrayAccessExpression) {
+		if (precedence > 0)
+			stringBuilder.append('(');
+
 		int oldPrecedence = precedence;
 		precedence = 1;
 
@@ -293,6 +296,9 @@ public class PrettyPrinterVisitor implements AstVisitor {
 		stringBuilder.append(']');
 
 		precedence = oldPrecedence;
+
+		if (precedence > 0)
+			stringBuilder.append(')');
 	}
 
 	@Override

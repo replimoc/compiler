@@ -24,7 +24,7 @@ class Main {
 			WorldArray ws = new World[A = ((B * 10) || (!C))][];
 			while ((this.T) % 42) {
 				{
-					ws[bar] = ((new Hello()).world);
+					(ws[bar]) = ((new Hello()).world);
 					ws.print();
 				}
 			}
