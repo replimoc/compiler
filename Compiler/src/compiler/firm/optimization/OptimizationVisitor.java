@@ -66,7 +66,8 @@ public class OptimizationVisitor implements NodeVisitor {
 
 	private final LinkedList<Node> workList;
 	private final HashMap<Node, TargetValue> targets = new HashMap<>();
-	private final HashMap<Node, TargetValue> specialTargets = new HashMap<>();
+	// Div and Mod nodes have a Proj successor which must be replaced instead of the Div and Mod nodes themselves
+	private final HashMap<Node, TargetValue> specialProjTargets = new HashMap<>();
 
 	public OptimizationVisitor(LinkedList<Node> workList) {
 		this.workList = workList;
@@ -220,7 +221,7 @@ public class OptimizationVisitor implements NodeVisitor {
 		TargetValue rightTarget = getTarget(div.getRight());
 
 		if (leftTarget != null && rightTarget != null) {
-			specialTargets.put(div, leftTarget.div(rightTarget));
+			specialProjTargets.put(div, leftTarget.div(rightTarget));
 		}
 
 	}
@@ -296,7 +297,7 @@ public class OptimizationVisitor implements NodeVisitor {
 		TargetValue rightTarget = getTarget(mod.getRight());
 
 		if (leftTarget != null && rightTarget != null) {
-			specialTargets.put(mod, leftTarget.mod(rightTarget));
+			specialProjTargets.put(mod, leftTarget.mod(rightTarget));
 		}
 	}
 
@@ -374,8 +375,8 @@ public class OptimizationVisitor implements NodeVisitor {
 	@Override
 	public void visit(Proj proj) {
 		if (proj.getPredCount() == 1) {
-			if (specialTargets.containsKey(proj.getPred(0))) {
-				setTargetValue(proj, specialTargets.get(proj.getPred(0)));
+			if (specialProjTargets.containsKey(proj.getPred(0))) {
+				setTargetValue(proj, specialProjTargets.get(proj.getPred(0)));
 			}
 		}
 	}
