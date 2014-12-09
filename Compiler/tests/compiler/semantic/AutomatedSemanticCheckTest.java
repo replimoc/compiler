@@ -1,11 +1,9 @@
 package compiler.semantic;
 
-import java.io.File;
-import java.io.FileWriter;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
-import java.nio.file.Paths;
+import java.util.Arrays;
 import java.util.List;
 
 import org.junit.Assert;
@@ -16,6 +14,7 @@ import compiler.lexer.Lexer;
 import compiler.parser.Parser;
 import compiler.semantic.exceptions.SemanticAnalysisException;
 import compiler.utils.TestFileVisitor;
+import compiler.utils.TestUtils;
 
 /**
  * Test correctness of semantic analysis che
@@ -26,11 +25,27 @@ public class AutomatedSemanticCheckTest implements TestFileVisitor.FileTester {
 
 	@Test
 	public void testCheckFiles() throws Exception {
-		Path testDir = Paths.get("testdata");
-		// TestFileVisitor lexTester = new TestFileVisitor(SEMANTIC_CHECK_EXTENSION, this, "multiarrays");
-		TestFileVisitor lexTester = new TestFileVisitor(SEMANTIC_CHECK_EXTENSION, this);
-		Files.walkFileTree(testDir, lexTester);
-		lexTester.checkForFailedTests();
+		TestFileVisitor.runTests(this, "testdata", TestFileVisitor.JAVA_EXTENSION, SEMANTIC_CHECK_EXTENSION);
+	}
+
+	@Test
+	public void testCheckMjTestFilesJava() throws Exception {
+		TestFileVisitor.runTests(this, "testdata/mj-test/pos", TestFileVisitor.JAVA_EXTENSION, TestFileVisitor.JAVA_EXTENSION);
+	}
+
+	@Test
+	public void testCheckMjTestFilesMiniJava() throws Exception {
+		TestFileVisitor.runTests(this, "testdata/mj-test/pos", TestFileVisitor.MINIJAVA_EXTENSION, TestFileVisitor.MINIJAVA_EXTENSION);
+	}
+
+	@Test
+	public void testCheckMjTestFilesRunnableJava() throws Exception {
+		TestFileVisitor.runTests(this, "testdata/mj-test/run", TestFileVisitor.JAVA_EXTENSION, TestFileVisitor.JAVA_EXTENSION);
+	}
+
+	@Test
+	public void testCheckMjTestFilesRunnableMiniJava() throws Exception {
+		TestFileVisitor.runTests(this, "testdata/mj-test/run", TestFileVisitor.MINIJAVA_EXTENSION, TestFileVisitor.MINIJAVA_EXTENSION);
 	}
 
 	@Override
@@ -39,7 +54,10 @@ public class AutomatedSemanticCheckTest implements TestFileVisitor.FileTester {
 		System.out.println("Testing file = " + sourceFilePath + "----------------------------------------------->");
 
 		// read expected results file
-		List<String> lines = Files.readAllLines(expectedResultFilePath, StandardCharsets.US_ASCII);
+		List<String> lines = Arrays.asList("correct");
+		if (!expectedResultFilePath.equals(sourceFilePath)) {
+			lines = Files.readAllLines(expectedResultFilePath, StandardCharsets.US_ASCII);
+		}
 		boolean isErrorExpected = !"correct".equals(lines.get(0));
 		int err_num = lines.size() > 1 ? Integer.parseInt(lines.get(1)) : -1;
 
@@ -54,14 +72,12 @@ public class AutomatedSemanticCheckTest implements TestFileVisitor.FileTester {
 
 			} else if (err_num == semanticResult.getNumberOfExceptions()) {
 				// Incorrect program produces the right errors, write them to a log file
-				File file = new File(expectedResultFilePath.toFile().getPath() + ".errors");
-				FileWriter output = new FileWriter(file, false);
+				StringBuffer errors = new StringBuffer();
+
 				for (SemanticAnalysisException error : semanticResult.getExceptions()) {
-					output.append(error.toString() + "\n");
+					errors.append(error.toString() + "\n");
 				}
-				output.close();
-				output = null;
-				file = null;
+				TestUtils.writeToFile(expectedResultFilePath.toFile().getPath() + ".errors", errors);
 
 			} else {
 				for (SemanticAnalysisException error : semanticResult.getExceptions()) {

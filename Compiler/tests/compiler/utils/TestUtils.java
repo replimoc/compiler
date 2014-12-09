@@ -2,6 +2,8 @@ package compiler.utils;
 
 import static org.junit.Assert.assertEquals;
 
+import java.io.File;
+import java.io.FileWriter;
 import java.io.IOException;
 import java.io.StringReader;
 import java.nio.charset.StandardCharsets;
@@ -85,8 +87,11 @@ public class TestUtils {
 	}
 
 	public static void assertLinesEqual(Path sourceFile, List<String> expected, Iterator<String> actualIter) {
+		assertLinesEqual(sourceFile, expected.iterator(), actualIter);
+	}
+
+	public static void assertLinesEqual(Path sourceFile, Iterator<String> expectedIter, Iterator<String> actualIter) {
 		int line = 1;
-		Iterator<String> expectedIter = expected.iterator();
 		while (expectedIter.hasNext() && actualIter.hasNext()) {
 			assertEquals("Error in file: " + sourceFile + " in line: " + line, expectedIter.next(), actualIter.next());
 			line++;
@@ -111,5 +116,21 @@ public class TestUtils {
 			arguments.add(arg);
 		}
 		return Utils.runProcessBuilder(new ProcessBuilder(arguments));
+	}
+
+	public static File writeToTemporaryFile(CharSequence buffer) throws IOException {
+		File file = File.createTempFile("testfile", "");
+		file.deleteOnExit();
+		writeToFile(file.getAbsolutePath(), buffer);
+		return file;
+	}
+
+	public static void writeToFile(String filename, CharSequence buffer) throws IOException {
+		File file = new File(filename);
+		FileWriter output = new FileWriter(file, false);
+		output.append(buffer);
+		output.close();
+		output = null;
+		file = null;
 	}
 }
