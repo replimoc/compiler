@@ -66,6 +66,7 @@ public class OptimizationVisitor implements NodeVisitor {
 
 	private final LinkedList<Node> workList;
 	private final HashMap<Node, TargetValue> targets = new HashMap<>();
+	private final HashMap<Node, TargetValue> specialTargets = new HashMap<>();
 
 	public OptimizationVisitor(LinkedList<Node> workList) {
 		this.workList = workList;
@@ -215,12 +216,13 @@ public class OptimizationVisitor implements NodeVisitor {
 
 	@Override
 	public void visit(Div div) {
-		/*
-		 * TargetValue leftTarget = getTarget(div.getLeft()); TargetValue rightTarget = getTarget(div.getRight());
-		 * 
-		 * if (leftTarget != null && rightTarget != null) { TargetValue newTargetValue = leftTarget.div(rightTarget); setTargetValue(div,
-		 * newTargetValue); }
-		 */
+		TargetValue leftTarget = getTarget(div.getLeft());
+		TargetValue rightTarget = getTarget(div.getRight());
+
+		if (leftTarget != null && rightTarget != null) {
+			specialTargets.put(div, leftTarget.div(rightTarget));
+		}
+
 	}
 
 	@Override
@@ -290,12 +292,12 @@ public class OptimizationVisitor implements NodeVisitor {
 
 	@Override
 	public void visit(Mod mod) {
-		/*
-		 * TargetValue leftTarget = getTarget(mod.getLeft()); TargetValue rightTarget = getTarget(mod.getRight());
-		 * 
-		 * if (leftTarget != null && rightTarget != null) { TargetValue newTargetValue = leftTarget.mod(rightTarget); setTargetValue(mod,
-		 * newTargetValue); // TODO: add the nodes having this add as predecessor. How can we get them? }
-		 */
+		TargetValue leftTarget = getTarget(mod.getLeft());
+		TargetValue rightTarget = getTarget(mod.getRight());
+
+		if (leftTarget != null && rightTarget != null) {
+			specialTargets.put(mod, leftTarget.mod(rightTarget));
+		}
 	}
 
 	@Override
@@ -370,9 +372,12 @@ public class OptimizationVisitor implements NodeVisitor {
 	}
 
 	@Override
-	public void visit(Proj arg0) {
-		// TODO Auto-generated method stub
-
+	public void visit(Proj proj) {
+		if (proj.getPredCount() == 1) {
+			if (specialTargets.containsKey(proj.getPred(0))) {
+				setTargetValue(proj, specialTargets.get(proj.getPred(0)));
+			}
+		}
 	}
 
 	@Override
@@ -394,21 +399,39 @@ public class OptimizationVisitor implements NodeVisitor {
 	}
 
 	@Override
-	public void visit(Shl arg0) {
-		// TODO Auto-generated method stub
+	public void visit(Shl shl) {
+		TargetValue leftTarget = getTarget(shl.getLeft());
+		TargetValue rightTarget = getTarget(shl.getRight());
 
+		if (leftTarget != null && rightTarget != null) {
+			TargetValue newTargetValue = leftTarget.shr(rightTarget);
+			setTargetValue(shl, newTargetValue);
+			// TODO: add the nodes having this add as predecessor. How can we get them?
+		}
 	}
 
 	@Override
-	public void visit(Shr arg0) {
-		// TODO Auto-generated method stub
+	public void visit(Shr shr) {
+		TargetValue leftTarget = getTarget(shr.getLeft());
+		TargetValue rightTarget = getTarget(shr.getRight());
 
+		if (leftTarget != null && rightTarget != null) {
+			TargetValue newTargetValue = leftTarget.shr(rightTarget);
+			setTargetValue(shr, newTargetValue);
+			// TODO: add the nodes having this add as predecessor. How can we get them?
+		}
 	}
 
 	@Override
-	public void visit(Shrs arg0) {
-		// TODO Auto-generated method stub
+	public void visit(Shrs shrs) {
+		TargetValue leftTarget = getTarget(shrs.getLeft());
+		TargetValue rightTarget = getTarget(shrs.getRight());
 
+		if (leftTarget != null && rightTarget != null) {
+			TargetValue newTargetValue = leftTarget.shr(rightTarget);
+			setTargetValue(shrs, newTargetValue);
+			// TODO: add the nodes having this add as predecessor. How can we get them?
+		}
 	}
 
 	@Override
