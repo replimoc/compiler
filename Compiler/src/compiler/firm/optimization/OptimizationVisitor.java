@@ -217,7 +217,7 @@ public class OptimizationVisitor implements NodeVisitor {
 
 	@Override
 	public void visit(Div div) {
-		// firm automatically skip this exchanging the node if right target is null
+		// firm automatically skips exchanging the node if right target is null
 		TargetValue leftTarget = getTarget(div.getLeft());
 		TargetValue rightTarget = getTarget(div.getRight());
 
@@ -294,7 +294,7 @@ public class OptimizationVisitor implements NodeVisitor {
 
 	@Override
 	public void visit(Mod mod) {
-		// firm automatically skip this exchanging the node if right target is null
+		// firm automatically skips exchanging the node if right target is null
 		TargetValue leftTarget = getTarget(mod.getLeft());
 		TargetValue rightTarget = getTarget(mod.getRight());
 
