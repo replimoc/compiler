@@ -2,6 +2,7 @@ package compiler.firm.optimization;
 
 import java.util.HashMap;
 import java.util.LinkedList;
+import java.util.List;
 
 import firm.Mode;
 import firm.TargetValue;
@@ -69,6 +70,9 @@ public class OptimizationVisitor implements NodeVisitor {
 	// Div and Mod nodes have a Proj successor which must be replaced instead of the Div and Mod nodes themselves
 	private final HashMap<Node, TargetValue> specialProjTargets = new HashMap<>();
 
+	// TODO: remove if possible!
+	private final HashMap<Node, Iterable<Node>> tempSuccessor = new HashMap<>();
+
 	public OptimizationVisitor(LinkedList<Node> workList) {
 		this.workList = workList;
 	}
@@ -82,6 +86,8 @@ public class OptimizationVisitor implements NodeVisitor {
 	}
 
 	private void workNodes(Iterable<Node> nodes) {
+		if (nodes == null)
+			return;
 		for (Node node : nodes) {
 			workList.offer(node);
 		}
@@ -95,15 +101,43 @@ public class OptimizationVisitor implements NodeVisitor {
 		return targets.get(node);
 	}
 
+	// TODO: remove if possible!
+	private void addSuccessor(Node node, Iterable<Node> nodes) {
+		for (Node predNode : nodes) {
+			Iterable<Node> pred = tempSuccessor.get(predNode);
+			List<Node> predNodes = new LinkedList<Node>();
+			if (pred != null) {
+				for (Node n : pred) {
+					predNodes.add(n);
+				}
+			}
+			if (!predNodes.contains(node))
+				predNodes.add(node);
+			tempSuccessor.put(predNode, predNodes);
+		}
+	}
+
 	@Override
 	public void visit(Add add) {
-		TargetValue leftTarget = getTarget(add.getLeft());
-		TargetValue rightTarget = getTarget(add.getRight());
+		addSuccessor(add, add.getPreds());
+		TargetValue target = getTarget(add);
+		if (target != null && target.equals(TargetValue.getBad())) {
+			// no const
+			return;
+		}
+		TargetValue leftTarget = getTarget(add.getLeft()) == null ? TargetValue.getUnknown() : getTarget(add.getLeft());
+		TargetValue rightTarget = getTarget(add.getRight()) == null ? TargetValue.getUnknown() : getTarget(add.getRight());
 
-		if (leftTarget != null && rightTarget != null) {
-			TargetValue newTargetValue = leftTarget.add(rightTarget);
-			setTargetValue(add, newTargetValue);
-			// TODO: add the nodes having this add as predecessor. How can we get them?
+		if (leftTarget.isConstant() && rightTarget.isConstant()) {
+			setTargetValue(add, leftTarget.add(rightTarget));
+		} else if (leftTarget.equals(TargetValue.getBad()) || rightTarget.equals(TargetValue.getBad())) {
+			setTargetValue(add, TargetValue.getBad());
+		} else {
+			setTargetValue(add, TargetValue.getUnknown());
+		}
+
+		if (target == null || !target.equals(getTarget(add))) {
+			workNodes(tempSuccessor.get(add));
 		}
 	}
 
@@ -133,13 +167,25 @@ public class OptimizationVisitor implements NodeVisitor {
 
 	@Override
 	public void visit(And and) {
-		TargetValue leftTarget = getTarget(and.getLeft());
-		TargetValue rightTarget = getTarget(and.getRight());
+		addSuccessor(and, and.getPreds());
+		TargetValue target = getTarget(and);
+		if (target != null && target.equals(TargetValue.getBad())) {
+			// no const
+			return;
+		}
+		TargetValue leftTarget = getTarget(and.getLeft()) == null ? TargetValue.getUnknown() : getTarget(and.getLeft());
+		TargetValue rightTarget = getTarget(and.getRight()) == null ? TargetValue.getUnknown() : getTarget(and.getRight());
 
-		if (leftTarget != null && rightTarget != null) {
-			TargetValue newTargetValue = leftTarget.and(rightTarget);
-			setTargetValue(and, newTargetValue);
-			// TODO: add the nodes having this add as predecessor. How can we get them?
+		if (leftTarget.isConstant() && rightTarget.isConstant()) {
+			setTargetValue(and, leftTarget.and(rightTarget));
+		} else if (leftTarget.equals(TargetValue.getBad()) || rightTarget.equals(TargetValue.getBad())) {
+			setTargetValue(and, TargetValue.getBad());
+		} else {
+			setTargetValue(and, TargetValue.getUnknown());
+		}
+
+		if (target == null || !target.equals(getTarget(and))) {
+			workNodes(tempSuccessor.get(and));
 		}
 	}
 
@@ -217,12 +263,26 @@ public class OptimizationVisitor implements NodeVisitor {
 
 	@Override
 	public void visit(Div div) {
-		// firm automatically skips exchanging the node if right target is null
-		TargetValue leftTarget = getTarget(div.getLeft());
-		TargetValue rightTarget = getTarget(div.getRight());
+		// // firm automatically skips exchanging the node if right target is null
+		addSuccessor(div, div.getPreds());
+		TargetValue target = getTarget(div);
+		if (target != null && target.equals(TargetValue.getBad())) {
+			// no const
+			return;
+		}
+		TargetValue leftTarget = getTarget(div.getLeft()) == null ? TargetValue.getUnknown() : getTarget(div.getLeft());
+		TargetValue rightTarget = getTarget(div.getRight()) == null ? TargetValue.getUnknown() : getTarget(div.getRight());
 
-		if (leftTarget != null && rightTarget != null) {
+		if (leftTarget.isConstant() && rightTarget.isConstant()) {
 			specialProjTargets.put(div, leftTarget.div(rightTarget));
+		} else if (leftTarget.equals(TargetValue.getBad()) || rightTarget.equals(TargetValue.getBad())) {
+			specialProjTargets.put(div, TargetValue.getBad());
+		} else {
+			specialProjTargets.put(div, TargetValue.getUnknown());
+		}
+
+		if (target == null || !target.equals(getTarget(div))) {
+			workNodes(tempSuccessor.get(div));
 		}
 
 	}
@@ -283,35 +343,61 @@ public class OptimizationVisitor implements NodeVisitor {
 
 	@Override
 	public void visit(Minus minus) {
-		TargetValue target = getTarget(minus.getOp());
-
-		if (target != null) {
-			TargetValue newTargetValue = target.neg();
-			setTargetValue(minus, newTargetValue);
-			// TODO: add the nodes having this add as predecessor. How can we get them?
-		}
+		// TargetValue target = getTarget(minus.getOp());
+		//
+		// if (target != null) {
+		// TargetValue newTargetValue = target.neg();
+		// setTargetValue(minus, newTargetValue);
+		// // TODO: add the nodes having this add as predecessor. How can we get them?
+		// }
 	}
 
 	@Override
 	public void visit(Mod mod) {
-		// firm automatically skips exchanging the node if right target is null
-		TargetValue leftTarget = getTarget(mod.getLeft());
-		TargetValue rightTarget = getTarget(mod.getRight());
+		// // firm automatically skips exchanging the node if right target is null
+		addSuccessor(mod, mod.getPreds());
+		TargetValue target = getTarget(mod);
+		if (target != null && target.equals(TargetValue.getBad())) {
+			// no const
+			return;
+		}
+		TargetValue leftTarget = getTarget(mod.getLeft()) == null ? TargetValue.getUnknown() : getTarget(mod.getLeft());
+		TargetValue rightTarget = getTarget(mod.getRight()) == null ? TargetValue.getUnknown() : getTarget(mod.getRight());
 
-		if (leftTarget != null && rightTarget != null) {
+		if (leftTarget.isConstant() && rightTarget.isConstant()) {
 			specialProjTargets.put(mod, leftTarget.mod(rightTarget));
+		} else if (leftTarget.equals(TargetValue.getBad()) || rightTarget.equals(TargetValue.getBad())) {
+			specialProjTargets.put(mod, TargetValue.getBad());
+		} else {
+			specialProjTargets.put(mod, TargetValue.getUnknown());
+		}
+
+		if (target == null || !target.equals(getTarget(mod))) {
+			workNodes(tempSuccessor.get(mod));
 		}
 	}
 
 	@Override
 	public void visit(Mul mul) {
-		TargetValue leftTarget = getTarget(mul.getLeft());
-		TargetValue rightTarget = getTarget(mul.getRight());
+		addSuccessor(mul, mul.getPreds());
+		TargetValue target = getTarget(mul);
+		if (target != null && target.equals(TargetValue.getBad())) {
+			// no const
+			return;
+		}
+		TargetValue leftTarget = getTarget(mul.getLeft()) == null ? TargetValue.getUnknown() : getTarget(mul.getLeft());
+		TargetValue rightTarget = getTarget(mul.getRight()) == null ? TargetValue.getUnknown() : getTarget(mul.getRight());
 
-		if (leftTarget != null && rightTarget != null) {
-			TargetValue newTargetValue = leftTarget.mul(rightTarget);
-			setTargetValue(mul, newTargetValue);
-			// TODO: add the nodes having this add as predecessor. How can we get them?
+		if (leftTarget.isConstant() && rightTarget.isConstant()) {
+			setTargetValue(mul, leftTarget.mul(rightTarget));
+		} else if (leftTarget.equals(TargetValue.getBad()) || rightTarget.equals(TargetValue.getBad())) {
+			setTargetValue(mul, TargetValue.getBad());
+		} else {
+			setTargetValue(mul, TargetValue.getUnknown());
+		}
+
+		if (target == null || !target.equals(getTarget(mul))) {
+			workNodes(tempSuccessor.get(mul));
 		}
 	}
 
@@ -335,13 +421,13 @@ public class OptimizationVisitor implements NodeVisitor {
 
 	@Override
 	public void visit(Not not) {
-		TargetValue target = getTarget(not.getOp());
-
-		if (target != null) {
-			TargetValue newTargetValue = target.not();
-			setTargetValue(not, newTargetValue);
-			// TODO: add the nodes having this add as predecessor. How can we get them?
-		}
+		// TargetValue target = getTarget(not.getOp());
+		//
+		// if (target != null) {
+		// TargetValue newTargetValue = target.not();
+		// setTargetValue(not, newTargetValue);
+		// // TODO: add the nodes having this add as predecessor. How can we get them?
+		// }
 	}
 
 	@Override
@@ -352,20 +438,57 @@ public class OptimizationVisitor implements NodeVisitor {
 
 	@Override
 	public void visit(Or or) {
-		TargetValue leftTarget = getTarget(or.getLeft());
-		TargetValue rightTarget = getTarget(or.getRight());
+		addSuccessor(or, or.getPreds());
+		TargetValue target = getTarget(or);
+		if (target != null && target.equals(TargetValue.getBad())) {
+			// no const
+			return;
+		}
+		TargetValue leftTarget = getTarget(or.getLeft()) == null ? TargetValue.getUnknown() : getTarget(or.getLeft());
+		TargetValue rightTarget = getTarget(or.getRight()) == null ? TargetValue.getUnknown() : getTarget(or.getRight());
 
-		if (leftTarget != null && rightTarget != null) {
-			TargetValue newTargetValue = leftTarget.or(rightTarget);
-			setTargetValue(or, newTargetValue);
-			// TODO: add the nodes having this add as predecessor. How can we get them?
+		if (leftTarget.isConstant() && rightTarget.isConstant()) {
+			setTargetValue(or, leftTarget.or(rightTarget));
+		} else if (leftTarget.equals(TargetValue.getBad()) || rightTarget.equals(TargetValue.getBad())) {
+			setTargetValue(or, TargetValue.getBad());
+		} else {
+			setTargetValue(or, TargetValue.getUnknown());
+		}
+
+		if (target == null || !target.equals(getTarget(or))) {
+			workNodes(tempSuccessor.get(or));
 		}
 	}
 
 	@Override
-	public void visit(Phi arg0) {
-		// TODO Auto-generated method stub
+	public void visit(Phi phi) {
+		addSuccessor(phi, phi.getPreds());
+		TargetValue target = getTarget(phi);
+		if (target != null && target.equals(TargetValue.getBad())) {
+			// no const
+			return;
+		}
+		TargetValue predTarget = getTarget(phi.getPred(0)) == null ? TargetValue.getUnknown() : getTarget(phi.getPred(0));
+		for (int i = 1; i < phi.getPredCount(); i++) {
+			TargetValue tmpTarget = getTarget(phi.getPred(i)) == null ? TargetValue.getUnknown() : getTarget(phi.getPred(i));
 
+			if (predTarget.isConstant() && tmpTarget.isConstant() && predTarget.equals(tmpTarget)) {
+				setTargetValue(phi, predTarget);
+			} else if (predTarget.equals(TargetValue.getBad()) || tmpTarget.equals(TargetValue.getBad())
+					|| (predTarget.isConstant() && tmpTarget.isConstant() && !predTarget.equals(tmpTarget))) {
+				setTargetValue(phi, TargetValue.getBad());
+				break;
+			} else if (tmpTarget.equals(TargetValue.getUnknown())) {
+				setTargetValue(phi, predTarget);
+			} else {
+				setTargetValue(phi, tmpTarget);
+				predTarget = tmpTarget;
+			}
+		}
+
+		if (target == null || !target.equals(getTarget(phi))) {
+			workNodes(tempSuccessor.get(phi));
+		}
 	}
 
 	@Override
@@ -376,10 +499,23 @@ public class OptimizationVisitor implements NodeVisitor {
 
 	@Override
 	public void visit(Proj proj) {
+		addSuccessor(proj, proj.getPreds());
+		TargetValue target = getTarget(proj);
 		if (proj.getPredCount() == 1) {
 			if (specialProjTargets.containsKey(proj.getPred(0))) {
-				setTargetValue(proj, specialProjTargets.get(proj.getPred(0)));
+				TargetValue tar = specialProjTargets.get(proj.getPred(0));
+				if (tar != null) {
+					setTargetValue(proj, tar);
+				}
+			} else {
+				setTargetValue(proj, TargetValue.getBad());
 			}
+		} else {
+			setTargetValue(proj, TargetValue.getBad());
+		}
+
+		if (target == null || !target.equals(getTarget(proj))) {
+			workNodes(tempSuccessor.get(proj));
 		}
 	}
 
@@ -403,37 +539,73 @@ public class OptimizationVisitor implements NodeVisitor {
 
 	@Override
 	public void visit(Shl shl) {
-		TargetValue leftTarget = getTarget(shl.getLeft());
-		TargetValue rightTarget = getTarget(shl.getRight());
+		addSuccessor(shl, shl.getPreds());
+		TargetValue target = getTarget(shl);
+		if (target != null && target.equals(TargetValue.getBad())) {
+			// no const
+			return;
+		}
+		TargetValue leftTarget = getTarget(shl.getLeft()) == null ? TargetValue.getUnknown() : getTarget(shl.getLeft());
+		TargetValue rightTarget = getTarget(shl.getRight()) == null ? TargetValue.getUnknown() : getTarget(shl.getRight());
 
-		if (leftTarget != null && rightTarget != null) {
-			TargetValue newTargetValue = leftTarget.shr(rightTarget);
-			setTargetValue(shl, newTargetValue);
-			// TODO: add the nodes having this add as predecessor. How can we get them?
+		if (leftTarget.isConstant() && rightTarget.isConstant()) {
+			setTargetValue(shl, leftTarget.shl(rightTarget));
+		} else if (leftTarget.equals(TargetValue.getBad()) || rightTarget.equals(TargetValue.getBad())) {
+			setTargetValue(shl, TargetValue.getBad());
+		} else {
+			setTargetValue(shl, TargetValue.getUnknown());
+		}
+
+		if (target == null || !target.equals(getTarget(shl))) {
+			workNodes(tempSuccessor.get(shl));
 		}
 	}
 
 	@Override
 	public void visit(Shr shr) {
-		TargetValue leftTarget = getTarget(shr.getLeft());
-		TargetValue rightTarget = getTarget(shr.getRight());
+		addSuccessor(shr, shr.getPreds());
+		TargetValue target = getTarget(shr);
+		if (target != null && target.equals(TargetValue.getBad())) {
+			// no const
+			return;
+		}
+		TargetValue leftTarget = getTarget(shr.getLeft()) == null ? TargetValue.getUnknown() : getTarget(shr.getLeft());
+		TargetValue rightTarget = getTarget(shr.getRight()) == null ? TargetValue.getUnknown() : getTarget(shr.getRight());
 
-		if (leftTarget != null && rightTarget != null) {
-			TargetValue newTargetValue = leftTarget.shr(rightTarget);
-			setTargetValue(shr, newTargetValue);
-			// TODO: add the nodes having this add as predecessor. How can we get them?
+		if (leftTarget.isConstant() && rightTarget.isConstant()) {
+			setTargetValue(shr, leftTarget.shr(rightTarget));
+		} else if (leftTarget.equals(TargetValue.getBad()) || rightTarget.equals(TargetValue.getBad())) {
+			setTargetValue(shr, TargetValue.getBad());
+		} else {
+			setTargetValue(shr, TargetValue.getUnknown());
+		}
+
+		if (target == null || !target.equals(getTarget(shr))) {
+			workNodes(tempSuccessor.get(shr));
 		}
 	}
 
 	@Override
 	public void visit(Shrs shrs) {
-		TargetValue leftTarget = getTarget(shrs.getLeft());
-		TargetValue rightTarget = getTarget(shrs.getRight());
+		addSuccessor(shrs, shrs.getPreds());
+		TargetValue target = getTarget(shrs);
+		if (target != null && target.equals(TargetValue.getBad())) {
+			// no const
+			return;
+		}
+		TargetValue leftTarget = getTarget(shrs.getLeft()) == null ? TargetValue.getUnknown() : getTarget(shrs.getLeft());
+		TargetValue rightTarget = getTarget(shrs.getRight()) == null ? TargetValue.getUnknown() : getTarget(shrs.getRight());
 
-		if (leftTarget != null && rightTarget != null) {
-			TargetValue newTargetValue = leftTarget.shr(rightTarget);
-			setTargetValue(shrs, newTargetValue);
-			// TODO: add the nodes having this add as predecessor. How can we get them?
+		if (leftTarget.isConstant() && rightTarget.isConstant()) {
+			setTargetValue(shrs, leftTarget.shrs(rightTarget));
+		} else if (leftTarget.equals(TargetValue.getBad()) || rightTarget.equals(TargetValue.getBad())) {
+			setTargetValue(shrs, TargetValue.getBad());
+		} else {
+			setTargetValue(shrs, TargetValue.getUnknown());
+		}
+
+		if (target == null || !target.equals(getTarget(shrs))) {
+			workNodes(tempSuccessor.get(shrs));
 		}
 	}
 
@@ -457,13 +629,25 @@ public class OptimizationVisitor implements NodeVisitor {
 
 	@Override
 	public void visit(Sub sub) {
-		TargetValue leftTarget = getTarget(sub.getLeft());
-		TargetValue rightTarget = getTarget(sub.getRight());
+		addSuccessor(sub, sub.getPreds());
+		TargetValue target = getTarget(sub);
+		if (target != null && target.equals(TargetValue.getBad())) {
+			// no const
+			return;
+		}
+		TargetValue leftTarget = getTarget(sub.getLeft()) == null ? TargetValue.getUnknown() : getTarget(sub.getLeft());
+		TargetValue rightTarget = getTarget(sub.getRight()) == null ? TargetValue.getUnknown() : getTarget(sub.getRight());
 
-		if (leftTarget != null && rightTarget != null) {
-			TargetValue newTargetValue = leftTarget.sub(rightTarget, sub.getMode());
-			setTargetValue(sub, newTargetValue);
-			// TODO: add the nodes having this add as predecessor. How can we get them?
+		if (leftTarget.isConstant() && rightTarget.isConstant()) {
+			setTargetValue(sub, leftTarget.sub(rightTarget, sub.getMode()));
+		} else if (leftTarget.equals(TargetValue.getUnknown()) || rightTarget.equals(TargetValue.getUnknown())) {
+			setTargetValue(sub, TargetValue.getUnknown());
+		} else {
+			setTargetValue(sub, TargetValue.getBad());
+		}
+
+		if (target == null || !target.equals(getTarget(sub))) {
+			workNodes(tempSuccessor.get(sub));
 		}
 	}
 
