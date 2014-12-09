@@ -52,6 +52,14 @@ public class TestFileVisitor extends SimpleFileVisitor<Path> {
 		tester.checkForFailedTests();
 	}
 
+	public static void runTest(TestFileVisitor.FileTester visitor, String folder, String sourceFileExtension, String destinationFileExtension,
+			String javaTestFileName)
+			throws IOException {
+		TestFileVisitor tester = new TestFileVisitor(sourceFileExtension, destinationFileExtension, visitor, javaTestFileName);
+		Files.walkFileTree(Paths.get(folder), tester);
+		tester.checkForFailedTests();
+	}
+
 	public static void runTestsForFolder(TestFileVisitor.FileTester visitor, String folder) throws IOException {
 		TestFileVisitor.runTests(visitor, folder, TestFileVisitor.JAVA_EXTENSION, TestFileVisitor.JAVA_EXTENSION);
 		TestFileVisitor.runTests(visitor, folder, TestFileVisitor.MINIJAVA_EXTENSION, TestFileVisitor.MINIJAVA_EXTENSION);
