@@ -41,7 +41,7 @@ public class TestFileVisitor extends SimpleFileVisitor<Path> {
 	private final FileTester fileTester;
 	private final List<Entry<Path, Throwable>> failedTestsList = new ArrayList<>();
 
-	private final ExecutorService threadPool = Executors.newFixedThreadPool(12);
+	private final ExecutorService threadPool = Executors.newFixedThreadPool(12, Utils.getThreadFactory(Utils.DEFAULT_STACK_SIZE_MB));
 
 	private int numberOfTests = 0;
 

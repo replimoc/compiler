@@ -45,9 +45,14 @@ public final class CompilerApp {
 	private CompilerApp() {
 	}
 
-	public static void main(String args[]) {
-		int exitCode = execute(args);
-		System.exit(exitCode);
+	public static void main(final String args[]) {
+		Utils.getThreadFactory(Utils.DEFAULT_STACK_SIZE_MB).newThread(new Runnable() {
+			@Override
+			public void run() {
+				int exitCode = execute(args);
+				System.exit(exitCode);
+			}
+		}).start();
 	}
 
 	private static int execute(String[] args) {
