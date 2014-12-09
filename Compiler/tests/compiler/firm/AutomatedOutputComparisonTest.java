@@ -43,13 +43,8 @@ public class AutomatedOutputComparisonTest implements TestFileVisitor.FileTester
 	}
 
 	@Test
-	public void testCompileMjTestJava() throws Exception {
-		TestFileVisitor.runTests(this, "testdata/mj-test/pos", TestFileVisitor.JAVA_EXTENSION, TestFileVisitor.JAVA_EXTENSION);
-	}
-
-	@Test
-	public void testCompileMjTestMiniJava() throws Exception {
-		TestFileVisitor.runTests(this, "testdata/mj-test/pos", TestFileVisitor.MINIJAVA_EXTENSION, TestFileVisitor.MINIJAVA_EXTENSION);
+	public void testCompileMjTest() throws Exception {
+		TestFileVisitor.runTestsForFolder(this, "testdata/mj-test/pos");
 	}
 
 	@After

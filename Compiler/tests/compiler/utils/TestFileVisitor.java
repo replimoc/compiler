@@ -52,6 +52,11 @@ public class TestFileVisitor extends SimpleFileVisitor<Path> {
 		tester.checkForFailedTests();
 	}
 
+	public static void runTestsForFolder(TestFileVisitor.FileTester visitor, String folder) throws IOException {
+		TestFileVisitor.runTests(visitor, folder, TestFileVisitor.JAVA_EXTENSION, TestFileVisitor.JAVA_EXTENSION);
+		TestFileVisitor.runTests(visitor, folder, TestFileVisitor.MINIJAVA_EXTENSION, TestFileVisitor.MINIJAVA_EXTENSION);
+	}
+
 	public TestFileVisitor(String expectedResultFileExtension, FileTester fileTester) {
 		this(JAVA_EXTENSION, expectedResultFileExtension, fileTester, null);
 	}

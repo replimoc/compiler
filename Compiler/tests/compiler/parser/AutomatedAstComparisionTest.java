@@ -39,33 +39,18 @@ public class AutomatedAstComparisionTest implements TestFileVisitor.FileTester {
 	}
 
 	@Test
-	public void testMjTestPositiveJava() throws Exception {
-		TestFileVisitor.runTests(this, "testdata/mj-test/pos-parser", TestFileVisitor.JAVA_EXTENSION, TestFileVisitor.JAVA_EXTENSION);
+	public void testMjTestPositive() throws Exception {
+		TestFileVisitor.runTestsForFolder(this, "testdata/mj-test/pos-parser");
 	}
 
 	@Test
-	public void testMjTestPositiveMiniJava() throws Exception {
-		TestFileVisitor.runTests(this, "testdata/mj-test/pos-parser", TestFileVisitor.MINIJAVA_EXTENSION, TestFileVisitor.MINIJAVA_EXTENSION);
+	public void testMjTestPositiveCompile() throws Exception {
+		TestFileVisitor.runTestsForFolder(this, "testdata/mj-test/pos");
 	}
 
 	@Test
-	public void testMjTestPositiveCompileJava() throws Exception {
-		TestFileVisitor.runTests(this, "testdata/mj-test/pos", TestFileVisitor.JAVA_EXTENSION, TestFileVisitor.JAVA_EXTENSION);
-	}
-
-	@Test
-	public void testMjTestPositiveCompileMiniJava() throws Exception {
-		TestFileVisitor.runTests(this, "testdata/mj-test/pos", TestFileVisitor.MINIJAVA_EXTENSION, TestFileVisitor.MINIJAVA_EXTENSION);
-	}
-
-	@Test
-	public void testMjTestPositiveCompileRunMiniJava() throws Exception {
-		TestFileVisitor.runTests(this, "testdata/mj-test/run", TestFileVisitor.MINIJAVA_EXTENSION, TestFileVisitor.MINIJAVA_EXTENSION);
-	}
-
-	@Test
-	public void testMjTestPositiveCompileRunJava() throws Exception {
-		TestFileVisitor.runTests(this, "testdata/mj-test/run", TestFileVisitor.JAVA_EXTENSION, TestFileVisitor.JAVA_EXTENSION);
+	public void testMjTestPositiveCompileRun() throws Exception {
+		TestFileVisitor.runTestsForFolder(this, "testdata/mj-test/run");
 	}
 
 	@Override
