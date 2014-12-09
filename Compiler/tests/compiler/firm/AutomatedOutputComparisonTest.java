@@ -6,7 +6,6 @@ import java.io.File;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
-import java.nio.file.Paths;
 import java.util.List;
 
 import org.junit.After;
@@ -26,6 +25,7 @@ import compiler.utils.Utils;
 public class AutomatedOutputComparisonTest implements TestFileVisitor.FileTester {
 
 	private static final String OUTPUT_FILE_EXTENSION = ".result";
+	private static final String OUTPUT_FILE_EXTENSION_MJTEST = ".check";
 
 	@Before
 	public void initFirm() {
@@ -34,19 +34,17 @@ public class AutomatedOutputComparisonTest implements TestFileVisitor.FileTester
 
 	@Test
 	public void testCompareJavaOutputWithResultReference() throws Exception {
-		Path testDir = Paths.get("testdata");
-		TestFileVisitor parserTester = new TestFileVisitor(OUTPUT_FILE_EXTENSION, this, "assignment");
-		// TestFileVisitor parserTester = new TestFileVisitor(OUTPUT_FILE_EXTENSION, this);
-		Files.walkFileTree(testDir, parserTester);
-		parserTester.checkForFailedTests();
+		TestFileVisitor.runTests(this, "testdata", TestFileVisitor.JAVA_EXTENSION, OUTPUT_FILE_EXTENSION);
 	}
 
 	@Test
 	public void testCompareMJOutputWithCheckReference() throws Exception {
-		Path testDir = Paths.get("testdata");
-		TestFileVisitor parserTester = new TestFileVisitor(".mj", ".check", this);
-		Files.walkFileTree(testDir, parserTester);
-		parserTester.checkForFailedTests();
+		TestFileVisitor.runTests(this, "testdata", TestFileVisitor.MINIJAVA_EXTENSION, OUTPUT_FILE_EXTENSION_MJTEST);
+	}
+
+	@Test
+	public void testCompileMjTest() throws Exception {
+		TestFileVisitor.runTestsForFolder(this, "testdata/mj-test/pos");
 	}
 
 	@After
@@ -67,11 +65,13 @@ public class AutomatedOutputComparisonTest implements TestFileVisitor.FileTester
 		}
 		assertEquals("compiling failed for " + sourceFile, 0, compilingState.getFirst().intValue());
 
-		Pair<Integer, List<String>> executionState = Utils.systemExec(binarFile.toString());
-		assertEquals("execution of assembly failed for " + sourceFile, 0, executionState.getFirst().intValue());
+		if (!sourceFile.equals(expectedFile)) {
+			Pair<Integer, List<String>> executionState = Utils.systemExec(binarFile.toString());
+			assertEquals("execution of assembly failed for " + sourceFile, 0, executionState.getFirst().intValue());
 
-		List<String> expectedOutput = Files.readAllLines(expectedFile, StandardCharsets.US_ASCII);
-		TestUtils.assertLinesEqual(sourceFile, expectedOutput, executionState.getSecond().iterator());
+			List<String> expectedOutput = Files.readAllLines(expectedFile, StandardCharsets.US_ASCII);
+			TestUtils.assertLinesEqual(sourceFile, expectedOutput, executionState.getSecond().iterator());
+		}
 
 		System.out.println(sourceFile + " passed ------------------------------------------------------------------------\n");
 	}

@@ -51,19 +51,15 @@ import compiler.ast.visitor.AstVisitor;
 import compiler.lexer.TokenType;
 
 public class PrettyPrinterVisitor implements AstVisitor {
-	private StringBuffer stringBuffer = new StringBuffer();
+	private final StringBuilder stringBuilder = new StringBuilder(4096);
 
 	private int precedence = 0;
 	private int tabStops = 0;
 
 	private void printTabs() {
 		for (int i = 0; i < tabStops; i++) {
-			stringBuffer.append('\t');
+			stringBuilder.append('\t');
 		}
-	}
-
-	public void resetOutputStream() {
-		this.stringBuffer = new StringBuffer();
 	}
 
 	/**
@@ -72,7 +68,7 @@ public class PrettyPrinterVisitor implements AstVisitor {
 	 * @return
 	 */
 	public String getOutputString() {
-		return this.stringBuffer.toString();
+		return stringBuilder.toString();
 	}
 
 	/**
@@ -88,22 +84,22 @@ public class PrettyPrinterVisitor implements AstVisitor {
 
 		precedence = tokenType.getPrecedence();
 		if (oldPrecedence > 0) {
-			stringBuffer.append('(');
+			stringBuilder.append('(');
 		}
 		if (!tokenType.isLeftAssociative())
 			precedence++;
 
 		binaryExpression.getOperand1().accept(this);
-		stringBuffer.append(' ');
-		stringBuffer.append(tokenType.getString());
-		stringBuffer.append(' ');
+		stringBuilder.append(' ');
+		stringBuilder.append(tokenType.getString());
+		stringBuilder.append(' ');
 
 		precedence += tokenType.isLeftAssociative() ? 1 : 0;
 
 		binaryExpression.getOperand2().accept(this);
 
 		if (oldPrecedence > 0) {
-			stringBuffer.append(')');
+			stringBuilder.append(')');
 		}
 		precedence = oldPrecedence;
 	}
@@ -180,7 +176,7 @@ public class PrettyPrinterVisitor implements AstVisitor {
 
 	@Override
 	public void visit(BooleanConstantExpression booleanConstantExpression) {
-		stringBuffer.append(booleanConstantExpression.isValue());
+		stringBuilder.append(booleanConstantExpression.isValue());
 	}
 
 	@Override
@@ -188,12 +184,12 @@ public class PrettyPrinterVisitor implements AstVisitor {
 		boolean withBrackets = precedence > 0 && integerConstantExpression.isNegative();
 
 		if (withBrackets)
-			stringBuffer.append('(');
+			stringBuilder.append('(');
 
-		stringBuffer.append(integerConstantExpression.getIntegerLiteral());
+		stringBuilder.append(integerConstantExpression.getIntegerLiteral());
 
 		if (withBrackets)
-			stringBuffer.append(')');
+			stringBuilder.append(')');
 	}
 
 	@Override
@@ -203,14 +199,14 @@ public class PrettyPrinterVisitor implements AstVisitor {
 
 		if (!methodInvocationExpression.isLocalMethod()) {
 			if (oldPrecedence > 0)
-				stringBuffer.append('(');
+				stringBuilder.append('(');
 
 			methodInvocationExpression.getMethodExpression().accept(this);
-			stringBuffer.append('.');
+			stringBuilder.append('.');
 		}
 
-		stringBuffer.append(methodInvocationExpression.getMethodIdent());
-		stringBuffer.append('(');
+		stringBuilder.append(methodInvocationExpression.getMethodIdent());
+		stringBuilder.append('(');
 		Expression[] args = methodInvocationExpression.getParameters();
 
 		// print arguments
@@ -219,7 +215,7 @@ public class PrettyPrinterVisitor implements AstVisitor {
 			precedence = 0;
 			args[i++].accept(this);
 			while (i < args.length) {
-				stringBuffer.append(", ");
+				stringBuilder.append(", ");
 				precedence = 0;
 				args[i++].accept(this);
 			}
@@ -227,37 +223,37 @@ public class PrettyPrinterVisitor implements AstVisitor {
 		}
 
 		precedence = oldPrecedence;
-		stringBuffer.append(')');
+		stringBuilder.append(')');
 
 		if (!methodInvocationExpression.isLocalMethod() && oldPrecedence > 0)
-			stringBuffer.append(')');
+			stringBuilder.append(')');
 	}
 
 	@Override
 	public void visit(NewArrayExpression newArrayExpression) {
 		if (precedence > 0) {
-			stringBuffer.append('(');
+			stringBuilder.append('(');
 		}
 
-		stringBuffer.append("new ");
+		stringBuilder.append("new ");
 		visitNewArrayExpression(newArrayExpression.getType(), newArrayExpression.getFirstDimension());
 
 		if (precedence > 0) {
-			stringBuffer.append(')');
+			stringBuilder.append(')');
 		}
 	}
 
 	@Override
 	public void visit(NewObjectExpression newObjectExpression) {
 		if (precedence > 0) {
-			stringBuffer.append('(');
+			stringBuilder.append('(');
 		}
-		stringBuffer.append("new ");
-		stringBuffer.append(newObjectExpression.getIdentifier());
-		stringBuffer.append("()");
+		stringBuilder.append("new ");
+		stringBuilder.append(newObjectExpression.getIdentifier());
+		stringBuilder.append("()");
 
 		if (precedence > 0) {
-			stringBuffer.append(')');
+			stringBuilder.append(')');
 		}
 	}
 
@@ -268,18 +264,18 @@ public class PrettyPrinterVisitor implements AstVisitor {
 			precedence = 1;
 
 			if (oldPrecedence > 0)
-				stringBuffer.append('(');
+				stringBuilder.append('(');
 
 			variableAccessExpression.getExpression().accept(this);
-			stringBuffer.append('.');
-			stringBuffer.append(variableAccessExpression.getFieldIdentifier().getValue());
+			stringBuilder.append('.');
+			stringBuilder.append(variableAccessExpression.getFieldIdentifier().getValue());
 
 			if (oldPrecedence > 0)
-				stringBuffer.append(')');
+				stringBuilder.append(')');
 
 			precedence = oldPrecedence;
 		} else {
-			stringBuffer.append(variableAccessExpression.getFieldIdentifier().getValue());
+			stringBuilder.append(variableAccessExpression.getFieldIdentifier().getValue());
 		}
 	}
 
@@ -289,12 +285,12 @@ public class PrettyPrinterVisitor implements AstVisitor {
 		precedence = 1;
 
 		arrayAccessExpression.getArrayExpression().accept(this);
-		stringBuffer.append('[');
+		stringBuilder.append('[');
 
 		precedence = 0;
 
 		arrayAccessExpression.getIndexExpression().accept(this);
-		stringBuffer.append(']');
+		stringBuilder.append(']');
 
 		precedence = oldPrecedence;
 	}
@@ -302,55 +298,55 @@ public class PrettyPrinterVisitor implements AstVisitor {
 	@Override
 	public void visit(LogicalNotExpression logicalNotExpression) {
 		if (precedence > 0) {
-			stringBuffer.append('(');
+			stringBuilder.append('(');
 		}
 		int oldPrecedence = precedence;
 		precedence = 10;
 
-		stringBuffer.append('!');
+		stringBuilder.append('!');
 		logicalNotExpression.getOperand().accept(this);
 
 		precedence = oldPrecedence;
 		if (precedence > 0) {
-			stringBuffer.append(')');
+			stringBuilder.append(')');
 		}
 	}
 
 	@Override
 	public void visit(NegateExpression negateExpression) {
 		if (precedence > 0) {
-			stringBuffer.append('(');
+			stringBuilder.append('(');
 		}
 		int oldPrecedence = precedence;
 		precedence = 10;
 
-		stringBuffer.append('-');
+		stringBuilder.append('-');
 		negateExpression.getOperand().accept(this);
 
 		precedence = oldPrecedence;
 		if (precedence > 0) {
-			stringBuffer.append(')');
+			stringBuilder.append(')');
 		}
 	}
 
 	@Override
 	public void visit(ReturnStatement returnStatement) {
 		if (returnStatement.getOperand() != null) {
-			stringBuffer.append("return ");
+			stringBuilder.append("return ");
 			returnStatement.getOperand().accept(this);
 		} else {
-			stringBuffer.append("return");
+			stringBuilder.append("return");
 		}
 	}
 
 	@Override
 	public void visit(ThisExpression thisExpression) {
-		stringBuffer.append("this");
+		stringBuilder.append("this");
 	}
 
 	@Override
 	public void visit(NullExpression nullExpression) {
-		stringBuffer.append("null");
+		stringBuilder.append("null");
 	}
 
 	@Override
@@ -391,9 +387,9 @@ public class PrettyPrinterVisitor implements AstVisitor {
 		default:
 			throw new IllegalArgumentException();
 		}
-		stringBuffer.append(typeString);
+		stringBuilder.append(typeString);
 		for (int i = 0; i < dim; i++) {
-			stringBuffer.append("[]");
+			stringBuilder.append("[]");
 		}
 	}
 
@@ -426,14 +422,14 @@ public class PrettyPrinterVisitor implements AstVisitor {
 		default:
 			throw new IllegalArgumentException();
 		}
-		stringBuffer.append(typeString);
+		stringBuilder.append(typeString);
 
-		stringBuffer.append('[');
+		stringBuilder.append('[');
 		expr.accept(this);
-		stringBuffer.append(']');
+		stringBuilder.append(']');
 
 		for (int i = 1; i < dim; i++) {
-			stringBuffer.append("[]");
+			stringBuilder.append("[]");
 		}
 	}
 
@@ -442,35 +438,35 @@ public class PrettyPrinterVisitor implements AstVisitor {
 		List<Statement> statements = block.getStatements();
 
 		if (statements.isEmpty()) {
-			stringBuffer.append("{ }");
+			stringBuilder.append("{ }");
 		} else {
-			stringBuffer.append('{');
+			stringBuilder.append('{');
 			tabStops++;
 
 			for (Statement statement : statements) {
-				stringBuffer.append('\n');
+				stringBuilder.append('\n');
 				printTabs();
 				statement.accept(this);
 				if (!(statement instanceof BlockBasedStatement) && !(statement instanceof Block)) {
-					stringBuffer.append(';');
+					stringBuilder.append(';');
 				}
 			}
 
 			tabStops--;
-			stringBuffer.append('\n');
+			stringBuilder.append('\n');
 			printTabs();
-			stringBuffer.append('}');
+			stringBuilder.append('}');
 		}
 	}
 
 	@Override
 	public void visit(ClassDeclaration classDeclaration) {
-		stringBuffer.append("class ");
-		stringBuffer.append(classDeclaration.getIdentifier());
-		stringBuffer.append(" {");
+		stringBuilder.append("class ");
+		stringBuilder.append(classDeclaration.getIdentifier());
+		stringBuilder.append(" {");
 
 		if (classDeclaration.getMembers().size() > 0) {
-			stringBuffer.append('\n');
+			stringBuilder.append('\n');
 			tabStops++;
 
 			List<ClassMember> members = classDeclaration.getMembers();
@@ -482,16 +478,16 @@ public class PrettyPrinterVisitor implements AstVisitor {
 			}
 			tabStops--;
 		} else {
-			stringBuffer.append(' ');
+			stringBuilder.append(' ');
 		}
-		stringBuffer.append("}\n");
+		stringBuilder.append("}\n");
 	}
 
 	@Override
 	public void visit(IfStatement ifStatement) {
-		stringBuffer.append("if (");
+		stringBuilder.append("if (");
 		ifStatement.getCondition().accept(this);
-		stringBuffer.append(')');
+		stringBuilder.append(')');
 
 		Statement trueCase = ifStatement.getTrueCase();
 		boolean trueIsBlock = visitBlockOrStatement(trueCase);
@@ -500,23 +496,23 @@ public class PrettyPrinterVisitor implements AstVisitor {
 		if (falseCase != null) {
 			if (trueIsBlock) {// if true case was a block, add space
 				if (((Block) trueCase).getStatements().isEmpty()) { // if true block was empty
-					stringBuffer.append('\n');
+					stringBuilder.append('\n');
 					printTabs();
 				} else {
-					stringBuffer.append(' ');
+					stringBuilder.append(' ');
 				}
 			} else {
-				stringBuffer.append('\n');
+				stringBuilder.append('\n');
 				printTabs();
 			}
 
 			// handle else if
 			if (falseCase instanceof IfStatement) {
-				stringBuffer.append("else ");
+				stringBuilder.append("else ");
 				falseCase.accept(this);
 
 			} else { // handle normal else
-				stringBuffer.append("else");
+				stringBuilder.append("else");
 				visitBlockOrStatement(falseCase);
 			}
 		}
@@ -524,17 +520,17 @@ public class PrettyPrinterVisitor implements AstVisitor {
 
 	private boolean visitBlockOrStatement(Statement statement) {
 		if (statement instanceof Block) {
-			stringBuffer.append(' ');
+			stringBuilder.append(' ');
 			statement.accept(this);
 			return true;
 		} else {
-			stringBuffer.append('\n');
+			stringBuilder.append('\n');
 			tabStops++;
 			printTabs();
 
 			statement.accept(this);
 			if (!(statement instanceof BlockBasedStatement))
-				stringBuffer.append(';');
+				stringBuilder.append(';');
 
 			tabStops--;
 			return false;
@@ -543,9 +539,9 @@ public class PrettyPrinterVisitor implements AstVisitor {
 
 	@Override
 	public void visit(WhileStatement whileStatement) {
-		stringBuffer.append("while (");
+		stringBuilder.append("while (");
 		whileStatement.getCondition().accept(this);
-		stringBuffer.append(')');
+		stringBuilder.append(')');
 
 		Statement body = whileStatement.getBody();
 		visitBlockOrStatement(body);
@@ -554,12 +550,12 @@ public class PrettyPrinterVisitor implements AstVisitor {
 	@Override
 	public void visit(LocalVariableDeclaration localVariableDeclaration) {
 		localVariableDeclaration.getType().accept(this);
-		stringBuffer.append(' ');
-		stringBuffer.append(localVariableDeclaration.getIdentifier());
+		stringBuilder.append(' ');
+		stringBuilder.append(localVariableDeclaration.getIdentifier());
 		Expression expression = localVariableDeclaration.getExpression();
 
 		if (expression != null) {
-			stringBuffer.append(" = ");
+			stringBuilder.append(" = ");
 			expression.accept(this);
 		}
 	}
@@ -567,8 +563,8 @@ public class PrettyPrinterVisitor implements AstVisitor {
 	@Override
 	public void visit(ParameterDefinition parameterDefinition) {
 		parameterDefinition.getType().accept(this);
-		stringBuffer.append(' ');
-		stringBuffer.append(parameterDefinition.getIdentifier());
+		stringBuilder.append(' ');
+		stringBuilder.append(parameterDefinition.getIdentifier());
 	}
 
 	@Override
@@ -592,37 +588,37 @@ public class PrettyPrinterVisitor implements AstVisitor {
 	}
 
 	private void printMethodDeclaration(MethodDeclaration methodDeclaration, boolean isStatic) {
-		stringBuffer.append("public ");
+		stringBuilder.append("public ");
 		if (isStatic)
-			stringBuffer.append("static ");
+			stringBuilder.append("static ");
 
 		methodDeclaration.getType().accept(this);
-		stringBuffer.append(' ');
-		stringBuffer.append(methodDeclaration.getIdentifier());
-		stringBuffer.append('(');
+		stringBuilder.append(' ');
+		stringBuilder.append(methodDeclaration.getIdentifier());
+		stringBuilder.append('(');
 		boolean first = true;
 
 		for (ParameterDefinition parameter : methodDeclaration.getParameters()) {
 			if (first)
 				first = false;
 			else
-				stringBuffer.append(", ");
+				stringBuilder.append(", ");
 			parameter.accept(this);
 		}
 
-		stringBuffer.append(") ");
+		stringBuilder.append(") ");
 		Block block = methodDeclaration.getBlock();
 		block.accept(this);
-		stringBuffer.append('\n');
+		stringBuilder.append('\n');
 	}
 
 	@Override
 	public void visit(FieldDeclaration fieldDeclaration) {
-		stringBuffer.append("public ");
+		stringBuilder.append("public ");
 		fieldDeclaration.getType().accept(this);
-		stringBuffer.append(' ');
-		stringBuffer.append(fieldDeclaration.getIdentifier().getValue());
-		stringBuffer.append(";\n");
+		stringBuilder.append(' ');
+		stringBuilder.append(fieldDeclaration.getIdentifier().getValue());
+		stringBuilder.append(";\n");
 	}
 
 }

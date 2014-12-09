@@ -1,10 +1,12 @@
 package compiler.utils;
 
+import java.io.IOException;
 import java.nio.file.FileSystems;
 import java.nio.file.FileVisitResult;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.PathMatcher;
+import java.nio.file.Paths;
 import java.nio.file.SimpleFileVisitor;
 import java.nio.file.attribute.BasicFileAttributes;
 import java.util.AbstractMap.SimpleEntry;
@@ -28,7 +30,8 @@ public class TestFileVisitor extends SimpleFileVisitor<Path> {
 		void testSourceFile(Path sourceFilePath, Path expectedResultFilePath) throws Exception;
 	}
 
-	private static final String JAVA_EXTENSION = ".java";
+	public static final String JAVA_EXTENSION = ".java";
+	public static final String MINIJAVA_EXTENSION = ".mj";
 
 	private final String expectedResultFileExtension;
 	private final String sourceFileExtension;
@@ -38,9 +41,21 @@ public class TestFileVisitor extends SimpleFileVisitor<Path> {
 	private final FileTester fileTester;
 	private final List<Entry<Path, Throwable>> failedTestsList = new ArrayList<>();
 
-	private final ExecutorService threadPool = Executors.newFixedThreadPool(12);
+	private final ExecutorService threadPool = Executors.newFixedThreadPool(12, Utils.getThreadFactory(Utils.DEFAULT_STACK_SIZE_MB));
 
 	private int numberOfTests = 0;
+
+	public static void runTests(TestFileVisitor.FileTester visitor, String folder, String sourceFileExtension, String destinationFileExtension)
+			throws IOException {
+		TestFileVisitor tester = new TestFileVisitor(sourceFileExtension, destinationFileExtension, visitor);
+		Files.walkFileTree(Paths.get(folder), tester);
+		tester.checkForFailedTests();
+	}
+
+	public static void runTestsForFolder(TestFileVisitor.FileTester visitor, String folder) throws IOException {
+		TestFileVisitor.runTests(visitor, folder, TestFileVisitor.JAVA_EXTENSION, TestFileVisitor.JAVA_EXTENSION);
+		TestFileVisitor.runTests(visitor, folder, TestFileVisitor.MINIJAVA_EXTENSION, TestFileVisitor.MINIJAVA_EXTENSION);
+	}
 
 	public TestFileVisitor(String expectedResultFileExtension, FileTester fileTester) {
 		this(JAVA_EXTENSION, expectedResultFileExtension, fileTester, null);

@@ -46,9 +46,14 @@ public final class CompilerApp {
 	private CompilerApp() {
 	}
 
-	public static void main(String args[]) {
-		int exitCode = execute(args);
-		System.exit(exitCode);
+	public static void main(final String args[]) {
+		Utils.getThreadFactory(Utils.DEFAULT_STACK_SIZE_MB).newThread(new Runnable() {
+			@Override
+			public void run() {
+				int exitCode = execute(args);
+				System.exit(exitCode);
+			}
+		}).start();
 	}
 
 	private static int execute(String[] args) {
@@ -105,12 +110,13 @@ public final class CompilerApp {
 
 					if (cmd.hasOption(PRETTY_PRINT_AST)) {
 						System.out.print(PrettyPrinter.prettyPrint(ast));
+						return 0;
 					}
 
 					SemanticCheckResults semanticResult = SemanticChecker.checkSemantic(ast);
 					if (semanticResult.hasErrors()) {
 						for (SemanticAnalysisException curr : semanticResult.getExceptions()) {
-							System.out.println(curr.getMessage());
+							System.err.println(curr.getMessage());
 						}
 						return 1;
 					}

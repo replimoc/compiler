@@ -4,10 +4,11 @@ import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
 
+import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
-import java.nio.file.Paths;
+import java.util.Iterator;
 import java.util.List;
 import java.util.Scanner;
 
@@ -29,41 +30,55 @@ public class AutomatedAstComparisionTest implements TestFileVisitor.FileTester {
 
 	@Test
 	public void testParserFiles() throws Exception {
-		Path testDir = Paths.get("testdata");
-		TestFileVisitor parserTester = new TestFileVisitor(PRETTY_AST_EXTENSION, this);
-		Files.walkFileTree(testDir, parserTester);
-		parserTester.checkForFailedTests();
+		TestFileVisitor.runTests(this, "testdata", TestFileVisitor.JAVA_EXTENSION, PRETTY_AST_EXTENSION);
 	}
 
 	@Test
 	public void testFixpointProperty() throws Exception {
-		Path testDir = Paths.get("testdata");
-		TestFileVisitor parserTester = new TestFileVisitor(PRETTY_AST_EXTENSION, PRETTY_AST_EXTENSION, this);
-		Files.walkFileTree(testDir, parserTester);
-		parserTester.checkForFailedTests();
+		TestFileVisitor.runTests(this, "testdata", PRETTY_AST_EXTENSION, PRETTY_AST_EXTENSION);
+	}
+
+	@Test
+	public void testMjTestPositive() throws Exception {
+		TestFileVisitor.runTestsForFolder(this, "testdata/mj-test/pos-parser");
+	}
+
+	@Test
+	public void testMjTestPositiveCompile() throws Exception {
+		TestFileVisitor.runTestsForFolder(this, "testdata/mj-test/pos");
+	}
+
+	@Test
+	public void testMjTestPositiveCompileRun() throws Exception {
+		TestFileVisitor.runTestsForFolder(this, "testdata/mj-test/run");
 	}
 
 	@Override
 	public void testSourceFile(Path sourceFile, Path expectedFile) throws Exception {
 		// read expected output
 		List<String> expectedOutput = Files.readAllLines(expectedFile, StandardCharsets.US_ASCII);
-		boolean failingExpected = !expectedOutput.isEmpty() && "error".equals(expectedOutput.get(0));
-
-		if (sourceFile.equals(expectedFile) && failingExpected) { // this is the case if we do the fixpoint test
+		boolean failingExpected = (!expectedOutput.isEmpty() && "error".equals(expectedOutput.get(0)));
+		boolean isFixpoint = sourceFile.equals(expectedFile);
+		if (isFixpoint && failingExpected) { // this is the case if we do the fixpoint test
 			return; // do not test error files
 		}
 
 		System.out.println("Testing ast generation of " + sourceFile);
-		Parser parser = TestUtils.initParser(sourceFile);
 
 		try {
-			AstNode ast = parser.parse();
-			String printedAst = PrettyPrinter.prettyPrint(ast);
+			Iterator<String> expectedOutputIterator = expectedOutput.iterator();
+			String printedAst = runParser(sourceFile);
+			if (isFixpoint) { // Run parser again
+				sourceFile = TestUtils.writeToTemporaryFile(printedAst).toPath();
+				expectedOutputIterator = new Scanner(printedAst);
+				((Scanner) expectedOutputIterator).useDelimiter("\n");
+				printedAst = runParser(sourceFile);
+			}
 
 			Scanner s = new Scanner(printedAst);
 			s.useDelimiter("\n"); // separate at new lines
 
-			TestUtils.assertLinesEqual(sourceFile, expectedOutput, s);
+			TestUtils.assertLinesEqual(sourceFile, expectedOutputIterator, s);
 			s.close();
 
 			assertFalse(failingExpected);
@@ -74,5 +89,11 @@ public class AutomatedAstComparisionTest implements TestFileVisitor.FileTester {
 				assertEquals(Integer.parseInt(expectedOutput.get(1)), errors);
 			}
 		}
+	}
+
+	private String runParser(Path sourceFile) throws IOException, ParsingFailedException {
+		Parser parser = TestUtils.initParser(sourceFile);
+		AstNode ast = parser.parse();
+		return PrettyPrinter.prettyPrint(ast);
 	}
 }

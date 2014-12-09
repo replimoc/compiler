@@ -7,8 +7,11 @@ import java.net.URISyntaxException;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Scanner;
+import java.util.concurrent.ThreadFactory;
 
 public class Utils {
+
+	public static final int DEFAULT_STACK_SIZE_MB = 20;
 
 	private Utils() {
 	}
@@ -56,5 +59,14 @@ public class Utils {
 		} catch (URISyntaxException e) {
 		}
 		return "";
+	}
+
+	public static ThreadFactory getThreadFactory(final int stackSizeMB) {
+		return new ThreadFactory() {
+			@Override
+			public Thread newThread(Runnable r) {
+				return new Thread(null, r, "runner", stackSizeMB * 1024 * 1024);
+			}
+		};
 	}
 }

@@ -135,12 +135,13 @@ public class PrettyPrinterVisitorTest {
 	}
 
 	@Test
-	public void testVisitBooleanConstantExpression() {
+	public void testVisitBooleanConstantTrueExpression() {
 		visitor.visit(new BooleanConstantExpression(position, true));
 		assertEquals("true", visitor.getOutputString());
+	}
 
-		visitor.resetOutputStream();
-
+	@Test
+	public void testVisitBooleanConstantFalseExpression() {
 		visitor.visit(new BooleanConstantExpression(position, false));
 		assertEquals("false", visitor.getOutputString());
 	}
@@ -152,13 +153,15 @@ public class PrettyPrinterVisitorTest {
 	}
 
 	@Test
-	public void testVisitMethodInvocationExpression() {
-		Expression[] parameters1 = { variable };
+	public void testVisitMethodInvocationExpression1() {
 		Expression[] parameters2 = { variable, variable };
 		visitor.visit(new MethodInvocationExpression(position, variable, new Symbol("-"), parameters2));
 		assertEquals("_.-(_, _)", visitor.getOutputString());
+	}
 
-		visitor.resetOutputStream();
+	@Test
+	public void testVisitMethodInvocationExpression2() {
+		Expression[] parameters1 = { variable };
 		visitor.visit(new MethodInvocationExpression(position, null, new Symbol("-"), parameters1));
 		assertEquals("-(_)", visitor.getOutputString());
 	}
@@ -240,35 +243,46 @@ public class PrettyPrinterVisitorTest {
 	}
 
 	@Test
-	public void testVisitIfStatement() {
+	public void testVisitIfStatement1() {
 		visitor.visit(new IfStatement(position, variable, new Block(variable)));
 		assertEquals("if (_) {\n\t_;\n}", visitor.getOutputString());
 
-		visitor.resetOutputStream();
+	}
+
+	@Test
+	public void testVisitIfStatement2() {
 		visitor.visit(new IfStatement(position, variable, new Block(variable), variable));
 		assertEquals("if (_) {\n\t_;\n} else\n\t_;", visitor.getOutputString());
 
-		visitor.resetOutputStream();
+	}
+
+	@Test
+	public void testVisitIfStatement3() {
 		visitor.visit(new IfStatement(position, variable, variable, variable));
 		assertEquals("if (_)\n\t_;\nelse\n\t_;", visitor.getOutputString());
 	}
 
 	@Test
-	public void testVisitWhileStatement() {
+	public void testVisitWhileStatement1() {
 		visitor.visit(new WhileStatement(position, variable, variable));
 		assertEquals("while (_)\n\t_;", visitor.getOutputString());
 
-		visitor.resetOutputStream();
+	}
+
+	@Test
+	public void testVisitWhileStatement2() {
 		visitor.visit(new WhileStatement(position, variable, new Block(variable)));
 		assertEquals("while (_) {\n\t_;\n}", visitor.getOutputString());
 	}
 
 	@Test
-	public void testVisitLocalVariableDeclaration() {
+	public void testVisitLocalVariableDeclaration1() {
 		visitor.visit(new LocalVariableDeclaration(position, type, new Symbol("-")));
 		assertEquals("int -", visitor.getOutputString());
+	}
 
-		visitor.resetOutputStream();
+	@Test
+	public void testVisitLocalVariableDeclaration2() {
 		visitor.visit(new LocalVariableDeclaration(position, type, new Symbol("-"), variable));
 		assertEquals("int - = _", visitor.getOutputString());
 	}
@@ -288,24 +302,31 @@ public class PrettyPrinterVisitorTest {
 	}
 
 	@Test
-	public void testVisitMethodDeclaration() {
+	public void testVisitMethodDeclaration1() {
 		MethodDeclaration methodDeclaration = new MethodDeclaration(position, new Symbol("_"), type);
 		methodDeclaration.setBlock(new Block((Position) null));
 
 		visitor.visit(methodDeclaration);
 		assertEquals("public int _() { }\n", visitor.getOutputString());
+	}
 
-		visitor.resetOutputStream();
+	@Test
+	public void testVisitMethodDeclaration2() {
+		MethodDeclaration methodDeclaration = new MethodDeclaration(position, new Symbol("_"), type);
 		Block block = new Block(position);
 		methodDeclaration.setBlock(block);
 		visitor.visit(methodDeclaration);
 		assertEquals("public int _() { }\n", visitor.getOutputString());
+	}
 
-		visitor.resetOutputStream();
+	@Test
+	public void testVisitMethodDeclaration3() {
+		MethodDeclaration methodDeclaration = new MethodDeclaration(position, new Symbol("_"), type);
+		Block block = new Block(position);
+		methodDeclaration.setBlock(block);
 		block.addStatement(variable);
 		visitor.visit(methodDeclaration);
 		assertEquals("public int _() {\n\t_;\n}\n", visitor.getOutputString());
-
 	}
 
 	@Test
