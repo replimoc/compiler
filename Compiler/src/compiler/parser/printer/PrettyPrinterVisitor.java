@@ -205,7 +205,7 @@ public class PrettyPrinterVisitor implements AstVisitor {
 			stringBuilder.append('.');
 		}
 
-		stringBuilder.append(methodInvocationExpression.getMethodIdent());
+		stringBuilder.append(methodInvocationExpression.getMethodIdentifier());
 		stringBuilder.append('(');
 		Expression[] args = methodInvocationExpression.getParameters();
 

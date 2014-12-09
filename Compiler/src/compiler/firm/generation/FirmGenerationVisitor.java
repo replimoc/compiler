@@ -349,7 +349,7 @@ public class FirmGenerationVisitor implements AstVisitor {
 				className = FirmGenerationVisitor.this.className;
 				methodObject = getThisPointer();
 			}
-			String methodName = methodInvocationExpression.getMethodIdent().getValue();
+			String methodName = methodInvocationExpression.getMethodIdentifier().getValue();
 			method = hierarchy.getMethodEntity(className, methodName);
 
 			// Generate parameter list

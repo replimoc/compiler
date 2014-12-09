@@ -18,4 +18,4 @@ error: type error in token at position line  30, character 19
 error: Illegal access to non static member at line  32, character 13
 error: type error in token at position line  32, character  8: Array access on a non array.
 error: type error in token at position line  32, character 13
-error: Member print at position line  33, character  8 is not available in object WorldArray defined at line  29, character 14
+error: Identifier WorldArray at position line  33, character  8 has not been defined
