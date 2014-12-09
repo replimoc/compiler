@@ -108,12 +108,13 @@ public final class CompilerApp {
 
 					if (cmd.hasOption(PRETTY_PRINT_AST)) {
 						System.out.print(PrettyPrinter.prettyPrint(ast));
+						return 0;
 					}
 
 					SemanticCheckResults semanticResult = SemanticChecker.checkSemantic(ast);
 					if (semanticResult.hasErrors()) {
 						for (SemanticAnalysisException curr : semanticResult.getExceptions()) {
-							System.out.println(curr.getMessage());
+							System.err.println(curr.getMessage());
 						}
 						return 1;
 					}
