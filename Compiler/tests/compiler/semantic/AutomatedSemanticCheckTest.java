@@ -50,6 +50,12 @@ public class AutomatedSemanticCheckTest implements TestFileVisitor.FileTester {
 		TestFileVisitor.runTestsForFolder(this, "testdata/mj-test/neg");
 	}
 
+	@Test
+	public void testCheckMjTestFilesPositiveParserAndSemantic() throws Exception {
+		allCorrect = false; // Positive files should be moved to pos
+		TestFileVisitor.runTestsForFolder(this, "testdata/mj-test/pos-parser");
+	}
+
 	@Override
 	public void testSourceFile(Path sourceFilePath, Path expectedResultFilePath) throws Exception {
 
