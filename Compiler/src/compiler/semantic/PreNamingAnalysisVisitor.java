@@ -110,12 +110,12 @@ public class PreNamingAnalysisVisitor implements AstVisitor {
 
 	@Override
 	public void visit(MethodDeclaration methodDeclaration) {
-		checkAndInsertDefinition(methodDeclaration, methodDeclaration.getPosition());
+		checkAndInsertDefinition(methodDeclaration);
 	}
 
 	@Override
 	public void visit(FieldDeclaration fieldDeclaration) {
-		checkAndInsertDefinition(fieldDeclaration, fieldDeclaration.getPosition());
+		checkAndInsertDefinition(fieldDeclaration);
 	}
 
 	@Override
@@ -152,22 +152,21 @@ public class PreNamingAnalysisVisitor implements AstVisitor {
 		mainFound = true;
 		staticMethodDeclaration.getParameters().get(0)
 				.setType(new ArrayType(parameter.getPosition(), new Type(parameter.getPosition(), BasicType.STRING_ARGS)));
-		checkAndInsertDefinition(staticMethodDeclaration, staticMethodDeclaration.getPosition());
+		checkAndInsertDefinition(staticMethodDeclaration);
 	}
 
-	private void checkAndInsertDefinition(MethodDeclaration definition, Position position) {
+	private void checkAndInsertDefinition(MethodDeclaration definition) {
 		if (currentMethodsMap.containsKey(definition.getIdentifier())) {
-			throwRedefinitionError(definition.getIdentifier(), position);
+			throwRedefinitionError(definition.getIdentifier(), definition.getPosition());
 			return;
 		}
 
 		currentMethodsMap.put(definition.getIdentifier(), definition);
 	}
 
-	// TODO: Second parameter is not necessary, its mostly already stored in first parameter
-	private void checkAndInsertDefinition(FieldDeclaration definition, Position position) {
+	private void checkAndInsertDefinition(FieldDeclaration definition) {
 		if (currentFieldsMap.containsKey(definition.getIdentifier())) {
-			throwRedefinitionError(definition.getIdentifier(), position);
+			throwRedefinitionError(definition.getIdentifier(), definition.getPosition());
 			return;
 		}
 
