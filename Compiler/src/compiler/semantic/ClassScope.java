@@ -4,24 +4,24 @@ import java.util.HashMap;
 import java.util.Map.Entry;
 
 import compiler.Symbol;
-import compiler.semantic.symbolTable.Definition;
-import compiler.semantic.symbolTable.MethodDefinition;
+import compiler.ast.Declaration;
+import compiler.ast.MethodDeclaration;
 
 public class ClassScope {
 
-	private final HashMap<Symbol, Definition> fields;
-	private final HashMap<Symbol, MethodDefinition> methods;
+	private final HashMap<Symbol, Declaration> fields;
+	private final HashMap<Symbol, MethodDeclaration> methods;
 
-	public ClassScope(HashMap<Symbol, Definition> fields, HashMap<Symbol, MethodDefinition> methods) {
+	public ClassScope(HashMap<Symbol, Declaration> fields, HashMap<Symbol, MethodDeclaration> methods) {
 		this.fields = fields;
 		this.methods = methods;
 	}
 
-	public MethodDefinition getMethodDefinition(Symbol identifier) {
+	public MethodDeclaration getMethodDefinition(Symbol identifier) {
 		return methods.get(identifier);
 	}
 
-	public Definition getFieldDefinition(Symbol identifier) {
+	public Declaration getFieldDefinition(Symbol identifier) {
 		return fields.get(identifier);
 	}
 
@@ -33,19 +33,19 @@ public class ClassScope {
 		return methods.size();
 	}
 
-	public Definition[] getFieldDefinitions() {
-		Definition[] fields = new Definition[this.fields.size()];
+	public Declaration[] getFieldDefinitions() {
+		Declaration[] fields = new Declaration[this.fields.size()];
 		int i = 0;
-		for (Entry<Symbol, Definition> curr : this.fields.entrySet()) {
+		for (Entry<Symbol, Declaration> curr : this.fields.entrySet()) {
 			fields[i++] = curr.getValue();
 		}
 		return fields;
 	}
 
-	public MethodDefinition[] getMethodDefinitions() {
-		MethodDefinition[] methods = new MethodDefinition[this.methods.size()];
+	public MethodDeclaration[] getMethodDefinitions() {
+		MethodDeclaration[] methods = new MethodDeclaration[this.methods.size()];
 		int i = 0;
-		for (Entry<Symbol, MethodDefinition> curr : this.methods.entrySet()) {
+		for (Entry<Symbol, MethodDeclaration> curr : this.methods.entrySet()) {
 			methods[i++] = curr.getValue();
 		}
 		return methods;

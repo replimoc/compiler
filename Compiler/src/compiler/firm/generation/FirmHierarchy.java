@@ -1,13 +1,16 @@
 package compiler.firm.generation;
 
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map.Entry;
 
 import compiler.Symbol;
+import compiler.ast.Declaration;
+import compiler.ast.MethodDeclaration;
+import compiler.ast.ParameterDefinition;
+import compiler.ast.StaticMethodDeclaration;
 import compiler.ast.type.BasicType;
 import compiler.semantic.ClassScope;
-import compiler.semantic.symbolTable.Definition;
-import compiler.semantic.symbolTable.MethodDefinition;
 
 import firm.ArrayType;
 import firm.ClassType;
@@ -83,12 +86,12 @@ public class FirmHierarchy {
 			String className = currEntry.getKey().getValue();
 			ClassScope scope = currEntry.getValue();
 
-			for (Definition currField : scope.getFieldDefinitions()) {
+			for (Declaration currField : scope.getFieldDefinitions()) {
 				addFieldEntity(className, currField);
 			}
-			for (MethodDefinition currMethod : scope.getMethodDefinitions()) {
+			for (MethodDeclaration currMethod : scope.getMethodDefinitions()) {
 				// main method is added separately because there is no type java.lang.String in MiniJava
-				if (!currMethod.isStaticMethod()) {
+				if (!(currMethod instanceof StaticMethodDeclaration)) {
 					addMethodEntity(className, currMethod);
 				}
 			}
@@ -104,7 +107,7 @@ public class FirmHierarchy {
 		definedClasses.put(className, wrapper);
 	}
 
-	private void addFieldEntity(String className, Definition definition) {
+	private void addFieldEntity(String className, Declaration definition) {
 		firm.Type firmType = getTypeDeclaration(definition.getType(), true);
 		String entityName = escapeName(className, "f", definition.getSymbol().getValue());
 
@@ -116,16 +119,16 @@ public class FirmHierarchy {
 		return definedClasses.get(className).classType;
 	}
 
-	private void addMethodEntity(String className, MethodDefinition methodDefinition) {
+	private void addMethodEntity(String className, MethodDeclaration methodDefinition) {
 		ClassWrapper classWrapper = definedClasses.get(className);
-		Definition[] parameterDefinitions = methodDefinition.getParameters();
+		List<ParameterDefinition> parameterDefinitions = methodDefinition.getParameters();
 
 		// types of parameters
 		// first parameter is "this" with type referenceToClass
-		firm.Type[] parameterTypes = new firm.Type[parameterDefinitions.length + 1];
+		firm.Type[] parameterTypes = new firm.Type[parameterDefinitions.size() + 1];
 		parameterTypes[0] = classWrapper.refToClass;
-		for (int paramIdx = 0; paramIdx < parameterDefinitions.length; paramIdx++) {
-			parameterTypes[paramIdx + 1] = getTypeDeclaration(parameterDefinitions[paramIdx].getType(), true);
+		for (int paramIdx = 0; paramIdx < parameterDefinitions.size(); paramIdx++) {
+			parameterTypes[paramIdx + 1] = getTypeDeclaration(parameterDefinitions.get(paramIdx).getType(), true);
 		}
 
 		// return type

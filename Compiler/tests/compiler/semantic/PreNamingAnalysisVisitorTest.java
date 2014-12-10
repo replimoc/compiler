@@ -14,6 +14,7 @@ import org.junit.Test;
 import compiler.StringTable;
 import compiler.Symbol;
 import compiler.ast.ClassDeclaration;
+import compiler.ast.Declaration;
 import compiler.ast.FieldDeclaration;
 import compiler.ast.MethodDeclaration;
 import compiler.ast.ParameterDefinition;
@@ -24,25 +25,23 @@ import compiler.ast.type.BasicType;
 import compiler.ast.type.ClassType;
 import compiler.ast.type.Type;
 import compiler.lexer.TokenType;
-import compiler.semantic.symbolTable.Definition;
-import compiler.semantic.symbolTable.MethodDefinition;
 
 public class PreNamingAnalysisVisitorTest {
 
 	private final PreNamingAnalysisVisitor visitor = new PreNamingAnalysisVisitor();
 	private final StringTable stringTable = new StringTable();
 
-	private final MethodDefinition[] testMethods = new MethodDefinition[] {
-			m("method1", t(BasicType.INT), d("param1", t(BasicType.INT))),
-			m("method2", t(BasicType.VOID), d("param1", t(BasicType.INT))),
-			m("method3", t(BasicType.VOID), d("param1", t(BasicType.INT)), d("param1", t(BasicType.BOOLEAN)), d("param1", t(BasicType.INT, 3))),
-			m("method4", t(BasicType.VOID), d("param1", t(BasicType.INT)))
+	private final MethodDeclaration[] testMethods = {
+			m("method1", t(BasicType.INT), pd("param1", t(BasicType.INT))),
+			m("method2", t(BasicType.VOID), pd("param1", t(BasicType.INT))),
+			m("method3", t(BasicType.VOID), pd("param1", t(BasicType.INT)), pd("param1", t(BasicType.BOOLEAN)), pd("param1", t(BasicType.INT, 3))),
+			m("method4", t(BasicType.VOID), pd("param1", t(BasicType.INT)))
 	};
 
-	private final Definition[] testFields = new Definition[] {
-			d("field1", t(BasicType.INT)),
-			d("field2", t(BasicType.BOOLEAN)),
-			d("field3", t(BasicType.VOID)),
+	private final FieldDeclaration[] testFields = new FieldDeclaration[] {
+			fd("field1", t(BasicType.INT)),
+			fd("field2", t(BasicType.BOOLEAN)),
+			fd("field3", t(BasicType.VOID)),
 	};
 
 	@Test
@@ -130,7 +129,7 @@ public class PreNamingAnalysisVisitorTest {
 
 	@Test
 	public void testValidMain() {
-		ClassScope scope1 = scope(f(), asArray(m("main", t(BasicType.VOID), d("args", t(ct("String"), 1)))));
+		ClassScope scope1 = scope(f(), asArray(m("main", t(BasicType.VOID), pd("args", t(ct("String"), 1)))));
 		HashMap<Symbol, ClassScope> expectedScopes = scopes(c("class1", scope1));
 
 		Program program = createAst(expectedScopes);
@@ -144,7 +143,7 @@ public class PreNamingAnalysisVisitorTest {
 
 	@Test
 	public void testMainInvalidReturnType() {
-		ClassScope scope1 = scope(f(), asArray(m("main", t(BasicType.INT), d("args", t(ct("String"), 1)))));
+		ClassScope scope1 = scope(f(), asArray(m("main", t(BasicType.INT), pd("args", t(ct("String"), 1)))));
 		HashMap<Symbol, ClassScope> expectedScopes = scopes(c("class1", scope1));
 
 		Program program = createAst(expectedScopes);
@@ -168,7 +167,7 @@ public class PreNamingAnalysisVisitorTest {
 
 	@Test
 	public void testMainInvalidParameterArrayType() {
-		ClassScope scope1 = scope(f(), asArray(m("main", t(BasicType.VOID), d("args", t(ct("Bla"), 1)))));
+		ClassScope scope1 = scope(f(), asArray(m("main", t(BasicType.VOID), pd("args", t(ct("Bla"), 1)))));
 		ClassScope scope2 = scope(f(), m());
 		HashMap<Symbol, ClassScope> expectedScopes = scopes(c("class1", scope1), c("Bla", scope2));
 
@@ -181,7 +180,7 @@ public class PreNamingAnalysisVisitorTest {
 
 	@Test
 	public void testMainInvalidParameterNoArrayType() {
-		ClassScope scope1 = scope(f(), asArray(m("main", t(BasicType.VOID), d("args", t(BasicType.INT)))));
+		ClassScope scope1 = scope(f(), asArray(m("main", t(BasicType.VOID), pd("args", t(BasicType.INT)))));
 		HashMap<Symbol, ClassScope> expectedScopes = scopes(c("class1", scope1));
 
 		Program program = createAst(expectedScopes);
@@ -193,7 +192,7 @@ public class PreNamingAnalysisVisitorTest {
 
 	@Test
 	public void testMainNoArrayParameterType() {
-		ClassScope scope1 = scope(f(), asArray(m("main", t(BasicType.INT), d("args", ct("String")))));
+		ClassScope scope1 = scope(f(), asArray(m("main", t(BasicType.INT), pd("args", ct("String")))));
 		HashMap<Symbol, ClassScope> expectedScopes = scopes(c("class1", scope1));
 
 		Program program = createAst(expectedScopes);
@@ -221,12 +220,12 @@ public class PreNamingAnalysisVisitorTest {
 		return t;
 	}
 
-	private static ClassDeclaration createClassDeclaration(Symbol name, Definition[] fields, MethodDefinition[] methods) {
+	private static ClassDeclaration createClassDeclaration(Symbol name, Declaration[] fields, MethodDeclaration[] methods) {
 		ClassDeclaration classDeclaration = new ClassDeclaration(null, name);
-		for (Definition field : fields) {
+		for (Declaration field : fields) {
 			classDeclaration.addClassMember(new FieldDeclaration(null, field.getType(), field.getSymbol()));
 		}
-		for (MethodDefinition method : methods) {
+		for (MethodDeclaration method : methods) {
 			MethodDeclaration methodDeclaration;
 			if ("main".equals(method.getSymbol().getValue())) { // hack to test static main
 				methodDeclaration = new StaticMethodDeclaration(null, method.getSymbol(), method.getType());
@@ -234,7 +233,7 @@ public class PreNamingAnalysisVisitorTest {
 				methodDeclaration = new MethodDeclaration(null, method.getSymbol(), method.getType());
 			}
 
-			for (Definition param : method.getParameters()) {
+			for (Declaration param : method.getParameters()) {
 				methodDeclaration.addParameter(new ParameterDefinition(null, param.getType(), param.getSymbol()));
 			}
 			classDeclaration.addClassMember(methodDeclaration);
@@ -252,14 +251,14 @@ public class PreNamingAnalysisVisitorTest {
 		return scopesMap;
 	}
 
-	private static ClassScope scope(Definition[] fields, MethodDefinition[] methods) {
-		HashMap<Symbol, Definition> fieldsMap = new HashMap<>();
-		HashMap<Symbol, MethodDefinition> methodsMap = new HashMap<>();
+	private static ClassScope scope(Declaration[] fields, MethodDeclaration[] methods) {
+		HashMap<Symbol, Declaration> fieldsMap = new HashMap<>();
+		HashMap<Symbol, MethodDeclaration> methodsMap = new HashMap<>();
 
-		for (Definition curr : fields) {
+		for (Declaration curr : fields) {
 			fieldsMap.put(curr.getSymbol(), curr);
 		}
-		for (MethodDefinition curr : methods) {
+		for (MethodDeclaration curr : methods) {
 			methodsMap.put(curr.getSymbol(), curr);
 		}
 
@@ -270,8 +269,8 @@ public class PreNamingAnalysisVisitorTest {
 		return new SimpleEntry<>(s(string), scope);
 	}
 
-	private MethodDefinition[] m(int... indexes) {
-		MethodDefinition[] definitions = new MethodDefinition[indexes.length];
+	private MethodDeclaration[] m(int... indexes) {
+		MethodDeclaration[] definitions = new MethodDeclaration[indexes.length];
 
 		for (int i = 0; i < indexes.length; i++) {
 			definitions[i] = testMethods[indexes[i]];
@@ -280,8 +279,8 @@ public class PreNamingAnalysisVisitorTest {
 		return definitions;
 	}
 
-	private Definition[] f(int... indexes) {
-		Definition[] definitions = new Definition[indexes.length];
+	private Declaration[] f(int... indexes) {
+		Declaration[] definitions = new Declaration[indexes.length];
 
 		for (int i = 0; i < indexes.length; i++) {
 			definitions[i] = testFields[indexes[i]];
@@ -309,12 +308,16 @@ public class PreNamingAnalysisVisitorTest {
 		return type;
 	}
 
-	private MethodDefinition m(String name, Type returnType, Definition... parameters) {
-		return new MethodDefinition(s(name), returnType, parameters);
+	private MethodDeclaration m(String name, Type returnType, ParameterDefinition... parameters) {
+		return new MethodDeclaration(s(name), returnType, parameters);
 	}
 
-	private Definition d(String name, Type type) {
-		return new Definition(s(name), type);
+	private ParameterDefinition pd(String name, Type type) {
+		return new ParameterDefinition(type, s(name));
+	}
+
+	private FieldDeclaration fd(String name, Type type) {
+		return new FieldDeclaration(type, s(name));
 	}
 
 	private Type ct(String string) {

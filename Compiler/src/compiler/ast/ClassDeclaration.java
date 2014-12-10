@@ -7,12 +7,12 @@ import compiler.Symbol;
 import compiler.ast.visitor.AstVisitor;
 import compiler.lexer.Position;
 
-public class ClassDeclaration extends AstNode implements Comparable<ClassDeclaration> {
+public class ClassDeclaration extends Declaration implements Comparable<ClassDeclaration> {
 	private final Symbol identifier;
 	private final List<ClassMember> members = new ArrayList<ClassMember>();
 
 	public ClassDeclaration(Position position, Symbol identifier) {
-		super(position);
+		super(position, identifier);
 		this.identifier = identifier;
 	}
 

@@ -5,14 +5,16 @@ import java.util.List;
 
 import compiler.Symbol;
 import compiler.ast.AstNode;
+import compiler.ast.Declaration;
+import compiler.ast.FieldDeclaration;
+import compiler.ast.MethodDeclaration;
+import compiler.ast.ParameterDefinition;
+import compiler.ast.PrintMethodDeclaration;
 import compiler.ast.type.BasicType;
 import compiler.ast.type.ClassType;
 import compiler.ast.type.Type;
 import compiler.lexer.Position;
 import compiler.semantic.exceptions.SemanticAnalysisException;
-import compiler.semantic.symbolTable.Definition;
-import compiler.semantic.symbolTable.MethodDefinition;
-import compiler.semantic.symbolTable.PrintMethodDefinition;
 import compiler.semantic.symbolTable.Scope;
 
 public final class SemanticChecker {
@@ -28,7 +30,7 @@ public final class SemanticChecker {
 
 		// fill System.out.println: if System class isn't present
 		Symbol systemSymbol = new Symbol("System");
-		Definition systemDefinition = null;
+		FieldDeclaration systemDefinition = null;
 
 		// create System class if 'System' is already defined
 		if (classScopes.containsKey(systemSymbol)) {
@@ -46,21 +48,21 @@ public final class SemanticChecker {
 			printStream = new Symbol("PrintStream" + printStreamNum);
 		} while (classScopes.containsKey(printStream));
 
-		Definition printStreamDefinition = new Definition(printStream, new ClassType(new Position(-1, -1), printStream));
+		FieldDeclaration printStreamDefinition = new FieldDeclaration(new ClassType(new Position(-1, -1), printStream), printStream);
 
-		HashMap<Symbol, MethodDefinition> psMethods = new HashMap<Symbol, MethodDefinition>();
+		HashMap<Symbol, MethodDeclaration> psMethods = new HashMap<Symbol, MethodDeclaration>();
 		Symbol printLineSymbol = new Symbol("println"); // FIXME This should not work, as we should use == for symbol comparison
-		Definition[] definitions = new Definition[1];
-		definitions[0] = new Definition(new Symbol("arg"), new Type(null, BasicType.INT));
-		psMethods.put(printLineSymbol, new PrintMethodDefinition(printLineSymbol, new Type(null, BasicType.VOID), definitions));
-		ClassScope printStreamScope = new ClassScope(new HashMap<Symbol, Definition>(), psMethods);
+		MethodDeclaration printLineMethod = new PrintMethodDeclaration(null, printLineSymbol, new Type(null, BasicType.VOID));
+		printLineMethod.addParameter(new ParameterDefinition(new Type(null, BasicType.INT), new Symbol("arg")));
+		psMethods.put(printLineSymbol, printLineMethod);
+		ClassScope printStreamScope = new ClassScope(new HashMap<Symbol, Declaration>(), psMethods);
 		classScopes.put(printStream, printStreamScope);
 
-		systemDefinition = new Definition(systemSymbol, new ClassType(null, systemSymbol));
+		systemDefinition = new FieldDeclaration(new ClassType(null, systemSymbol), systemSymbol);
 		systemSymbol.setDefintion(new Scope(null, 0), systemDefinition);
-		HashMap<Symbol, Definition> fields = new HashMap<Symbol, Definition>();
+		HashMap<Symbol, Declaration> fields = new HashMap<Symbol, Declaration>();
 		fields.put(new Symbol("out"), printStreamDefinition);
-		HashMap<Symbol, MethodDefinition> methods = new HashMap<Symbol, MethodDefinition>();
+		HashMap<Symbol, MethodDeclaration> methods = new HashMap<Symbol, MethodDeclaration>();
 		ClassScope systemClassScope = new ClassScope(fields, methods);
 		classScopes.put(systemSymbol, systemClassScope);
 

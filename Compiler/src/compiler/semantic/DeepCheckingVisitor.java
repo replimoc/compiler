@@ -64,8 +64,6 @@ import compiler.semantic.exceptions.RedefinitionErrorException;
 import compiler.semantic.exceptions.SemanticAnalysisException;
 import compiler.semantic.exceptions.TypeErrorException;
 import compiler.semantic.exceptions.UndefinedSymbolException;
-import compiler.semantic.symbolTable.Definition;
-import compiler.semantic.symbolTable.MethodDefinition;
 import compiler.semantic.symbolTable.SymbolTable;
 
 public class DeepCheckingVisitor implements AstVisitor {
@@ -76,14 +74,14 @@ public class DeepCheckingVisitor implements AstVisitor {
 	private SymbolTable symbolTable = null;
 	private ClassDeclaration currentClassDeclaration;
 	private ClassScope currentClassScope = null;
-	private MethodDefinition currentMethodDefinition = null;
-	private final Definition systemDefinition;
+	private MethodDeclaration currentMethodDefinition = null;
+	private final Declaration systemDefinition;
 
 	private boolean isStaticMethod;
 	private boolean returnOnAllPaths;
 	private boolean isExpressionStatement;
 
-	public DeepCheckingVisitor(HashMap<Symbol, ClassScope> classScopes, Definition systemDefinition) {
+	public DeepCheckingVisitor(HashMap<Symbol, ClassScope> classScopes, Declaration systemDefinition) {
 		this.classScopes = classScopes;
 		this.systemDefinition = systemDefinition;
 	}
@@ -345,27 +343,27 @@ public class DeepCheckingVisitor implements AstVisitor {
 
 	private void checkCallMethod(MethodInvocationExpression methodInvocation, ClassScope classScope) {
 		Symbol methodIdentifier = methodInvocation.getMethodIdentifier();
-		MethodDefinition methodDefinition = classScope.getMethodDefinition(methodIdentifier);
+		MethodDeclaration methodDefinition = classScope.getMethodDefinition(methodIdentifier);
 		if (methodDefinition == null) {
 			throwNoSuchMemberError(currentClassDeclaration.getIdentifier(), currentClassDeclaration.getPosition(),
 					methodIdentifier, methodInvocation.getPosition());
-		} else if (methodDefinition.isStaticMethod()) {
+		} else if (methodDefinition instanceof StaticMethodDeclaration) {
 			throwMainNotCallableError(methodInvocation);
 		} else {
 			checkParameterDefinitionAndSetReturnType(methodInvocation, methodDefinition);
 		}
 	}
 
-	private void checkParameterDefinitionAndSetReturnType(MethodInvocationExpression methodInvocationExpression, MethodDefinition methodDefinition) {
+	private void checkParameterDefinitionAndSetReturnType(MethodInvocationExpression methodInvocationExpression, MethodDeclaration methodDefinition) {
 		// now check params
-		if (methodDefinition.getParameters().length != methodInvocationExpression.getParameters().length) {
+		if (methodDefinition.getParameters().size() != methodInvocationExpression.getParameters().length) {
 			exceptions
 					.add(new InvalidMethodCallException(methodInvocationExpression.getMethodIdentifier(), methodInvocationExpression.getPosition()));
 			return;
 		}
 
-		for (int i = 0; i < methodDefinition.getParameters().length; i++) {
-			Definition parameterDefinition = methodDefinition.getParameters()[i];
+		for (int i = 0; i < methodDefinition.getParameters().size(); i++) {
+			Declaration parameterDefinition = methodDefinition.getParameters().get(i);
 			Expression expression = methodInvocationExpression.getParameters()[i];
 			expression.accept(this);
 
@@ -440,7 +438,7 @@ public class DeepCheckingVisitor implements AstVisitor {
 				return;
 			}
 			// check if member exists in this class
-			Definition fieldDef = classScope.getFieldDefinition(variableAccessExpression.getFieldIdentifier());
+			Declaration fieldDef = classScope.getFieldDefinition(variableAccessExpression.getFieldIdentifier());
 			if (fieldDef == null) {
 				throwNoSuchMemberError(leftExpressionType.getIdentifier(), leftExpressionType.getPosition(),
 						variableAccessExpression.getFieldIdentifier(),

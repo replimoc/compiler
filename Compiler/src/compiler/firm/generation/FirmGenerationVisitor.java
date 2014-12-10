@@ -10,6 +10,7 @@ import compiler.ast.Declaration;
 import compiler.ast.FieldDeclaration;
 import compiler.ast.MethodDeclaration;
 import compiler.ast.ParameterDefinition;
+import compiler.ast.PrintMethodDeclaration;
 import compiler.ast.StaticMethodDeclaration;
 import compiler.ast.statement.ArrayAccessExpression;
 import compiler.ast.statement.BooleanConstantExpression;
@@ -48,7 +49,6 @@ import compiler.ast.type.BasicType;
 import compiler.ast.type.ClassType;
 import compiler.ast.type.Type;
 import compiler.ast.visitor.AstVisitor;
-import compiler.semantic.symbolTable.PrintMethodDefinition;
 
 import firm.Construction;
 import firm.Entity;
@@ -321,7 +321,7 @@ public class FirmGenerationVisitor implements AstVisitor {
 		MethodCallInformation methodCallInformation = new MethodCallInformation();
 
 		// special case - System.out.println which is PrintStream::println()
-		if (methodInvocationExpression.getMethodDefinition() instanceof PrintMethodDefinition) {
+		if (methodInvocationExpression.getMethodDefinition() instanceof PrintMethodDeclaration) {
 			methodCallInformation = new PrintMethodCallInformation();
 		}
 

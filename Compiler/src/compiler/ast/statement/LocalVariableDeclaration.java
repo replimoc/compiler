@@ -6,14 +6,14 @@ import compiler.ast.type.Type;
 import compiler.ast.visitor.AstVisitor;
 import compiler.lexer.Position;
 
-public class LocalVariableDeclaration extends Statement implements Declaration {
+public class LocalVariableDeclaration extends Declaration implements Statement {
 
 	private final Expression expression;
 	private final Symbol identifier;
 	private int variableNumber;
 
 	public LocalVariableDeclaration(Position position, Type type, Symbol identifier, Expression expression, int variableNumber) {
-		super(position, type);
+		super(position, type, identifier);
 		this.identifier = identifier;
 		this.expression = expression;
 		this.variableNumber = variableNumber;

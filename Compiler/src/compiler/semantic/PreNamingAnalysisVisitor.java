@@ -9,6 +9,7 @@ import compiler.ast.AstNode;
 import compiler.ast.Block;
 import compiler.ast.ClassDeclaration;
 import compiler.ast.ClassMember;
+import compiler.ast.Declaration;
 import compiler.ast.FieldDeclaration;
 import compiler.ast.MethodDeclaration;
 import compiler.ast.ParameterDefinition;
@@ -54,15 +55,13 @@ import compiler.semantic.exceptions.NoMainFoundException;
 import compiler.semantic.exceptions.RedefinitionErrorException;
 import compiler.semantic.exceptions.SemanticAnalysisException;
 import compiler.semantic.exceptions.TypeErrorException;
-import compiler.semantic.symbolTable.Definition;
-import compiler.semantic.symbolTable.MethodDefinition;
 
 public class PreNamingAnalysisVisitor implements AstVisitor {
 
 	private final HashMap<Symbol, ClassScope> classScopes = new HashMap<>();
 
-	private HashMap<Symbol, Definition> currentFieldsMap;
-	private HashMap<Symbol, MethodDefinition> currentMethodsMap;
+	private HashMap<Symbol, Declaration> currentFieldsMap;
+	private HashMap<Symbol, MethodDeclaration> currentMethodsMap;
 
 	private boolean mainFound = false;
 	private final List<SemanticAnalysisException> exceptions = new ArrayList<>();
@@ -111,26 +110,12 @@ public class PreNamingAnalysisVisitor implements AstVisitor {
 
 	@Override
 	public void visit(MethodDeclaration methodDeclaration) {
-		Symbol identifier = methodDeclaration.getIdentifier();
-		Type returnType = methodDeclaration.getType();
-		List<ParameterDefinition> parameters = methodDeclaration.getParameters();
-
-		Definition[] parameterDefinitions = new Definition[parameters.size()];
-
-		int i = 0;
-		for (ParameterDefinition currParameter : methodDeclaration.getParameters()) {
-			parameterDefinitions[i] = new Definition(currParameter.getIdentifier(), currParameter.getType());
-			i++;
-		}
-
-		MethodDefinition methodDefinition = new MethodDefinition(identifier, returnType, parameterDefinitions);
-
-		checkAndInsertDefinition(methodDefinition, methodDeclaration.getPosition());
+		checkAndInsertDefinition(methodDeclaration, methodDeclaration.getPosition());
 	}
 
 	@Override
 	public void visit(FieldDeclaration fieldDeclaration) {
-		checkAndInsertDefinition(new Definition(fieldDeclaration.getIdentifier(), fieldDeclaration.getType()), fieldDeclaration.getPosition());
+		checkAndInsertDefinition(fieldDeclaration, fieldDeclaration.getPosition());
 	}
 
 	@Override
@@ -165,15 +150,12 @@ public class PreNamingAnalysisVisitor implements AstVisitor {
 		}
 
 		mainFound = true;
-		Position position = staticMethodDeclaration.getPosition();
-
-		Definition[] parameterTypes = new Definition[] { new Definition(parameter.getIdentifier(),
-				new Type(parameter.getPosition(), BasicType.STRING_ARGS)) };
-		parameter.setType(new ArrayType(parameter.getPosition(), new Type(parameter.getPosition(), BasicType.STRING_ARGS)));
-		checkAndInsertDefinition(new MethodDefinition(identifier, returnType, parameterTypes, true), position);
+		staticMethodDeclaration.getParameters().get(0)
+				.setType(new ArrayType(parameter.getPosition(), new Type(parameter.getPosition(), BasicType.STRING_ARGS)));
+		checkAndInsertDefinition(staticMethodDeclaration, staticMethodDeclaration.getPosition());
 	}
 
-	private void checkAndInsertDefinition(MethodDefinition definition, Position position) {
+	private void checkAndInsertDefinition(MethodDeclaration definition, Position position) {
 		if (currentMethodsMap.containsKey(definition.getSymbol())) {
 			throwRedefinitionError(definition.getSymbol(), position);
 			return;
@@ -182,7 +164,8 @@ public class PreNamingAnalysisVisitor implements AstVisitor {
 		currentMethodsMap.put(definition.getSymbol(), definition);
 	}
 
-	private void checkAndInsertDefinition(Definition definition, Position position) {
+	// TODO: Second parameter is not necessary, its mostly already stored in first parameter
+	private void checkAndInsertDefinition(FieldDeclaration definition, Position position) {
 		if (currentFieldsMap.containsKey(definition.getSymbol())) {
 			throwRedefinitionError(definition.getSymbol(), position);
 			return;

@@ -1,17 +1,15 @@
 package compiler.ast.statement;
 
-import compiler.ast.AstNode;
-import compiler.ast.type.Type;
+import compiler.ast.visitor.AstVisitor;
 import compiler.lexer.Position;
 
-public abstract class Statement extends AstNode {
+import firm.nodes.Node;
 
-	public Statement(Position position) {
-		super(position);
-	}
+public interface Statement {
 
-	public Statement(Position position, Type type) {
-		super(position, type);
-	}
+	Position getPosition();
 
+	void accept(AstVisitor firmGenerationVisitor);
+
+	Node getFirmNode();
 }
