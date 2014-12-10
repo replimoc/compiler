@@ -50,6 +50,7 @@ import compiler.ast.visitor.AstVisitor;
 import compiler.semantic.symbolTable.Definition;
 import compiler.semantic.symbolTable.LocalVariableDefinition;
 import compiler.semantic.symbolTable.PrintMethodDefinition;
+
 import firm.Construction;
 import firm.Entity;
 import firm.Graph;
@@ -594,7 +595,6 @@ public class FirmGenerationVisitor implements AstVisitor {
 	}
 
 	private Node getConditionNode(Expression expression) {
-		// TODO: optimize boolean constants!
 		Node conditionNode;
 		if (expression.getFirmNode() != null && !expression.getFirmNode().getMode().equals(Mode.getT())) {
 			// booleans and boolean constants
