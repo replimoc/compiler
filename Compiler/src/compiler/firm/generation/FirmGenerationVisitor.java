@@ -747,7 +747,7 @@ public class FirmGenerationVisitor implements AstVisitor {
 		}
 
 		expression.setType(definition.getType());
-		VariableAccessExpression variableAccess = new VariableAccessExpression(null, null, definition.getSymbol());
+		VariableAccessExpression variableAccess = new VariableAccessExpression(null, null, definition.getIdentifier());
 		variableAccess.setDefinition(definition);
 		AssignmentExpression assignment = new AssignmentExpression(null, variableAccess, expression);
 		assignment.accept(this);

@@ -32,11 +32,6 @@ public class FieldDeclaration extends ClassMember {
 	}
 
 	@Override
-	public Symbol getSymbol() {
-		return getIdentifier();
-	}
-
-	@Override
 	public boolean isLocalVariable() {
 		return false;
 	}

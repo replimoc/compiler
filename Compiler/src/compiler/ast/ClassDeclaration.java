@@ -8,20 +8,14 @@ import compiler.ast.visitor.AstVisitor;
 import compiler.lexer.Position;
 
 public class ClassDeclaration extends Declaration implements Comparable<ClassDeclaration> {
-	private final Symbol identifier;
 	private final List<ClassMember> members = new ArrayList<ClassMember>();
 
 	public ClassDeclaration(Position position, Symbol identifier) {
 		super(position, identifier);
-		this.identifier = identifier;
 	}
 
 	public void addClassMember(ClassMember member) {
 		this.members.add(member);
-	}
-
-	public Symbol getIdentifier() {
-		return identifier;
 	}
 
 	public List<ClassMember> getMembers() {
@@ -35,6 +29,6 @@ public class ClassDeclaration extends Declaration implements Comparable<ClassDec
 
 	@Override
 	public int compareTo(ClassDeclaration o) {
-		return identifier.getValue().compareTo(o.identifier.getValue());
+		return getIdentifier().getValue().compareTo(o.getIdentifier().getValue());
 	}
 }

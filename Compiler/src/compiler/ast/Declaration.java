@@ -17,7 +17,7 @@ public abstract class Declaration extends AstNode {
 		this.symbol = symbol;
 	}
 
-	public Symbol getSymbol() {
+	public Symbol getIdentifier() {
 		return symbol;
 	}
 

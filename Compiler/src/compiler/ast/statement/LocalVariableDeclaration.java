@@ -9,12 +9,10 @@ import compiler.lexer.Position;
 public class LocalVariableDeclaration extends Declaration implements Statement {
 
 	private final Expression expression;
-	private final Symbol identifier;
 	private int variableNumber;
 
 	public LocalVariableDeclaration(Position position, Type type, Symbol identifier, Expression expression, int variableNumber) {
 		super(position, type, identifier);
-		this.identifier = identifier;
 		this.expression = expression;
 		this.variableNumber = variableNumber;
 	}
@@ -35,10 +33,6 @@ public class LocalVariableDeclaration extends Declaration implements Statement {
 		this(position, type, identifier, null);
 	}
 
-	public Symbol getIdentifier() {
-		return identifier;
-	}
-
 	public Expression getExpression() {
 		return expression;
 	}
@@ -54,11 +48,6 @@ public class LocalVariableDeclaration extends Declaration implements Statement {
 
 	public void setVariableNumber(int variableNumber) {
 		this.variableNumber = variableNumber;
-	}
-
-	@Override
-	public Symbol getSymbol() {
-		return getIdentifier();
 	}
 
 	@Override

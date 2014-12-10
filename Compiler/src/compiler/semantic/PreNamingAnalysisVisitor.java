@@ -156,22 +156,22 @@ public class PreNamingAnalysisVisitor implements AstVisitor {
 	}
 
 	private void checkAndInsertDefinition(MethodDeclaration definition, Position position) {
-		if (currentMethodsMap.containsKey(definition.getSymbol())) {
-			throwRedefinitionError(definition.getSymbol(), position);
+		if (currentMethodsMap.containsKey(definition.getIdentifier())) {
+			throwRedefinitionError(definition.getIdentifier(), position);
 			return;
 		}
 
-		currentMethodsMap.put(definition.getSymbol(), definition);
+		currentMethodsMap.put(definition.getIdentifier(), definition);
 	}
 
 	// TODO: Second parameter is not necessary, its mostly already stored in first parameter
 	private void checkAndInsertDefinition(FieldDeclaration definition, Position position) {
-		if (currentFieldsMap.containsKey(definition.getSymbol())) {
-			throwRedefinitionError(definition.getSymbol(), position);
+		if (currentFieldsMap.containsKey(definition.getIdentifier())) {
+			throwRedefinitionError(definition.getIdentifier(), position);
 			return;
 		}
 
-		currentFieldsMap.put(definition.getSymbol(), definition);
+		currentFieldsMap.put(definition.getIdentifier(), definition);
 	}
 
 	private void throwTypeError(AstNode astNode, String message) {

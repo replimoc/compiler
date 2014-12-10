@@ -223,18 +223,18 @@ public class PreNamingAnalysisVisitorTest {
 	private static ClassDeclaration createClassDeclaration(Symbol name, Declaration[] fields, MethodDeclaration[] methods) {
 		ClassDeclaration classDeclaration = new ClassDeclaration(null, name);
 		for (Declaration field : fields) {
-			classDeclaration.addClassMember(new FieldDeclaration(null, field.getType(), field.getSymbol()));
+			classDeclaration.addClassMember(new FieldDeclaration(null, field.getType(), field.getIdentifier()));
 		}
 		for (MethodDeclaration method : methods) {
 			MethodDeclaration methodDeclaration;
-			if ("main".equals(method.getSymbol().getValue())) { // hack to test static main
-				methodDeclaration = new StaticMethodDeclaration(null, method.getSymbol(), method.getType());
+			if ("main".equals(method.getIdentifier().getValue())) { // hack to test static main
+				methodDeclaration = new StaticMethodDeclaration(null, method.getIdentifier(), method.getType());
 			} else {
-				methodDeclaration = new MethodDeclaration(null, method.getSymbol(), method.getType());
+				methodDeclaration = new MethodDeclaration(null, method.getIdentifier(), method.getType());
 			}
 
 			for (Declaration param : method.getParameters()) {
-				methodDeclaration.addParameter(new ParameterDefinition(null, param.getType(), param.getSymbol()));
+				methodDeclaration.addParameter(new ParameterDefinition(null, param.getType(), param.getIdentifier()));
 			}
 			classDeclaration.addClassMember(methodDeclaration);
 		}
@@ -256,10 +256,10 @@ public class PreNamingAnalysisVisitorTest {
 		HashMap<Symbol, MethodDeclaration> methodsMap = new HashMap<>();
 
 		for (Declaration curr : fields) {
-			fieldsMap.put(curr.getSymbol(), curr);
+			fieldsMap.put(curr.getIdentifier(), curr);
 		}
 		for (MethodDeclaration curr : methods) {
-			methodsMap.put(curr.getSymbol(), curr);
+			methodsMap.put(curr.getIdentifier(), curr);
 		}
 
 		return new ClassScope(fieldsMap, methodsMap);
