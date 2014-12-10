@@ -1,16 +1,17 @@
 package compiler.semantic.symbolTable;
 
 import compiler.Symbol;
+import compiler.ast.Declaration;
 
 class Change {
 
 	private final Symbol symbol;
-	private final Definition prevDefinition;
+	private final Declaration prevDefinition;
 	private final Scope prevScope;
 
-	protected Change(Symbol symbol, Definition prevDefinition, Scope prevScope) {
+	protected Change(Symbol symbol, Declaration declaration, Scope prevScope) {
 		this.symbol = symbol;
-		this.prevDefinition = prevDefinition;
+		this.prevDefinition = declaration;
 		this.prevScope = prevScope;
 	}
 
@@ -18,7 +19,7 @@ class Change {
 		return symbol;
 	}
 
-	public Definition getPrevDefinition() {
+	public Declaration getPrevDefinition() {
 		return prevDefinition;
 	}
 

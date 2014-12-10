@@ -1,9 +1,10 @@
 package compiler.semantic.symbolTable;
 
 import compiler.Symbol;
+import compiler.ast.Declaration;
 import compiler.ast.type.Type;
 
-public class Definition {
+public class Definition implements Declaration {
 
 	private final Symbol symbol;
 	private final Type type;

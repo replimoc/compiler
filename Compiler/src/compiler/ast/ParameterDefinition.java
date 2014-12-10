@@ -1,10 +1,10 @@
 package compiler.ast;
 
 import compiler.Symbol;
+import compiler.ast.statement.LocalVariableDeclaration;
 import compiler.ast.type.Type;
 import compiler.ast.visitor.AstVisitor;
 import compiler.lexer.Position;
-import compiler.semantic.symbolTable.LocalVariableDefinition;
 
 public class ParameterDefinition extends AstNode {
 
@@ -26,8 +26,8 @@ public class ParameterDefinition extends AstNode {
 		visitor.visit(this);
 	}
 
-	public LocalVariableDefinition getDefinition() {
-		return new LocalVariableDefinition(identifier, getType(), variableNumber);
+	public Declaration getDefinition() { // TODO maybe optimize this
+		return new LocalVariableDeclaration(getPosition(), getType(), getIdentifier(), variableNumber);
 	}
 
 	public void setVariableNumber(int variableNumber) {

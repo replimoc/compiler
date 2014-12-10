@@ -9,6 +9,7 @@ import compiler.ast.AstNode;
 import compiler.ast.Block;
 import compiler.ast.ClassDeclaration;
 import compiler.ast.ClassMember;
+import compiler.ast.Declaration;
 import compiler.ast.FieldDeclaration;
 import compiler.ast.MethodDeclaration;
 import compiler.ast.ParameterDefinition;
@@ -384,7 +385,7 @@ public class DeepCheckingVisitor implements AstVisitor {
 		if (expression == null) {
 			Symbol fieldIdentifier = variableAccessExpression.getFieldIdentifier();
 			Position position = variableAccessExpression.getPosition();
-			Definition definition = null;
+			Declaration definition = null;
 			if (fieldIdentifier.isDefined()) {
 				if (isStaticMethod) {
 					if (fieldIdentifier.getDefinitionScope().getParentScope() == null) {

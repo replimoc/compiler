@@ -1,6 +1,6 @@
 package compiler;
 
-import compiler.semantic.symbolTable.Definition;
+import compiler.ast.Declaration;
 import compiler.semantic.symbolTable.Scope;
 
 /**
@@ -9,7 +9,7 @@ import compiler.semantic.symbolTable.Scope;
 public class Symbol {
 	private final String value;
 	private Scope defScope;
-	private Definition definition;
+	private Declaration definition;
 
 	// definition
 
@@ -59,7 +59,7 @@ public class Symbol {
 	 * @param definition
 	 *            Definition object
 	 */
-	public void setDefintion(Scope scope, Definition definition) {
+	public void setDefintion(Scope scope, Declaration definition) {
 		this.defScope = scope;
 		this.definition = definition;
 	}
@@ -78,7 +78,7 @@ public class Symbol {
 	 * 
 	 * @return Current definition
 	 */
-	public Definition getDefinition() {
+	public Declaration getDefinition() {
 		return definition;
 	}
 

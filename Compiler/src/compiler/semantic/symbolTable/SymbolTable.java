@@ -3,6 +3,7 @@ package compiler.semantic.symbolTable;
 import java.util.LinkedList;
 
 import compiler.Symbol;
+import compiler.ast.statement.LocalVariableDeclaration;
 import compiler.ast.type.Type;
 
 public class SymbolTable {
@@ -30,7 +31,7 @@ public class SymbolTable {
 	public int insert(Symbol symbol, Type type) {
 		changeStack.push(new Change(symbol, symbol.getDefinition(), symbol.getDefinitionScope()));
 		int variableNumber = localVariables + 1; // +1 for this pointer
-		symbol.setDefintion(currentScope, new LocalVariableDefinition(symbol, type, variableNumber));
+		symbol.setDefintion(currentScope, new LocalVariableDeclaration(type, symbol, variableNumber));
 		localVariables++;
 		return variableNumber;
 	}

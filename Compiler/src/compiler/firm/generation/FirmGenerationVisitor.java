@@ -6,6 +6,7 @@ import java.util.Map;
 import compiler.ast.Block;
 import compiler.ast.ClassDeclaration;
 import compiler.ast.ClassMember;
+import compiler.ast.Declaration;
 import compiler.ast.FieldDeclaration;
 import compiler.ast.MethodDeclaration;
 import compiler.ast.ParameterDefinition;
@@ -47,8 +48,6 @@ import compiler.ast.type.BasicType;
 import compiler.ast.type.ClassType;
 import compiler.ast.type.Type;
 import compiler.ast.visitor.AstVisitor;
-import compiler.semantic.symbolTable.Definition;
-import compiler.semantic.symbolTable.LocalVariableDefinition;
 import compiler.semantic.symbolTable.PrintMethodDefinition;
 
 import firm.Construction;
@@ -429,9 +428,9 @@ public class FirmGenerationVisitor implements AstVisitor {
 
 		Expression objectNameForFieldAccess = variableAccessExpression.getExpression();
 		if (objectNameForFieldAccess == null) {
-			Definition definition = variableAccessExpression.getDefinition();
+			Declaration definition = variableAccessExpression.getDefinition();
 			if (definition.isLocalVariable()) {
-				variableAccess(variableAccessExpression, (LocalVariableDefinition) definition, assignmentRightSide);
+				variableAccess(variableAccessExpression, (LocalVariableDeclaration) definition, assignmentRightSide);
 			} else {
 				memberAccess(variableAccessExpression, this.className, getThisPointer(), assignmentRightSide);
 			}
@@ -442,7 +441,7 @@ public class FirmGenerationVisitor implements AstVisitor {
 		}
 	}
 
-	private void variableAccess(VariableAccessExpression variableAccessExpression, LocalVariableDefinition definition, Expression assignmentRightSide) {
+	private void variableAccess(VariableAccessExpression variableAccessExpression, LocalVariableDeclaration definition, Expression assignmentRightSide) {
 		int variableNumber = definition.getVariableNumber();
 		methodConstruction.getCurrentMem();
 
@@ -722,15 +721,15 @@ public class FirmGenerationVisitor implements AstVisitor {
 		Expression expression = localVariableDeclaration.getExpression();
 		if (expression != null) {
 			VariableAccessExpression variableAccess = new VariableAccessExpression(null, null, localVariableDeclaration.getIdentifier());
-			variableAccess.setDefinition(localVariableDeclaration.getDefinition());
+			variableAccess.setDefinition(localVariableDeclaration);
 			AssignmentExpression assignment = new AssignmentExpression(null, variableAccess, expression);
 			assignment.accept(this);
 		} else {
-			assignDefaultValue(localVariableDeclaration.getDefinition());
+			assignDefaultValue(localVariableDeclaration);
 		}
 	}
 
-	private void assignDefaultValue(Definition definition) {
+	private void assignDefaultValue(Declaration definition) {
 		Expression expression;
 		switch (definition.getType().getBasicType()) {
 		case INT:
