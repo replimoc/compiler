@@ -120,7 +120,7 @@ public class DeepCheckingVisitor implements AstVisitor {
 
 	private boolean hasType(Type type, AstNode astNode) {
 		return (astNode.getType() == null
-				|| (type.getBasicType() != null && type.getBasicType() != BasicType.INT && type.getBasicType() != BasicType.BOOLEAN
+				|| (!type.is(BasicType.INT) && !type.is(BasicType.BOOLEAN)
 				&& astNode.getType().is(BasicType.NULL))
 				|| astNode.getType().equals(type));
 	}
@@ -167,9 +167,11 @@ public class DeepCheckingVisitor implements AstVisitor {
 		AstNode right = binaryExpression.getOperand2();
 		left.accept(this);
 		right.accept(this);
-		if (left.getType() != null
-				&& right.getType() != null
-				&& !(left.getType().equals(right.getType()) || left.getType().is(BasicType.NULL) || right.getType().is(BasicType.NULL))) {
+		if (!(left.getType() == null
+				|| right.getType() == null
+				|| left.getType().equals(right.getType())
+				|| left.getType().is(BasicType.NULL)
+				|| right.getType().is(BasicType.NULL))) {
 			throwTypeError(binaryExpression);
 		}
 	}
@@ -325,7 +327,7 @@ public class DeepCheckingVisitor implements AstVisitor {
 			}
 
 			// if left expression type is != BasicType.CLASS (e.g. int, boolean, void, array) throw error
-			if (leftExpressionType.getBasicType() != BasicType.CLASS) {
+			if (!leftExpressionType.is(BasicType.CLASS)) {
 				throwNoSuchMemberError(leftExpressionType.getIdentifier(), leftExpressionType.getPosition(),
 						methodInvocationExpression.getMethodIdentifier(), methodInvocationExpression.getPosition());
 				return;
@@ -425,7 +427,7 @@ public class DeepCheckingVisitor implements AstVisitor {
 			}
 
 			// if left expression type is != class (e.g. int, boolean, void) then throw error
-			if (leftExpressionType.getBasicType() != BasicType.CLASS) {
+			if (!leftExpressionType.is(BasicType.CLASS)) {
 				throwNoSuchMemberError(leftExpressionType.getIdentifier(), leftExpressionType.getPosition(),
 						variableAccessExpression.getFieldIdentifier(),
 						variableAccessExpression.getPosition());
@@ -717,7 +719,7 @@ public class DeepCheckingVisitor implements AstVisitor {
 			methodDeclaration.getBlock().accept(this);
 
 			// if method has return type, check if all paths have a return statement
-			if (currentMethodDefinition.getType().getBasicType() != BasicType.VOID) {
+			if (!currentMethodDefinition.getType().is(BasicType.VOID)) {
 				if (!returnOnAllPaths) {
 					exceptions.add(new MissingReturnStatementOnAPathException(methodDeclaration.getPosition(), methodDeclaration.getIdentifier()));
 				}
