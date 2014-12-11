@@ -10,8 +10,6 @@ import firm.BackEdges;
 import firm.Graph;
 import firm.Program;
 import firm.nodes.Node;
-import firm.nodes.Phi;
-import firm.nodes.Proj;
 
 public final class FirmOptimizer {
 	private FirmOptimizer() {
@@ -46,27 +44,7 @@ public final class FirmOptimizer {
 
 			if (node.getPredCount() > 0) {
 				if (target.isRemove() && target.getTargetValue().isConstant()) {
-
-					// nodes that have a phi node as predecessor must only be removed if the phi nodes will be removed
-					boolean remove = true;
-					if (node instanceof Proj) {
-						// div and mod need one extra indirection
-						for (Node pred : node.getPreds()) {
-							for (Node pred2 : pred.getPreds()) {
-								if (pred2 instanceof Phi) {
-									remove = remove && targetValuesMap.get(pred2).isRemove();
-								}
-							}
-						}
-					} else
-						for (Node pred : node.getPreds()) {
-							if (pred instanceof Phi) {
-								remove = remove && targetValuesMap.get(pred).isRemove();
-							}
-						}
-					if (remove) {
-						Graph.exchange(node, graph.newConst(target.getTargetValue()));
-					}
+					Graph.exchange(node, graph.newConst(target.getTargetValue()));
 				}
 			}
 		}

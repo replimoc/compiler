@@ -107,6 +107,89 @@ public class OptimizationVisitor implements NodeVisitor {
 		return targets.get(node);
 	}
 
+	private void biTransferFunction(Node node, TargetValue leftTarget, TargetValue rightTarget, TargetValue newTargetValue) {
+		if (leftTarget.isConstant() && rightTarget.isConstant()) {
+			setTargetValue(node, newTargetValue);
+		} else if (leftTarget.equals(TargetValue.getBad()) || rightTarget.equals(TargetValue.getBad())) {
+			setTargetValue(node, TargetValue.getBad());
+		} else {
+			setTargetValue(node, TargetValue.getUnknown());
+		}
+	}
+
+	private void unaryTransferFunction(Node node, TargetValue newTargetValue) {
+		if (newTargetValue.isConstant()) {
+			setTargetValue(node, newTargetValue);
+		} else if (newTargetValue.equals(TargetValue.getBad())) {
+			setTargetValue(node, TargetValue.getBad());
+		} else {
+			setTargetValue(node, TargetValue.getUnknown());
+		}
+	}
+
+	private void divModTransferFunction(Node node, TargetValue leftTarget, TargetValue rightTarget, TargetValue newTargetValue) {
+		if (leftTarget.isNull()) {
+			specialProjDivModTargets.put(node, new Target(leftTarget));
+		} else if (leftTarget.isConstant() && rightTarget.isConstant()) {
+			specialProjDivModTargets.put(node, new Target(newTargetValue));
+		} else if (leftTarget.equals(TargetValue.getBad()) || rightTarget.equals(TargetValue.getBad())) {
+			specialProjDivModTargets.put(node, new Target(TargetValue.getBad()));
+		} else {
+			specialProjDivModTargets.put(node, new Target(TargetValue.getUnknown()));
+		}
+	}
+
+	private void binaryExpressionCleanup(Node node, Node left, Node right, TargetValue target) {
+		if (target == null || !target.equals(getTargetValue(node))) {
+			for (Edge edge : BackEdges.getOuts(node)) {
+				workNode(edge.node);
+			}
+		} else {
+			// are we finished?
+			if (target.isConstant()) {
+				if (!targets.get(left).isRemove() || !targets.get(right).isRemove()) {
+					setTargetValue(node, target, false);
+				} else {
+					setTargetValue(node, target, true);
+				}
+			}
+		}
+	}
+
+	private void unaryExpressionCleanup(Node node, Node operand, TargetValue target) {
+		if (target == null || !target.equals(getTargetValue(node))) {
+			for (Edge edge : BackEdges.getOuts(node)) {
+				workNode(edge.node);
+			}
+		} else {
+			// are we finished?
+			if (target.isConstant()) {
+				if (!targets.get(operand).isRemove()) {
+					setTargetValue(node, target, false);
+				} else {
+					setTargetValue(node, target, true);
+				}
+			}
+		}
+	}
+
+	private void divModExpressionCleanup(Node node, Node left, Node right, TargetValue target) {
+		if (target == null || !target.equals(getTargetValue(node))) {
+			for (Edge edge : BackEdges.getOuts(node)) {
+				workNode(edge.node);
+			}
+		} else {
+			// are we finished?
+			if (target.isConstant()) {
+				if (!targets.get(left).isRemove() || !targets.get(right).isRemove()) {
+					specialProjDivModTargets.put(node, new Target(target, false));
+				} else {
+					specialProjDivModTargets.put(node, new Target(target, true));
+				}
+			}
+		}
+	}
+
 	@Override
 	public void visit(Add add) {
 		TargetValue target = getTargetValue(add);
@@ -116,20 +199,10 @@ public class OptimizationVisitor implements NodeVisitor {
 		}
 		TargetValue leftTarget = getTargetValue(add.getLeft());
 		TargetValue rightTarget = getTargetValue(add.getRight());
+		TargetValue newTargetValue = (leftTarget.isConstant() && rightTarget.isConstant()) ? leftTarget.add(rightTarget) : TargetValue.getUnknown();
 
-		if (leftTarget.isConstant() && rightTarget.isConstant()) {
-			setTargetValue(add, leftTarget.add(rightTarget));
-		} else if (leftTarget.equals(TargetValue.getBad()) || rightTarget.equals(TargetValue.getBad())) {
-			setTargetValue(add, TargetValue.getBad());
-		} else {
-			setTargetValue(add, TargetValue.getUnknown());
-		}
-
-		if (target == null || !target.equals(getTargetValue(add))) {
-			for (Edge edge : BackEdges.getOuts(add)) {
-				workNode(edge.node);
-			}
-		}
+		biTransferFunction(add, leftTarget, rightTarget, newTargetValue);
+		binaryExpressionCleanup(add, add.getLeft(), add.getRight(), target);
 	}
 
 	@Override
@@ -165,20 +238,10 @@ public class OptimizationVisitor implements NodeVisitor {
 		}
 		TargetValue leftTarget = getTargetValue(and.getLeft());
 		TargetValue rightTarget = getTargetValue(and.getRight());
+		TargetValue newTargetValue = (leftTarget.isConstant() && rightTarget.isConstant()) ? leftTarget.and(rightTarget) : TargetValue.getUnknown();
 
-		if (leftTarget.isConstant() && rightTarget.isConstant()) {
-			setTargetValue(and, leftTarget.and(rightTarget));
-		} else if (leftTarget.equals(TargetValue.getBad()) || rightTarget.equals(TargetValue.getBad())) {
-			setTargetValue(and, TargetValue.getBad(), false);
-		} else {
-			setTargetValue(and, TargetValue.getUnknown(), false);
-		}
-
-		if (target == null || !target.equals(getTargetValue(and))) {
-			for (Edge edge : BackEdges.getOuts(and)) {
-				workNode(edge.node);
-			}
-		}
+		biTransferFunction(and, leftTarget, rightTarget, newTargetValue);
+		binaryExpressionCleanup(and, and.getLeft(), and.getRight(), target);
 	}
 
 	@Override
@@ -264,27 +327,16 @@ public class OptimizationVisitor implements NodeVisitor {
 		Target leftTarget = getTarget(div.getLeft());
 		TargetValue leftTargetValue = leftTarget == null ? TargetValue.getUnknown() : leftTarget.getTargetValue();
 		TargetValue rightTargetValue = getTargetValue(div.getRight());
-
+		TargetValue newTargetValue;
 		if (leftTargetValue.isNull()) {
-			if (leftTarget.isRemove()) {
-				specialProjDivModTargets.put(div, new Target(leftTargetValue, true));
-			} else {
-				specialProjDivModTargets.put(div, new Target(leftTargetValue, false));
-			}
-		} else if (leftTargetValue.isConstant() && rightTargetValue.isConstant()) {
-			specialProjDivModTargets.put(div, new Target(leftTargetValue.div(rightTargetValue)));
-		} else if (leftTargetValue.equals(TargetValue.getBad()) || rightTargetValue.equals(TargetValue.getBad())) {
-			specialProjDivModTargets.put(div, new Target(TargetValue.getBad(), false));
+			newTargetValue = leftTargetValue;
 		} else {
-			specialProjDivModTargets.put(div, new Target(TargetValue.getUnknown(), false));
+			newTargetValue = (leftTargetValue.isConstant() && rightTargetValue.isConstant()) ? leftTargetValue.div(rightTargetValue) : TargetValue
+					.getUnknown();
 		}
 
-		if (target == null || !target.equals(getTargetValue(div))) {
-			for (Edge edge : BackEdges.getOuts(div)) {
-				workNode(edge.node);
-			}
-		}
-
+		divModTransferFunction(div, leftTargetValue, rightTargetValue, newTargetValue);
+		divModExpressionCleanup(div, div.getLeft(), div.getRight(), target);
 	}
 
 	@Override
@@ -350,19 +402,8 @@ public class OptimizationVisitor implements NodeVisitor {
 		}
 		TargetValue newTargetValue = (target == null || !target.isConstant()) ? TargetValue.getUnknown() : target.neg();
 
-		if (newTargetValue.isConstant()) {
-			setTargetValue(minus, newTargetValue);
-		} else if (newTargetValue.equals(TargetValue.getBad())) {
-			setTargetValue(minus, TargetValue.getBad());
-		} else {
-			setTargetValue(minus, TargetValue.getUnknown());
-		}
-
-		if (target == null || !target.equals(getTargetValue(minus))) {
-			for (Edge edge : BackEdges.getOuts(minus)) {
-				workNode(edge.node);
-			}
-		}
+		unaryTransferFunction(minus, newTargetValue);
+		unaryExpressionCleanup(minus, minus.getOp(), target);
 	}
 
 	@Override
@@ -375,27 +416,17 @@ public class OptimizationVisitor implements NodeVisitor {
 		}
 		Target leftTarget = getTarget(mod.getLeft());
 		TargetValue leftTargetValue = leftTarget == null ? TargetValue.getUnknown() : leftTarget.getTargetValue();
-		TargetValue rightTarget = getTargetValue(mod.getRight());
-
+		TargetValue rightTargetValue = getTargetValue(mod.getRight());
+		TargetValue newTargetValue;
 		if (leftTargetValue.isNull()) {
-			if (leftTarget.isRemove()) {
-				specialProjDivModTargets.put(mod, new Target(leftTargetValue, true));
-			} else {
-				specialProjDivModTargets.put(mod, new Target(leftTargetValue, false));
-			}
-		} else if (leftTargetValue.isConstant() && rightTarget.isConstant()) {
-			specialProjDivModTargets.put(mod, new Target(leftTargetValue.mod(rightTarget)));
-		} else if (leftTargetValue.equals(TargetValue.getBad()) || rightTarget.equals(TargetValue.getBad())) {
-			specialProjDivModTargets.put(mod, new Target(TargetValue.getBad(), false));
+			newTargetValue = leftTargetValue;
 		} else {
-			specialProjDivModTargets.put(mod, new Target(TargetValue.getUnknown(), false));
+			newTargetValue = (leftTargetValue.isConstant() && rightTargetValue.isConstant()) ? leftTargetValue.mod(rightTargetValue) : TargetValue
+					.getUnknown();
 		}
 
-		if (target == null || !target.equals(getTargetValue(mod))) {
-			for (Edge edge : BackEdges.getOuts(mod)) {
-				workNode(edge.node);
-			}
-		}
+		divModTransferFunction(mod, leftTargetValue, rightTargetValue, newTargetValue);
+		divModExpressionCleanup(mod, mod.getLeft(), mod.getRight(), target);
 	}
 
 	@Override
@@ -407,20 +438,10 @@ public class OptimizationVisitor implements NodeVisitor {
 		}
 		TargetValue leftTarget = getTargetValue(mul.getLeft());
 		TargetValue rightTarget = getTargetValue(mul.getRight());
+		TargetValue newTargetValue = (leftTarget.isConstant() && rightTarget.isConstant()) ? leftTarget.mul(rightTarget) : TargetValue.getUnknown();
 
-		if (leftTarget.isConstant() && rightTarget.isConstant()) {
-			setTargetValue(mul, leftTarget.mul(rightTarget));
-		} else if (leftTarget.equals(TargetValue.getBad()) || rightTarget.equals(TargetValue.getBad())) {
-			setTargetValue(mul, TargetValue.getBad());
-		} else {
-			setTargetValue(mul, TargetValue.getUnknown());
-		}
-
-		if (target == null || !target.equals(getTargetValue(mul))) {
-			for (Edge edge : BackEdges.getOuts(mul)) {
-				workNode(edge.node);
-			}
-		}
+		biTransferFunction(mul, leftTarget, rightTarget, newTargetValue);
+		binaryExpressionCleanup(mul, mul.getLeft(), mul.getRight(), target);
 	}
 
 	@Override
@@ -450,19 +471,8 @@ public class OptimizationVisitor implements NodeVisitor {
 		}
 		TargetValue newTargetValue = (target == null || !target.isConstant()) ? TargetValue.getUnknown() : target.not();
 
-		if (newTargetValue.isConstant()) {
-			setTargetValue(not, newTargetValue);
-		} else if (newTargetValue.equals(TargetValue.getBad())) {
-			setTargetValue(not, TargetValue.getBad());
-		} else {
-			setTargetValue(not, TargetValue.getUnknown());
-		}
-
-		if (target == null || !target.equals(getTargetValue(not))) {
-			for (Edge edge : BackEdges.getOuts(not)) {
-				workNode(edge.node);
-			}
-		}
+		unaryTransferFunction(not, newTargetValue);
+		unaryExpressionCleanup(not, not.getOp(), target);
 	}
 
 	@Override
@@ -480,20 +490,10 @@ public class OptimizationVisitor implements NodeVisitor {
 		}
 		TargetValue leftTarget = getTargetValue(or.getLeft());
 		TargetValue rightTarget = getTargetValue(or.getRight());
+		TargetValue newTargetValue = (leftTarget.isConstant() && rightTarget.isConstant()) ? leftTarget.or(rightTarget) : TargetValue.getUnknown();
 
-		if (leftTarget.isConstant() && rightTarget.isConstant()) {
-			setTargetValue(or, leftTarget.or(rightTarget));
-		} else if (leftTarget.equals(TargetValue.getBad()) || rightTarget.equals(TargetValue.getBad())) {
-			setTargetValue(or, TargetValue.getBad());
-		} else {
-			setTargetValue(or, TargetValue.getUnknown());
-		}
-
-		if (target == null || !target.equals(getTargetValue(or))) {
-			for (Edge edge : BackEdges.getOuts(or)) {
-				workNode(edge.node);
-			}
-		}
+		biTransferFunction(or, leftTarget, rightTarget, newTargetValue);
+		binaryExpressionCleanup(or, or.getLeft(), or.getRight(), target);
 	}
 
 	@Override
@@ -513,6 +513,7 @@ public class OptimizationVisitor implements NodeVisitor {
 				if (predTarget.isRemove() && tmpTarget.isRemove()) {
 					setTargetValue(phi, predTargetValue, true);
 				} else {
+					// only propagate the temporary constant
 					setTargetValue(phi, predTargetValue, false);
 				}
 			} else if (predTargetValue.equals(TargetValue.getBad()) || tmpTargetValue.equals(TargetValue.getBad())
@@ -531,6 +532,19 @@ public class OptimizationVisitor implements NodeVisitor {
 			for (Edge edge : BackEdges.getOuts(phi)) {
 				workNode(edge.node);
 			}
+		} else {
+			// are we finished?
+			if (target.isConstant()) {
+				boolean remove = true;
+				for (int i = 0; i < phi.getPredCount(); i++) {
+					remove = remove && targets.get(phi.getPred(i)).isRemove();
+				}
+				if (!remove) {
+					setTargetValue(phi, target, false);
+				} else {
+					setTargetValue(phi, target, true);
+				}
+			}
 		}
 	}
 
@@ -548,8 +562,10 @@ public class OptimizationVisitor implements NodeVisitor {
 				Target tar = specialProjDivModTargets.get(proj.getPred(0));
 				if (tar != null) {
 					TargetValue tarVal = tar.getTargetValue();
-					if (tarVal != null && tar.isRemove()) {
+					if (tarVal != null && tar.isRemove() && !target.equals(tarVal)) {
 						setTargetValue(proj, tarVal);
+						// we need to visit this node again to check if the div/mod will be removed
+						workNode(proj);
 					}
 				}
 			}
@@ -558,6 +574,27 @@ public class OptimizationVisitor implements NodeVisitor {
 		if (target == null || !target.equals(getTargetValue(proj))) {
 			for (Edge edge : BackEdges.getOuts(proj)) {
 				workNode(edge.node);
+			}
+		} else {
+			// are we finished?
+			if (target.isConstant()) {
+				boolean remove = true;
+				for (Node pred : proj.getPreds()) {
+					for (Node pred2 : pred.getPreds()) {
+						Target tar = specialProjDivModTargets.get(pred2);
+						if (tar != null) {
+							remove = remove && tar.isRemove();
+						} else {
+							tar = targets.get(pred2);
+							if (tar != null) {
+								remove = remove && tar.isRemove();
+							}
+						}
+					}
+				}
+				if (!remove) {
+					setTargetValue(proj, target, false);
+				}
 			}
 		}
 	}
@@ -589,20 +626,10 @@ public class OptimizationVisitor implements NodeVisitor {
 		}
 		TargetValue leftTarget = getTargetValue(shl.getLeft());
 		TargetValue rightTarget = getTargetValue(shl.getRight());
+		TargetValue newTargetValue = (leftTarget.isConstant() && rightTarget.isConstant()) ? leftTarget.shl(rightTarget) : TargetValue.getUnknown();
 
-		if (leftTarget.isConstant() && rightTarget.isConstant()) {
-			setTargetValue(shl, leftTarget.shl(rightTarget));
-		} else if (leftTarget.equals(TargetValue.getBad()) || rightTarget.equals(TargetValue.getBad())) {
-			setTargetValue(shl, TargetValue.getBad());
-		} else {
-			setTargetValue(shl, TargetValue.getUnknown());
-		}
-
-		if (target == null || !target.equals(getTargetValue(shl))) {
-			for (Edge edge : BackEdges.getOuts(shl)) {
-				workNode(edge.node);
-			}
-		}
+		biTransferFunction(shl, leftTarget, rightTarget, newTargetValue);
+		binaryExpressionCleanup(shl, shl.getLeft(), shl.getRight(), target);
 	}
 
 	@Override
@@ -614,20 +641,10 @@ public class OptimizationVisitor implements NodeVisitor {
 		}
 		TargetValue leftTarget = getTargetValue(shr.getLeft());
 		TargetValue rightTarget = getTargetValue(shr.getRight());
+		TargetValue newTargetValue = (leftTarget.isConstant() && rightTarget.isConstant()) ? leftTarget.shr(rightTarget) : TargetValue.getUnknown();
 
-		if (leftTarget.isConstant() && rightTarget.isConstant()) {
-			setTargetValue(shr, leftTarget.shr(rightTarget));
-		} else if (leftTarget.equals(TargetValue.getBad()) || rightTarget.equals(TargetValue.getBad())) {
-			setTargetValue(shr, TargetValue.getBad());
-		} else {
-			setTargetValue(shr, TargetValue.getUnknown());
-		}
-
-		if (target == null || !target.equals(getTargetValue(shr))) {
-			for (Edge edge : BackEdges.getOuts(shr)) {
-				workNode(edge.node);
-			}
-		}
+		biTransferFunction(shr, leftTarget, rightTarget, newTargetValue);
+		binaryExpressionCleanup(shr, shr.getLeft(), shr.getRight(), target);
 	}
 
 	@Override
@@ -639,20 +656,10 @@ public class OptimizationVisitor implements NodeVisitor {
 		}
 		TargetValue leftTarget = getTargetValue(shrs.getLeft());
 		TargetValue rightTarget = getTargetValue(shrs.getRight());
+		TargetValue newTargetValue = (leftTarget.isConstant() && rightTarget.isConstant()) ? leftTarget.shrs(rightTarget) : TargetValue.getUnknown();
 
-		if (leftTarget.isConstant() && rightTarget.isConstant()) {
-			setTargetValue(shrs, leftTarget.shrs(rightTarget));
-		} else if (leftTarget.equals(TargetValue.getBad()) || rightTarget.equals(TargetValue.getBad())) {
-			setTargetValue(shrs, TargetValue.getBad());
-		} else {
-			setTargetValue(shrs, TargetValue.getUnknown());
-		}
-
-		if (target == null || !target.equals(getTargetValue(shrs))) {
-			for (Edge edge : BackEdges.getOuts(shrs)) {
-				workNode(edge.node);
-			}
-		}
+		biTransferFunction(shrs, leftTarget, rightTarget, newTargetValue);
+		binaryExpressionCleanup(shrs, shrs.getLeft(), shrs.getRight(), target);
 	}
 
 	@Override
@@ -682,20 +689,11 @@ public class OptimizationVisitor implements NodeVisitor {
 		}
 		TargetValue leftTarget = getTargetValue(sub.getLeft());
 		TargetValue rightTarget = getTargetValue(sub.getRight());
+		TargetValue newTargetValue = (leftTarget.isConstant() && rightTarget.isConstant()) ? leftTarget.sub(rightTarget, sub.getMode()) : TargetValue
+				.getUnknown();
 
-		if (leftTarget.isConstant() && rightTarget.isConstant()) {
-			setTargetValue(sub, leftTarget.sub(rightTarget, sub.getMode()));
-		} else if (leftTarget.equals(TargetValue.getBad()) || rightTarget.equals(TargetValue.getBad())) {
-			setTargetValue(sub, TargetValue.getBad());
-		} else {
-			setTargetValue(sub, TargetValue.getUnknown());
-		}
-
-		if (target == null || !target.equals(getTargetValue(sub))) {
-			for (Edge edge : BackEdges.getOuts(sub)) {
-				workNode(edge.node);
-			}
-		}
+		biTransferFunction(sub, leftTarget, rightTarget, newTargetValue);
+		binaryExpressionCleanup(sub, sub.getLeft(), sub.getRight(), target);
 	}
 
 	@Override
