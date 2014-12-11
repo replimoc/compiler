@@ -100,7 +100,7 @@ public class OptimizationVisitor implements NodeVisitor {
 	}
 
 	private TargetValue getTargetValue(Node node) {
-		return targets.get(node) == null ? null : targets.get(node).getTargetValue();
+		return targets.get(node) == null ? TargetValue.getUnknown() : targets.get(node).getTargetValue();
 	}
 
 	private Target getTarget(Node node) {
@@ -114,8 +114,8 @@ public class OptimizationVisitor implements NodeVisitor {
 			// no const
 			return;
 		}
-		TargetValue leftTarget = getTargetValue(add.getLeft()) == null ? TargetValue.getUnknown() : getTargetValue(add.getLeft());
-		TargetValue rightTarget = getTargetValue(add.getRight()) == null ? TargetValue.getUnknown() : getTargetValue(add.getRight());
+		TargetValue leftTarget = getTargetValue(add.getLeft());
+		TargetValue rightTarget = getTargetValue(add.getRight());
 
 		if (leftTarget.isConstant() && rightTarget.isConstant()) {
 			setTargetValue(add, leftTarget.add(rightTarget));
@@ -163,8 +163,8 @@ public class OptimizationVisitor implements NodeVisitor {
 			// no const
 			return;
 		}
-		TargetValue leftTarget = getTargetValue(and.getLeft()) == null ? TargetValue.getUnknown() : getTargetValue(and.getLeft());
-		TargetValue rightTarget = getTargetValue(and.getRight()) == null ? TargetValue.getUnknown() : getTargetValue(and.getRight());
+		TargetValue leftTarget = getTargetValue(and.getLeft());
+		TargetValue rightTarget = getTargetValue(and.getRight());
 
 		if (leftTarget.isConstant() && rightTarget.isConstant()) {
 			setTargetValue(and, leftTarget.and(rightTarget));
@@ -262,9 +262,8 @@ public class OptimizationVisitor implements NodeVisitor {
 			return;
 		}
 		Target leftTarget = getTarget(div.getLeft());
-		TargetValue leftTargetValue = (leftTarget == null || leftTarget.getTargetValue() == null) ? TargetValue.getUnknown() : leftTarget
-				.getTargetValue();
-		TargetValue rightTargetValue = getTargetValue(div.getRight()) == null ? TargetValue.getUnknown() : getTargetValue(div.getRight());
+		TargetValue leftTargetValue = leftTarget == null ? TargetValue.getUnknown() : leftTarget.getTargetValue();
+		TargetValue rightTargetValue = getTargetValue(div.getRight());
 
 		if (leftTargetValue.isNull()) {
 			if (leftTarget.isRemove()) {
@@ -375,9 +374,8 @@ public class OptimizationVisitor implements NodeVisitor {
 			return;
 		}
 		Target leftTarget = getTarget(mod.getLeft());
-		TargetValue leftTargetValue = (leftTarget == null || leftTarget.getTargetValue() == null) ? TargetValue.getUnknown() : leftTarget
-				.getTargetValue();
-		TargetValue rightTarget = getTargetValue(mod.getRight()) == null ? TargetValue.getUnknown() : getTargetValue(mod.getRight());
+		TargetValue leftTargetValue = leftTarget == null ? TargetValue.getUnknown() : leftTarget.getTargetValue();
+		TargetValue rightTarget = getTargetValue(mod.getRight());
 
 		if (leftTargetValue.isNull()) {
 			if (leftTarget.isRemove()) {
@@ -407,8 +405,8 @@ public class OptimizationVisitor implements NodeVisitor {
 			// no const
 			return;
 		}
-		TargetValue leftTarget = getTargetValue(mul.getLeft()) == null ? TargetValue.getUnknown() : getTargetValue(mul.getLeft());
-		TargetValue rightTarget = getTargetValue(mul.getRight()) == null ? TargetValue.getUnknown() : getTargetValue(mul.getRight());
+		TargetValue leftTarget = getTargetValue(mul.getLeft());
+		TargetValue rightTarget = getTargetValue(mul.getRight());
 
 		if (leftTarget.isConstant() && rightTarget.isConstant()) {
 			setTargetValue(mul, leftTarget.mul(rightTarget));
@@ -480,8 +478,8 @@ public class OptimizationVisitor implements NodeVisitor {
 			// no const
 			return;
 		}
-		TargetValue leftTarget = getTargetValue(or.getLeft()) == null ? TargetValue.getUnknown() : getTargetValue(or.getLeft());
-		TargetValue rightTarget = getTargetValue(or.getRight()) == null ? TargetValue.getUnknown() : getTargetValue(or.getRight());
+		TargetValue leftTarget = getTargetValue(or.getLeft());
+		TargetValue rightTarget = getTargetValue(or.getRight());
 
 		if (leftTarget.isConstant() && rightTarget.isConstant()) {
 			setTargetValue(or, leftTarget.or(rightTarget));
@@ -507,12 +505,10 @@ public class OptimizationVisitor implements NodeVisitor {
 		}
 
 		Target predTarget = getTarget(phi.getPred(0));
-		TargetValue predTargetValue = (predTarget == null || predTarget.getTargetValue() == null) ? TargetValue.getUnknown() : predTarget
-				.getTargetValue();
+		TargetValue predTargetValue = predTarget == null ? TargetValue.getUnknown() : predTarget.getTargetValue();
 		for (int i = 1; i < phi.getPredCount(); i++) {
 			Target tmpTarget = getTarget(phi.getPred(i));
-			TargetValue tmpTargetValue = (tmpTarget == null || tmpTarget.getTargetValue() == null) ? TargetValue.getUnknown() : tmpTarget
-					.getTargetValue();
+			TargetValue tmpTargetValue = tmpTarget == null ? TargetValue.getUnknown() : tmpTarget.getTargetValue();
 			if (predTargetValue.isConstant() && tmpTargetValue.isConstant() && predTargetValue.equals(tmpTargetValue)) {
 				if (predTarget.isRemove() && tmpTarget.isRemove()) {
 					setTargetValue(phi, predTargetValue, true);
@@ -591,8 +587,8 @@ public class OptimizationVisitor implements NodeVisitor {
 			// no const
 			return;
 		}
-		TargetValue leftTarget = getTargetValue(shl.getLeft()) == null ? TargetValue.getUnknown() : getTargetValue(shl.getLeft());
-		TargetValue rightTarget = getTargetValue(shl.getRight()) == null ? TargetValue.getUnknown() : getTargetValue(shl.getRight());
+		TargetValue leftTarget = getTargetValue(shl.getLeft());
+		TargetValue rightTarget = getTargetValue(shl.getRight());
 
 		if (leftTarget.isConstant() && rightTarget.isConstant()) {
 			setTargetValue(shl, leftTarget.shl(rightTarget));
@@ -616,8 +612,8 @@ public class OptimizationVisitor implements NodeVisitor {
 			// no const
 			return;
 		}
-		TargetValue leftTarget = getTargetValue(shr.getLeft()) == null ? TargetValue.getUnknown() : getTargetValue(shr.getLeft());
-		TargetValue rightTarget = getTargetValue(shr.getRight()) == null ? TargetValue.getUnknown() : getTargetValue(shr.getRight());
+		TargetValue leftTarget = getTargetValue(shr.getLeft());
+		TargetValue rightTarget = getTargetValue(shr.getRight());
 
 		if (leftTarget.isConstant() && rightTarget.isConstant()) {
 			setTargetValue(shr, leftTarget.shr(rightTarget));
@@ -641,8 +637,8 @@ public class OptimizationVisitor implements NodeVisitor {
 			// no const
 			return;
 		}
-		TargetValue leftTarget = getTargetValue(shrs.getLeft()) == null ? TargetValue.getUnknown() : getTargetValue(shrs.getLeft());
-		TargetValue rightTarget = getTargetValue(shrs.getRight()) == null ? TargetValue.getUnknown() : getTargetValue(shrs.getRight());
+		TargetValue leftTarget = getTargetValue(shrs.getLeft());
+		TargetValue rightTarget = getTargetValue(shrs.getRight());
 
 		if (leftTarget.isConstant() && rightTarget.isConstant()) {
 			setTargetValue(shrs, leftTarget.shrs(rightTarget));
@@ -684,15 +680,15 @@ public class OptimizationVisitor implements NodeVisitor {
 			// no const
 			return;
 		}
-		TargetValue leftTarget = getTargetValue(sub.getLeft()) == null ? TargetValue.getUnknown() : getTargetValue(sub.getLeft());
-		TargetValue rightTarget = getTargetValue(sub.getRight()) == null ? TargetValue.getUnknown() : getTargetValue(sub.getRight());
+		TargetValue leftTarget = getTargetValue(sub.getLeft());
+		TargetValue rightTarget = getTargetValue(sub.getRight());
 
 		if (leftTarget.isConstant() && rightTarget.isConstant()) {
 			setTargetValue(sub, leftTarget.sub(rightTarget, sub.getMode()));
 		} else if (leftTarget.equals(TargetValue.getBad()) || rightTarget.equals(TargetValue.getBad())) {
 			setTargetValue(sub, TargetValue.getBad());
 		} else {
-			setTargetValue(sub, TargetValue.getBad());
+			setTargetValue(sub, TargetValue.getUnknown());
 		}
 
 		if (target == null || !target.equals(getTargetValue(sub))) {
