@@ -1,7 +1,5 @@
 package compiler.utils;
 
-import static org.junit.Assert.assertEquals;
-
 import java.io.IOException;
 import java.nio.file.Paths;
 import java.util.ArrayList;
@@ -42,9 +40,9 @@ public class FixedTokensSupplierTest {
 			Token actualLookAhead2 = fixedTokenSupplier.getLookAhead();
 			Token actualNext = fixedTokenSupplier.getNextToken();
 
-			assertEquals(expectedLookAhead, actualLookAhead);
-			assertEquals(expectedLookAhead2, actualLookAhead2);
-			assertEquals(expectedNext, actualNext);
+			TestUtils.assertTokenEquals(expectedLookAhead, actualLookAhead);
+			TestUtils.assertTokenEquals(expectedLookAhead2, actualLookAhead2);
+			TestUtils.assertTokenEquals(expectedNext, actualNext);
 		} while (expectedNext.getType() != TokenType.EOF);
 	}
 }

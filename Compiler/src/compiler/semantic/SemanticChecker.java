@@ -11,6 +11,7 @@ import compiler.ast.FieldDeclaration;
 import compiler.ast.MethodDeclaration;
 import compiler.ast.ParameterDefinition;
 import compiler.ast.PrintMethodDeclaration;
+import compiler.ast.SystemFieldDeclaration;
 import compiler.ast.type.BasicType;
 import compiler.ast.type.ClassType;
 import compiler.ast.type.Type;
@@ -31,14 +32,14 @@ public final class SemanticChecker {
 		List<SemanticAnalysisException> exceptions = preAnalysisVisitor.getExceptions();
 
 		// fill System.out.println: if System class isn't present
-		Symbol systemSymbol = getSymbol(stringTable, "System", TokenType.CLASS);
+		Symbol systemSymbol = getSymbol(stringTable, "System");
 		FieldDeclaration systemDefinition = null;
 
 		// create System class if 'System' is already defined
 		if (classScopes.containsKey(systemSymbol)) {
 			int systemSymbolNum = 0;
 			do {
-				systemSymbol = getSymbol(stringTable, "System" + systemSymbolNum, TokenType.CLASS);
+				systemSymbol = getSymbol(stringTable, "System" + systemSymbolNum);
 			} while (classScopes.containsKey(systemSymbol));
 		}
 
@@ -47,23 +48,23 @@ public final class SemanticChecker {
 
 		Symbol printStream;
 		do {
-			printStream = getSymbol(stringTable, "PrintStream" + printStreamNum, TokenType.CLASS);
+			printStream = getSymbol(stringTable, "PrintStream" + printStreamNum);
 		} while (classScopes.containsKey(printStream));
 
-		FieldDeclaration printStreamDefinition = new FieldDeclaration(new ClassType(new Position(-1, -1), printStream), printStream);
+		FieldDeclaration printStreamDefinition = new SystemFieldDeclaration(new ClassType(new Position(-1, -1), printStream), printStream);
 
 		HashMap<Symbol, MethodDeclaration> psMethods = new HashMap<Symbol, MethodDeclaration>();
-		Symbol printLineSymbol = getSymbol(stringTable, "println", TokenType.IDENTIFIER);
+		Symbol printLineSymbol = getSymbol(stringTable, "println");
 		MethodDeclaration printLineMethod = new PrintMethodDeclaration(null, printLineSymbol, new Type(null, BasicType.VOID));
-		printLineMethod.addParameter(new ParameterDefinition(new Type(null, BasicType.INT), getSymbol(stringTable, "arg", TokenType.IDENTIFIER)));
+		printLineMethod.addParameter(new ParameterDefinition(new Type(null, BasicType.INT), getSymbol(stringTable, "arg")));
 		psMethods.put(printLineSymbol, printLineMethod);
 		ClassScope printStreamScope = new ClassScope(new HashMap<Symbol, Declaration>(), psMethods);
 		classScopes.put(printStream, printStreamScope);
 
-		systemDefinition = new FieldDeclaration(new ClassType(null, systemSymbol), systemSymbol);
+		systemDefinition = new SystemFieldDeclaration(new ClassType(null, systemSymbol), systemSymbol);
 		systemSymbol.setDefintion(new Scope(null, 0), systemDefinition);
 		HashMap<Symbol, Declaration> fields = new HashMap<Symbol, Declaration>();
-		fields.put(getSymbol(stringTable, "out", TokenType.IDENTIFIER), printStreamDefinition);
+		fields.put(getSymbol(stringTable, "out"), printStreamDefinition);
 		HashMap<Symbol, MethodDeclaration> methods = new HashMap<Symbol, MethodDeclaration>();
 		ClassScope systemClassScope = new ClassScope(fields, methods);
 		classScopes.put(systemSymbol, systemClassScope);
@@ -76,7 +77,7 @@ public final class SemanticChecker {
 		return new SemanticCheckResults(exceptions, classScopes);
 	}
 
-	private static Symbol getSymbol(StringTable stringTable, String name, TokenType type) {
-		return new Symbol(name);
+	private static Symbol getSymbol(StringTable stringTable, String name) {
+		return stringTable.insert(name, TokenType.IDENTIFIER).getSymbol();
 	}
 }

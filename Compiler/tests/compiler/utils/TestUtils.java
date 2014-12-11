@@ -18,7 +18,9 @@ import org.junit.Assert;
 import org.junit.Ignore;
 
 import compiler.StringTable;
+import compiler.Symbol;
 import compiler.lexer.Lexer;
+import compiler.lexer.Token;
 import compiler.lexer.TokenType;
 import compiler.main.CompilerApp;
 import compiler.parser.Parser;
@@ -144,5 +146,21 @@ public class TestUtils {
 		output.close();
 		output = null;
 		file = null;
+	}
+
+	public static void assertTokenEquals(Token token1, Token token2) {
+		assertEquals(token1.getPosition(), token2.getPosition());
+		assertEquals(token1.getType(), token2.getType());
+		assertSymbolEquals(token1.getSymbol(), token2.getSymbol());
+	}
+
+	public static void assertSymbolEquals(Symbol symbol1, Symbol symbol2) {
+		String value1 = null;
+		String value2 = null;
+		if (symbol1 != null)
+			value1 = symbol1.getValue();
+		if (symbol2 != null)
+			value2 = symbol2.getValue();
+		assertEquals(value1, value2);
 	}
 }

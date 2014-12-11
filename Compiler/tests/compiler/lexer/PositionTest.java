@@ -1,13 +1,9 @@
 package compiler.lexer;
 
 import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotEquals;
-import static org.junit.Assert.assertTrue;
 
 import org.junit.Test;
-
-import compiler.Symbol;
 
 public class PositionTest {
 
@@ -34,16 +30,5 @@ public class PositionTest {
 		assertNotEquals(p11, p2);
 		assertNotEquals(p2, p3);
 		assertNotEquals(p2, p4);
-	}
-
-	@Test
-	public void testEqualsCornerCases() {
-		Position p = new Position(1, 2);
-
-		assertFalse(p.equals(null));
-		assertFalse(p.equals("test"));
-		assertFalse(p.equals(new Symbol(null)));
-		assertTrue(new Symbol(null).equals(new Symbol(null)));
-		assertFalse(new Symbol(null).equals(p));
 	}
 }
