@@ -4,9 +4,11 @@ import java.util.HashMap;
 import java.util.LinkedList;
 import java.util.Map.Entry;
 
+import compiler.firm.optimization.OptimizationVisitor.Target;
+
+import firm.BackEdges;
 import firm.Graph;
 import firm.Program;
-import firm.TargetValue;
 import firm.nodes.Node;
 
 public final class FirmOptimizer {
@@ -18,9 +20,11 @@ public final class FirmOptimizer {
 			LinkedList<Node> workList = new LinkedList<>();
 
 			OptimizationVisitor visitor = new OptimizationVisitor(workList);
-			graph.walkTopological(visitor);
 
+			BackEdges.enable(graph);
+			graph.walkTopological(visitor);
 			workList(workList, visitor);
+			BackEdges.disable(graph);
 
 			replaceNodesWithTargets(graph, visitor.getTargetValues());
 		}
@@ -33,14 +37,14 @@ public final class FirmOptimizer {
 		}
 	}
 
-	private static void replaceNodesWithTargets(Graph graph, HashMap<Node, TargetValue> targetValuesMap) {
-		for (Entry<Node, TargetValue> targetEntry : targetValuesMap.entrySet()) {
+	private static void replaceNodesWithTargets(Graph graph, HashMap<Node, Target> targetValuesMap) {
+		for (Entry<Node, Target> targetEntry : targetValuesMap.entrySet()) {
 			Node node = targetEntry.getKey();
-			TargetValue targetValue = targetEntry.getValue();
+			Target target = targetEntry.getValue();
 
 			if (node.getPredCount() > 0) {
-				if (targetValue.isConstant()) {
-					Graph.exchange(node, graph.newConst(targetValue));
+				if (target.isRemove() && target.getTargetValue().isConstant()) {
+					Graph.exchange(node, graph.newConst(target.getTargetValue()));
 				}
 			}
 		}
