@@ -9,8 +9,8 @@ import compiler.ast.ClassMember;
 import compiler.ast.Declaration;
 import compiler.ast.FieldDeclaration;
 import compiler.ast.MethodDeclaration;
-import compiler.ast.ParameterDefinition;
 import compiler.ast.NativeMethodDeclaration;
+import compiler.ast.ParameterDefinition;
 import compiler.ast.StaticMethodDeclaration;
 import compiler.ast.statement.ArrayAccessExpression;
 import compiler.ast.statement.BooleanConstantExpression;
@@ -312,62 +312,33 @@ public class FirmGenerationVisitor implements AstVisitor {
 
 	@Override
 	public void visit(MethodInvocationExpression methodInvocationExpression) {
-		MethodCallInformation methodCallInformation = new MethodCallInformation();
-
-		// special case - System.out.println which is PrintStream::println()
-		if (methodInvocationExpression.getMethodDefinition() instanceof NativeMethodDeclaration) {
-			methodCallInformation = new PrintMethodCallInformation();
-		}
-
-		methodCallInformation.generate(methodInvocationExpression);
-		methodInvocationExpression.setFirmNode(callMethod(methodCallInformation));
-	}
-
-	private class MethodCallInformation {
 		Node[] parameterNodes;
 		Entity method;
 
-		public void generate(MethodInvocationExpression methodInvocationExpression) {
-			Node methodObject;
+		Node methodObject;
 
-			// Generate method name
-			Expression methodExpression = methodInvocationExpression.getMethodExpression();
-			if (methodExpression != null) {
-				methodExpression.accept(FirmGenerationVisitor.this);
-
-				methodObject = methodExpression.getFirmNode();
-			} else {
-				methodObject = getThisPointer();
-			}
-			method = hierarchy.getEntity(methodInvocationExpression.getMethodDefinition());
-
-			// Generate parameter list
-			Expression[] parameters = methodInvocationExpression.getParameters();
-			parameterNodes = new Node[parameters.length + 1];
-			parameterNodes[0] = methodObject;
-
-			for (int j = 0; j < parameters.length; j++) {
-				parameterNodes[j + 1] = getNodeForExpression(parameters[j]);
-			}
+		// Generate method name
+		Expression methodExpression = methodInvocationExpression.getMethodExpression();
+		if (methodExpression != null && !(methodInvocationExpression.getMethodDefinition() instanceof NativeMethodDeclaration)) {
+			methodExpression.accept(FirmGenerationVisitor.this);
+			methodObject = methodExpression.getFirmNode();
+		} else {
+			methodObject = getThisPointer();
 		}
-	}
+		method = hierarchy.getEntity(methodInvocationExpression.getMethodDefinition());
 
-	private class PrintMethodCallInformation extends MethodCallInformation {
-		@Override
-		public void generate(MethodInvocationExpression methodInvocationExpression) {
-			Expression parameter = methodInvocationExpression.getParameters()[0];
-			parameter.accept(FirmGenerationVisitor.this);
-			parameterNodes = new Node[] { parameter.getFirmNode() };
-			method = hierarchy.getPrintInt();
+		// Generate parameter list
+		Expression[] parameters = methodInvocationExpression.getParameters();
+		parameterNodes = new Node[parameters.length + 1];
+		parameterNodes[0] = methodObject;
+
+		for (int j = 0; j < parameters.length; j++) {
+			parameterNodes[j + 1] = getNodeForExpression(parameters[j]);
 		}
-	}
 
-	private Node callMethod(MethodCallInformation info) {
-		MethodType firmMethodType = (MethodType) info.method.getType();
-
-		Node addressOfMethod = methodConstruction.newAddress(info.method);
-
-		return callMethod(addressOfMethod, info.parameterNodes, firmMethodType);
+		Node addressOfMethod = methodConstruction.newAddress(method);
+		MethodType firmMethodType = (MethodType) method.getType();
+		methodInvocationExpression.setFirmNode(callMethod(addressOfMethod, parameterNodes, firmMethodType));
 	}
 
 	private Node callMethod(Node addressOfMethod, Node[] parameterNodes, MethodType firmMethodType) {

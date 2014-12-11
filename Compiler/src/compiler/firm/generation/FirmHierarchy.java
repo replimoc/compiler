@@ -28,7 +28,6 @@ public class FirmHierarchy {
 	private final Mode modeBoolean = Mode.getBu(); // unsigned 8 bit for boolean
 	private final Mode modeReference = Mode.createReferenceMode("P64", Mode.Arithmetic.TwosComplement, 64, 64); // 64 bit pointer
 
-	private final Entity printInt;
 	private final Entity calloc;
 
 	private final HashMap<String, ClassWrapper> definedClasses = new HashMap<>();
@@ -48,10 +47,6 @@ public class FirmHierarchy {
 		Mode.setDefaultModeP(getModeReference());
 
 		// create library function(s)
-		// void print_int(int);
-		MethodType printIntType = new MethodType(new firm.Type[] { new PrimitiveType(getModeInt()) }, new firm.Type[] {});
-		this.printInt = new Entity(firm.Program.getGlobalType(), "print_int", printIntType);
-
 		// void* calloc_proxy (size_t num, size_t size);
 		MethodType callocType = new MethodType(new firm.Type[] { new PrimitiveType(getModeInt()), new PrimitiveType(getModeInt()) },
 				new firm.Type[] { new PrimitiveType(getModeReference()) });
@@ -163,10 +158,6 @@ public class FirmHierarchy {
 		}
 
 		return firmType;
-	}
-
-	public Entity getPrintInt() {
-		return printInt;
 	}
 
 	public Entity getCalloc() {

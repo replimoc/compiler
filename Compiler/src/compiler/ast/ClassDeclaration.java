@@ -9,6 +9,7 @@ import compiler.ast.visitor.AstVisitor;
 import compiler.lexer.Position;
 
 public class ClassDeclaration extends Declaration implements Comparable<ClassDeclaration> {
+	private static final String MEMBER_TYPE = "c";
 	private final List<ClassMember> members = new ArrayList<ClassMember>();
 
 	public ClassDeclaration(Position position, Symbol identifier) {
@@ -45,6 +46,6 @@ public class ClassDeclaration extends Declaration implements Comparable<ClassDec
 
 	@Override
 	public String getMemberType() {
-		return null;
+		return MEMBER_TYPE;
 	}
 }
