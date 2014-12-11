@@ -27,10 +27,10 @@ import firm.Program;
 public class FirmHierarchy {
 
 	private final Mode modeInt = Mode.getIs(); // integer signed 32 bit
-	private final Mode modeBool = Mode.getBu(); // unsigned 8 bit for boolean
-	private final Mode modeRef = Mode.createReferenceMode("P64", Mode.Arithmetic.TwosComplement, 64, 64); // 64 bit pointer
+	private final Mode modeBoolean = Mode.getBu(); // unsigned 8 bit for boolean
+	private final Mode modeReference = Mode.createReferenceMode("P64", Mode.Arithmetic.TwosComplement, 64, 64); // 64 bit pointer
 
-	private final Entity print_int;
+	private final Entity printInt;
 	private final Entity calloc;
 	private final Entity mainMethod;
 
@@ -39,26 +39,26 @@ public class FirmHierarchy {
 	static class ClassWrapper {
 		ClassWrapper(String className) {
 			classType = new ClassType(className);
-			refToClass = new PointerType(classType);
+			referenceToClass = new PointerType(classType);
 		}
 
 		ClassType classType;
-		firm.Type refToClass;
+		firm.Type referenceToClass;
 	}
 
 	public FirmHierarchy() {
 		// set 64bit pointer as default
-		Mode.setDefaultModeP(getModeRef());
+		Mode.setDefaultModeP(getModeReference());
 
 		// create library function(s)
 		// void print_int(int);
-		MethodType print_int_type = new MethodType(new firm.Type[] { new PrimitiveType(getModeInt()) }, new firm.Type[] {});
-		this.print_int = new Entity(firm.Program.getGlobalType(), "print_int", print_int_type);
+		MethodType printIntType = new MethodType(new firm.Type[] { new PrimitiveType(getModeInt()) }, new firm.Type[] {});
+		this.printInt = new Entity(firm.Program.getGlobalType(), "print_int", printIntType);
 
 		// void* calloc_proxy (size_t num, size_t size);
-		MethodType calloc_type = new MethodType(new firm.Type[] { new PrimitiveType(getModeInt()), new PrimitiveType(getModeInt()) },
-				new firm.Type[] { new PrimitiveType(getModeRef()) });
-		this.calloc = new Entity(firm.Program.getGlobalType(), "calloc_proxy", calloc_type);
+		MethodType callocType = new MethodType(new firm.Type[] { new PrimitiveType(getModeInt()), new PrimitiveType(getModeInt()) },
+				new firm.Type[] { new PrimitiveType(getModeReference()) });
+		this.calloc = new Entity(firm.Program.getGlobalType(), "calloc_proxy", callocType);
 
 		// void main(void)
 		MethodType mainType = new MethodType(new firm.Type[] {}, new firm.Type[] {});
@@ -68,23 +68,29 @@ public class FirmHierarchy {
 	public void initialize(HashMap<Symbol, ClassScope> classScopes) {
 		// first iterate over all classes -- so that forward references to classes
 		// in method parameters and return types work
-		for (Entry<Symbol, ClassScope> currEntry : classScopes.entrySet()) {
-			String className = currEntry.getKey().getValue();
-			addClass(className);
+		for (Entry<Symbol, ClassScope> currentEntry : classScopes.entrySet()) {
+			String className = currentEntry.getKey().getValue();
+
+			// Add class name
+			ClassWrapper wrapper = new ClassWrapper(className);
+			definedClasses.put(className, wrapper);
 		}
 
 		// iterate over all fields and methods and create firm entities
-		for (Entry<Symbol, ClassScope> currEntry : classScopes.entrySet()) {
-			String className = currEntry.getKey().getValue();
-			ClassScope scope = currEntry.getValue();
+		for (Entry<Symbol, ClassScope> currentEntry : classScopes.entrySet()) {
+			String className = currentEntry.getKey().getValue();
+			ClassScope scope = currentEntry.getValue();
 
-			for (Declaration currField : scope.getFieldDefinitions()) {
-				addFieldEntity(className, currField);
+			// Create field declarations
+			for (Declaration currentField : scope.getFieldDefinitions()) {
+				new Entity(getClassType(className),
+						currentField.getAssemblerName(),
+						getTypeDeclaration(currentField.getType(), true));
 			}
-			for (MethodDeclaration currMethod : scope.getMethodDefinitions()) {
+			for (MethodDeclaration currentMethod : scope.getMethodDefinitions()) {
 				// main method is added separately because there is no type java.lang.String in MiniJava
-				if (!(currMethod instanceof StaticMethodDeclaration)) {
-					addMethodEntity(className, currMethod);
+				if (!(currentMethod instanceof StaticMethodDeclaration)) {
+					addMethodEntity(className, currentMethod);
 				}
 			}
 
@@ -92,19 +98,6 @@ public class FirmHierarchy {
 			classType.layoutFields();
 			classType.finishLayout();
 		}
-	}
-
-	private void addClass(String className) {
-		ClassWrapper wrapper = new ClassWrapper(className);
-		definedClasses.put(className, wrapper);
-	}
-
-	private void addFieldEntity(String className, Declaration definition) {
-		firm.Type firmType = getTypeDeclaration(definition.getType(), true);
-		String entityName = definition.getAssemblerName();
-
-		// create new entity and attach to currentClass
-		new Entity(getClassType(className), entityName, firmType);
 	}
 
 	private ClassType getClassType(String className) {
@@ -118,7 +111,7 @@ public class FirmHierarchy {
 		// types of parameters
 		// first parameter is "this" with type referenceToClass
 		firm.Type[] parameterTypes = new firm.Type[parameterDefinitions.size() + 1];
-		parameterTypes[0] = classWrapper.refToClass;
+		parameterTypes[0] = classWrapper.referenceToClass;
 		for (int paramIdx = 0; paramIdx < parameterDefinitions.size(); paramIdx++) {
 			parameterTypes[paramIdx + 1] = getTypeDeclaration(parameterDefinitions.get(paramIdx).getType(), true);
 		}
@@ -147,10 +140,6 @@ public class FirmHierarchy {
 		return definedClasses.get(className).classType;
 	}
 
-	public firm.Type getType(compiler.ast.type.Type type) {
-		return getTypeDeclaration(type, false);
-	}
-
 	public firm.Type getTypeDeclaration(compiler.ast.type.Type type, boolean arrayAsReference) {
 
 		firm.Type firmType = null;
@@ -159,19 +148,19 @@ public class FirmHierarchy {
 			firmType = new PrimitiveType(getModeInt());
 			break;
 		case BOOLEAN:
-			firmType = new PrimitiveType(getModeBool());
+			firmType = new PrimitiveType(getModeBoolean());
 			break;
 		case VOID:
 			return null;
 		case NULL:
-			firmType = new PrimitiveType(getModeRef());
+			firmType = new PrimitiveType(getModeReference());
 			break;
 		case CLASS:
-			firmType = definedClasses.get(type.getIdentifier().getValue()).refToClass;
+			firmType = definedClasses.get(type.getIdentifier().getValue()).referenceToClass;
 			break;
 		case ARRAY:
 			if (arrayAsReference) {
-				firmType = new PrimitiveType(getModeRef());
+				firmType = new PrimitiveType(getModeReference());
 			} else {
 				firmType = new ArrayType(getTypeDeclaration(type.getSubType(), true));
 			}
@@ -186,8 +175,8 @@ public class FirmHierarchy {
 		return firmType;
 	}
 
-	public Entity getPrint_int() {
-		return print_int;
+	public Entity getPrintInt() {
+		return printInt;
 	}
 
 	public Entity getCalloc() {
@@ -202,12 +191,12 @@ public class FirmHierarchy {
 		return modeInt;
 	}
 
-	public Mode getModeBool() {
-		return modeBool;
+	public Mode getModeBoolean() {
+		return modeBoolean;
 	}
 
-	public Mode getModeRef() {
-		return modeRef;
+	public Mode getModeReference() {
+		return modeReference;
 	}
 
 }

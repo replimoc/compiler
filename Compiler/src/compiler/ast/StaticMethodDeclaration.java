@@ -19,4 +19,9 @@ public class StaticMethodDeclaration extends MethodDeclaration {
 	public void accept(AstVisitor visitor) {
 		visitor.visit(this);
 	}
+
+	@Override
+	public String getAssemblerName() {
+		return "_main"; // Map to main method, StaticMethodDeclaration is always main for MiniJava.
+	}
 }
