@@ -38,11 +38,6 @@ public class ParameterDefinition extends Declaration {
 	}
 
 	@Override
-	public boolean isLocalVariable() {
-		return false;
-	}
-
-	@Override
 	public String getMemberType() {
 		return MEMBER_TYPE;
 	}

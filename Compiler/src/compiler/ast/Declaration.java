@@ -22,10 +22,6 @@ public abstract class Declaration extends AstNode {
 		return symbol;
 	}
 
-	public boolean isLocalVariable() {
-		return false;
-	}
-
 	public String getAssemblerName() {
 		String className = "";
 		if (getClassDeclaration() != null) { // TODO: Currently there is no class declaration for PrintStream

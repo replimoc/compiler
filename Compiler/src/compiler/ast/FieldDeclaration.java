@@ -33,11 +33,6 @@ public class FieldDeclaration extends ClassMember {
 	}
 
 	@Override
-	public boolean isLocalVariable() {
-		return false;
-	}
-
-	@Override
 	public String getMemberType() {
 		return MEMBER_TYPE;
 	}

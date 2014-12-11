@@ -52,11 +52,6 @@ public class LocalVariableDeclaration extends Declaration implements Statement {
 	}
 
 	@Override
-	public boolean isLocalVariable() {
-		return true;
-	}
-
-	@Override
 	public String getMemberType() {
 		return MEMBER_TYPE;
 	}

@@ -419,7 +419,7 @@ public class FirmGenerationVisitor implements AstVisitor {
 		Expression objectNameForFieldAccess = variableAccessExpression.getExpression();
 		if (objectNameForFieldAccess == null) {
 			Declaration definition = variableAccessExpression.getDefinition();
-			if (definition.isLocalVariable()) {
+			if (definition instanceof LocalVariableDeclaration) { // TODO: Replace this with the visitor pattern?
 				variableAccess(variableAccessExpression, (LocalVariableDeclaration) definition, assignmentRightSide);
 			} else {
 				memberAccess(variableAccessExpression, getThisPointer(), assignmentRightSide);
