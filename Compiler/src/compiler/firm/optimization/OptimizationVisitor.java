@@ -169,9 +169,9 @@ public class OptimizationVisitor implements NodeVisitor {
 		if (leftTarget.isConstant() && rightTarget.isConstant()) {
 			setTargetValue(and, leftTarget.and(rightTarget));
 		} else if (leftTarget.equals(TargetValue.getBad()) || rightTarget.equals(TargetValue.getBad())) {
-			setTargetValue(and, TargetValue.getBad());
+			setTargetValue(and, TargetValue.getBad(), false);
 		} else {
-			setTargetValue(and, TargetValue.getUnknown());
+			setTargetValue(and, TargetValue.getUnknown(), false);
 		}
 
 		if (target == null || !target.equals(getTargetValue(and))) {
@@ -267,16 +267,16 @@ public class OptimizationVisitor implements NodeVisitor {
 
 		if (leftTargetValue.isNull()) {
 			if (leftTarget.isRemove()) {
-				specialProjDivModTargets.put(div, new Target(leftTargetValue, false));
-			} else {
 				specialProjDivModTargets.put(div, new Target(leftTargetValue, true));
+			} else {
+				specialProjDivModTargets.put(div, new Target(leftTargetValue, false));
 			}
 		} else if (leftTargetValue.isConstant() && rightTargetValue.isConstant()) {
 			specialProjDivModTargets.put(div, new Target(leftTargetValue.div(rightTargetValue)));
 		} else if (leftTargetValue.equals(TargetValue.getBad()) || rightTargetValue.equals(TargetValue.getBad())) {
-			specialProjDivModTargets.put(div, new Target(TargetValue.getBad()));
+			specialProjDivModTargets.put(div, new Target(TargetValue.getBad(), false));
 		} else {
-			specialProjDivModTargets.put(div, new Target(TargetValue.getUnknown()));
+			specialProjDivModTargets.put(div, new Target(TargetValue.getUnknown(), false));
 		}
 
 		if (target == null || !target.equals(getTargetValue(div))) {
@@ -348,14 +348,14 @@ public class OptimizationVisitor implements NodeVisitor {
 			// no const
 			return;
 		}
-		TargetValue newTargetValue = target == null ? TargetValue.getUnknown() : target.neg();
+		TargetValue newTargetValue = (target == null || !target.isConstant()) ? TargetValue.getUnknown() : target.neg();
 
 		if (newTargetValue.isConstant()) {
 			setTargetValue(minus, newTargetValue);
 		} else if (newTargetValue.equals(TargetValue.getBad())) {
-			setTargetValue(minus, newTargetValue);
+			setTargetValue(minus, TargetValue.getBad());
 		} else {
-			setTargetValue(minus, newTargetValue);
+			setTargetValue(minus, TargetValue.getUnknown());
 		}
 
 		if (target == null || !target.equals(getTargetValue(minus))) {
@@ -379,16 +379,16 @@ public class OptimizationVisitor implements NodeVisitor {
 
 		if (leftTargetValue.isNull()) {
 			if (leftTarget.isRemove()) {
-				specialProjDivModTargets.put(mod, new Target(leftTargetValue, false));
-			} else {
 				specialProjDivModTargets.put(mod, new Target(leftTargetValue, true));
+			} else {
+				specialProjDivModTargets.put(mod, new Target(leftTargetValue, false));
 			}
 		} else if (leftTargetValue.isConstant() && rightTarget.isConstant()) {
 			specialProjDivModTargets.put(mod, new Target(leftTargetValue.mod(rightTarget)));
 		} else if (leftTargetValue.equals(TargetValue.getBad()) || rightTarget.equals(TargetValue.getBad())) {
-			specialProjDivModTargets.put(mod, new Target(TargetValue.getBad()));
+			specialProjDivModTargets.put(mod, new Target(TargetValue.getBad(), false));
 		} else {
-			specialProjDivModTargets.put(mod, new Target(TargetValue.getUnknown()));
+			specialProjDivModTargets.put(mod, new Target(TargetValue.getUnknown(), false));
 		}
 
 		if (target == null || !target.equals(getTargetValue(mod))) {
@@ -448,14 +448,14 @@ public class OptimizationVisitor implements NodeVisitor {
 			// no const
 			return;
 		}
-		TargetValue newTargetValue = target == null ? TargetValue.getUnknown() : target.not();
+		TargetValue newTargetValue = (target == null || !target.isConstant()) ? TargetValue.getUnknown() : target.not();
 
 		if (newTargetValue.isConstant()) {
 			setTargetValue(not, newTargetValue);
 		} else if (newTargetValue.equals(TargetValue.getBad())) {
-			setTargetValue(not, newTargetValue);
+			setTargetValue(not, TargetValue.getBad());
 		} else {
-			setTargetValue(not, newTargetValue);
+			setTargetValue(not, TargetValue.getUnknown());
 		}
 
 		if (target == null || !target.equals(getTargetValue(not))) {
