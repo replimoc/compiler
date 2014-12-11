@@ -29,7 +29,6 @@ public final class SemanticChecker {
 		// fill System.out.println: if System class isn't present
 		Symbol systemSymbol = getSymbol(stringTable, "System");
 
-		// create System class if 'System' is already defined
 		if (!classScopes.containsKey(systemSymbol)) {
 			// create PrintStream class
 			Symbol printStreamName = getRandomName(stringTable, classScopes, "PrintStream");
@@ -40,6 +39,7 @@ public final class SemanticChecker {
 							new ParameterDefinition(new Type(BasicType.INT), getSymbol(stringTable, "arg0"))));
 			printStream.accept(preAnalysisVisitor);
 
+			// Create system class
 			ClassDeclaration system = new ClassDeclaration(
 					systemSymbol,
 					new StaticFieldDeclaration(printStream.getType(), getSymbol(stringTable, "out")));
