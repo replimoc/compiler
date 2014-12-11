@@ -4,6 +4,7 @@ import java.util.ArrayList;
 import java.util.List;
 
 import compiler.Symbol;
+import compiler.ast.type.ClassType;
 import compiler.ast.visitor.AstVisitor;
 import compiler.lexer.Position;
 
@@ -12,6 +13,16 @@ public class ClassDeclaration extends Declaration implements Comparable<ClassDec
 
 	public ClassDeclaration(Position position, Symbol identifier) {
 		super(position, identifier);
+		setType(new ClassType(identifier));
+		setClassDeclaration(this);
+	}
+
+	public ClassDeclaration(Symbol identifier, ClassMember... members) {
+		this(null, identifier);
+		for (ClassMember member : members) {
+			addClassMember(member);
+			member.setClassDeclaration(this);
+		}
 	}
 
 	public void addClassMember(ClassMember member) {

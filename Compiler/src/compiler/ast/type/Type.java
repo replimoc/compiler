@@ -9,6 +9,10 @@ public class Type extends AstNode {
 
 	private final BasicType basicType;
 
+	public Type(BasicType basicType) {
+		this(null, basicType);
+	}
+
 	public Type(Position position, BasicType basicType) {
 		super(position);
 		this.basicType = basicType;

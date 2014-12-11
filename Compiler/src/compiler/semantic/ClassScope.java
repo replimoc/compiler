@@ -4,17 +4,28 @@ import java.util.HashMap;
 import java.util.Map.Entry;
 
 import compiler.Symbol;
+import compiler.ast.ClassDeclaration;
 import compiler.ast.Declaration;
 import compiler.ast.MethodDeclaration;
+import compiler.ast.StaticFieldDeclaration;
 
 public class ClassScope {
-
+	private final ClassDeclaration classDeclaration;
 	private final HashMap<Symbol, Declaration> fields;
 	private final HashMap<Symbol, MethodDeclaration> methods;
 
 	public ClassScope(HashMap<Symbol, Declaration> fields, HashMap<Symbol, MethodDeclaration> methods) {
+		this(null, fields, methods);
+	}
+
+	public ClassScope(ClassDeclaration classDeclaration, HashMap<Symbol, Declaration> fields, HashMap<Symbol, MethodDeclaration> methods) {
+		this.classDeclaration = classDeclaration;
 		this.fields = fields;
 		this.methods = methods;
+	}
+
+	public ClassDeclaration getClassDeclaration() {
+		return classDeclaration;
 	}
 
 	public MethodDeclaration getMethodDefinition(Symbol identifier) {
@@ -31,6 +42,15 @@ public class ClassScope {
 
 	public int getNumberOfMethods() {
 		return methods.size();
+	}
+
+	public boolean hasStaticField() {
+		for (Entry<Symbol, Declaration> curr : this.fields.entrySet()) {
+			if (curr.getValue() instanceof StaticFieldDeclaration) {
+				return true;
+			}
+		}
+		return false;
 	}
 
 	public Declaration[] getFieldDefinitions() {

@@ -6,19 +6,14 @@ import java.util.List;
 import compiler.StringTable;
 import compiler.Symbol;
 import compiler.ast.AstNode;
-import compiler.ast.Declaration;
-import compiler.ast.FieldDeclaration;
-import compiler.ast.MethodDeclaration;
+import compiler.ast.ClassDeclaration;
 import compiler.ast.ParameterDefinition;
 import compiler.ast.PrintMethodDeclaration;
-import compiler.ast.SystemFieldDeclaration;
+import compiler.ast.StaticFieldDeclaration;
 import compiler.ast.type.BasicType;
-import compiler.ast.type.ClassType;
 import compiler.ast.type.Type;
-import compiler.lexer.Position;
 import compiler.lexer.TokenType;
 import compiler.semantic.exceptions.SemanticAnalysisException;
-import compiler.semantic.symbolTable.Scope;
 
 public final class SemanticChecker {
 	private SemanticChecker() { // no objects of this class shall be created.
@@ -33,44 +28,27 @@ public final class SemanticChecker {
 
 		// fill System.out.println: if System class isn't present
 		Symbol systemSymbol = getSymbol(stringTable, "System");
-		FieldDeclaration systemDefinition = null;
 
 		// create System class if 'System' is already defined
-		if (classScopes.containsKey(systemSymbol)) {
-			int systemSymbolNum = 0;
-			do {
-				systemSymbol = getSymbol(stringTable, "System" + systemSymbolNum);
-			} while (classScopes.containsKey(systemSymbol));
+		if (!classScopes.containsKey(systemSymbol)) {
+			// create PrintStream class
+			Symbol printStreamName = getRandomName(stringTable, classScopes, "PrintStream");
+			ClassDeclaration printStream = new ClassDeclaration(
+					printStreamName,
+					new PrintMethodDeclaration(getSymbol(stringTable, "println"),
+							new Type(BasicType.VOID),
+							new ParameterDefinition(new Type(BasicType.INT), getSymbol(stringTable, "arg0"))));
+			printStream.accept(preAnalysisVisitor);
+
+			ClassDeclaration system = new ClassDeclaration(
+					systemSymbol,
+					new StaticFieldDeclaration(printStream.getType(), getSymbol(stringTable, "out")));
+
+			system.accept(preAnalysisVisitor);
 		}
 
-		// create PrintStream class
-		int printStreamNum = 0;
-
-		Symbol printStream;
-		do {
-			printStream = getSymbol(stringTable, "PrintStream" + printStreamNum);
-		} while (classScopes.containsKey(printStream));
-
-		FieldDeclaration printStreamDefinition = new SystemFieldDeclaration(new ClassType(new Position(-1, -1), printStream), printStream);
-
-		HashMap<Symbol, MethodDeclaration> psMethods = new HashMap<Symbol, MethodDeclaration>();
-		Symbol printLineSymbol = getSymbol(stringTable, "println");
-		MethodDeclaration printLineMethod = new PrintMethodDeclaration(null, printLineSymbol, new Type(null, BasicType.VOID));
-		printLineMethod.addParameter(new ParameterDefinition(new Type(null, BasicType.INT), getSymbol(stringTable, "arg")));
-		psMethods.put(printLineSymbol, printLineMethod);
-		ClassScope printStreamScope = new ClassScope(new HashMap<Symbol, Declaration>(), psMethods);
-		classScopes.put(printStream, printStreamScope);
-
-		systemDefinition = new SystemFieldDeclaration(new ClassType(null, systemSymbol), systemSymbol);
-		systemSymbol.setDefintion(new Scope(null, 0), systemDefinition);
-		HashMap<Symbol, Declaration> fields = new HashMap<Symbol, Declaration>();
-		fields.put(getSymbol(stringTable, "out"), printStreamDefinition);
-		HashMap<Symbol, MethodDeclaration> methods = new HashMap<Symbol, MethodDeclaration>();
-		ClassScope systemClassScope = new ClassScope(fields, methods);
-		classScopes.put(systemSymbol, systemClassScope);
-
 		// run full semantic check
-		DeepCheckingVisitor deepCheckingVisitor = new DeepCheckingVisitor(classScopes, systemDefinition);
+		DeepCheckingVisitor deepCheckingVisitor = new DeepCheckingVisitor(classScopes);
 		ast.accept(deepCheckingVisitor);
 		exceptions.addAll(deepCheckingVisitor.getExceptions());
 
@@ -79,5 +57,16 @@ public final class SemanticChecker {
 
 	private static Symbol getSymbol(StringTable stringTable, String name) {
 		return stringTable.insert(name, TokenType.IDENTIFIER).getSymbol();
+	}
+
+	private static Symbol getRandomName(StringTable stringTable, HashMap<Symbol, ClassScope> classScopes, String prefix) {
+		int number = 0;
+
+		Symbol symbol;
+		do {
+			symbol = getSymbol(stringTable, prefix + number);
+			number++;
+		} while (classScopes.containsKey(symbol));
+		return symbol;
 	}
 }

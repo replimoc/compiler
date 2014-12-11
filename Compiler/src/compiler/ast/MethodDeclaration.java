@@ -22,7 +22,7 @@ public class MethodDeclaration extends ClassMember {
 		this.returnType = returnType;
 	}
 
-	public MethodDeclaration(Symbol identifier, Type returnType, ParameterDefinition[] parameters) {
+	public MethodDeclaration(Symbol identifier, Type returnType, ParameterDefinition... parameters) {
 		this(null, identifier, returnType);
 		if (parameters != null && parameters.length > 0) {
 			this.parameters.addAll(Arrays.asList(parameters));

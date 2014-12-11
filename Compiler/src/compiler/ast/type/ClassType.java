@@ -8,6 +8,10 @@ public class ClassType extends Type {
 
 	private final Symbol identifier;
 
+	public ClassType(Symbol identifier) {
+		this(null, identifier);
+	}
+
 	public ClassType(Position position, Symbol identifier) {
 		super(position, BasicType.CLASS);
 		this.identifier = identifier;

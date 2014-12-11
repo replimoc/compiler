@@ -1,7 +1,6 @@
 package compiler;
 
 import compiler.ast.Declaration;
-import compiler.ast.SystemFieldDeclaration;
 import compiler.semantic.symbolTable.Scope;
 
 /**
@@ -59,6 +58,6 @@ public class Symbol {
 	}
 
 	public boolean isDefined() {
-		return defScope != null && definition != null && !(definition instanceof SystemFieldDeclaration);
+		return defScope != null && definition != null;
 	}
 }

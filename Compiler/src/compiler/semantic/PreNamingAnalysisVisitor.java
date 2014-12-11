@@ -102,7 +102,7 @@ public class PreNamingAnalysisVisitor implements AstVisitor {
 		if (classScopes.containsKey(identifier)) {
 			throwRedefinitionError(identifier, classDeclaration.getPosition());
 		} else {
-			getClassScopes().put(identifier, new ClassScope(currentFieldsMap, currentMethodsMap));
+			getClassScopes().put(identifier, new ClassScope(classDeclaration, currentFieldsMap, currentMethodsMap));
 			currentFieldsMap = null;
 			currentMethodsMap = null;
 		}

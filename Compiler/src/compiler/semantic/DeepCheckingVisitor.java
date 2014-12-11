@@ -75,15 +75,13 @@ public class DeepCheckingVisitor implements AstVisitor {
 	private ClassDeclaration currentClassDeclaration;
 	private ClassScope currentClassScope = null;
 	private MethodDeclaration currentMethodDefinition = null;
-	private final Declaration systemDefinition;
 
 	private boolean isStaticMethod;
 	private boolean returnOnAllPaths;
 	private boolean isExpressionStatement;
 
-	public DeepCheckingVisitor(HashMap<Symbol, ClassScope> classScopes, Declaration systemDefinition) {
+	public DeepCheckingVisitor(HashMap<Symbol, ClassScope> classScopes) {
 		this.classScopes = classScopes;
-		this.systemDefinition = systemDefinition;
 	}
 
 	public List<SemanticAnalysisException> getExceptions() {
@@ -404,9 +402,15 @@ public class DeepCheckingVisitor implements AstVisitor {
 					// continue
 				}
 				definition = currentClassScope.getFieldDefinition(fieldIdentifier);
-				// special case is System
-			} else if (fieldIdentifier.getValue().equals("System")) {
-				definition = systemDefinition;
+			} else if (classScopes.containsKey(fieldIdentifier)) {
+				// Static access
+				ClassScope staticScope = classScopes.get(fieldIdentifier);
+				definition = staticScope.getClassDeclaration();
+
+				if (!staticScope.hasStaticField()) {
+					throwUndefinedSymbolError(fieldIdentifier, position);
+					return;
+				}
 			} else {
 				throwUndefinedSymbolError(fieldIdentifier, position);
 				return;
