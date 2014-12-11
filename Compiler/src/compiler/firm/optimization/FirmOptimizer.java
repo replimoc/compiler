@@ -50,20 +50,18 @@ public final class FirmOptimizer {
 					// nodes that have a phi node as predecessor must only be removed if the phi nodes will be removed
 					boolean remove = true;
 					if (node instanceof Proj) {
+						// div and mod need one extra indirection
 						for (Node pred : node.getPreds()) {
 							for (Node pred2 : pred.getPreds()) {
 								if (pred2 instanceof Phi) {
-									remove = targetValuesMap.get(pred2).isRemove();
+									remove = remove && targetValuesMap.get(pred2).isRemove();
 								}
-							}
-							if (pred instanceof Phi) {
-								remove = targetValuesMap.get(pred).isRemove();
 							}
 						}
 					} else
 						for (Node pred : node.getPreds()) {
 							if (pred instanceof Phi) {
-								remove = targetValuesMap.get(pred).isRemove();
+								remove = remove && targetValuesMap.get(pred).isRemove();
 							}
 						}
 					if (remove) {
