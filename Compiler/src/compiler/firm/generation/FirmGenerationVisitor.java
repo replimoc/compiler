@@ -419,8 +419,8 @@ public class FirmGenerationVisitor implements AstVisitor {
 		Expression objectNameForFieldAccess = variableAccessExpression.getExpression();
 		if (objectNameForFieldAccess == null) {
 			Declaration definition = variableAccessExpression.getDefinition();
-			if (definition instanceof LocalVariableDeclaration) { // TODO: Replace this with the visitor pattern?
-				variableAccess(variableAccessExpression, (LocalVariableDeclaration) definition, assignmentRightSide);
+			if (definition instanceof LocalVariableDeclaration) {
+				variableAccess(variableAccessExpression, assignmentRightSide);
 			} else {
 				memberAccess(variableAccessExpression, getThisPointer(), assignmentRightSide);
 			}
@@ -431,8 +431,9 @@ public class FirmGenerationVisitor implements AstVisitor {
 		}
 	}
 
-	private void variableAccess(VariableAccessExpression variableAccessExpression, LocalVariableDeclaration definition, Expression assignmentRightSide) {
-		int variableNumber = definition.getVariableNumber();
+	private void variableAccess(VariableAccessExpression variableAccessExpression, Expression assignmentRightSide) {
+		LocalVariableDeclaration declaration = (LocalVariableDeclaration) variableAccessExpression.getDefinition();
+		int variableNumber = declaration.getVariableNumber();
 		methodConstruction.getCurrentMem();
 
 		if (assignmentRightSide != null) {
@@ -441,7 +442,7 @@ public class FirmGenerationVisitor implements AstVisitor {
 			methodConstruction.setVariable(variableNumber, rightSideNode);
 			variableAccessExpression.setFirmNode(rightSideNode);
 		} else {
-			Type astType = variableAccessExpression.getDefinition().getType();
+			Type astType = declaration.getType();
 			Mode accessMode = convertAstTypeToMode(astType);
 			Node node = methodConstruction.getVariable(variableNumber, accessMode);
 			variableAccessExpression.setFirmNode(node);
