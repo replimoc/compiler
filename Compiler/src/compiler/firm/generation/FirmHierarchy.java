@@ -140,7 +140,7 @@ public class FirmHierarchy {
 	}
 
 	public Entity getEntity(Declaration declaration) {
-		return getClassType(declaration.getClassDeclaration().getIdentifier().getValue()).getMemberByName(declaration.getAssemblerName());
+		return getClassType(declaration.getClassName()).getMemberByName(declaration.getAssemblerName());
 	}
 
 	public ClassType getClassEntity(String className) {

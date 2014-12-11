@@ -23,11 +23,7 @@ public abstract class Declaration extends AstNode {
 	}
 
 	public String getAssemblerName() {
-		String className = "";
-		if (getClassDeclaration() != null) { // TODO: Currently there is no class declaration for PrintStream
-			className = getClassDeclaration().getIdentifier().getValue();
-		}
-		return "_" + escapeName(className) + "_"
+		return "_" + escapeName(getClassName()) + "_"
 				+ escapeName(getMemberType()) + "_"
 				+ escapeName(getIdentifier().getValue());
 	}
@@ -44,6 +40,14 @@ public abstract class Declaration extends AstNode {
 
 	public ClassDeclaration getClassDeclaration() {
 		return classDeclaration;
+	}
+
+	public String getClassName() {
+		String className = "";
+		if (getClassDeclaration() != null) { // TODO: Currently there is no class declaration for PrintStream
+			className = getClassDeclaration().getIdentifier().getValue();
+		}
+		return className;
 	}
 
 	@Override
