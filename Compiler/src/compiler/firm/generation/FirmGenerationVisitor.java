@@ -10,7 +10,7 @@ import compiler.ast.Declaration;
 import compiler.ast.FieldDeclaration;
 import compiler.ast.MethodDeclaration;
 import compiler.ast.ParameterDefinition;
-import compiler.ast.PrintMethodDeclaration;
+import compiler.ast.NativeMethodDeclaration;
 import compiler.ast.StaticMethodDeclaration;
 import compiler.ast.statement.ArrayAccessExpression;
 import compiler.ast.statement.BooleanConstantExpression;
@@ -315,7 +315,7 @@ public class FirmGenerationVisitor implements AstVisitor {
 		MethodCallInformation methodCallInformation = new MethodCallInformation();
 
 		// special case - System.out.println which is PrintStream::println()
-		if (methodInvocationExpression.getMethodDefinition() instanceof PrintMethodDeclaration) {
+		if (methodInvocationExpression.getMethodDefinition() instanceof NativeMethodDeclaration) {
 			methodCallInformation = new PrintMethodCallInformation();
 		}
 
