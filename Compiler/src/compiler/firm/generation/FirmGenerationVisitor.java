@@ -73,8 +73,6 @@ public class FirmGenerationVisitor implements AstVisitor {
 	// create new map for param <-> variable number
 	private Node activePhiNode;
 
-	private String className;
-
 	private Expression assignmentRightSide = null;
 
 	private firm.nodes.Block trueDestination;
@@ -86,10 +84,6 @@ public class FirmGenerationVisitor implements AstVisitor {
 
 	private Node getThisPointer() {
 		return methodConstruction.getVariable(0, hierarchy.getModeRef());
-	}
-
-	private String getClassName(Expression expression) {
-		return expression.getType().getIdentifier().getValue();
 	}
 
 	private Node getCallocAddress() {
@@ -334,7 +328,6 @@ public class FirmGenerationVisitor implements AstVisitor {
 		Entity method;
 
 		public void generate(MethodInvocationExpression methodInvocationExpression) {
-			String className;
 			Node methodObject;
 
 			// Generate method name
@@ -342,14 +335,11 @@ public class FirmGenerationVisitor implements AstVisitor {
 			if (methodExpression != null) {
 				methodExpression.accept(FirmGenerationVisitor.this);
 
-				className = getClassName(methodExpression);
 				methodObject = methodExpression.getFirmNode();
 			} else {
-				className = FirmGenerationVisitor.this.className;
 				methodObject = getThisPointer();
 			}
-			String methodName = methodInvocationExpression.getMethodIdentifier().getValue();
-			method = hierarchy.getMethodEntity(className, methodName);
+			method = hierarchy.getEntity(methodInvocationExpression.getMethodDefinition());
 
 			// Generate parameter list
 			Expression[] parameters = methodInvocationExpression.getParameters();
@@ -416,7 +406,7 @@ public class FirmGenerationVisitor implements AstVisitor {
 
 	@Override
 	public void visit(NewObjectExpression newObjectExpression) {
-		firm.ClassType classType = hierarchy.getClassEntity(getClassName(newObjectExpression));
+		firm.ClassType classType = hierarchy.getClassEntity(newObjectExpression.getType().getIdentifier().getValue());
 		Node referenceToObject = callCalloc(intToNode(1), intToNode(classType.getSizeBytes()));
 		newObjectExpression.setFirmNode(referenceToObject);
 	}
@@ -432,11 +422,11 @@ public class FirmGenerationVisitor implements AstVisitor {
 			if (definition.isLocalVariable()) {
 				variableAccess(variableAccessExpression, (LocalVariableDeclaration) definition, assignmentRightSide);
 			} else {
-				memberAccess(variableAccessExpression, this.className, getThisPointer(), assignmentRightSide);
+				memberAccess(variableAccessExpression, getThisPointer(), assignmentRightSide);
 			}
 		} else {
 			objectNameForFieldAccess.accept(this);
-			memberAccess(variableAccessExpression, getClassName(objectNameForFieldAccess), objectNameForFieldAccess.getFirmNode(),
+			memberAccess(variableAccessExpression, objectNameForFieldAccess.getFirmNode(),
 					assignmentRightSide);
 		}
 	}
@@ -458,9 +448,8 @@ public class FirmGenerationVisitor implements AstVisitor {
 		}
 	}
 
-	private void memberAccess(VariableAccessExpression variableAccessExpression, String objectClassName, Node object, Expression assignmentRightSide) {
-		String attribute = variableAccessExpression.getFieldIdentifier().getValue();
-		Entity field = hierarchy.getFieldEntity(objectClassName, attribute);
+	private void memberAccess(VariableAccessExpression variableAccessExpression, Node object, Expression assignmentRightSide) {
+		Entity field = hierarchy.getEntity(variableAccessExpression.getDefinition());
 
 		Node addressOfField = methodConstruction.newMember(object, field);
 
@@ -755,7 +744,6 @@ public class FirmGenerationVisitor implements AstVisitor {
 
 	@Override
 	public void visit(ClassDeclaration classDeclaration) {
-		this.className = classDeclaration.getIdentifier().getValue();
 		for (ClassMember curr : classDeclaration.getMembers()) {
 			curr.accept(this);
 		}
@@ -772,7 +760,7 @@ public class FirmGenerationVisitor implements AstVisitor {
 	public void visit(MethodDeclaration methodDeclaration) {
 		clearState();
 
-		Entity methodEntity = hierarchy.getMethodEntity(this.className, methodDeclaration.getIdentifier().getValue());
+		Entity methodEntity = hierarchy.getEntity(methodDeclaration);
 
 		int numberLocalVariables = methodDeclaration.getNumberOfLocalVariables();
 		int variablesCount = 1 /* this */+ methodDeclaration.getParameters().size() + numberLocalVariables /* boolean assignments */+ 1;

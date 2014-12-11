@@ -6,6 +6,7 @@ import compiler.ast.visitor.AstVisitor;
 import compiler.lexer.Position;
 
 public class FieldDeclaration extends ClassMember {
+	private static final String MEMBER_TYPE = "f";
 	private final Type type;
 
 	public FieldDeclaration(Type type, Symbol identifier) {
@@ -34,6 +35,11 @@ public class FieldDeclaration extends ClassMember {
 	@Override
 	public boolean isLocalVariable() {
 		return false;
+	}
+
+	@Override
+	public String getMemberType() {
+		return MEMBER_TYPE;
 	}
 
 	@Override

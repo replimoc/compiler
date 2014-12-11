@@ -31,4 +31,9 @@ public class ClassDeclaration extends Declaration implements Comparable<ClassDec
 	public int compareTo(ClassDeclaration o) {
 		return getIdentifier().getValue().compareTo(o.getIdentifier().getValue());
 	}
+
+	@Override
+	public String getMemberType() {
+		return null;
+	}
 }

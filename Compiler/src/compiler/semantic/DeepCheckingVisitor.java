@@ -446,6 +446,7 @@ public class DeepCheckingVisitor implements AstVisitor {
 				return;
 			}
 
+			variableAccessExpression.setDefinition(fieldDef);
 			variableAccessExpression.setType(fieldDef.getType());
 		}
 	}
@@ -570,6 +571,7 @@ public class DeepCheckingVisitor implements AstVisitor {
 		currentClassScope = classScopes.get(classDeclaration.getIdentifier());
 
 		for (ClassMember classMember : classDeclaration.getMembers()) {
+			classMember.setClassDeclaration(classDeclaration);
 			classMember.accept(this);
 		}
 		currentClassDeclaration = null;
@@ -624,6 +626,7 @@ public class DeepCheckingVisitor implements AstVisitor {
 
 	@Override
 	public void visit(LocalVariableDeclaration localVariableDeclaration) {
+		localVariableDeclaration.setClassDeclaration(currentClassDeclaration);
 		localVariableDeclaration.getType().accept(this);
 
 		if (hasType(BasicType.VOID, localVariableDeclaration)) {
@@ -647,6 +650,7 @@ public class DeepCheckingVisitor implements AstVisitor {
 
 	@Override
 	public void visit(ParameterDefinition parameterDefinition) {
+		parameterDefinition.setClassDeclaration(currentClassDeclaration);
 		Type type = parameterDefinition.getType();
 
 		if (isStaticMethod) { // special case for String[] args

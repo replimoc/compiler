@@ -10,6 +10,7 @@ import compiler.ast.visitor.AstVisitor;
 import compiler.lexer.Position;
 
 public class MethodDeclaration extends ClassMember {
+	private static final String MEMBER_TYPE = "m";
 
 	private final Type returnType;
 	private final List<ParameterDefinition> parameters = new ArrayList<ParameterDefinition>();
@@ -80,6 +81,11 @@ public class MethodDeclaration extends ClassMember {
 	@Override
 	public boolean isLocalVariable() {
 		return false;
+	}
+
+	@Override
+	public String getMemberType() {
+		return MEMBER_TYPE;
 	}
 
 	@Override

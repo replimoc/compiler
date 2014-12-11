@@ -7,7 +7,7 @@ import compiler.ast.visitor.AstVisitor;
 import compiler.lexer.Position;
 
 public class ParameterDefinition extends Declaration {
-
+	private static final String MEMBER_TYPE = "f";
 	private int variableNumber;
 
 	public ParameterDefinition(Position position, Type type, Symbol identifier) {
@@ -40,5 +40,10 @@ public class ParameterDefinition extends Declaration {
 	@Override
 	public boolean isLocalVariable() {
 		return false;
+	}
+
+	@Override
+	public String getMemberType() {
+		return MEMBER_TYPE;
 	}
 }

@@ -6,6 +6,7 @@ import compiler.lexer.Position;
 
 public abstract class Declaration extends AstNode {
 	private final Symbol symbol;
+	private ClassDeclaration classDeclaration;
 
 	public Declaration(Position position, Symbol symbol) {
 		super(position);
@@ -23,6 +24,30 @@ public abstract class Declaration extends AstNode {
 
 	public boolean isLocalVariable() {
 		return false;
+	}
+
+	public String getAssemblerName() {
+		String className = "";
+		if (getClassDeclaration() != null) { // TODO: Currently there is no class declaration for PrintStream
+			className = getClassDeclaration().getIdentifier().getValue();
+		}
+		return "_" + escapeName(className) + "_"
+				+ escapeName(getMemberType()) + "_"
+				+ escapeName(getIdentifier().getValue());
+	}
+
+	private String escapeName(String name) {
+		return name.replaceAll("_", "__");
+	}
+
+	public abstract String getMemberType();
+
+	public void setClassDeclaration(ClassDeclaration classDeclaration) {
+		this.classDeclaration = classDeclaration;
+	}
+
+	public ClassDeclaration getClassDeclaration() {
+		return classDeclaration;
 	}
 
 	@Override

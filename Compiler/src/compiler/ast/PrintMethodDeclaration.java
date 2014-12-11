@@ -10,4 +10,8 @@ public class PrintMethodDeclaration extends MethodDeclaration {
 		super(position, identifier, returnType);
 	}
 
+	@Override
+	public String getAssemblerName() {
+		return "print_int";
+	}
 }

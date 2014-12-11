@@ -65,14 +65,6 @@ public class FirmHierarchy {
 		this.mainMethod = new Entity(Program.getGlobalType(), "_main", mainType);
 	}
 
-	private String escapeName(String name) {
-		return name.replaceAll("_", "__");
-	}
-
-	private String escapeName(String className, String type, String suffix) {
-		return "_" + escapeName(className) + "_" + escapeName(type) + "_" + escapeName(suffix);
-	}
-
 	public void initialize(HashMap<Symbol, ClassScope> classScopes) {
 		// first iterate over all classes -- so that forward references to classes
 		// in method parameters and return types work
@@ -109,7 +101,7 @@ public class FirmHierarchy {
 
 	private void addFieldEntity(String className, Declaration definition) {
 		firm.Type firmType = getTypeDeclaration(definition.getType(), true);
-		String entityName = escapeName(className, "f", definition.getIdentifier().getValue());
+		String entityName = definition.getAssemblerName();
 
 		// create new entity and attach to currentClass
 		new Entity(getClassType(className), entityName, firmType);
@@ -142,20 +134,13 @@ public class FirmHierarchy {
 
 		// create methodType and methodEntity
 		MethodType methodType = new MethodType(parameterTypes, returnType);
-		String entityName = escapeName(className, "m", methodDefinition.getIdentifier().getValue());
 
 		// create new entity and attach to currentClass
-		new Entity(classWrapper.classType, entityName, methodType);
+		new Entity(classWrapper.classType, methodDefinition.getAssemblerName(), methodType);
 	}
 
-	public Entity getMethodEntity(String className, String methodName) {
-		String entityName = escapeName(className, "m", methodName);
-		return getClassType(className).getMemberByName(entityName);
-	}
-
-	public Entity getFieldEntity(String className, String fieldName) {
-		String entityName = escapeName(className, "f", fieldName);
-		return getClassType(className).getMemberByName(entityName);
+	public Entity getEntity(Declaration declaration) {
+		return getClassType(declaration.getClassDeclaration().getIdentifier().getValue()).getMemberByName(declaration.getAssemblerName());
 	}
 
 	public ClassType getClassEntity(String className) {

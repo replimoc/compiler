@@ -8,6 +8,7 @@ import compiler.lexer.Position;
 
 public class LocalVariableDeclaration extends Declaration implements Statement {
 
+	private static final String MEMBER_TYPE = "f";
 	private final Expression expression;
 	private int variableNumber;
 
@@ -53,5 +54,10 @@ public class LocalVariableDeclaration extends Declaration implements Statement {
 	@Override
 	public boolean isLocalVariable() {
 		return true;
+	}
+
+	@Override
+	public String getMemberType() {
+		return MEMBER_TYPE;
 	}
 }
