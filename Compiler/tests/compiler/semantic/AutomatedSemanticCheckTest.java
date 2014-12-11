@@ -116,7 +116,7 @@ public class AutomatedSemanticCheckTest implements TestFileVisitor.FileTester {
 			}
 		}
 
-		System.err.println("<-----------------------------------------------file = " + sourceFilePath + " has passed the test");
+		System.out.println("* " + sourceFilePath + " has passed the test");
 
 	}
 }
