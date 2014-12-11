@@ -91,7 +91,8 @@ public final class CompilerApp {
 
 				try {
 					// Execute Lexer
-					Lexer lexer = new Lexer(Files.newBufferedReader(file, StandardCharsets.US_ASCII), new StringTable());
+					StringTable stringTable = new StringTable();
+					Lexer lexer = new Lexer(Files.newBufferedReader(file, StandardCharsets.US_ASCII), stringTable);
 
 					if (cmd.hasOption(LEXTEST)) {
 						return executeLextest(lexer);
@@ -113,7 +114,7 @@ public final class CompilerApp {
 						return 0;
 					}
 
-					SemanticCheckResults semanticResult = SemanticChecker.checkSemantic(ast);
+					SemanticCheckResults semanticResult = SemanticChecker.checkSemantic(ast, stringTable);
 					if (semanticResult.hasErrors()) {
 						for (SemanticAnalysisException curr : semanticResult.getExceptions()) {
 							System.err.println(curr.getMessage());

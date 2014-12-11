@@ -22,6 +22,7 @@ import compiler.lexer.Lexer;
 import compiler.lexer.TokenType;
 import compiler.main.CompilerApp;
 import compiler.parser.Parser;
+import compiler.parser.ParsingFailedException;
 import compiler.semantic.SemanticCheckResults;
 import compiler.semantic.SemanticChecker;
 import compiler.semantic.exceptions.SemanticAnalysisException;
@@ -51,8 +52,18 @@ public class TestUtils {
 	}
 
 	public static Parser initParser(String program) throws IOException {
-		Lexer lex = new Lexer(new StringReader(program), new StringTable());
+		return initParser(program, new StringTable());
+	}
+
+	public static Parser initParser(String program, StringTable stringTable) throws IOException {
+		Lexer lex = new Lexer(new StringReader(program), stringTable);
 		return new Parser(lex);
+	}
+
+	public static SemanticCheckResults checkSemantic(String program) throws IOException, ParsingFailedException {
+		StringTable stringTable = new StringTable();
+		Parser parser = TestUtils.initParser(program, stringTable);
+		return SemanticChecker.checkSemantic(parser.parse(), stringTable);
 	}
 
 	/**
@@ -72,10 +83,11 @@ public class TestUtils {
 	}
 
 	public static compiler.ast.Program getAstForFile(String fileName) throws Exception {
-		Lexer lexer = new Lexer(Files.newBufferedReader(Paths.get(fileName), StandardCharsets.US_ASCII), new StringTable());
+		StringTable stringTable = new StringTable();
+		Lexer lexer = new Lexer(Files.newBufferedReader(Paths.get(fileName), StandardCharsets.US_ASCII), stringTable);
 		Parser parser = new Parser(lexer);
 		compiler.ast.Program program = parser.parse();
-		SemanticCheckResults semanticResult = SemanticChecker.checkSemantic(program);
+		SemanticCheckResults semanticResult = SemanticChecker.checkSemantic(program, stringTable);
 		if (semanticResult.hasErrors()) {
 			for (SemanticAnalysisException error : semanticResult.getExceptions()) {
 				error.printStackTrace();

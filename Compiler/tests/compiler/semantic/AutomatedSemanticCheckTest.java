@@ -70,7 +70,8 @@ public class AutomatedSemanticCheckTest implements TestFileVisitor.FileTester {
 		int err_num = lines.size() > 1 ? Integer.parseInt(lines.get(1)) : -1;
 
 		// start lexer
-		Lexer lexer = new Lexer(Files.newBufferedReader(sourceFilePath, StandardCharsets.US_ASCII), new StringTable());
+		StringTable stringTable = new StringTable();
+		Lexer lexer = new Lexer(Files.newBufferedReader(sourceFilePath, StandardCharsets.US_ASCII), stringTable);
 		Parser parser = new Parser(lexer);
 		boolean parsingError = false;
 		Program parserResult = null;
@@ -82,7 +83,7 @@ public class AutomatedSemanticCheckTest implements TestFileVisitor.FileTester {
 
 		SemanticCheckResults semanticResult = null;
 		if (!parsingError) {
-			semanticResult = SemanticChecker.checkSemantic(parserResult);
+			semanticResult = SemanticChecker.checkSemantic(parserResult, stringTable);
 		}
 		if (isErrorExpected) {
 			if (!parsingError && !semanticResult.hasErrors()) {

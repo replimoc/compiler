@@ -13,6 +13,7 @@ import compiler.parser.Parser;
 import compiler.semantic.SemanticCheckResults;
 import compiler.semantic.SemanticChecker;
 import compiler.semantic.exceptions.SemanticAnalysisException;
+
 import firm.Dump;
 import firm.Graph;
 import firm.Program;
@@ -28,10 +29,11 @@ public class FirmTester {
 
 		String filename = "firmdata/classes.java";
 
-		Lexer lexer = new Lexer(Files.newBufferedReader(Paths.get(filename), StandardCharsets.US_ASCII), new StringTable());
+		StringTable stringTable = new StringTable();
+		Lexer lexer = new Lexer(Files.newBufferedReader(Paths.get(filename), StandardCharsets.US_ASCII), stringTable);
 		Parser parser = new Parser(lexer);
 		compiler.ast.Program program = parser.parse();
-		SemanticCheckResults semanticResults = SemanticChecker.checkSemantic(program);
+		SemanticCheckResults semanticResults = SemanticChecker.checkSemantic(program, stringTable);
 		if (semanticResults.hasErrors()) {
 			for (SemanticAnalysisException error : semanticResults.getExceptions()) {
 				error.printStackTrace();
@@ -51,5 +53,4 @@ public class FirmTester {
 
 		FirmUtils.finishFirm();
 	}
-
 }
