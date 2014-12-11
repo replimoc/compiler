@@ -4,6 +4,8 @@ import java.util.HashMap;
 import java.util.LinkedList;
 import java.util.List;
 
+import firm.BackEdges;
+import firm.BackEdges.Edge;
 import firm.Mode;
 import firm.TargetValue;
 import firm.nodes.Add;
@@ -66,9 +68,9 @@ import firm.nodes.Unknown;
 public class OptimizationVisitor implements NodeVisitor {
 
 	private final LinkedList<Node> workList;
-	private final HashMap<Node, TargetValue> targets = new HashMap<>();
+	private final HashMap<Node, Target> targets = new HashMap<>();
 	// Div and Mod nodes have a Proj successor which must be replaced instead of the Div and Mod nodes themselves
-	private final HashMap<Node, TargetValue> specialProjTargets = new HashMap<>();
+	private final HashMap<Node, Target> specialProjDivModTargets = new HashMap<>();
 
 	// TODO: remove if possible!
 	private final HashMap<Node, Iterable<Node>> tempSuccessor = new HashMap<>();
@@ -77,7 +79,7 @@ public class OptimizationVisitor implements NodeVisitor {
 		this.workList = workList;
 	}
 
-	public HashMap<Node, TargetValue> getTargetValues() {
+	public HashMap<Node, Target> getTargetValues() {
 		return targets;
 	}
 
@@ -94,10 +96,18 @@ public class OptimizationVisitor implements NodeVisitor {
 	}
 
 	private void setTargetValue(Node node, TargetValue targetValue) {
-		targets.put(node, targetValue);
+		targets.put(node, new Target(targetValue));
 	}
 
-	private TargetValue getTarget(Node node) {
+	private void setTargetValue(Node node, TargetValue targetValue, boolean remove) {
+		targets.put(node, new Target(targetValue, remove));
+	}
+
+	private TargetValue getTargetValue(Node node) {
+		return targets.get(node) == null ? null : targets.get(node).getTargetValue();
+	}
+
+	private Target getTarget(Node node) {
 		return targets.get(node);
 	}
 
@@ -119,14 +129,13 @@ public class OptimizationVisitor implements NodeVisitor {
 
 	@Override
 	public void visit(Add add) {
-		addSuccessor(add, add.getPreds());
-		TargetValue target = getTarget(add);
+		TargetValue target = getTargetValue(add);
 		if (target != null && target.equals(TargetValue.getBad())) {
 			// no const
 			return;
 		}
-		TargetValue leftTarget = getTarget(add.getLeft()) == null ? TargetValue.getUnknown() : getTarget(add.getLeft());
-		TargetValue rightTarget = getTarget(add.getRight()) == null ? TargetValue.getUnknown() : getTarget(add.getRight());
+		TargetValue leftTarget = getTargetValue(add.getLeft()) == null ? TargetValue.getUnknown() : getTargetValue(add.getLeft());
+		TargetValue rightTarget = getTargetValue(add.getRight()) == null ? TargetValue.getUnknown() : getTargetValue(add.getRight());
 
 		if (leftTarget.isConstant() && rightTarget.isConstant()) {
 			setTargetValue(add, leftTarget.add(rightTarget));
@@ -136,8 +145,10 @@ public class OptimizationVisitor implements NodeVisitor {
 			setTargetValue(add, TargetValue.getUnknown());
 		}
 
-		if (target == null || !target.equals(getTarget(add))) {
-			workNodes(tempSuccessor.get(add));
+		if (target == null || !target.equals(getTargetValue(add))) {
+			for (Edge edge : BackEdges.getOuts(add)) {
+				workNode(edge.node);
+			}
 		}
 	}
 
@@ -167,14 +178,13 @@ public class OptimizationVisitor implements NodeVisitor {
 
 	@Override
 	public void visit(And and) {
-		addSuccessor(and, and.getPreds());
-		TargetValue target = getTarget(and);
+		TargetValue target = getTargetValue(and);
 		if (target != null && target.equals(TargetValue.getBad())) {
 			// no const
 			return;
 		}
-		TargetValue leftTarget = getTarget(and.getLeft()) == null ? TargetValue.getUnknown() : getTarget(and.getLeft());
-		TargetValue rightTarget = getTarget(and.getRight()) == null ? TargetValue.getUnknown() : getTarget(and.getRight());
+		TargetValue leftTarget = getTargetValue(and.getLeft()) == null ? TargetValue.getUnknown() : getTargetValue(and.getLeft());
+		TargetValue rightTarget = getTargetValue(and.getRight()) == null ? TargetValue.getUnknown() : getTargetValue(and.getRight());
 
 		if (leftTarget.isConstant() && rightTarget.isConstant()) {
 			setTargetValue(and, leftTarget.and(rightTarget));
@@ -184,8 +194,10 @@ public class OptimizationVisitor implements NodeVisitor {
 			setTargetValue(and, TargetValue.getUnknown());
 		}
 
-		if (target == null || !target.equals(getTarget(and))) {
-			workNodes(tempSuccessor.get(and));
+		if (target == null || !target.equals(getTargetValue(and))) {
+			for (Edge edge : BackEdges.getOuts(and)) {
+				workNode(edge.node);
+			}
 		}
 	}
 
@@ -264,25 +276,34 @@ public class OptimizationVisitor implements NodeVisitor {
 	@Override
 	public void visit(Div div) {
 		// // firm automatically skips exchanging the node if right target is null
-		addSuccessor(div, div.getPreds());
-		TargetValue target = getTarget(div);
+		TargetValue target = getTargetValue(div);
 		if (target != null && target.equals(TargetValue.getBad())) {
 			// no const
 			return;
 		}
-		TargetValue leftTarget = getTarget(div.getLeft()) == null ? TargetValue.getUnknown() : getTarget(div.getLeft());
-		TargetValue rightTarget = getTarget(div.getRight()) == null ? TargetValue.getUnknown() : getTarget(div.getRight());
+		Target leftTarget = getTarget(div.getLeft());
+		TargetValue leftTargetValue = (leftTarget == null || leftTarget.getTargetValue() == null) ? TargetValue.getUnknown() : leftTarget
+				.getTargetValue();
+		TargetValue rightTargetValue = getTargetValue(div.getRight()) == null ? TargetValue.getUnknown() : getTargetValue(div.getRight());
 
-		if (leftTarget.isConstant() && rightTarget.isConstant()) {
-			specialProjTargets.put(div, leftTarget.div(rightTarget));
-		} else if (leftTarget.equals(TargetValue.getBad()) || rightTarget.equals(TargetValue.getBad())) {
-			specialProjTargets.put(div, TargetValue.getBad());
+		if (leftTargetValue.isNull()) {
+			if (leftTarget.isRemove()) {
+				specialProjDivModTargets.put(div, new Target(leftTargetValue, false));
+			} else {
+				specialProjDivModTargets.put(div, new Target(leftTargetValue, true));
+			}
+		} else if (leftTargetValue.isConstant() && rightTargetValue.isConstant()) {
+			specialProjDivModTargets.put(div, new Target(leftTargetValue.div(rightTargetValue)));
+		} else if (leftTargetValue.equals(TargetValue.getBad()) || rightTargetValue.equals(TargetValue.getBad())) {
+			specialProjDivModTargets.put(div, new Target(TargetValue.getBad()));
 		} else {
-			specialProjTargets.put(div, TargetValue.getUnknown());
+			specialProjDivModTargets.put(div, new Target(TargetValue.getUnknown()));
 		}
 
-		if (target == null || !target.equals(getTarget(div))) {
-			workNodes(tempSuccessor.get(div));
+		if (target == null || !target.equals(getTargetValue(div))) {
+			for (Edge edge : BackEdges.getOuts(div)) {
+				workNode(edge.node);
+			}
 		}
 
 	}
@@ -343,50 +364,71 @@ public class OptimizationVisitor implements NodeVisitor {
 
 	@Override
 	public void visit(Minus minus) {
-		// TargetValue target = getTarget(minus.getOp());
-		//
-		// if (target != null) {
-		// TargetValue newTargetValue = target.neg();
-		// setTargetValue(minus, newTargetValue);
-		// // TODO: add the nodes having this add as predecessor. How can we get them?
-		// }
+		TargetValue target = getTargetValue(minus.getOp());
+		if (target != null && target.equals(TargetValue.getBad())) {
+			// no const
+			return;
+		}
+		TargetValue newTargetValue = target == null ? TargetValue.getUnknown() : target.neg();
+
+		if (newTargetValue.isConstant()) {
+			setTargetValue(minus, newTargetValue);
+		} else if (newTargetValue.equals(TargetValue.getBad())) {
+			setTargetValue(minus, newTargetValue);
+		} else {
+			setTargetValue(minus, newTargetValue);
+		}
+
+		if (target == null || !target.equals(getTargetValue(minus))) {
+			for (Edge edge : BackEdges.getOuts(minus)) {
+				workNode(edge.node);
+			}
+		}
 	}
 
 	@Override
 	public void visit(Mod mod) {
 		// // firm automatically skips exchanging the node if right target is null
-		addSuccessor(mod, mod.getPreds());
-		TargetValue target = getTarget(mod);
+		TargetValue target = getTargetValue(mod);
 		if (target != null && target.equals(TargetValue.getBad())) {
 			// no const
 			return;
 		}
-		TargetValue leftTarget = getTarget(mod.getLeft()) == null ? TargetValue.getUnknown() : getTarget(mod.getLeft());
-		TargetValue rightTarget = getTarget(mod.getRight()) == null ? TargetValue.getUnknown() : getTarget(mod.getRight());
+		Target leftTarget = getTarget(mod.getLeft());
+		TargetValue leftTargetValue = (leftTarget == null || leftTarget.getTargetValue() == null) ? TargetValue.getUnknown() : leftTarget
+				.getTargetValue();
+		TargetValue rightTarget = getTargetValue(mod.getRight()) == null ? TargetValue.getUnknown() : getTargetValue(mod.getRight());
 
-		if (leftTarget.isConstant() && rightTarget.isConstant()) {
-			specialProjTargets.put(mod, leftTarget.mod(rightTarget));
-		} else if (leftTarget.equals(TargetValue.getBad()) || rightTarget.equals(TargetValue.getBad())) {
-			specialProjTargets.put(mod, TargetValue.getBad());
+		if (leftTargetValue.isNull()) {
+			if (leftTarget.isRemove()) {
+				specialProjDivModTargets.put(mod, new Target(leftTargetValue, false));
+			} else {
+				specialProjDivModTargets.put(mod, new Target(leftTargetValue, true));
+			}
+		} else if (leftTargetValue.isConstant() && rightTarget.isConstant()) {
+			specialProjDivModTargets.put(mod, new Target(leftTargetValue.mod(rightTarget)));
+		} else if (leftTargetValue.equals(TargetValue.getBad()) || rightTarget.equals(TargetValue.getBad())) {
+			specialProjDivModTargets.put(mod, new Target(TargetValue.getBad()));
 		} else {
-			specialProjTargets.put(mod, TargetValue.getUnknown());
+			specialProjDivModTargets.put(mod, new Target(TargetValue.getUnknown()));
 		}
 
-		if (target == null || !target.equals(getTarget(mod))) {
-			workNodes(tempSuccessor.get(mod));
+		if (target == null || !target.equals(getTargetValue(mod))) {
+			for (Edge edge : BackEdges.getOuts(mod)) {
+				workNode(edge.node);
+			}
 		}
 	}
 
 	@Override
 	public void visit(Mul mul) {
-		addSuccessor(mul, mul.getPreds());
-		TargetValue target = getTarget(mul);
+		TargetValue target = getTargetValue(mul);
 		if (target != null && target.equals(TargetValue.getBad())) {
 			// no const
 			return;
 		}
-		TargetValue leftTarget = getTarget(mul.getLeft()) == null ? TargetValue.getUnknown() : getTarget(mul.getLeft());
-		TargetValue rightTarget = getTarget(mul.getRight()) == null ? TargetValue.getUnknown() : getTarget(mul.getRight());
+		TargetValue leftTarget = getTargetValue(mul.getLeft()) == null ? TargetValue.getUnknown() : getTargetValue(mul.getLeft());
+		TargetValue rightTarget = getTargetValue(mul.getRight()) == null ? TargetValue.getUnknown() : getTargetValue(mul.getRight());
 
 		if (leftTarget.isConstant() && rightTarget.isConstant()) {
 			setTargetValue(mul, leftTarget.mul(rightTarget));
@@ -396,8 +438,10 @@ public class OptimizationVisitor implements NodeVisitor {
 			setTargetValue(mul, TargetValue.getUnknown());
 		}
 
-		if (target == null || !target.equals(getTarget(mul))) {
-			workNodes(tempSuccessor.get(mul));
+		if (target == null || !target.equals(getTargetValue(mul))) {
+			for (Edge edge : BackEdges.getOuts(mul)) {
+				workNode(edge.node);
+			}
 		}
 	}
 
@@ -421,13 +465,26 @@ public class OptimizationVisitor implements NodeVisitor {
 
 	@Override
 	public void visit(Not not) {
-		// TargetValue target = getTarget(not.getOp());
-		//
-		// if (target != null) {
-		// TargetValue newTargetValue = target.not();
-		// setTargetValue(not, newTargetValue);
-		// // TODO: add the nodes having this add as predecessor. How can we get them?
-		// }
+		TargetValue target = getTargetValue(not.getOp());
+		if (target != null && target.equals(TargetValue.getBad())) {
+			// no const
+			return;
+		}
+		TargetValue newTargetValue = target == null ? TargetValue.getUnknown() : target.not();
+
+		if (newTargetValue.isConstant()) {
+			setTargetValue(not, newTargetValue);
+		} else if (newTargetValue.equals(TargetValue.getBad())) {
+			setTargetValue(not, newTargetValue);
+		} else {
+			setTargetValue(not, newTargetValue);
+		}
+
+		if (target == null || !target.equals(getTargetValue(not))) {
+			for (Edge edge : BackEdges.getOuts(not)) {
+				workNode(edge.node);
+			}
+		}
 	}
 
 	@Override
@@ -438,14 +495,13 @@ public class OptimizationVisitor implements NodeVisitor {
 
 	@Override
 	public void visit(Or or) {
-		addSuccessor(or, or.getPreds());
-		TargetValue target = getTarget(or);
+		TargetValue target = getTargetValue(or);
 		if (target != null && target.equals(TargetValue.getBad())) {
 			// no const
 			return;
 		}
-		TargetValue leftTarget = getTarget(or.getLeft()) == null ? TargetValue.getUnknown() : getTarget(or.getLeft());
-		TargetValue rightTarget = getTarget(or.getRight()) == null ? TargetValue.getUnknown() : getTarget(or.getRight());
+		TargetValue leftTarget = getTargetValue(or.getLeft()) == null ? TargetValue.getUnknown() : getTargetValue(or.getLeft());
+		TargetValue rightTarget = getTargetValue(or.getRight()) == null ? TargetValue.getUnknown() : getTargetValue(or.getRight());
 
 		if (leftTarget.isConstant() && rightTarget.isConstant()) {
 			setTargetValue(or, leftTarget.or(rightTarget));
@@ -455,39 +511,50 @@ public class OptimizationVisitor implements NodeVisitor {
 			setTargetValue(or, TargetValue.getUnknown());
 		}
 
-		if (target == null || !target.equals(getTarget(or))) {
-			workNodes(tempSuccessor.get(or));
+		if (target == null || !target.equals(getTargetValue(or))) {
+			for (Edge edge : BackEdges.getOuts(or)) {
+				workNode(edge.node);
+			}
 		}
 	}
 
 	@Override
 	public void visit(Phi phi) {
-		addSuccessor(phi, phi.getPreds());
-		TargetValue target = getTarget(phi);
+		TargetValue target = getTargetValue(phi);
 		if (target != null && target.equals(TargetValue.getBad())) {
 			// no const
 			return;
 		}
-		TargetValue predTarget = getTarget(phi.getPred(0)) == null ? TargetValue.getUnknown() : getTarget(phi.getPred(0));
-		for (int i = 1; i < phi.getPredCount(); i++) {
-			TargetValue tmpTarget = getTarget(phi.getPred(i)) == null ? TargetValue.getUnknown() : getTarget(phi.getPred(i));
 
-			if (predTarget.isConstant() && tmpTarget.isConstant() && predTarget.equals(tmpTarget)) {
-				setTargetValue(phi, predTarget);
-			} else if (predTarget.equals(TargetValue.getBad()) || tmpTarget.equals(TargetValue.getBad())
-					|| (predTarget.isConstant() && tmpTarget.isConstant() && !predTarget.equals(tmpTarget))) {
-				setTargetValue(phi, TargetValue.getBad());
+		Target predTarget = getTarget(phi.getPred(0));
+		TargetValue predTargetValue = (predTarget == null || predTarget.getTargetValue() == null) ? TargetValue.getUnknown() : predTarget
+				.getTargetValue();
+		for (int i = 1; i < phi.getPredCount(); i++) {
+			Target tmpTarget = getTarget(phi.getPred(i));
+			TargetValue tmpTargetValue = (tmpTarget == null || tmpTarget.getTargetValue() == null) ? TargetValue.getUnknown() : tmpTarget
+					.getTargetValue();
+			if (predTargetValue.isConstant() && tmpTargetValue.isConstant() && predTargetValue.equals(tmpTargetValue)) {
+				if (predTarget.isRemove() && tmpTarget.isRemove()) {
+					setTargetValue(phi, predTargetValue, true);
+				} else {
+					setTargetValue(phi, predTargetValue, false);
+				}
+			} else if (predTargetValue.equals(TargetValue.getBad()) || tmpTargetValue.equals(TargetValue.getBad())
+					|| (predTargetValue.isConstant() && tmpTargetValue.isConstant() && !predTargetValue.equals(tmpTargetValue))) {
+				setTargetValue(phi, TargetValue.getBad(), false);
 				break;
-			} else if (tmpTarget.equals(TargetValue.getUnknown())) {
-				setTargetValue(phi, predTarget);
+			} else if (tmpTargetValue.equals(TargetValue.getUnknown())) {
+				setTargetValue(phi, predTargetValue, false);
 			} else {
-				setTargetValue(phi, tmpTarget);
-				predTarget = tmpTarget;
+				setTargetValue(phi, tmpTargetValue, false);
+				predTargetValue = tmpTargetValue;
 			}
 		}
 
-		if (target == null || !target.equals(getTarget(phi))) {
-			workNodes(tempSuccessor.get(phi));
+		if (target == null || !target.equals(getTargetValue(phi))) {
+			for (Edge edge : BackEdges.getOuts(phi)) {
+				workNode(edge.node);
+			}
 		}
 	}
 
@@ -499,16 +566,22 @@ public class OptimizationVisitor implements NodeVisitor {
 
 	@Override
 	public void visit(Proj proj) {
-		addSuccessor(proj, proj.getPreds());
-		TargetValue target = getTarget(proj);
+		TargetValue target = getTargetValue(proj);
 		if (proj.getPredCount() == 1) {
-			if (specialProjTargets.containsKey(proj.getPred(0))) {
-				TargetValue tar = specialProjTargets.get(proj.getPred(0));
+			if (specialProjDivModTargets.containsKey(proj.getPred(0))) {
+				Target tar = specialProjDivModTargets.get(proj.getPred(0));
 				if (tar != null) {
-					setTargetValue(proj, tar);
+					TargetValue tarVal = tar.getTargetValue();
+					if (tarVal != null && tar.isRemove()) {
+						setTargetValue(proj, tarVal);
+					}
 				}
-			} else {
-				setTargetValue(proj, TargetValue.getBad());
+			}
+		}
+
+		if (target == null || !target.equals(getTargetValue(proj))) {
+			for (Edge edge : BackEdges.getOuts(proj)) {
+				workNode(edge.node);
 			}
 		} else {
 			setTargetValue(proj, TargetValue.getBad());
@@ -539,14 +612,13 @@ public class OptimizationVisitor implements NodeVisitor {
 
 	@Override
 	public void visit(Shl shl) {
-		addSuccessor(shl, shl.getPreds());
-		TargetValue target = getTarget(shl);
+		TargetValue target = getTargetValue(shl);
 		if (target != null && target.equals(TargetValue.getBad())) {
 			// no const
 			return;
 		}
-		TargetValue leftTarget = getTarget(shl.getLeft()) == null ? TargetValue.getUnknown() : getTarget(shl.getLeft());
-		TargetValue rightTarget = getTarget(shl.getRight()) == null ? TargetValue.getUnknown() : getTarget(shl.getRight());
+		TargetValue leftTarget = getTargetValue(shl.getLeft()) == null ? TargetValue.getUnknown() : getTargetValue(shl.getLeft());
+		TargetValue rightTarget = getTargetValue(shl.getRight()) == null ? TargetValue.getUnknown() : getTargetValue(shl.getRight());
 
 		if (leftTarget.isConstant() && rightTarget.isConstant()) {
 			setTargetValue(shl, leftTarget.shl(rightTarget));
@@ -556,21 +628,22 @@ public class OptimizationVisitor implements NodeVisitor {
 			setTargetValue(shl, TargetValue.getUnknown());
 		}
 
-		if (target == null || !target.equals(getTarget(shl))) {
-			workNodes(tempSuccessor.get(shl));
+		if (target == null || !target.equals(getTargetValue(shl))) {
+			for (Edge edge : BackEdges.getOuts(shl)) {
+				workNode(edge.node);
+			}
 		}
 	}
 
 	@Override
 	public void visit(Shr shr) {
-		addSuccessor(shr, shr.getPreds());
-		TargetValue target = getTarget(shr);
+		TargetValue target = getTargetValue(shr);
 		if (target != null && target.equals(TargetValue.getBad())) {
 			// no const
 			return;
 		}
-		TargetValue leftTarget = getTarget(shr.getLeft()) == null ? TargetValue.getUnknown() : getTarget(shr.getLeft());
-		TargetValue rightTarget = getTarget(shr.getRight()) == null ? TargetValue.getUnknown() : getTarget(shr.getRight());
+		TargetValue leftTarget = getTargetValue(shr.getLeft()) == null ? TargetValue.getUnknown() : getTargetValue(shr.getLeft());
+		TargetValue rightTarget = getTargetValue(shr.getRight()) == null ? TargetValue.getUnknown() : getTargetValue(shr.getRight());
 
 		if (leftTarget.isConstant() && rightTarget.isConstant()) {
 			setTargetValue(shr, leftTarget.shr(rightTarget));
@@ -580,21 +653,22 @@ public class OptimizationVisitor implements NodeVisitor {
 			setTargetValue(shr, TargetValue.getUnknown());
 		}
 
-		if (target == null || !target.equals(getTarget(shr))) {
-			workNodes(tempSuccessor.get(shr));
+		if (target == null || !target.equals(getTargetValue(shr))) {
+			for (Edge edge : BackEdges.getOuts(shr)) {
+				workNode(edge.node);
+			}
 		}
 	}
 
 	@Override
 	public void visit(Shrs shrs) {
-		addSuccessor(shrs, shrs.getPreds());
-		TargetValue target = getTarget(shrs);
+		TargetValue target = getTargetValue(shrs);
 		if (target != null && target.equals(TargetValue.getBad())) {
 			// no const
 			return;
 		}
-		TargetValue leftTarget = getTarget(shrs.getLeft()) == null ? TargetValue.getUnknown() : getTarget(shrs.getLeft());
-		TargetValue rightTarget = getTarget(shrs.getRight()) == null ? TargetValue.getUnknown() : getTarget(shrs.getRight());
+		TargetValue leftTarget = getTargetValue(shrs.getLeft()) == null ? TargetValue.getUnknown() : getTargetValue(shrs.getLeft());
+		TargetValue rightTarget = getTargetValue(shrs.getRight()) == null ? TargetValue.getUnknown() : getTargetValue(shrs.getRight());
 
 		if (leftTarget.isConstant() && rightTarget.isConstant()) {
 			setTargetValue(shrs, leftTarget.shrs(rightTarget));
@@ -604,8 +678,10 @@ public class OptimizationVisitor implements NodeVisitor {
 			setTargetValue(shrs, TargetValue.getUnknown());
 		}
 
-		if (target == null || !target.equals(getTarget(shrs))) {
-			workNodes(tempSuccessor.get(shrs));
+		if (target == null || !target.equals(getTargetValue(shrs))) {
+			for (Edge edge : BackEdges.getOuts(shrs)) {
+				workNode(edge.node);
+			}
 		}
 	}
 
@@ -629,25 +705,26 @@ public class OptimizationVisitor implements NodeVisitor {
 
 	@Override
 	public void visit(Sub sub) {
-		addSuccessor(sub, sub.getPreds());
-		TargetValue target = getTarget(sub);
+		TargetValue target = getTargetValue(sub);
 		if (target != null && target.equals(TargetValue.getBad())) {
 			// no const
 			return;
 		}
-		TargetValue leftTarget = getTarget(sub.getLeft()) == null ? TargetValue.getUnknown() : getTarget(sub.getLeft());
-		TargetValue rightTarget = getTarget(sub.getRight()) == null ? TargetValue.getUnknown() : getTarget(sub.getRight());
+		TargetValue leftTarget = getTargetValue(sub.getLeft()) == null ? TargetValue.getUnknown() : getTargetValue(sub.getLeft());
+		TargetValue rightTarget = getTargetValue(sub.getRight()) == null ? TargetValue.getUnknown() : getTargetValue(sub.getRight());
 
 		if (leftTarget.isConstant() && rightTarget.isConstant()) {
 			setTargetValue(sub, leftTarget.sub(rightTarget, sub.getMode()));
-		} else if (leftTarget.equals(TargetValue.getUnknown()) || rightTarget.equals(TargetValue.getUnknown())) {
-			setTargetValue(sub, TargetValue.getUnknown());
+		} else if (leftTarget.equals(TargetValue.getBad()) || rightTarget.equals(TargetValue.getBad())) {
+			setTargetValue(sub, TargetValue.getBad());
 		} else {
 			setTargetValue(sub, TargetValue.getBad());
 		}
 
-		if (target == null || !target.equals(getTarget(sub))) {
-			workNodes(tempSuccessor.get(sub));
+		if (target == null || !target.equals(getTargetValue(sub))) {
+			for (Edge edge : BackEdges.getOuts(sub)) {
+				workNode(edge.node);
+			}
 		}
 	}
 
@@ -679,6 +756,38 @@ public class OptimizationVisitor implements NodeVisitor {
 	public void visitUnknown(Node arg0) {
 		// TODO Auto-generated method stub
 
+	}
+
+	/**
+	 * Represents a target value for a node.
+	 *
+	 */
+	public class Target {
+		/**
+		 * Target value
+		 */
+		private TargetValue target;
+		/**
+		 * Flag if the node shall be removed from the graph.
+		 */
+		private boolean remove;
+
+		public Target(TargetValue target, boolean remove) {
+			this.target = target;
+			this.remove = remove;
+		}
+
+		public Target(TargetValue target) {
+			this(target, true);
+		}
+
+		public TargetValue getTargetValue() {
+			return target;
+		}
+
+		public boolean isRemove() {
+			return remove;
+		}
 	}
 
 }
