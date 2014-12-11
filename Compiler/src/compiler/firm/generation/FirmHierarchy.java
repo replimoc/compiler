@@ -8,7 +8,6 @@ import compiler.Symbol;
 import compiler.ast.Declaration;
 import compiler.ast.MethodDeclaration;
 import compiler.ast.ParameterDefinition;
-import compiler.ast.StaticMethodDeclaration;
 import compiler.ast.type.BasicType;
 import compiler.semantic.ClassScope;
 
@@ -19,7 +18,6 @@ import firm.MethodType;
 import firm.Mode;
 import firm.PointerType;
 import firm.PrimitiveType;
-import firm.Program;
 
 /**
  * Methods to create and access entities
@@ -32,7 +30,6 @@ public class FirmHierarchy {
 
 	private final Entity printInt;
 	private final Entity calloc;
-	private final Entity mainMethod;
 
 	private final HashMap<String, ClassWrapper> definedClasses = new HashMap<>();
 
@@ -59,10 +56,6 @@ public class FirmHierarchy {
 		MethodType callocType = new MethodType(new firm.Type[] { new PrimitiveType(getModeInt()), new PrimitiveType(getModeInt()) },
 				new firm.Type[] { new PrimitiveType(getModeReference()) });
 		this.calloc = new Entity(firm.Program.getGlobalType(), "calloc_proxy", callocType);
-
-		// void main(void)
-		MethodType mainType = new MethodType(new firm.Type[] {}, new firm.Type[] {});
-		this.mainMethod = new Entity(Program.getGlobalType(), "_main", mainType);
 	}
 
 	public void initialize(HashMap<Symbol, ClassScope> classScopes) {
@@ -89,9 +82,7 @@ public class FirmHierarchy {
 			}
 			for (MethodDeclaration currentMethod : scope.getMethodDefinitions()) {
 				// main method is added separately because there is no type java.lang.String in MiniJava
-				if (!(currentMethod instanceof StaticMethodDeclaration)) {
-					addMethodEntity(className, currentMethod);
-				}
+				addMethodEntity(className, currentMethod);
 			}
 
 			ClassType classType = getClassEntity(className);
@@ -106,7 +97,7 @@ public class FirmHierarchy {
 
 	private void addMethodEntity(String className, MethodDeclaration methodDefinition) {
 		ClassWrapper classWrapper = definedClasses.get(className);
-		List<ParameterDefinition> parameterDefinitions = methodDefinition.getParameters();
+		List<ParameterDefinition> parameterDefinitions = methodDefinition.getValidParameters();
 
 		// types of parameters
 		// first parameter is "this" with type referenceToClass
@@ -181,10 +172,6 @@ public class FirmHierarchy {
 
 	public Entity getCalloc() {
 		return calloc;
-	}
-
-	public Entity getMainMethod() {
-		return mainMethod;
 	}
 
 	public Mode getModeInt() {

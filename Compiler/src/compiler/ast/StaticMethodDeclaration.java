@@ -1,5 +1,8 @@
 package compiler.ast;
 
+import java.util.ArrayList;
+import java.util.List;
+
 import compiler.Symbol;
 import compiler.ast.type.Type;
 import compiler.ast.visitor.AstVisitor;
@@ -18,6 +21,11 @@ public class StaticMethodDeclaration extends MethodDeclaration {
 	@Override
 	public void accept(AstVisitor visitor) {
 		visitor.visit(this);
+	}
+
+	@Override
+	public List<ParameterDefinition> getValidParameters() {
+		return new ArrayList<>();
 	}
 
 	@Override

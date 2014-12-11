@@ -759,12 +759,21 @@ public class FirmGenerationVisitor implements AstVisitor {
 
 	@Override
 	public void visit(MethodDeclaration methodDeclaration) {
+		visitMethodDeclaration(methodDeclaration);
+	}
+
+	@Override
+	public void visit(StaticMethodDeclaration staticMethodDeclaration) {
+		visitMethodDeclaration(staticMethodDeclaration);
+	}
+
+	public void visitMethodDeclaration(MethodDeclaration methodDeclaration) {
 		clearState();
 
 		Entity methodEntity = hierarchy.getEntity(methodDeclaration);
 
 		int numberLocalVariables = methodDeclaration.getNumberOfLocalVariables();
-		int variablesCount = 1 /* this */+ methodDeclaration.getParameters().size() + numberLocalVariables /* boolean assignments */+ 1;
+		int variablesCount = 1 /* this */+ methodDeclaration.getValidParameters().size() + numberLocalVariables /* boolean assignments */+ 1;
 		Graph graph = new Graph(methodEntity, variablesCount);
 		methodConstruction = new Construction(graph);
 
@@ -772,7 +781,7 @@ public class FirmGenerationVisitor implements AstVisitor {
 		// set this parameter
 		createThisParameter(args);
 		// create parameters variables
-		for (ParameterDefinition param : methodDeclaration.getParameters()) {
+		for (ParameterDefinition param : methodDeclaration.getValidParameters()) {
 			param.accept(this);
 		}
 
@@ -787,32 +796,6 @@ public class FirmGenerationVisitor implements AstVisitor {
 			// return void if no return was specified yet
 			Node returnNode = methodConstruction.newReturn(methodConstruction.getCurrentMem(), new Node[] {});
 			graph.getEndBlock().addPred(returnNode);
-		}
-
-		methodConstruction.setUnreachable();
-		methodConstruction.finish();
-	}
-
-	@Override
-	public void visit(StaticMethodDeclaration staticMethodDeclaration) {
-		assert "main".equals(staticMethodDeclaration.getIdentifier().getValue());
-
-		clearState();
-
-		int variablesCount = staticMethodDeclaration.getNumberOfLocalVariables()/* boolean assignments */+ 1;
-		Graph mainGraph = new Graph(hierarchy.getMainMethod(), variablesCount);
-		this.methodConstruction = new Construction(mainGraph);
-
-		staticMethodDeclaration.getBlock().accept(this);
-
-		// add all collected return nodes
-		for (Node returnNode : methodReturns.values()) {
-			mainGraph.getEndBlock().addPred(returnNode);
-		}
-		if (!methodReturns.containsKey(methodConstruction.getCurrentBlock())) {
-			// return void if no return was specified yet
-			Node returnNode = methodConstruction.newReturn(methodConstruction.getCurrentMem(), new Node[] {});
-			mainGraph.getEndBlock().addPred(returnNode);
 		}
 
 		methodConstruction.setUnreachable();

@@ -48,6 +48,10 @@ public class MethodDeclaration extends ClassMember {
 		return parameters;
 	}
 
+	public List<ParameterDefinition> getValidParameters() {
+		return parameters;
+	}
+
 	public Block getBlock() {
 		return block;
 	}
