@@ -121,12 +121,12 @@ public class DeepCheckingVisitor implements AstVisitor {
 	private boolean hasType(Type type, AstNode astNode) {
 		return (astNode.getType() == null
 				|| (type.getBasicType() != null && type.getBasicType() != BasicType.INT && type.getBasicType() != BasicType.BOOLEAN
-				&& astNode.getType().getBasicType() == BasicType.NULL)
+				&& astNode.getType().is(BasicType.NULL))
 				|| astNode.getType().equals(type));
 	}
 
 	private boolean hasType(BasicType type, AstNode astNode) {
-		return (astNode.getType() == null || astNode.getType().getBasicType() == type);
+		return (astNode.getType() == null || astNode.getType().is(type));
 	}
 
 	private void expectType(Type type, AstNode astNode) {
@@ -169,7 +169,7 @@ public class DeepCheckingVisitor implements AstVisitor {
 		right.accept(this);
 		if (left.getType() != null
 				&& right.getType() != null
-				&& !(left.getType().equals(right.getType()) || left.getType().getBasicType() == BasicType.NULL || right.getType().getBasicType() == BasicType.NULL)) {
+				&& !(left.getType().equals(right.getType()) || left.getType().is(BasicType.NULL) || right.getType().is(BasicType.NULL))) {
 			throwTypeError(binaryExpression);
 		}
 	}
@@ -462,8 +462,8 @@ public class DeepCheckingVisitor implements AstVisitor {
 			return; // Already an error thrown in an upper left array part.
 		}
 
-		if (arrayExpression.getType().getBasicType() == BasicType.ARRAY) {
-			if (arrayExpression.getType().getSubType().getBasicType() == BasicType.STRING_ARGS) {
+		if (arrayExpression.getType().is(BasicType.ARRAY)) {
+			if (arrayExpression.getType().getSubType().is(BasicType.STRING_ARGS)) {
 				throwTypeError(arrayAccessExpression, "Access on main method parameter forbidden.");
 			}
 			arrayAccessExpression.setType(arrayExpression.getType().getSubType());
@@ -486,7 +486,7 @@ public class DeepCheckingVisitor implements AstVisitor {
 	@Override
 	public void visit(ReturnStatement returnStatement) {
 		isExpressionStatement = true;
-		boolean isVoidMethod = currentMethodDefinition.getType().getBasicType() == BasicType.VOID;
+		boolean isVoidMethod = currentMethodDefinition.getType().is(BasicType.VOID);
 
 		if (returnStatement.getOperand() != null) {
 			if (isVoidMethod) {

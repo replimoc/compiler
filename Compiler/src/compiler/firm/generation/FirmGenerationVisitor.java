@@ -96,7 +96,7 @@ public class FirmGenerationVisitor implements AstVisitor {
 
 	private Node getNodeForExpression(Expression expression) {
 		Node operand;
-		if (expression.getType().getBasicType() == BasicType.BOOLEAN) {
+		if (expression.getType().is(BasicType.BOOLEAN)) {
 			// maybe additional blocks need to be created
 			operand = createBooleanNodeFromBinaryExpression(expression);
 		} else {
@@ -539,7 +539,7 @@ public class FirmGenerationVisitor implements AstVisitor {
 			Node returnNode;
 			if (hasOperand) {
 				Node exprNode;
-				if (returnStatement.getOperand().getType().getBasicType() == BasicType.BOOLEAN) {
+				if (returnStatement.getOperand().getType().is(BasicType.BOOLEAN)) {
 					exprNode = createBooleanNodeFromBinaryExpression(returnStatement.getOperand());
 				} else {
 					returnStatement.getOperand().accept(this);
@@ -791,7 +791,7 @@ public class FirmGenerationVisitor implements AstVisitor {
 		for (Node returnNode : methodReturns.values()) {
 			graph.getEndBlock().addPred(returnNode);
 		}
-		if (methodDeclaration.getType().getBasicType() == BasicType.VOID
+		if (methodDeclaration.getType().is(BasicType.VOID)
 				&& !methodReturns.containsKey(methodConstruction.getCurrentBlock())) {
 			// return void if no return was specified yet
 			Node returnNode = methodConstruction.newReturn(methodConstruction.getCurrentMem(), new Node[] {});

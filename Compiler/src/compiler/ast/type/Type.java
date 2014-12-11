@@ -26,6 +26,10 @@ public class Type extends AstNode {
 		return null;
 	}
 
+	public boolean is(BasicType basicType) {
+		return getBasicType() == basicType;
+	}
+
 	@Override
 	public void accept(AstVisitor visitor) {
 		visitor.visit(this);

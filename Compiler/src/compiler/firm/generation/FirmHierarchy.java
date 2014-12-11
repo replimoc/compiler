@@ -81,7 +81,6 @@ public class FirmHierarchy {
 						getTypeDeclaration(currentField.getType(), true));
 			}
 			for (MethodDeclaration currentMethod : scope.getMethodDefinitions()) {
-				// main method is added separately because there is no type java.lang.String in MiniJava
 				addMethodEntity(className, currentMethod);
 			}
 
@@ -109,7 +108,7 @@ public class FirmHierarchy {
 
 		// return type
 		firm.Type[] returnType;
-		if (methodDefinition.getType().getBasicType() == BasicType.VOID) {
+		if (methodDefinition.getType().is(BasicType.VOID)) {
 			returnType = new firm.Type[] {};
 		} else {
 			returnType = new firm.Type[1];
