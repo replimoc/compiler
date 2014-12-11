@@ -2,7 +2,6 @@ package compiler.firm.optimization;
 
 import java.util.HashMap;
 import java.util.LinkedList;
-import java.util.List;
 
 import firm.BackEdges;
 import firm.BackEdges.Edge;
@@ -72,9 +71,6 @@ public class OptimizationVisitor implements NodeVisitor {
 	// Div and Mod nodes have a Proj successor which must be replaced instead of the Div and Mod nodes themselves
 	private final HashMap<Node, Target> specialProjDivModTargets = new HashMap<>();
 
-	// TODO: remove if possible!
-	private final HashMap<Node, Iterable<Node>> tempSuccessor = new HashMap<>();
-
 	public OptimizationVisitor(LinkedList<Node> workList) {
 		this.workList = workList;
 	}
@@ -109,22 +105,6 @@ public class OptimizationVisitor implements NodeVisitor {
 
 	private Target getTarget(Node node) {
 		return targets.get(node);
-	}
-
-	// TODO: remove if possible!
-	private void addSuccessor(Node node, Iterable<Node> nodes) {
-		for (Node predNode : nodes) {
-			Iterable<Node> pred = tempSuccessor.get(predNode);
-			List<Node> predNodes = new LinkedList<Node>();
-			if (pred != null) {
-				for (Node n : pred) {
-					predNodes.add(n);
-				}
-			}
-			if (!predNodes.contains(node))
-				predNodes.add(node);
-			tempSuccessor.put(predNode, predNodes);
-		}
 	}
 
 	@Override
@@ -583,12 +563,6 @@ public class OptimizationVisitor implements NodeVisitor {
 			for (Edge edge : BackEdges.getOuts(proj)) {
 				workNode(edge.node);
 			}
-		} else {
-			setTargetValue(proj, TargetValue.getBad());
-		}
-
-		if (target == null || !target.equals(getTarget(proj))) {
-			workNodes(tempSuccessor.get(proj));
 		}
 	}
 
