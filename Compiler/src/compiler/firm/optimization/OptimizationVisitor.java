@@ -69,7 +69,7 @@ public class OptimizationVisitor implements NodeVisitor {
 	private final LinkedList<Node> workList;
 	private final HashMap<Node, Target> targets = new HashMap<>();
 	// Div and Mod nodes have a Proj successor which must be replaced instead of the Div and Mod nodes themselves
-	private final HashMap<Node, TargetValue> specialProjDivModTargets = new HashMap<>();
+	private final HashMap<Node, Target> specialProjDivModTargets = new HashMap<>();
 
 	public OptimizationVisitor(LinkedList<Node> workList) {
 		this.workList = workList;
@@ -261,15 +261,23 @@ public class OptimizationVisitor implements NodeVisitor {
 			// no const
 			return;
 		}
-		TargetValue leftTarget = getTargetValue(div.getLeft()) == null ? TargetValue.getUnknown() : getTargetValue(div.getLeft());
-		TargetValue rightTarget = getTargetValue(div.getRight()) == null ? TargetValue.getUnknown() : getTargetValue(div.getRight());
+		Target leftTarget = getTarget(div.getLeft());
+		TargetValue leftTargetValue = (leftTarget == null || leftTarget.getTargetValue() == null) ? TargetValue.getUnknown() : leftTarget
+				.getTargetValue();
+		TargetValue rightTargetValue = getTargetValue(div.getRight()) == null ? TargetValue.getUnknown() : getTargetValue(div.getRight());
 
-		if (leftTarget.isConstant() && rightTarget.isConstant()) {
-			specialProjDivModTargets.put(div, leftTarget.div(rightTarget));
-		} else if (leftTarget.equals(TargetValue.getBad()) || rightTarget.equals(TargetValue.getBad())) {
-			specialProjDivModTargets.put(div, TargetValue.getBad());
+		if (leftTargetValue.isNull()) {
+			if (leftTarget.isRemove()) {
+				specialProjDivModTargets.put(div, new Target(leftTargetValue, false));
+			} else {
+				specialProjDivModTargets.put(div, new Target(leftTargetValue, true));
+			}
+		} else if (leftTargetValue.isConstant() && rightTargetValue.isConstant()) {
+			specialProjDivModTargets.put(div, new Target(leftTargetValue.div(rightTargetValue)));
+		} else if (leftTargetValue.equals(TargetValue.getBad()) || rightTargetValue.equals(TargetValue.getBad())) {
+			specialProjDivModTargets.put(div, new Target(TargetValue.getBad()));
 		} else {
-			specialProjDivModTargets.put(div, TargetValue.getUnknown());
+			specialProjDivModTargets.put(div, new Target(TargetValue.getUnknown()));
 		}
 
 		if (target == null || !target.equals(getTargetValue(div))) {
@@ -366,15 +374,23 @@ public class OptimizationVisitor implements NodeVisitor {
 			// no const
 			return;
 		}
-		TargetValue leftTarget = getTargetValue(mod.getLeft()) == null ? TargetValue.getUnknown() : getTargetValue(mod.getLeft());
+		Target leftTarget = getTarget(mod.getLeft());
+		TargetValue leftTargetValue = (leftTarget == null || leftTarget.getTargetValue() == null) ? TargetValue.getUnknown() : leftTarget
+				.getTargetValue();
 		TargetValue rightTarget = getTargetValue(mod.getRight()) == null ? TargetValue.getUnknown() : getTargetValue(mod.getRight());
 
-		if (leftTarget.isConstant() && rightTarget.isConstant()) {
-			specialProjDivModTargets.put(mod, leftTarget.mod(rightTarget));
-		} else if (leftTarget.equals(TargetValue.getBad()) || rightTarget.equals(TargetValue.getBad())) {
-			specialProjDivModTargets.put(mod, TargetValue.getBad());
+		if (leftTargetValue.isNull()) {
+			if (leftTarget.isRemove()) {
+				specialProjDivModTargets.put(mod, new Target(leftTargetValue, false));
+			} else {
+				specialProjDivModTargets.put(mod, new Target(leftTargetValue, true));
+			}
+		} else if (leftTargetValue.isConstant() && rightTarget.isConstant()) {
+			specialProjDivModTargets.put(mod, new Target(leftTargetValue.mod(rightTarget)));
+		} else if (leftTargetValue.equals(TargetValue.getBad()) || rightTarget.equals(TargetValue.getBad())) {
+			specialProjDivModTargets.put(mod, new Target(TargetValue.getBad()));
 		} else {
-			specialProjDivModTargets.put(mod, TargetValue.getUnknown());
+			specialProjDivModTargets.put(mod, new Target(TargetValue.getUnknown()));
 		}
 
 		if (target == null || !target.equals(getTargetValue(mod))) {
@@ -533,9 +549,12 @@ public class OptimizationVisitor implements NodeVisitor {
 		TargetValue target = getTargetValue(proj);
 		if (proj.getPredCount() == 1) {
 			if (specialProjDivModTargets.containsKey(proj.getPred(0))) {
-				TargetValue tar = specialProjDivModTargets.get(proj.getPred(0));
+				Target tar = specialProjDivModTargets.get(proj.getPred(0));
 				if (tar != null) {
-					setTargetValue(proj, tar);
+					TargetValue tarVal = tar.getTargetValue();
+					if (tarVal != null && tar.isRemove()) {
+						setTargetValue(proj, tarVal);
+					}
 				}
 			}
 		}
