@@ -18,7 +18,7 @@ import java.util.UUID;
 
 import org.junit.Ignore;
 
-import compiler.ast.ClassMember;
+import compiler.ast.MemberDeclaration;
 import compiler.firm.generation.FirmGenerationVisitor;
 import compiler.utils.TestUtils;
 
@@ -74,7 +74,7 @@ public final class FirmTestUtils {
 	public static void assertExportEquals(String assertionFolder, String javaFile, boolean export) throws Exception {
 		compiler.ast.Program ast = TestUtils.getAstForFile(javaFile);
 
-		for (ClassMember classMember : ast.getClasses().get(0).getMembers()) {
+		for (MemberDeclaration classMember : ast.getClasses().get(0).getMembers()) {
 			classMember.accept(new FirmGenerationVisitor());
 		}
 

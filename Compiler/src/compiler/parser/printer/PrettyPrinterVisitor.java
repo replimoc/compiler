@@ -5,10 +5,10 @@ import java.util.List;
 
 import compiler.ast.Block;
 import compiler.ast.ClassDeclaration;
-import compiler.ast.ClassMember;
+import compiler.ast.MemberDeclaration;
 import compiler.ast.FieldDeclaration;
 import compiler.ast.MethodDeclaration;
-import compiler.ast.ParameterDefinition;
+import compiler.ast.ParameterDeclaration;
 import compiler.ast.Program;
 import compiler.ast.StaticMethodDeclaration;
 import compiler.ast.statement.ArrayAccessExpression;
@@ -475,10 +475,10 @@ public class PrettyPrinterVisitor implements AstVisitor {
 			stringBuilder.append('\n');
 			tabStops++;
 
-			List<ClassMember> members = classDeclaration.getMembers();
+			List<MemberDeclaration> members = classDeclaration.getMembers();
 			Collections.sort(members);
 
-			for (ClassMember member : members) {
+			for (MemberDeclaration member : members) {
 				printTabs();
 				member.accept(this);
 			}
@@ -567,7 +567,7 @@ public class PrettyPrinterVisitor implements AstVisitor {
 	}
 
 	@Override
-	public void visit(ParameterDefinition parameterDefinition) {
+	public void visit(ParameterDeclaration parameterDefinition) {
 		parameterDefinition.getType().accept(this);
 		stringBuilder.append(' ');
 		stringBuilder.append(parameterDefinition.getIdentifier());
@@ -604,7 +604,7 @@ public class PrettyPrinterVisitor implements AstVisitor {
 		stringBuilder.append('(');
 		boolean first = true;
 
-		for (ParameterDefinition parameter : methodDeclaration.getParameters()) {
+		for (ParameterDeclaration parameter : methodDeclaration.getParameters()) {
 			if (first)
 				first = false;
 			else

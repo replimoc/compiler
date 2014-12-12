@@ -5,7 +5,7 @@ import compiler.ast.type.Type;
 import compiler.ast.visitor.AstVisitor;
 import compiler.lexer.Position;
 
-public class FieldDeclaration extends ClassMember {
+public class FieldDeclaration extends MemberDeclaration {
 	private static final String MEMBER_TYPE = "f";
 	private final Type type;
 

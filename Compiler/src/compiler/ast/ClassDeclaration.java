@@ -10,7 +10,7 @@ import compiler.lexer.Position;
 
 public class ClassDeclaration extends Declaration implements Comparable<ClassDeclaration> {
 	private static final String MEMBER_TYPE = "c";
-	private final List<ClassMember> members = new ArrayList<ClassMember>();
+	private final List<MemberDeclaration> members = new ArrayList<MemberDeclaration>();
 
 	public ClassDeclaration(Position position, Symbol identifier) {
 		super(position, identifier);
@@ -18,19 +18,19 @@ public class ClassDeclaration extends Declaration implements Comparable<ClassDec
 		setClassDeclaration(this);
 	}
 
-	public ClassDeclaration(Symbol identifier, ClassMember... members) {
+	public ClassDeclaration(Symbol identifier, MemberDeclaration... members) {
 		this(null, identifier);
-		for (ClassMember member : members) {
+		for (MemberDeclaration member : members) {
 			addClassMember(member);
 			member.setClassDeclaration(this);
 		}
 	}
 
-	public void addClassMember(ClassMember member) {
+	public void addClassMember(MemberDeclaration member) {
 		this.members.add(member);
 	}
 
-	public List<ClassMember> getMembers() {
+	public List<MemberDeclaration> getMembers() {
 		return members;
 	}
 

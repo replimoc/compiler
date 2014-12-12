@@ -8,11 +8,11 @@ import compiler.Symbol;
 import compiler.ast.AstNode;
 import compiler.ast.Block;
 import compiler.ast.ClassDeclaration;
-import compiler.ast.ClassMember;
+import compiler.ast.MemberDeclaration;
 import compiler.ast.Declaration;
 import compiler.ast.FieldDeclaration;
 import compiler.ast.MethodDeclaration;
-import compiler.ast.ParameterDefinition;
+import compiler.ast.ParameterDeclaration;
 import compiler.ast.Program;
 import compiler.ast.StaticMethodDeclaration;
 import compiler.ast.statement.ArrayAccessExpression;
@@ -94,7 +94,7 @@ public class PreNamingAnalysisVisitor implements AstVisitor {
 		currentFieldsMap = new HashMap<>();
 		currentMethodsMap = new HashMap<>();
 
-		for (ClassMember curr : classDeclaration.getMembers()) {
+		for (MemberDeclaration curr : classDeclaration.getMembers()) {
 			curr.accept(this);
 		}
 
@@ -142,7 +142,7 @@ public class PreNamingAnalysisVisitor implements AstVisitor {
 			return;
 		}
 
-		ParameterDefinition parameter = staticMethodDeclaration.getParameters().get(0);
+		ParameterDeclaration parameter = staticMethodDeclaration.getParameters().get(0);
 		Type parameterType = parameter.getType();
 		if (parameterType.getBasicType() != BasicType.ARRAY || !"String".equals(parameterType.getSubType().getIdentifier().getValue())) {
 			throwTypeError(staticMethodDeclaration, "'public static void main' method must have a single argument of type String[].");
@@ -322,7 +322,7 @@ public class PreNamingAnalysisVisitor implements AstVisitor {
 	}
 
 	@Override
-	public void visit(ParameterDefinition parameterDefinition) {
+	public void visit(ParameterDeclaration parameterDefinition) {
 	}
 
 }

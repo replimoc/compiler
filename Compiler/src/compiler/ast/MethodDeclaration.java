@@ -9,11 +9,11 @@ import compiler.ast.type.Type;
 import compiler.ast.visitor.AstVisitor;
 import compiler.lexer.Position;
 
-public class MethodDeclaration extends ClassMember {
+public class MethodDeclaration extends MemberDeclaration {
 	private static final String MEMBER_TYPE = "m";
 
 	private final Type returnType;
-	private final List<ParameterDefinition> parameters = new ArrayList<ParameterDefinition>();
+	private final List<ParameterDeclaration> parameters = new ArrayList<ParameterDeclaration>();
 	private Block block;
 	private int numberOfLocalVariables;
 
@@ -22,7 +22,7 @@ public class MethodDeclaration extends ClassMember {
 		this.returnType = returnType;
 	}
 
-	public MethodDeclaration(Symbol identifier, Type returnType, ParameterDefinition... parameters) {
+	public MethodDeclaration(Symbol identifier, Type returnType, ParameterDeclaration... parameters) {
 		this(null, identifier, returnType);
 		if (parameters != null && parameters.length > 0) {
 			this.parameters.addAll(Arrays.asList(parameters));
@@ -35,7 +35,7 @@ public class MethodDeclaration extends ClassMember {
 		this.block = block;
 	}
 
-	public void addParameter(ParameterDefinition parameter) {
+	public void addParameter(ParameterDeclaration parameter) {
 		parameters.add(parameter);
 	}
 
@@ -44,11 +44,11 @@ public class MethodDeclaration extends ClassMember {
 		return returnType;
 	}
 
-	public List<ParameterDefinition> getParameters() {
+	public List<ParameterDeclaration> getParameters() {
 		return parameters;
 	}
 
-	public List<ParameterDefinition> getValidParameters() {
+	public List<ParameterDeclaration> getValidParameters() {
 		return parameters;
 	}
 

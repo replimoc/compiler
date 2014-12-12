@@ -17,7 +17,7 @@ import compiler.ast.ClassDeclaration;
 import compiler.ast.Declaration;
 import compiler.ast.FieldDeclaration;
 import compiler.ast.MethodDeclaration;
-import compiler.ast.ParameterDefinition;
+import compiler.ast.ParameterDeclaration;
 import compiler.ast.Program;
 import compiler.ast.StaticMethodDeclaration;
 import compiler.ast.type.ArrayType;
@@ -234,7 +234,7 @@ public class PreNamingAnalysisVisitorTest {
 			}
 
 			for (Declaration param : method.getParameters()) {
-				methodDeclaration.addParameter(new ParameterDefinition(null, param.getType(), param.getIdentifier()));
+				methodDeclaration.addParameter(new ParameterDeclaration(null, param.getType(), param.getIdentifier()));
 			}
 			classDeclaration.addClassMember(methodDeclaration);
 		}
@@ -308,12 +308,12 @@ public class PreNamingAnalysisVisitorTest {
 		return type;
 	}
 
-	private MethodDeclaration m(String name, Type returnType, ParameterDefinition... parameters) {
+	private MethodDeclaration m(String name, Type returnType, ParameterDeclaration... parameters) {
 		return new MethodDeclaration(s(name), returnType, parameters);
 	}
 
-	private ParameterDefinition pd(String name, Type type) {
-		return new ParameterDefinition(type, s(name));
+	private ParameterDeclaration pd(String name, Type type) {
+		return new ParameterDeclaration(type, s(name));
 	}
 
 	private FieldDeclaration fd(String name, Type type) {

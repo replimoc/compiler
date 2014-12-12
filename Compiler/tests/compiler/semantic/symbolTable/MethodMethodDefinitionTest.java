@@ -7,7 +7,7 @@ import org.junit.Test;
 
 import compiler.Symbol;
 import compiler.ast.MethodDeclaration;
-import compiler.ast.ParameterDefinition;
+import compiler.ast.ParameterDeclaration;
 import compiler.ast.type.BasicType;
 import compiler.ast.type.Type;
 import compiler.lexer.Position;
@@ -17,7 +17,7 @@ public class MethodMethodDefinitionTest {
 	private final Symbol s = new Symbol("a");
 	private final Type t = new Type(null, BasicType.INT);
 	private final Position p = new Position(0, 0);
-	private final ParameterDefinition[] params = { new ParameterDefinition(p, t, s) };
+	private final ParameterDeclaration[] params = { new ParameterDeclaration(p, t, s) };
 
 	@Test
 	public void testEqualsAndHashCode3() {

@@ -24,7 +24,7 @@ public class StaticMethodDeclaration extends MethodDeclaration {
 	}
 
 	@Override
-	public List<ParameterDefinition> getValidParameters() {
+	public List<ParameterDeclaration> getValidParameters() {
 		return new ArrayList<>();
 	}
 

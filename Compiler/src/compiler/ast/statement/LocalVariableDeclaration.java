@@ -8,7 +8,7 @@ import compiler.lexer.Position;
 
 public class LocalVariableDeclaration extends Declaration implements Statement {
 
-	private static final String MEMBER_TYPE = "f";
+	private static final String MEMBER_TYPE = "l";
 	private final Expression expression;
 	private int variableNumber;
 

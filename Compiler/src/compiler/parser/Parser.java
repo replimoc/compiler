@@ -7,10 +7,10 @@ import java.util.List;
 import compiler.Symbol;
 import compiler.ast.Block;
 import compiler.ast.ClassDeclaration;
-import compiler.ast.ClassMember;
+import compiler.ast.MemberDeclaration;
 import compiler.ast.FieldDeclaration;
 import compiler.ast.MethodDeclaration;
-import compiler.ast.ParameterDefinition;
+import compiler.ast.ParameterDeclaration;
 import compiler.ast.Program;
 import compiler.ast.StaticMethodDeclaration;
 import compiler.ast.statement.ArrayAccessExpression;
@@ -153,7 +153,7 @@ public class Parser {
 	 * @throws ParserException
 	 * @throws IOException
 	 */
-	private ClassMember parseClassMember() throws ParserException, IOException {
+	private MemberDeclaration parseClassMember() throws ParserException, IOException {
 		switch (token.getType()) {
 		case PUBLIC:
 			consumeToken();
@@ -220,7 +220,7 @@ public class Parser {
 				expectAndConsume(TokenType.RP);
 
 				// new main method ast node
-				ParameterDefinition param = new ParameterDefinition(pos, new ArrayType(pos, new ClassType(pos, type)), ident);
+				ParameterDeclaration param = new ParameterDeclaration(pos, new ArrayType(pos, new ClassType(pos, type)), ident);
 				MethodDeclaration decl = new StaticMethodDeclaration(firstToken.getPosition(), firstToken.getSymbol(),
 						new Type(retType.getPosition(), BasicType.VOID), parseBlock());
 				decl.addParameter(param);
@@ -251,10 +251,10 @@ public class Parser {
 	 * @throws ParserException
 	 * @throws IOException
 	 */
-	private ParameterDefinition parseParameter() throws ParserException, IOException {
+	private ParameterDeclaration parseParameter() throws ParserException, IOException {
 		Type type = parseType();
 		expect(TokenType.IDENTIFIER);
-		ParameterDefinition param = new ParameterDefinition(token.getPosition(), type, token.getSymbol());
+		ParameterDeclaration param = new ParameterDeclaration(token.getPosition(), type, token.getSymbol());
 		consumeToken();
 		return param;
 	}

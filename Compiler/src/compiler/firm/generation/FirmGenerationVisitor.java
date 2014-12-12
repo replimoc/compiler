@@ -8,12 +8,12 @@ import java.util.Map.Entry;
 import compiler.Symbol;
 import compiler.ast.Block;
 import compiler.ast.ClassDeclaration;
-import compiler.ast.ClassMember;
+import compiler.ast.MemberDeclaration;
 import compiler.ast.Declaration;
 import compiler.ast.FieldDeclaration;
 import compiler.ast.MethodDeclaration;
 import compiler.ast.NativeMethodDeclaration;
-import compiler.ast.ParameterDefinition;
+import compiler.ast.ParameterDeclaration;
 import compiler.ast.StaticMethodDeclaration;
 import compiler.ast.statement.ArrayAccessExpression;
 import compiler.ast.statement.BooleanConstantExpression;
@@ -116,7 +116,7 @@ public class FirmGenerationVisitor implements AstVisitor {
 				new Entity(firmClassType, currentField.getAssemblerName(), currentField.getType().getFirmType());
 			}
 			for (MethodDeclaration currentMethod : scope.getMethodDefinitions()) {
-				List<ParameterDefinition> parameterDefinitions = currentMethod.getValidParameters();
+				List<ParameterDeclaration> parameterDefinitions = currentMethod.getValidParameters();
 
 				// types of parameters
 				// first parameter is "this" with type referenceToClass
@@ -768,7 +768,7 @@ public class FirmGenerationVisitor implements AstVisitor {
 
 	@Override
 	public void visit(ClassDeclaration classDeclaration) {
-		for (ClassMember curr : classDeclaration.getMembers()) {
+		for (MemberDeclaration curr : classDeclaration.getMembers()) {
 			curr.accept(this);
 		}
 	}
@@ -802,7 +802,7 @@ public class FirmGenerationVisitor implements AstVisitor {
 		// set this parameter
 		createThisParameter(args);
 		// create parameters variables
-		for (ParameterDefinition param : methodDeclaration.getValidParameters()) {
+		for (ParameterDeclaration param : methodDeclaration.getValidParameters()) {
 			param.accept(this);
 		}
 
@@ -829,7 +829,7 @@ public class FirmGenerationVisitor implements AstVisitor {
 	}
 
 	@Override
-	public void visit(ParameterDefinition parameterDefinition) {
+	public void visit(ParameterDeclaration parameterDefinition) {
 		Type type = parameterDefinition.getType();
 		Node reference = methodConstruction.getGraph().getArgs();
 		Node parameterProj = methodConstruction.newProj(reference, type.getMode(), parameterDefinition.getVariableNumber());

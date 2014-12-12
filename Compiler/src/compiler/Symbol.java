@@ -6,7 +6,7 @@ import compiler.semantic.symbolTable.Scope;
 /**
  * Symbol represents a hashed String (see StringTable).
  */
-public class Symbol {
+public class Symbol implements Comparable<Symbol> {
 	private final String value;
 	private Scope defScope;
 	private Declaration definition;
@@ -59,5 +59,10 @@ public class Symbol {
 
 	public boolean isDefined() {
 		return defScope != null && definition != null;
+	}
+
+	@Override
+	public int compareTo(Symbol other) {
+		return value.compareTo(other.value);
 	}
 }

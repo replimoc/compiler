@@ -4,7 +4,7 @@ import compiler.ast.Block;
 import compiler.ast.ClassDeclaration;
 import compiler.ast.FieldDeclaration;
 import compiler.ast.MethodDeclaration;
-import compiler.ast.ParameterDefinition;
+import compiler.ast.ParameterDeclaration;
 import compiler.ast.Program;
 import compiler.ast.StaticMethodDeclaration;
 import compiler.ast.statement.ArrayAccessExpression;
@@ -103,7 +103,7 @@ public interface AstVisitor {
 
 	public void visit(LocalVariableDeclaration localVariableDeclaration);
 
-	public void visit(ParameterDefinition parameterDefinition);
+	public void visit(ParameterDeclaration parameterDefinition);
 
 	public void visit(Program program);
 

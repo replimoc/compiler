@@ -8,7 +8,7 @@ import compiler.Symbol;
 import compiler.ast.AstNode;
 import compiler.ast.ClassDeclaration;
 import compiler.ast.NativeMethodDeclaration;
-import compiler.ast.ParameterDefinition;
+import compiler.ast.ParameterDeclaration;
 import compiler.ast.StaticFieldDeclaration;
 import compiler.ast.type.BasicType;
 import compiler.ast.type.Type;
@@ -36,7 +36,7 @@ public final class SemanticChecker {
 					printStreamName,
 					new NativeMethodDeclaration("print_int", getSymbol(stringTable, "println"),
 							new Type(BasicType.VOID),
-							new ParameterDefinition(new Type(BasicType.INT), getSymbol(stringTable, "arg0"))));
+							new ParameterDeclaration(new Type(BasicType.INT), getSymbol(stringTable, "arg0"))));
 			printStream.accept(preAnalysisVisitor);
 
 			// Create system class

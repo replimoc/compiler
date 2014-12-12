@@ -5,21 +5,21 @@ import compiler.ast.type.Type;
 import compiler.lexer.Position;
 
 public abstract class Declaration extends AstNode {
-	private final Symbol symbol;
+	protected final Symbol identifier;
 	private ClassDeclaration classDeclaration;
 
-	public Declaration(Position position, Symbol symbol) {
+	public Declaration(Position position, Symbol identifier) {
 		super(position);
-		this.symbol = symbol;
+		this.identifier = identifier;
 	}
 
-	public Declaration(Position position, Type type, Symbol symbol) {
+	public Declaration(Position position, Type type, Symbol identifier) {
 		super(position, type);
-		this.symbol = symbol;
+		this.identifier = identifier;
 	}
 
 	public Symbol getIdentifier() {
-		return symbol;
+		return identifier;
 	}
 
 	public String getAssemblerName() {
@@ -54,7 +54,7 @@ public abstract class Declaration extends AstNode {
 	public int hashCode() {
 		final int prime = 31;
 		int result = 1;
-		result = prime * result + ((symbol == null) ? 0 : symbol.hashCode());
+		result = prime * result + ((identifier == null) ? 0 : identifier.hashCode());
 		return result;
 	}
 
@@ -67,10 +67,10 @@ public abstract class Declaration extends AstNode {
 		if (getClass() != obj.getClass())
 			return false;
 		Declaration other = (Declaration) obj;
-		if (symbol == null) {
-			if (other.symbol != null)
+		if (identifier == null) {
+			if (other.identifier != null)
 				return false;
-		} else if (!symbol.equals(other.symbol))
+		} else if (!identifier.equals(other.identifier))
 			return false;
 		return true;
 	}

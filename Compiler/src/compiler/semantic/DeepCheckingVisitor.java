@@ -8,11 +8,11 @@ import compiler.Symbol;
 import compiler.ast.AstNode;
 import compiler.ast.Block;
 import compiler.ast.ClassDeclaration;
-import compiler.ast.ClassMember;
+import compiler.ast.MemberDeclaration;
 import compiler.ast.Declaration;
 import compiler.ast.FieldDeclaration;
 import compiler.ast.MethodDeclaration;
-import compiler.ast.ParameterDefinition;
+import compiler.ast.ParameterDeclaration;
 import compiler.ast.Program;
 import compiler.ast.StaticMethodDeclaration;
 import compiler.ast.statement.ArrayAccessExpression;
@@ -580,7 +580,7 @@ public class DeepCheckingVisitor implements AstVisitor {
 		currentClassDeclaration = classDeclaration;
 		currentClassScope = classScopes.get(classDeclaration.getIdentifier());
 
-		for (ClassMember classMember : classDeclaration.getMembers()) {
+		for (MemberDeclaration classMember : classDeclaration.getMembers()) {
 			classMember.setClassDeclaration(classDeclaration);
 			classMember.accept(this);
 		}
@@ -659,7 +659,7 @@ public class DeepCheckingVisitor implements AstVisitor {
 	}
 
 	@Override
-	public void visit(ParameterDefinition parameterDefinition) {
+	public void visit(ParameterDeclaration parameterDefinition) {
 		parameterDefinition.setClassDeclaration(currentClassDeclaration);
 		Type type = parameterDefinition.getType();
 
@@ -716,7 +716,7 @@ public class DeepCheckingVisitor implements AstVisitor {
 		symbolTable = new SymbolTable();
 		symbolTable.enterScope();
 
-		for (ParameterDefinition parameterDefinition : methodDeclaration.getParameters()) {
+		for (ParameterDeclaration parameterDefinition : methodDeclaration.getParameters()) {
 			parameterDefinition.accept(this);
 		}
 
