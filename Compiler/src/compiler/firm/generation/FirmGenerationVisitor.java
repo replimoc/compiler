@@ -325,7 +325,7 @@ public class FirmGenerationVisitor implements AstVisitor {
 		} else {
 			methodObject = getThisPointer();
 		}
-		method = hierarchy.getEntity(methodInvocationExpression.getMethodDefinition());
+		method = getEntity(methodInvocationExpression.getMethodDefinition());
 
 		// Generate parameter list
 		Expression[] parameters = methodInvocationExpression.getParameters();
@@ -377,7 +377,7 @@ public class FirmGenerationVisitor implements AstVisitor {
 
 	@Override
 	public void visit(NewObjectExpression newObjectExpression) {
-		firm.ClassType classType = hierarchy.getClassEntity(newObjectExpression.getType().getIdentifier().getValue());
+		firm.ClassType classType = newObjectExpression.getObjectClass().getType().getFirmClassType();
 		Node referenceToObject = callCalloc(intToNode(1), intToNode(classType.getSizeBytes()));
 		newObjectExpression.setFirmNode(referenceToObject);
 	}
@@ -421,7 +421,7 @@ public class FirmGenerationVisitor implements AstVisitor {
 	}
 
 	private void memberAccess(VariableAccessExpression variableAccessExpression, Node object, Expression assignmentRightSide) {
-		Entity field = hierarchy.getEntity(variableAccessExpression.getDefinition());
+		Entity field = getEntity(variableAccessExpression.getDefinition());
 
 		Node addressOfField = methodConstruction.newMember(object, field);
 
@@ -737,7 +737,7 @@ public class FirmGenerationVisitor implements AstVisitor {
 	public void visitMethodDeclaration(MethodDeclaration methodDeclaration) {
 		clearState();
 
-		Entity methodEntity = hierarchy.getEntity(methodDeclaration);
+		Entity methodEntity = getEntity(methodDeclaration);
 
 		int numberLocalVariables = methodDeclaration.getNumberOfLocalVariables();
 		int variablesCount = 1 /* this */+ methodDeclaration.getValidParameters().size() + numberLocalVariables /* boolean assignments */+ 1;
@@ -823,4 +823,7 @@ public class FirmGenerationVisitor implements AstVisitor {
 		// ArrayType will never be visited
 	}
 
+	private Entity getEntity(Declaration declaration) {
+		return declaration.getClassDeclaration().getType().getFirmClassType().getMemberByName(declaration.getAssemblerName());
+	}
 }

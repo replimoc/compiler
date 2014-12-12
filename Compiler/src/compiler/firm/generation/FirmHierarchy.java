@@ -29,18 +29,6 @@ public class FirmHierarchy {
 
 	private final Entity calloc;
 
-	private final HashMap<String, ClassWrapper> definedClasses = new HashMap<>();
-
-	static class ClassWrapper {
-		ClassWrapper(ClassDeclaration classDeclaration) {
-			classType = classDeclaration.getType().getFirmClassType();
-			referenceToClass = classDeclaration.getType().getFirmType();
-		}
-
-		ClassType classType;
-		firm.Type referenceToClass;
-	}
-
 	public FirmHierarchy() {
 		// set 64bit pointer as default
 		Mode.setDefaultModeP(getModeReference());
@@ -56,78 +44,52 @@ public class FirmHierarchy {
 		// first iterate over all classes -- so that forward references to classes
 		// in method parameters and return types work
 		for (Entry<Symbol, ClassScope> currentEntry : classScopes.entrySet()) {
-			String className = currentEntry.getKey().getValue();
 			ClassDeclaration classDeclaration = currentEntry.getValue().getClassDeclaration();
 
-			// Add class name
-			ClassWrapper wrapper = new ClassWrapper(classDeclaration);
-			definedClasses.put(className, wrapper);
+			// Create class nodes
+			classDeclaration.getType().getFirmClassType();
+			classDeclaration.getType().getFirmType();
 		}
 
 		// iterate over all fields and methods and create firm entities
 		for (Entry<Symbol, ClassScope> currentEntry : classScopes.entrySet()) {
-			String className = currentEntry.getKey().getValue();
 			ClassScope scope = currentEntry.getValue();
+			ClassDeclaration classDeclaration = scope.getClassDeclaration();
+			firm.ClassType firmClassType = classDeclaration.getType().getFirmClassType();
 
 			// Create field declarations
 			for (Declaration currentField : scope.getFieldDefinitions()) {
-				new Entity(getClassType(className),
-						currentField.getAssemblerName(),
-						currentField.getType().getFirmType());
+				new Entity(firmClassType, currentField.getAssemblerName(), currentField.getType().getFirmType());
 			}
 			for (MethodDeclaration currentMethod : scope.getMethodDefinitions()) {
-				addMethodEntity(className, currentMethod);
+				List<ParameterDefinition> parameterDefinitions = currentMethod.getValidParameters();
+
+				// types of parameters
+				// first parameter is "this" with type referenceToClass
+				firm.Type[] parameterTypes = new firm.Type[parameterDefinitions.size() + 1];
+				parameterTypes[0] = classDeclaration.getType().getFirmType();
+				for (int paramIdx = 0; paramIdx < parameterDefinitions.size(); paramIdx++) {
+					parameterTypes[paramIdx + 1] = parameterDefinitions.get(paramIdx).getType().getFirmType();
+				}
+
+				// return type
+				firm.Type[] returnType = {};
+				if (!currentMethod.getType().is(BasicType.VOID)) {
+					returnType = new firm.Type[1];
+					returnType[0] = currentMethod.getType().getFirmType();
+				}
+
+				// create methodType and methodEntity
+				MethodType methodType = new MethodType(parameterTypes, returnType);
+
+				// create new entity and attach to currentClass
+				new Entity(firmClassType, currentMethod.getAssemblerName(), methodType);
 			}
 
-			ClassType classType = getClassEntity(className);
+			ClassType classType = classDeclaration.getType().getFirmClassType();
 			classType.layoutFields();
 			classType.finishLayout();
 		}
-	}
-
-	private ClassType getClassType(String className) {
-		return definedClasses.get(className).classType;
-	}
-
-	private void addMethodEntity(String className, MethodDeclaration methodDefinition) {
-		ClassWrapper classWrapper = definedClasses.get(className);
-		List<ParameterDefinition> parameterDefinitions = methodDefinition.getValidParameters();
-
-		// types of parameters
-		// first parameter is "this" with type referenceToClass
-		firm.Type[] parameterTypes = new firm.Type[parameterDefinitions.size() + 1];
-		parameterTypes[0] = classWrapper.referenceToClass;
-		for (int paramIdx = 0; paramIdx < parameterDefinitions.size(); paramIdx++) {
-			parameterTypes[paramIdx + 1] = parameterDefinitions.get(paramIdx).getType().getFirmType();
-		}
-
-		// return type
-		firm.Type[] returnType;
-		if (methodDefinition.getType().is(BasicType.VOID)) {
-			returnType = new firm.Type[] {};
-		} else {
-			returnType = new firm.Type[1];
-			returnType[0] = methodDefinition.getType().getFirmType();
-		}
-
-		// create methodType and methodEntity
-		MethodType methodType = new MethodType(parameterTypes, returnType);
-
-		// create new entity and attach to currentClass
-		new Entity(classWrapper.classType, methodDefinition.getAssemblerName(), methodType);
-	}
-
-	public Entity getEntity(Declaration declaration) {
-		return getClassType(declaration.getClassName()).getMemberByName(declaration.getAssemblerName());
-	}
-
-	public ClassType getClassEntity(String className) {
-		return definedClasses.get(className).classType;
-	}
-
-	public firm.Type getTypeDeclaration(compiler.ast.type.Type type, boolean arrayAsReference) {
-
-		return type.getFirmType();
 	}
 
 	public Entity getCalloc() {

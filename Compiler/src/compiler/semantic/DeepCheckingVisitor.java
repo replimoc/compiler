@@ -299,7 +299,11 @@ public class DeepCheckingVisitor implements AstVisitor {
 	@Override
 	public void visit(NewObjectExpression newObjectExpression) {
 		ClassType type = new ClassType(newObjectExpression.getPosition(), newObjectExpression.getIdentifier());
-		visit(type);
+		type.accept(this);
+		if (classScopes.containsKey(newObjectExpression.getIdentifier())) {
+			ClassScope objectClass = classScopes.get(newObjectExpression.getIdentifier());
+			newObjectExpression.setObjectClass(objectClass.getClassDeclaration());
+		}
 		newObjectExpression.setType(type);
 	}
 
