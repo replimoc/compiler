@@ -127,12 +127,11 @@ public final class CompilerApp {
 
 					FirmUtils.initFirm();
 					FirmGraphGenerator.transformToFirm(ast, semanticResult.getClassScopes());
+					FirmUtils.highToLowLevel();
 
 					if (!cmd.hasOption(NO_OPT)) {
 						FirmOptimizer.optimize();
 					}
-
-					FirmUtils.highToLowLevel();
 
 					if (cmd.hasOption(GRAPH_FIRM)) {
 						FirmUtils.createFirmGraph();
@@ -161,6 +160,7 @@ public final class CompilerApp {
 			System.err.println("Wrong Command Line Parameters: " + e.getMessage());
 		} catch (Throwable t) {
 			System.err.println("Unexpected exception occured: " + t.getMessage());
+			t.printStackTrace();
 			if (debug) {
 				t.printStackTrace();
 			}

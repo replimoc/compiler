@@ -68,6 +68,7 @@ public class OptimizationVisitor implements NodeVisitor {
 
 	private final LinkedList<Node> workList;
 	private final HashMap<Node, Target> targets = new HashMap<>();
+	private final HashMap<Node, Node> arithmeticTarget = new HashMap<>();
 	// Div and Mod nodes have a Proj successor which must be replaced instead of the Div and Mod nodes themselves
 	private final HashMap<Node, Target> specialProjDivModTargets = new HashMap<>();
 
@@ -77,6 +78,10 @@ public class OptimizationVisitor implements NodeVisitor {
 
 	public HashMap<Node, Target> getTargetValues() {
 		return targets;
+	}
+
+	public HashMap<Node, Node> getArithmeticTargets() {
+		return arithmeticTarget;
 	}
 
 	private void workNode(Node node) {
@@ -139,20 +144,24 @@ public class OptimizationVisitor implements NodeVisitor {
 		}
 	}
 
-	private void binaryExpressionCleanup(Node node, Node left, Node right, TargetValue target) {
+	private boolean binaryExpressionCleanup(Node node, Node left, Node right, TargetValue target) {
 		if (target == null || !target.equals(getTargetValue(node))) {
 			for (Edge edge : BackEdges.getOuts(node)) {
 				workNode(edge.node);
 			}
+			return false;
 		} else {
 			// are we finished?
 			if (target.isConstant()) {
 				if (!targets.get(left).isRemove() || !targets.get(right).isRemove()) {
 					setTargetValue(node, target, false);
+					return false;
 				} else {
 					setTargetValue(node, target, true);
+					return true;
 				}
 			}
+			return true;
 		}
 	}
 
@@ -193,16 +202,26 @@ public class OptimizationVisitor implements NodeVisitor {
 	@Override
 	public void visit(Add add) {
 		TargetValue target = getTargetValue(add);
-		if (target != null && target.equals(TargetValue.getBad())) {
-			// no const
-			return;
-		}
 		TargetValue leftTarget = getTargetValue(add.getLeft());
 		TargetValue rightTarget = getTargetValue(add.getRight());
 		TargetValue newTargetValue = (leftTarget.isConstant() && rightTarget.isConstant()) ? leftTarget.add(rightTarget) : TargetValue.getUnknown();
 
 		biTransferFunction(add, leftTarget, rightTarget, newTargetValue);
-		binaryExpressionCleanup(add, add.getLeft(), add.getRight(), target);
+
+		boolean fixpoint = binaryExpressionCleanup(add, add.getLeft(), add.getRight(), target);
+
+		if (fixpoint && !target.isConstant()) {
+			if (leftTarget.isNull() && targets.get(add.getLeft()).isRemove()) {
+				arithmeticTarget.put(add,
+						add.getRight());
+			} else if (rightTarget.isNull() && targets.get(add.getRight()).isRemove()) {
+				arithmeticTarget.put(add, add.getLeft());
+			}
+			else {
+				arithmeticTarget.remove(add);
+			}
+		}
+
 	}
 
 	@Override
@@ -232,10 +251,6 @@ public class OptimizationVisitor implements NodeVisitor {
 	@Override
 	public void visit(And and) {
 		TargetValue target = getTargetValue(and);
-		if (target != null && target.equals(TargetValue.getBad())) {
-			// no const
-			return;
-		}
 		TargetValue leftTarget = getTargetValue(and.getLeft());
 		TargetValue rightTarget = getTargetValue(and.getRight());
 		TargetValue newTargetValue = (leftTarget.isConstant() && rightTarget.isConstant()) ? leftTarget.and(rightTarget) : TargetValue.getUnknown();
@@ -293,15 +308,18 @@ public class OptimizationVisitor implements NodeVisitor {
 
 	@Override
 	public void visit(Const constant) {
-		if (constant.getMode().equals(Mode.getIs()) || constant.getMode().equals(Mode.getBu())) {
+		if (constant.getMode().equals(Mode.getIs()) || constant.getMode().equals(Mode.getBu()) || constant.getMode().equals(Mode.getLu())) {
 			setTargetValue(constant, constant.getTarval());
 		}
 	}
 
 	@Override
-	public void visit(Conv arg0) {
-		// TODO Auto-generated method stub
+	public void visit(Conv conv) {
+		TargetValue target = getTargetValue(conv.getOp());
+		TargetValue newTargetValue = (target == null || !target.isConstant()) ? TargetValue.getUnknown() : target.convertTo(conv.getMode());
 
+		unaryTransferFunction(conv, newTargetValue);
+		unaryExpressionCleanup(conv, conv.getOp(), target);
 	}
 
 	@Override
@@ -320,15 +338,11 @@ public class OptimizationVisitor implements NodeVisitor {
 	public void visit(Div div) {
 		// // firm automatically skips exchanging the node if right target is null
 		TargetValue target = getTargetValue(div);
-		if (target != null && target.equals(TargetValue.getBad())) {
-			// no const
-			return;
-		}
 		Target leftTarget = getTarget(div.getLeft());
 		TargetValue leftTargetValue = leftTarget == null ? TargetValue.getUnknown() : leftTarget.getTargetValue();
 		TargetValue rightTargetValue = getTargetValue(div.getRight());
 		TargetValue newTargetValue;
-		if (leftTargetValue.isNull()) {
+		if (leftTargetValue.isNull() && targets.get(div.getLeft()).isRemove()) {
 			newTargetValue = leftTargetValue;
 		} else {
 			newTargetValue = (leftTargetValue.isConstant() && rightTargetValue.isConstant()) ? leftTargetValue.div(rightTargetValue) : TargetValue
@@ -396,10 +410,6 @@ public class OptimizationVisitor implements NodeVisitor {
 	@Override
 	public void visit(Minus minus) {
 		TargetValue target = getTargetValue(minus.getOp());
-		if (target != null && target.equals(TargetValue.getBad())) {
-			// no const
-			return;
-		}
 		TargetValue newTargetValue = (target == null || !target.isConstant()) ? TargetValue.getUnknown() : target.neg();
 
 		unaryTransferFunction(minus, newTargetValue);
@@ -410,15 +420,11 @@ public class OptimizationVisitor implements NodeVisitor {
 	public void visit(Mod mod) {
 		// // firm automatically skips exchanging the node if right target is null
 		TargetValue target = getTargetValue(mod);
-		if (target != null && target.equals(TargetValue.getBad())) {
-			// no const
-			return;
-		}
 		Target leftTarget = getTarget(mod.getLeft());
 		TargetValue leftTargetValue = leftTarget == null ? TargetValue.getUnknown() : leftTarget.getTargetValue();
 		TargetValue rightTargetValue = getTargetValue(mod.getRight());
 		TargetValue newTargetValue;
-		if (leftTargetValue.isNull()) {
+		if (leftTargetValue.isNull() && targets.get(mod.getLeft()).isRemove()) {
 			newTargetValue = leftTargetValue;
 		} else {
 			newTargetValue = (leftTargetValue.isConstant() && rightTargetValue.isConstant()) ? leftTargetValue.mod(rightTargetValue) : TargetValue
@@ -432,15 +438,22 @@ public class OptimizationVisitor implements NodeVisitor {
 	@Override
 	public void visit(Mul mul) {
 		TargetValue target = getTargetValue(mul);
-		if (target != null && target.equals(TargetValue.getBad())) {
-			// no const
-			return;
-		}
 		TargetValue leftTarget = getTargetValue(mul.getLeft());
 		TargetValue rightTarget = getTargetValue(mul.getRight());
 		TargetValue newTargetValue = (leftTarget.isConstant() && rightTarget.isConstant()) ? leftTarget.mul(rightTarget) : TargetValue.getUnknown();
 
-		biTransferFunction(mul, leftTarget, rightTarget, newTargetValue);
+		if (leftTarget.isConstant() && rightTarget.isConstant()) {
+			setTargetValue(mul, newTargetValue);
+		} else if (leftTarget.isNull() && targets.get(mul.getLeft()).isRemove()) {
+			setTargetValue(mul, new TargetValue(0, mul.getMode()));
+		} else if (rightTarget.isNull() && targets.get(mul.getRight()).isRemove()) {
+			setTargetValue(mul, new TargetValue(0, mul.getMode()));
+		} else if (leftTarget.equals(TargetValue.getBad()) || rightTarget.equals(TargetValue.getBad())) {
+			setTargetValue(mul, TargetValue.getBad());
+		} else {
+			setTargetValue(mul, TargetValue.getUnknown());
+		}
+
 		binaryExpressionCleanup(mul, mul.getLeft(), mul.getRight(), target);
 	}
 
@@ -465,10 +478,6 @@ public class OptimizationVisitor implements NodeVisitor {
 	@Override
 	public void visit(Not not) {
 		TargetValue target = getTargetValue(not.getOp());
-		if (target != null && target.equals(TargetValue.getBad())) {
-			// no const
-			return;
-		}
 		TargetValue newTargetValue = (target == null || !target.isConstant()) ? TargetValue.getUnknown() : target.not();
 
 		unaryTransferFunction(not, newTargetValue);
@@ -484,10 +493,6 @@ public class OptimizationVisitor implements NodeVisitor {
 	@Override
 	public void visit(Or or) {
 		TargetValue target = getTargetValue(or);
-		if (target != null && target.equals(TargetValue.getBad())) {
-			// no const
-			return;
-		}
 		TargetValue leftTarget = getTargetValue(or.getLeft());
 		TargetValue rightTarget = getTargetValue(or.getRight());
 		TargetValue newTargetValue = (leftTarget.isConstant() && rightTarget.isConstant()) ? leftTarget.or(rightTarget) : TargetValue.getUnknown();
@@ -499,11 +504,6 @@ public class OptimizationVisitor implements NodeVisitor {
 	@Override
 	public void visit(Phi phi) {
 		TargetValue target = getTargetValue(phi);
-		if (target != null && target.equals(TargetValue.getBad())) {
-			// no const
-			return;
-		}
-
 		Target predTarget = getTarget(phi.getPred(0));
 		TargetValue predTargetValue = predTarget == null ? TargetValue.getUnknown() : predTarget.getTargetValue();
 		for (int i = 1; i < phi.getPredCount(); i++) {
@@ -566,6 +566,8 @@ public class OptimizationVisitor implements NodeVisitor {
 						setTargetValue(proj, tarVal);
 						// we need to visit this node again to check if the div/mod will be removed
 						workNode(proj);
+					} else {
+						setTargetValue(proj, TargetValue.getUnknown(), false);
 					}
 				}
 			}
@@ -620,10 +622,6 @@ public class OptimizationVisitor implements NodeVisitor {
 	@Override
 	public void visit(Shl shl) {
 		TargetValue target = getTargetValue(shl);
-		if (target != null && target.equals(TargetValue.getBad())) {
-			// no const
-			return;
-		}
 		TargetValue leftTarget = getTargetValue(shl.getLeft());
 		TargetValue rightTarget = getTargetValue(shl.getRight());
 		TargetValue newTargetValue = (leftTarget.isConstant() && rightTarget.isConstant()) ? leftTarget.shl(rightTarget) : TargetValue.getUnknown();
@@ -635,10 +633,6 @@ public class OptimizationVisitor implements NodeVisitor {
 	@Override
 	public void visit(Shr shr) {
 		TargetValue target = getTargetValue(shr);
-		if (target != null && target.equals(TargetValue.getBad())) {
-			// no const
-			return;
-		}
 		TargetValue leftTarget = getTargetValue(shr.getLeft());
 		TargetValue rightTarget = getTargetValue(shr.getRight());
 		TargetValue newTargetValue = (leftTarget.isConstant() && rightTarget.isConstant()) ? leftTarget.shr(rightTarget) : TargetValue.getUnknown();
@@ -650,10 +644,6 @@ public class OptimizationVisitor implements NodeVisitor {
 	@Override
 	public void visit(Shrs shrs) {
 		TargetValue target = getTargetValue(shrs);
-		if (target != null && target.equals(TargetValue.getBad())) {
-			// no const
-			return;
-		}
 		TargetValue leftTarget = getTargetValue(shrs.getLeft());
 		TargetValue rightTarget = getTargetValue(shrs.getRight());
 		TargetValue newTargetValue = (leftTarget.isConstant() && rightTarget.isConstant()) ? leftTarget.shrs(rightTarget) : TargetValue.getUnknown();
@@ -683,17 +673,22 @@ public class OptimizationVisitor implements NodeVisitor {
 	@Override
 	public void visit(Sub sub) {
 		TargetValue target = getTargetValue(sub);
-		if (target != null && target.equals(TargetValue.getBad())) {
-			// no const
-			return;
-		}
 		TargetValue leftTarget = getTargetValue(sub.getLeft());
 		TargetValue rightTarget = getTargetValue(sub.getRight());
 		TargetValue newTargetValue = (leftTarget.isConstant() && rightTarget.isConstant()) ? leftTarget.sub(rightTarget, sub.getMode()) : TargetValue
 				.getUnknown();
 
 		biTransferFunction(sub, leftTarget, rightTarget, newTargetValue);
-		binaryExpressionCleanup(sub, sub.getLeft(), sub.getRight(), target);
+		boolean fixpoint = binaryExpressionCleanup(sub, sub.getLeft(), sub.getRight(), target);
+
+		if (fixpoint && !target.isConstant()) {
+			if (rightTarget.isNull() && targets.get(sub.getRight()).isRemove()) {
+				arithmeticTarget.put(sub, sub.getLeft());
+			} else {
+				arithmeticTarget.remove(sub);
+			}
+		}
+
 	}
 
 	@Override

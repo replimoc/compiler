@@ -26,7 +26,8 @@ public final class FirmOptimizer {
 			workList(workList, visitor);
 			BackEdges.disable(graph);
 
-			replaceNodesWithTargets(graph, visitor.getTargetValues());
+			replaceNodesWithConstantTargets(graph, visitor.getTargetValues());
+			replaceNodesWithArithmeticTargets(graph, visitor.getArithmeticTargets());
 		}
 	}
 
@@ -37,7 +38,7 @@ public final class FirmOptimizer {
 		}
 	}
 
-	private static void replaceNodesWithTargets(Graph graph, HashMap<Node, Target> targetValuesMap) {
+	private static void replaceNodesWithConstantTargets(Graph graph, HashMap<Node, Target> targetValuesMap) {
 		for (Entry<Node, Target> targetEntry : targetValuesMap.entrySet()) {
 			Node node = targetEntry.getKey();
 			Target target = targetEntry.getValue();
@@ -46,6 +47,17 @@ public final class FirmOptimizer {
 				if (target.isRemove() && target.getTargetValue().isConstant()) {
 					Graph.exchange(node, graph.newConst(target.getTargetValue()));
 				}
+			}
+		}
+	}
+
+	private static void replaceNodesWithArithmeticTargets(Graph graph, HashMap<Node, Node> targetValuesMap) {
+		for (Entry<Node, Node> targetEntry : targetValuesMap.entrySet()) {
+			Node node = targetEntry.getKey();
+			Node target = targetEntry.getValue();
+
+			if (node.getPredCount() > 0) {
+				Graph.exchange(node, target);
 			}
 		}
 	}
