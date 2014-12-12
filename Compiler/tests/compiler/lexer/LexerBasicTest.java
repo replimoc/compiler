@@ -20,7 +20,6 @@ public class LexerBasicTest {
 		Token token = lexer.getNextToken();
 		Assert.assertEquals(TokenType.EOF, token.getType());
 
-		// TODO should the next token after EOF be EOF or null or not specified?
 		token = lexer.getNextToken();
 		Assert.assertNull(token);
 	}
@@ -33,7 +32,6 @@ public class LexerBasicTest {
 		Token token = lexer.getNextToken();
 		Assert.assertEquals(TokenType.EOF, token.getType());
 
-		// TODO should the next token after EOF be EOF or null or not specified?
 		token = lexer.getNextToken();
 		Assert.assertNull(token);
 	}

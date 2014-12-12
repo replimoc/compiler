@@ -295,7 +295,7 @@ public class Parser {
 			Position pos = token.getPosition();
 			consumeToken();
 
-			type = new ArrayType(pos, type); // TODO: seems to be ugly
+			type = new ArrayType(pos, type);
 		}
 
 		return type;

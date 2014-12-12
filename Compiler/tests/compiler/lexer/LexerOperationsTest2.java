@@ -133,11 +133,8 @@ public class LexerOperationsTest2 {
 
 	}
 
-	/**
-	 * TODO what is the proper name for x = expr ? true_val : false_val?
-	 */
 	@Test
-	public void testQuestionColon() throws Exception {
+	public void testTernaryOperator() throws Exception {
 		{
 			String[] expressions = { "a = iff ? /* */ then : /****/ ellse ", "v=a?b:c" };
 			for (String expression : expressions) {

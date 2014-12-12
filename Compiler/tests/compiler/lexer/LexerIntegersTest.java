@@ -66,7 +66,6 @@ public class LexerIntegersTest {
 
 			Assert.assertEquals(TokenType.SUBTRACT, minusToken.getType());
 			Assert.assertEquals(TokenType.INTEGER, literalToken.getType());
-			// TODO check javadoc for substring
 			Assert.assertEquals(literal.substring(1, literal.length()), literalToken.getSymbol().getValue());
 			Assert.assertEquals(TokenType.EOF, eof.getType());
 		}
