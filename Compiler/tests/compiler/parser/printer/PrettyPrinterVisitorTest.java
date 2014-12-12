@@ -6,11 +6,11 @@ import org.junit.Test;
 
 import compiler.Symbol;
 import compiler.ast.Block;
-import compiler.ast.ClassDeclaration;
-import compiler.ast.FieldDeclaration;
-import compiler.ast.MethodDeclaration;
-import compiler.ast.ParameterDeclaration;
 import compiler.ast.Program;
+import compiler.ast.declaration.ClassDeclaration;
+import compiler.ast.declaration.FieldDeclaration;
+import compiler.ast.declaration.MethodDeclaration;
+import compiler.ast.declaration.ParameterDeclaration;
 import compiler.ast.statement.ArrayAccessExpression;
 import compiler.ast.statement.BooleanConstantExpression;
 import compiler.ast.statement.Expression;

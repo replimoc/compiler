@@ -1,7 +1,7 @@
 package compiler.ast.statement;
 
 import compiler.Symbol;
-import compiler.ast.ClassDeclaration;
+import compiler.ast.declaration.ClassDeclaration;
 import compiler.ast.statement.unary.PrimaryExpression;
 import compiler.ast.visitor.AstVisitor;
 import compiler.lexer.Position;

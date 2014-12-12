@@ -6,8 +6,8 @@ import static org.junit.Assert.assertNotEquals;
 import org.junit.Test;
 
 import compiler.Symbol;
-import compiler.ast.MethodDeclaration;
-import compiler.ast.ParameterDeclaration;
+import compiler.ast.declaration.MethodDeclaration;
+import compiler.ast.declaration.ParameterDeclaration;
 import compiler.ast.type.BasicType;
 import compiler.ast.type.Type;
 import compiler.lexer.Position;

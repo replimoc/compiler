@@ -1,6 +1,6 @@
 package compiler;
 
-import compiler.ast.Declaration;
+import compiler.ast.declaration.Declaration;
 import compiler.semantic.symbolTable.Scope;
 
 /**

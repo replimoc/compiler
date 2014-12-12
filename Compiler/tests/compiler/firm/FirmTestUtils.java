@@ -18,10 +18,9 @@ import java.util.UUID;
 
 import org.junit.Ignore;
 
-import compiler.ast.MemberDeclaration;
+import compiler.ast.declaration.MemberDeclaration;
 import compiler.firm.generation.FirmGenerationVisitor;
 import compiler.utils.TestUtils;
-
 import firm.Dump;
 import firm.Graph;
 import firm.Program;

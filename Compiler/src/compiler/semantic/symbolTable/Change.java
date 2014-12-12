@@ -1,7 +1,7 @@
 package compiler.semantic.symbolTable;
 
 import compiler.Symbol;
-import compiler.ast.Declaration;
+import compiler.ast.declaration.Declaration;
 
 class Change {
 

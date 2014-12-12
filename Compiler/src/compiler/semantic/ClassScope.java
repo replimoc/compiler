@@ -4,10 +4,10 @@ import java.util.HashMap;
 import java.util.Map.Entry;
 
 import compiler.Symbol;
-import compiler.ast.ClassDeclaration;
-import compiler.ast.Declaration;
-import compiler.ast.MethodDeclaration;
-import compiler.ast.StaticFieldDeclaration;
+import compiler.ast.declaration.ClassDeclaration;
+import compiler.ast.declaration.Declaration;
+import compiler.ast.declaration.MethodDeclaration;
+import compiler.ast.declaration.StaticFieldDeclaration;
 
 public class ClassScope {
 	private final ClassDeclaration classDeclaration;

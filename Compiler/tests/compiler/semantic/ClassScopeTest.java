@@ -9,8 +9,8 @@ import java.util.HashMap;
 import org.junit.Test;
 
 import compiler.Symbol;
-import compiler.ast.Declaration;
-import compiler.ast.MethodDeclaration;
+import compiler.ast.declaration.Declaration;
+import compiler.ast.declaration.MethodDeclaration;
 
 public class ClassScopeTest {
 

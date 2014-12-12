@@ -1,10 +1,11 @@
-package compiler.ast;
+package compiler.ast.declaration;
 
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 
 import compiler.Symbol;
+import compiler.ast.Block;
 import compiler.ast.type.Type;
 import compiler.ast.visitor.AstVisitor;
 import compiler.lexer.Position;

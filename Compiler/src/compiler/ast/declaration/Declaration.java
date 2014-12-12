@@ -1,6 +1,7 @@
-package compiler.ast;
+package compiler.ast.declaration;
 
 import compiler.Symbol;
+import compiler.ast.AstNode;
 import compiler.ast.type.Type;
 import compiler.lexer.Position;
 

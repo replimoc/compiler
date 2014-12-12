@@ -1,4 +1,4 @@
-package compiler.ast;
+package compiler.ast.declaration;
 
 import java.util.ArrayList;
 import java.util.List;

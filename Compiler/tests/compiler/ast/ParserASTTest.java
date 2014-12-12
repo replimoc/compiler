@@ -6,6 +6,8 @@ import java.io.IOException;
 
 import org.junit.Test;
 
+import compiler.ast.declaration.FieldDeclaration;
+import compiler.ast.declaration.MethodDeclaration;
 import compiler.ast.type.ClassType;
 import compiler.parser.Parser;
 import compiler.parser.ParsingFailedException;
