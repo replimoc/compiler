@@ -108,14 +108,11 @@ public class FirmGenerationVisitor implements AstVisitor {
 	}
 
 	private void createFirmForBinaryOperation(BinaryExpression binaryExpression, CreateBinaryFirmNode firmNodeCreator) {
-		// get type of expression
-		Mode mode = convertAstTypeToMode(binaryExpression.getType());
-
 		// get firmNode for operands
 		Node operand1 = getNodeForExpression(binaryExpression.getOperand1());
 		Node operand2 = getNodeForExpression(binaryExpression.getOperand2());
 
-		Node exprNode = firmNodeCreator.createNode(operand1, operand2, mode);
+		Node exprNode = firmNodeCreator.createNode(operand1, operand2, binaryExpression.getType().getMode());
 		binaryExpression.setFirmNode(exprNode);
 	}
 
@@ -415,7 +412,7 @@ public class FirmGenerationVisitor implements AstVisitor {
 			variableAccessExpression.setFirmNode(rightSideNode);
 		} else {
 			Type astType = declaration.getType();
-			Mode accessMode = convertAstTypeToMode(astType);
+			Mode accessMode = astType.getMode();
 			Node node = methodConstruction.getVariable(variableNumber, accessMode);
 			variableAccessExpression.setFirmNode(node);
 		}
@@ -475,7 +472,7 @@ public class FirmGenerationVisitor implements AstVisitor {
 		if (assignmentRightSide != null) {
 			result = memberAssign(arrayIndex, assignmentRightSide);
 		} else {
-			result = memberGet(arrayIndex, convertAstTypeToMode(arrayExpression.getType().getSubType()));
+			result = memberGet(arrayIndex, arrayExpression.getType().getSubType().getMode());
 		}
 		arrayAccessExpression.setFirmNode(result);
 	}
@@ -487,15 +484,12 @@ public class FirmGenerationVisitor implements AstVisitor {
 
 	@Override
 	public void visit(NegateExpression negateExpression) {
-		// get type of expression
-		Mode mode = convertAstTypeToMode(negateExpression.getType());
-
 		// get firmNode for the operand
 		Expression operand = negateExpression.getOperand();
 		operand.accept(this);
 		Node operandNode = operand.getFirmNode();
 
-		Node exprNode = methodConstruction.newMinus(operandNode, mode);
+		Node exprNode = methodConstruction.newMinus(operandNode, negateExpression.getType().getMode());
 		negateExpression.setFirmNode(exprNode);
 	}
 
@@ -779,7 +773,7 @@ public class FirmGenerationVisitor implements AstVisitor {
 	public void visit(ParameterDefinition parameterDefinition) {
 		Type type = parameterDefinition.getType();
 		Node reference = methodConstruction.getGraph().getArgs();
-		Node parameterProj = methodConstruction.newProj(reference, convertAstTypeToMode(type), parameterDefinition.getVariableNumber());
+		Node parameterProj = methodConstruction.newProj(reference, type.getMode(), parameterDefinition.getVariableNumber());
 		methodConstruction.setVariable(parameterDefinition.getVariableNumber(), parameterProj);
 		parameterDefinition.setFirmNode(parameterProj);
 	}
@@ -793,20 +787,6 @@ public class FirmGenerationVisitor implements AstVisitor {
 		this.methodConstruction = null;
 		this.methodReturns.clear();
 		this.activePhiNode = null;
-	}
-
-	private firm.Mode convertAstTypeToMode(Type type) {
-		switch (type.getBasicType()) {
-		case INT:
-			return FirmUtils.getModeInteger();
-		case BOOLEAN:
-			return FirmUtils.getModeBoolean();
-		case CLASS:
-		case ARRAY:
-			return FirmUtils.getModeReference();
-		default:
-			throw new RuntimeException("convertTypeToMode for " + type + " is not implemented");
-		}
 	}
 
 	@Override

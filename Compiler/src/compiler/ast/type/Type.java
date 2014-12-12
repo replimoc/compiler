@@ -71,24 +71,26 @@ public class Type extends AstNode {
 		return true;
 	}
 
-	protected firm.Type generateFirmType() {
-		firm.Type firmType = null;
-		switch (this.getBasicType()) {
+	public firm.Mode getMode() {
+		switch (getBasicType()) {
 		case INT:
-			firmType = new PrimitiveType(FirmUtils.getModeInteger());
-			break;
+			return FirmUtils.getModeInteger();
 		case BOOLEAN:
-			firmType = new PrimitiveType(FirmUtils.getModeBoolean());
-			break;
-		case VOID:
-			return null;
+			return FirmUtils.getModeBoolean();
+		case CLASS:
+		case ARRAY:
 		case NULL:
-			firmType = new PrimitiveType(FirmUtils.getModeReference());
-			break;
+			return FirmUtils.getModeReference();
 		default:
-			break;
+			return null;
 		}
+	}
 
-		return firmType;
+	protected firm.Type generateFirmType() {
+		firm.Mode mode = getMode();
+		if (mode != null) {
+			return new PrimitiveType(mode);
+		}
+		return null;
 	}
 }
