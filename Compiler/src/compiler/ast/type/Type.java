@@ -5,9 +5,13 @@ import compiler.ast.AstNode;
 import compiler.ast.visitor.AstVisitor;
 import compiler.lexer.Position;
 
+import firm.Mode;
+import firm.PrimitiveType;
+
 public class Type extends AstNode {
 
 	private final BasicType basicType;
+	private firm.Type firmType;
 
 	public Type(BasicType basicType) {
 		this(null, basicType);
@@ -28,6 +32,12 @@ public class Type extends AstNode {
 
 	public Symbol getIdentifier() {
 		return null;
+	}
+
+	public firm.Type getFirmType() {
+		if (firmType == null)
+			this.firmType = generateFirmType();
+		return firmType;
 	}
 
 	public boolean is(BasicType basicType) {
@@ -61,4 +71,28 @@ public class Type extends AstNode {
 		return true;
 	}
 
+	protected static Mode getModeReference() {
+		return Mode.createReferenceMode("P64", Mode.Arithmetic.TwosComplement, 64, 64);
+	}
+
+	protected firm.Type generateFirmType() {
+		firm.Type firmType = null;
+		switch (this.getBasicType()) {
+		case INT:
+			firmType = new PrimitiveType(Mode.getIs());
+			break;
+		case BOOLEAN:
+			firmType = new PrimitiveType(Mode.getBu());
+			break;
+		case VOID:
+			return null;
+		case NULL:
+			firmType = new PrimitiveType(getModeReference());
+			break;
+		default:
+			break;
+		}
+
+		return firmType;
+	}
 }

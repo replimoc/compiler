@@ -5,18 +5,17 @@ import java.util.List;
 import java.util.Map.Entry;
 
 import compiler.Symbol;
+import compiler.ast.ClassDeclaration;
 import compiler.ast.Declaration;
 import compiler.ast.MethodDeclaration;
 import compiler.ast.ParameterDefinition;
 import compiler.ast.type.BasicType;
 import compiler.semantic.ClassScope;
 
-import firm.ArrayType;
 import firm.ClassType;
 import firm.Entity;
 import firm.MethodType;
 import firm.Mode;
-import firm.PointerType;
 import firm.PrimitiveType;
 
 /**
@@ -33,9 +32,9 @@ public class FirmHierarchy {
 	private final HashMap<String, ClassWrapper> definedClasses = new HashMap<>();
 
 	static class ClassWrapper {
-		ClassWrapper(String className) {
-			classType = new ClassType(className);
-			referenceToClass = new PointerType(classType);
+		ClassWrapper(ClassDeclaration classDeclaration) {
+			classType = classDeclaration.getType().getFirmClassType();
+			referenceToClass = classDeclaration.getType().getFirmType();
 		}
 
 		ClassType classType;
@@ -58,9 +57,10 @@ public class FirmHierarchy {
 		// in method parameters and return types work
 		for (Entry<Symbol, ClassScope> currentEntry : classScopes.entrySet()) {
 			String className = currentEntry.getKey().getValue();
+			ClassDeclaration classDeclaration = currentEntry.getValue().getClassDeclaration();
 
 			// Add class name
-			ClassWrapper wrapper = new ClassWrapper(className);
+			ClassWrapper wrapper = new ClassWrapper(classDeclaration);
 			definedClasses.put(className, wrapper);
 		}
 
@@ -73,7 +73,7 @@ public class FirmHierarchy {
 			for (Declaration currentField : scope.getFieldDefinitions()) {
 				new Entity(getClassType(className),
 						currentField.getAssemblerName(),
-						getTypeDeclaration(currentField.getType(), true));
+						currentField.getType().getFirmType());
 			}
 			for (MethodDeclaration currentMethod : scope.getMethodDefinitions()) {
 				addMethodEntity(className, currentMethod);
@@ -98,7 +98,7 @@ public class FirmHierarchy {
 		firm.Type[] parameterTypes = new firm.Type[parameterDefinitions.size() + 1];
 		parameterTypes[0] = classWrapper.referenceToClass;
 		for (int paramIdx = 0; paramIdx < parameterDefinitions.size(); paramIdx++) {
-			parameterTypes[paramIdx + 1] = getTypeDeclaration(parameterDefinitions.get(paramIdx).getType(), true);
+			parameterTypes[paramIdx + 1] = parameterDefinitions.get(paramIdx).getType().getFirmType();
 		}
 
 		// return type
@@ -107,7 +107,7 @@ public class FirmHierarchy {
 			returnType = new firm.Type[] {};
 		} else {
 			returnType = new firm.Type[1];
-			returnType[0] = getTypeDeclaration(methodDefinition.getType(), true);
+			returnType[0] = methodDefinition.getType().getFirmType();
 		}
 
 		// create methodType and methodEntity
@@ -127,37 +127,7 @@ public class FirmHierarchy {
 
 	public firm.Type getTypeDeclaration(compiler.ast.type.Type type, boolean arrayAsReference) {
 
-		firm.Type firmType = null;
-		switch (type.getBasicType()) {
-		case INT:
-			firmType = new PrimitiveType(getModeInt());
-			break;
-		case BOOLEAN:
-			firmType = new PrimitiveType(getModeBoolean());
-			break;
-		case VOID:
-			return null;
-		case NULL:
-			firmType = new PrimitiveType(getModeReference());
-			break;
-		case CLASS:
-			firmType = definedClasses.get(type.getIdentifier().getValue()).referenceToClass;
-			break;
-		case ARRAY:
-			if (arrayAsReference) {
-				firmType = new PrimitiveType(getModeReference());
-			} else {
-				firmType = new ArrayType(getTypeDeclaration(type.getSubType(), true));
-			}
-			break;
-		case METHOD:
-			break;
-		default:
-			// type STRING_ARGS
-			assert false;
-		}
-
-		return firmType;
+		return type.getFirmType();
 	}
 
 	public Entity getCalloc() {

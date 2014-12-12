@@ -7,6 +7,7 @@ import compiler.lexer.Position;
 public class ClassType extends Type {
 
 	private final Symbol identifier;
+	private firm.ClassType firmClassType;
 
 	public ClassType(Symbol identifier) {
 		this(null, identifier);
@@ -20,6 +21,18 @@ public class ClassType extends Type {
 	@Override
 	public Symbol getIdentifier() {
 		return identifier;
+	}
+
+	public firm.ClassType getFirmClassType() {
+		if (firmClassType == null) {
+			firmClassType = new firm.ClassType(getIdentifier().getValue());
+		}
+		return firmClassType;
+	}
+
+	@Override
+	protected firm.Type generateFirmType() {
+		return new firm.PointerType(getFirmClassType());
 	}
 
 	@Override

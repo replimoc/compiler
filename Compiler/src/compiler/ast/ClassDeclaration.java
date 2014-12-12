@@ -35,6 +35,11 @@ public class ClassDeclaration extends Declaration implements Comparable<ClassDec
 	}
 
 	@Override
+	public ClassType getType() {
+		return (ClassType) super.getType();
+	}
+
+	@Override
 	public void accept(AstVisitor visitor) {
 		visitor.visit(this);
 	}

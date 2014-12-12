@@ -362,7 +362,7 @@ public class FirmGenerationVisitor implements AstVisitor {
 
 	@Override
 	public void visit(NewArrayExpression newArrayExpression) {
-		int elementsSize = hierarchy.getTypeDeclaration(newArrayExpression.getType().getSubType(), true).getSizeBytes();
+		int elementsSize = newArrayExpression.getType().getSubType().getFirmType().getSizeBytes();
 
 		Expression elementsCount = newArrayExpression.getFirstDimension();
 		elementsCount.accept(this);
@@ -468,7 +468,7 @@ public class FirmGenerationVisitor implements AstVisitor {
 
 		// calculate index offset
 		Node arrayIndex = methodConstruction
-				.newSel(arrayExpression.getFirmNode(), indexExpression.getFirmNode(), getArrayType(arrayExpression));
+				.newSel(arrayExpression.getFirmNode(), indexExpression.getFirmNode(), ((ArrayType) arrayExpression.getType()).getFirmArrayType());
 
 		Node result = null;
 		if (assignmentRightSide != null) {
@@ -477,10 +477,6 @@ public class FirmGenerationVisitor implements AstVisitor {
 			result = memberGet(arrayIndex, convertAstTypeToMode(arrayExpression.getType().getSubType()));
 		}
 		arrayAccessExpression.setFirmNode(result);
-	}
-
-	private firm.Type getArrayType(Expression expression) {
-		return hierarchy.getTypeDeclaration(expression.getType(), false);
 	}
 
 	@Override
