@@ -793,11 +793,9 @@ public class FirmGenerationVisitor implements AstVisitor {
 	public void visitMethodDeclaration(MethodDeclaration methodDeclaration) {
 		clearState();
 
-		Entity methodEntity = getEntity(methodDeclaration);
-
 		int numberLocalVariables = methodDeclaration.getNumberOfLocalVariables();
 		int variablesCount = 1 /* this */+ methodDeclaration.getValidParameters().size() + numberLocalVariables /* boolean assignments */+ 1;
-		Graph graph = new Graph(methodEntity, variablesCount);
+		Graph graph = new Graph(getEntity(methodDeclaration), variablesCount);
 		methodConstruction = new Construction(graph);
 
 		Node args = graph.getArgs();
