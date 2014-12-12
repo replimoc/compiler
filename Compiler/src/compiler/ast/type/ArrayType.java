@@ -2,6 +2,7 @@ package compiler.ast.type;
 
 import compiler.Symbol;
 import compiler.ast.visitor.AstVisitor;
+import compiler.firm.FirmUtils;
 import compiler.lexer.Position;
 
 import firm.PrimitiveType;
@@ -36,7 +37,7 @@ public class ArrayType extends Type {
 
 	@Override
 	protected firm.Type generateFirmType() {
-		return new PrimitiveType(Type.getModeReference());
+		return new PrimitiveType(FirmUtils.getModeReference());
 	}
 
 	public firm.Type getFirmArrayType() {

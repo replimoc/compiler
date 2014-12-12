@@ -3,9 +3,9 @@ package compiler.ast.type;
 import compiler.Symbol;
 import compiler.ast.AstNode;
 import compiler.ast.visitor.AstVisitor;
+import compiler.firm.FirmUtils;
 import compiler.lexer.Position;
 
-import firm.Mode;
 import firm.PrimitiveType;
 
 public class Type extends AstNode {
@@ -71,23 +71,19 @@ public class Type extends AstNode {
 		return true;
 	}
 
-	protected static Mode getModeReference() {
-		return Mode.createReferenceMode("P64", Mode.Arithmetic.TwosComplement, 64, 64);
-	}
-
 	protected firm.Type generateFirmType() {
 		firm.Type firmType = null;
 		switch (this.getBasicType()) {
 		case INT:
-			firmType = new PrimitiveType(Mode.getIs());
+			firmType = new PrimitiveType(FirmUtils.getModeInteger());
 			break;
 		case BOOLEAN:
-			firmType = new PrimitiveType(Mode.getBu());
+			firmType = new PrimitiveType(FirmUtils.getModeBoolean());
 			break;
 		case VOID:
 			return null;
 		case NULL:
-			firmType = new PrimitiveType(getModeReference());
+			firmType = new PrimitiveType(FirmUtils.getModeReference());
 			break;
 		default:
 			break;

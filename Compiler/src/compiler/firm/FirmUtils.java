@@ -15,6 +15,7 @@ import firm.Entity;
 import firm.Firm;
 import firm.Graph;
 import firm.MethodType;
+import firm.Mode;
 import firm.Program;
 import firm.Type;
 import firm.Util;
@@ -128,6 +129,33 @@ public final class FirmUtils {
 			graph.check();
 			Dump.dumpGraph(graph, "generated");
 		}
+	}
+
+	/**
+	 * Returns mode of 32-bit integer signed
+	 * 
+	 * @return
+	 */
+	public static Mode getModeInteger() {
+		return Mode.getIs();
+	}
+
+	/**
+	 * Returns mode for 8-bit boolean.
+	 * 
+	 * @return
+	 */
+	public static Mode getModeBoolean() {
+		return Mode.getBu();
+	}
+
+	/**
+	 * Returns reference mode for 64-bit
+	 * 
+	 * @return
+	 */
+	public static Mode getModeReference() {
+		return Mode.createReferenceMode("P64", Mode.Arithmetic.TwosComplement, 64, 64);
 	}
 
 	public static void finishFirm() {

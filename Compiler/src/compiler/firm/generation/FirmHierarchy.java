@@ -10,6 +10,7 @@ import compiler.ast.Declaration;
 import compiler.ast.MethodDeclaration;
 import compiler.ast.ParameterDefinition;
 import compiler.ast.type.BasicType;
+import compiler.firm.FirmUtils;
 import compiler.semantic.ClassScope;
 
 import firm.ClassType;
@@ -23,21 +24,21 @@ import firm.PrimitiveType;
  */
 public class FirmHierarchy {
 
-	private final Mode modeInt = Mode.getIs(); // integer signed 32 bit
-	private final Mode modeBoolean = Mode.getBu(); // unsigned 8 bit for boolean
-	private final Mode modeReference = Mode.createReferenceMode("P64", Mode.Arithmetic.TwosComplement, 64, 64); // 64 bit pointer
-
 	private final Entity calloc;
 
 	public FirmHierarchy() {
 		// set 64bit pointer as default
-		Mode.setDefaultModeP(getModeReference());
+		Mode.setDefaultModeP(FirmUtils.getModeReference());
 
-		// create library function(s)
 		// void* calloc_proxy (size_t num, size_t size);
-		MethodType callocType = new MethodType(new firm.Type[] { new PrimitiveType(getModeInt()), new PrimitiveType(getModeInt()) },
-				new firm.Type[] { new PrimitiveType(getModeReference()) });
+		MethodType callocType = new MethodType(
+				new firm.Type[] { new PrimitiveType(FirmUtils.getModeInteger()), new PrimitiveType(FirmUtils.getModeInteger()) },
+				new firm.Type[] { new PrimitiveType(FirmUtils.getModeReference()) });
 		this.calloc = new Entity(firm.Program.getGlobalType(), "calloc_proxy", callocType);
+	}
+
+	public Entity getCalloc() {
+		return calloc;
 	}
 
 	public void initialize(HashMap<Symbol, ClassScope> classScopes) {
@@ -91,21 +92,4 @@ public class FirmHierarchy {
 			classType.finishLayout();
 		}
 	}
-
-	public Entity getCalloc() {
-		return calloc;
-	}
-
-	public Mode getModeInt() {
-		return modeInt;
-	}
-
-	public Mode getModeBoolean() {
-		return modeBoolean;
-	}
-
-	public Mode getModeReference() {
-		return modeReference;
-	}
-
 }

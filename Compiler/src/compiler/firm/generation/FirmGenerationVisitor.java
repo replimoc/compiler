@@ -49,6 +49,7 @@ import compiler.ast.type.BasicType;
 import compiler.ast.type.ClassType;
 import compiler.ast.type.Type;
 import compiler.ast.visitor.AstVisitor;
+import compiler.firm.FirmUtils;
 
 import firm.Construction;
 import firm.Entity;
@@ -83,7 +84,7 @@ public class FirmGenerationVisitor implements AstVisitor {
 	}
 
 	private Node getThisPointer() {
-		return methodConstruction.getVariable(0, hierarchy.getModeReference());
+		return methodConstruction.getVariable(0, FirmUtils.getModeReference());
 	}
 
 	private Node getCallocAddress() {
@@ -172,20 +173,20 @@ public class FirmGenerationVisitor implements AstVisitor {
 			// create true block assigning true to temp variable
 			trueBlock.mature();
 			methodConstruction.setCurrentBlock(trueBlock);
-			Node trueConst = methodConstruction.newConst(1, hierarchy.getModeBoolean());
+			Node trueConst = methodConstruction.newConst(1, FirmUtils.getModeBoolean());
 			Node trueJump = methodConstruction.newJmp();
 			afterBlock.addPred(trueJump);
 
 			// create false block assigning false to temp variable
 			falseBlock.mature();
 			methodConstruction.setCurrentBlock(falseBlock);
-			Node falseConst = methodConstruction.newConst(0, hierarchy.getModeBoolean());
+			Node falseConst = methodConstruction.newConst(0, FirmUtils.getModeBoolean());
 			Node falseJump = methodConstruction.newJmp();
 			afterBlock.addPred(falseJump);
 
 			afterBlock.mature();
 			methodConstruction.setCurrentBlock(afterBlock);
-			Node phi = methodConstruction.newPhi(new Node[] { trueConst, falseConst }, hierarchy.getModeBoolean());
+			Node phi = methodConstruction.newPhi(new Node[] { trueConst, falseConst }, FirmUtils.getModeBoolean());
 			activePhiNode = phi;
 			return phi;
 		}
@@ -297,7 +298,7 @@ public class FirmGenerationVisitor implements AstVisitor {
 
 	private Node createBooleanConstantNode(boolean boolValue) {
 		int boolIntValue = boolValue ? 1 : 0;
-		return methodConstruction.newConst(boolIntValue, hierarchy.getModeBoolean());
+		return methodConstruction.newConst(boolIntValue, FirmUtils.getModeBoolean());
 	}
 
 	@Override
@@ -306,7 +307,7 @@ public class FirmGenerationVisitor implements AstVisitor {
 		String intValue = integerConstantExpression.getIntegerLiteral();
 		int val = Integer.parseInt(intValue);
 
-		Node constant = methodConstruction.newConst(val, hierarchy.getModeInt());
+		Node constant = methodConstruction.newConst(val, FirmUtils.getModeInteger());
 		integerConstantExpression.setFirmNode(constant);
 	}
 
@@ -372,7 +373,7 @@ public class FirmGenerationVisitor implements AstVisitor {
 	}
 
 	private Node intToNode(int i) {
-		return methodConstruction.newConst(i, hierarchy.getModeInt());
+		return methodConstruction.newConst(i, FirmUtils.getModeInteger());
 	}
 
 	@Override
@@ -433,7 +434,7 @@ public class FirmGenerationVisitor implements AstVisitor {
 			// primitive types have modes, Pointer types don't and there is no method to set it
 			// for minijava it is safe to set all pointers to reference
 			if (fieldAccessMode == null)
-				fieldAccessMode = hierarchy.getModeReference();
+				fieldAccessMode = FirmUtils.getModeReference();
 			Node member = memberGet(addressOfField, fieldAccessMode);
 			variableAccessExpression.setFirmNode(member);
 		}
@@ -529,7 +530,7 @@ public class FirmGenerationVisitor implements AstVisitor {
 
 	@Override
 	public void visit(NullExpression nullExpression) {
-		Node cNull = methodConstruction.newConst(0, hierarchy.getModeReference());
+		Node cNull = methodConstruction.newConst(0, FirmUtils.getModeReference());
 		nullExpression.setFirmNode(cNull);
 
 	}
@@ -554,7 +555,7 @@ public class FirmGenerationVisitor implements AstVisitor {
 		Node conditionNode;
 		if (expression.getFirmNode() != null && !expression.getFirmNode().getMode().equals(Mode.getT())) {
 			// booleans and boolean constants
-			Node trueConst = methodConstruction.newConst(1, hierarchy.getModeBoolean());
+			Node trueConst = methodConstruction.newConst(1, FirmUtils.getModeBoolean());
 			Node cmp = methodConstruction.newCmp(expression.getFirmNode(), trueConst, Relation.Equal);
 			conditionNode = methodConstruction.newCond(cmp);
 		} else {
@@ -582,7 +583,7 @@ public class FirmGenerationVisitor implements AstVisitor {
 			// TODO: find a more elegant way to do this!
 			// we reference a condition node that is not in the current block, get the last set phi node instead
 			// create a new condition node for that phi node
-			Node trueConst = methodConstruction.newConst(1, hierarchy.getModeBoolean());
+			Node trueConst = methodConstruction.newConst(1, FirmUtils.getModeBoolean());
 			Node cmp = methodConstruction.newCmp(activePhiNode, trueConst, Relation.Equal);
 			conditionNode = methodConstruction.newCond(cmp);
 			Node condTrue = methodConstruction.newProj(conditionNode, mode, 1);
@@ -770,7 +771,7 @@ public class FirmGenerationVisitor implements AstVisitor {
 	}
 
 	private void createThisParameter(Node args) {
-		Node projThis = methodConstruction.newProj(args, hierarchy.getModeReference(), 0);
+		Node projThis = methodConstruction.newProj(args, FirmUtils.getModeReference(), 0);
 		methodConstruction.setVariable(0, projThis);
 	}
 
@@ -797,12 +798,12 @@ public class FirmGenerationVisitor implements AstVisitor {
 	private firm.Mode convertAstTypeToMode(Type type) {
 		switch (type.getBasicType()) {
 		case INT:
-			return hierarchy.getModeInt();
+			return FirmUtils.getModeInteger();
 		case BOOLEAN:
-			return hierarchy.getModeBoolean();
+			return FirmUtils.getModeBoolean();
 		case CLASS:
 		case ARRAY:
-			return hierarchy.getModeReference();
+			return FirmUtils.getModeReference();
 		default:
 			throw new RuntimeException("convertTypeToMode for " + type + " is not implemented");
 		}
