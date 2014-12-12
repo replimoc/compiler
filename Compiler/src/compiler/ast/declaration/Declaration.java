@@ -44,13 +44,7 @@ public abstract class Declaration extends AstNode {
 	}
 
 	public String getClassName() {
-		String className;
-		if (getClassDeclaration() != null) { // TODO: Currently there is no class declaration for PrintStream
-			className = getClassDeclaration().getIdentifier().getValue();
-		} else {
-			className = "";
-		}
-		return className;
+		return getClassDeclaration().getIdentifier().getValue();
 	}
 
 	@Override
