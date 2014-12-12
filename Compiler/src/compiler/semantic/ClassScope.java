@@ -6,19 +6,20 @@ import java.util.Map.Entry;
 import compiler.Symbol;
 import compiler.ast.declaration.ClassDeclaration;
 import compiler.ast.declaration.Declaration;
+import compiler.ast.declaration.FieldDeclaration;
 import compiler.ast.declaration.MethodDeclaration;
 import compiler.ast.declaration.StaticFieldDeclaration;
 
 public class ClassScope {
 	private final ClassDeclaration classDeclaration;
-	private final HashMap<Symbol, Declaration> fields; // FIXME @Andreas Eberle: use field declaration
+	private final HashMap<Symbol, FieldDeclaration> fields;
 	private final HashMap<Symbol, MethodDeclaration> methods;
 
-	public ClassScope(HashMap<Symbol, Declaration> fields, HashMap<Symbol, MethodDeclaration> methods) {
+	public ClassScope(HashMap<Symbol, FieldDeclaration> fields, HashMap<Symbol, MethodDeclaration> methods) {
 		this(null, fields, methods);
 	}
 
-	public ClassScope(ClassDeclaration classDeclaration, HashMap<Symbol, Declaration> fields, HashMap<Symbol, MethodDeclaration> methods) {
+	public ClassScope(ClassDeclaration classDeclaration, HashMap<Symbol, FieldDeclaration> fields, HashMap<Symbol, MethodDeclaration> methods) {
 		this.classDeclaration = classDeclaration;
 		this.fields = fields;
 		this.methods = methods;
@@ -45,7 +46,7 @@ public class ClassScope {
 	}
 
 	public boolean hasStaticField() {
-		for (Entry<Symbol, Declaration> curr : this.fields.entrySet()) {
+		for (Entry<Symbol, FieldDeclaration> curr : this.fields.entrySet()) {
 			if (curr.getValue() instanceof StaticFieldDeclaration) {
 				return true;
 			}
@@ -53,10 +54,10 @@ public class ClassScope {
 		return false;
 	}
 
-	public Declaration[] getFieldDeclarations() {
-		Declaration[] fields = new Declaration[this.fields.size()];
+	public FieldDeclaration[] getFieldDeclarations() {
+		FieldDeclaration[] fields = new FieldDeclaration[this.fields.size()];
 		int i = 0;
-		for (Entry<Symbol, Declaration> curr : this.fields.entrySet()) {
+		for (Entry<Symbol, FieldDeclaration> curr : this.fields.entrySet()) {
 			fields[i++] = curr.getValue();
 		}
 		return fields;

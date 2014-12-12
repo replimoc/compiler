@@ -251,11 +251,11 @@ public class PreNamingAnalysisVisitorTest {
 		return scopesMap;
 	}
 
-	private static ClassScope scope(Declaration[] fields, MethodDeclaration[] methods) {
-		HashMap<Symbol, Declaration> fieldsMap = new HashMap<>();
+	private static ClassScope scope(FieldDeclaration[] fields, MethodDeclaration[] methods) {
+		HashMap<Symbol, FieldDeclaration> fieldsMap = new HashMap<>();
 		HashMap<Symbol, MethodDeclaration> methodsMap = new HashMap<>();
 
-		for (Declaration curr : fields) {
+		for (FieldDeclaration curr : fields) {
 			fieldsMap.put(curr.getIdentifier(), curr);
 		}
 		for (MethodDeclaration curr : methods) {
@@ -279,8 +279,8 @@ public class PreNamingAnalysisVisitorTest {
 		return declarations;
 	}
 
-	private Declaration[] f(int... indexes) {
-		Declaration[] declarations = new Declaration[indexes.length];
+	private FieldDeclaration[] f(int... indexes) {
+		FieldDeclaration[] declarations = new FieldDeclaration[indexes.length];
 
 		for (int i = 0; i < indexes.length; i++) {
 			declarations[i] = testFields[indexes[i]];

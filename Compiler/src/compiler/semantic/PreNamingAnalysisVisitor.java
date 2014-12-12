@@ -9,7 +9,6 @@ import compiler.ast.AstNode;
 import compiler.ast.Block;
 import compiler.ast.Program;
 import compiler.ast.declaration.ClassDeclaration;
-import compiler.ast.declaration.Declaration;
 import compiler.ast.declaration.FieldDeclaration;
 import compiler.ast.declaration.MemberDeclaration;
 import compiler.ast.declaration.MethodDeclaration;
@@ -60,7 +59,7 @@ public class PreNamingAnalysisVisitor implements AstVisitor {
 
 	private final HashMap<Symbol, ClassScope> classScopes = new HashMap<>();
 
-	private HashMap<Symbol, Declaration> currentFieldsMap;
+	private HashMap<Symbol, FieldDeclaration> currentFieldsMap;
 	private HashMap<Symbol, MethodDeclaration> currentMethodsMap;
 
 	private boolean mainFound = false;
