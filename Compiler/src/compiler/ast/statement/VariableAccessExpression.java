@@ -9,7 +9,7 @@ import compiler.lexer.Position;
 public class VariableAccessExpression extends PostfixExpression {
 	private final Expression expression;
 	private final Symbol fieldIdentifier;
-	private Declaration definition;
+	private Declaration declaration;
 
 	public VariableAccessExpression(Position position, Expression leftExpression, Symbol fieldIdentifier) {
 		super(position, leftExpression);
@@ -30,11 +30,11 @@ public class VariableAccessExpression extends PostfixExpression {
 		visitor.visit(this);
 	}
 
-	public Declaration getDefinition() {
-		return definition;
+	public Declaration getDeclaration() {
+		return declaration;
 	}
 
-	public void setDefinition(Declaration newDef) {
-		definition = newDef;
+	public void setDeclaration(Declaration declaration) {
+		this.declaration = declaration;
 	}
 }

@@ -72,7 +72,7 @@ public class PreNamingAnalysisVisitorTest {
 	}
 
 	@Test
-	public void testDoubleClassDefinition() {
+	public void testDoubleClassDeclaration() {
 		Program program = new Program(null);
 		Symbol class1 = s("class1");
 		program.addClassDeclaration(new ClassDeclaration(null, class1));
@@ -116,7 +116,7 @@ public class PreNamingAnalysisVisitorTest {
 	}
 
 	@Test
-	public void testDoubleFieldDefinition() {
+	public void testDoubleFieldDeclaration() {
 		ClassScope scope1 = scope(f(1, 2, 0, 1), m());
 		HashMap<Symbol, ClassScope> expectedScopes = scopes(c("class1", scope1));
 
@@ -209,7 +209,7 @@ public class PreNamingAnalysisVisitorTest {
 			Symbol name = curr.getKey();
 			ClassScope scope = curr.getValue();
 
-			program.addClassDeclaration(createClassDeclaration(name, scope.getFieldDefinitions(), scope.getMethodDefinitions()));
+			program.addClassDeclaration(createClassDeclaration(name, scope.getFieldDeclarations(), scope.getMethodDeclarations()));
 		}
 
 		return program;
@@ -270,23 +270,23 @@ public class PreNamingAnalysisVisitorTest {
 	}
 
 	private MethodDeclaration[] m(int... indexes) {
-		MethodDeclaration[] definitions = new MethodDeclaration[indexes.length];
+		MethodDeclaration[] declarations = new MethodDeclaration[indexes.length];
 
 		for (int i = 0; i < indexes.length; i++) {
-			definitions[i] = testMethods[indexes[i]];
+			declarations[i] = testMethods[indexes[i]];
 		}
 
-		return definitions;
+		return declarations;
 	}
 
 	private Declaration[] f(int... indexes) {
-		Declaration[] definitions = new Declaration[indexes.length];
+		Declaration[] declarations = new Declaration[indexes.length];
 
 		for (int i = 0; i < indexes.length; i++) {
-			definitions[i] = testFields[indexes[i]];
+			declarations[i] = testFields[indexes[i]];
 		}
 
-		return definitions;
+		return declarations;
 	}
 
 	private Symbol s(String string) {

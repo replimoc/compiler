@@ -12,7 +12,7 @@ import compiler.ast.type.BasicType;
 import compiler.ast.type.Type;
 import compiler.lexer.Position;
 
-public class MethodMethodDefinitionTest {
+public class MethodMethodDefinitionTest { // FIXME @Andreas Eberle: delete this test, it is obsolete
 
 	private final Symbol s = new Symbol("a");
 	private final Type t = new Type(null, BasicType.INT);

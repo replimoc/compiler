@@ -54,6 +54,7 @@ import compiler.ast.type.Type;
 import compiler.ast.visitor.AstVisitor;
 import compiler.firm.FirmUtils;
 import compiler.semantic.ClassScope;
+
 import firm.Construction;
 import firm.Entity;
 import firm.Graph;
@@ -111,18 +112,18 @@ public class FirmGenerationVisitor implements AstVisitor {
 			firm.ClassType firmClassType = classDeclaration.getType().getFirmClassType();
 
 			// Create field declarations
-			for (Declaration currentField : scope.getFieldDefinitions()) {
+			for (Declaration currentField : scope.getFieldDeclarations()) {
 				new Entity(firmClassType, currentField.getAssemblerName(), currentField.getType().getFirmType());
 			}
-			for (MethodDeclaration currentMethod : scope.getMethodDefinitions()) {
-				List<ParameterDeclaration> parameterDefinitions = currentMethod.getValidParameters();
+			for (MethodDeclaration currentMethod : scope.getMethodDeclarations()) {
+				List<ParameterDeclaration> parameterDeclarations = currentMethod.getValidParameters();
 
 				// types of parameters
 				// first parameter is "this" with type referenceToClass
-				firm.Type[] parameterTypes = new firm.Type[parameterDefinitions.size() + 1];
+				firm.Type[] parameterTypes = new firm.Type[parameterDeclarations.size() + 1];
 				parameterTypes[0] = classDeclaration.getType().getFirmType();
-				for (int paramIdx = 0; paramIdx < parameterDefinitions.size(); paramIdx++) {
-					parameterTypes[paramIdx + 1] = parameterDefinitions.get(paramIdx).getType().getFirmType();
+				for (int paramIdx = 0; paramIdx < parameterDeclarations.size(); paramIdx++) {
+					parameterTypes[paramIdx + 1] = parameterDeclarations.get(paramIdx).getType().getFirmType();
 				}
 
 				// return type
@@ -375,13 +376,13 @@ public class FirmGenerationVisitor implements AstVisitor {
 
 		// Generate method name
 		Expression methodExpression = methodInvocationExpression.getMethodExpression();
-		if (methodExpression != null && !(methodInvocationExpression.getMethodDefinition() instanceof NativeMethodDeclaration)) {
+		if (methodExpression != null && !(methodInvocationExpression.getMethodDeclaration() instanceof NativeMethodDeclaration)) {
 			methodExpression.accept(FirmGenerationVisitor.this);
 			methodObject = methodExpression.getFirmNode();
 		} else {
 			methodObject = getThisPointer();
 		}
-		method = getEntity(methodInvocationExpression.getMethodDefinition());
+		method = getEntity(methodInvocationExpression.getMethodDeclaration());
 
 		// Generate parameter list
 		Expression[] parameters = methodInvocationExpression.getParameters();
@@ -447,8 +448,8 @@ public class FirmGenerationVisitor implements AstVisitor {
 
 		Expression objectNameForFieldAccess = variableAccessExpression.getExpression();
 		if (objectNameForFieldAccess == null) {
-			Declaration definition = variableAccessExpression.getDefinition();
-			if (definition instanceof LocalVariableDeclaration) {
+			Declaration declaration = variableAccessExpression.getDeclaration();
+			if (declaration instanceof LocalVariableDeclaration) {
 				variableAccess(variableAccessExpression, assignmentRightSide);
 			} else {
 				memberAccess(variableAccessExpression, getThisPointer(), assignmentRightSide);
@@ -461,7 +462,7 @@ public class FirmGenerationVisitor implements AstVisitor {
 	}
 
 	private void variableAccess(VariableAccessExpression variableAccessExpression, Expression assignmentRightSide) {
-		LocalVariableDeclaration declaration = (LocalVariableDeclaration) variableAccessExpression.getDefinition();
+		LocalVariableDeclaration declaration = (LocalVariableDeclaration) variableAccessExpression.getDeclaration();
 		int variableNumber = declaration.getVariableNumber();
 		methodConstruction.getCurrentMem();
 
@@ -479,7 +480,7 @@ public class FirmGenerationVisitor implements AstVisitor {
 	}
 
 	private void memberAccess(VariableAccessExpression variableAccessExpression, Node object, Expression assignmentRightSide) {
-		Entity field = getEntity(variableAccessExpression.getDefinition());
+		Entity field = getEntity(variableAccessExpression.getDeclaration());
 
 		Node addressOfField = methodConstruction.newMember(object, field);
 
@@ -733,7 +734,7 @@ public class FirmGenerationVisitor implements AstVisitor {
 		Expression expression = localVariableDeclaration.getExpression();
 		if (expression != null) {
 			VariableAccessExpression variableAccess = new VariableAccessExpression(null, null, localVariableDeclaration.getIdentifier());
-			variableAccess.setDefinition(localVariableDeclaration);
+			variableAccess.setDeclaration(localVariableDeclaration);
 			AssignmentExpression assignment = new AssignmentExpression(null, variableAccess, expression);
 			assignment.accept(this);
 		} else {
@@ -741,9 +742,9 @@ public class FirmGenerationVisitor implements AstVisitor {
 		}
 	}
 
-	private void assignDefaultValue(Declaration definition) {
+	private void assignDefaultValue(Declaration declaration) {
 		Expression expression;
-		switch (definition.getType().getBasicType()) {
+		switch (declaration.getType().getBasicType()) {
 		case INT:
 			expression = new IntegerConstantExpression(null, "0");
 			break;
@@ -758,9 +759,9 @@ public class FirmGenerationVisitor implements AstVisitor {
 			throw new RuntimeException("Internal Compiler Error: This should never happen!");
 		}
 
-		expression.setType(definition.getType());
-		VariableAccessExpression variableAccess = new VariableAccessExpression(null, null, definition.getIdentifier());
-		variableAccess.setDefinition(definition);
+		expression.setType(declaration.getType());
+		VariableAccessExpression variableAccess = new VariableAccessExpression(null, null, declaration.getIdentifier());
+		variableAccess.setDeclaration(declaration);
 		AssignmentExpression assignment = new AssignmentExpression(null, variableAccess, expression);
 		assignment.accept(this);
 	}
@@ -828,12 +829,12 @@ public class FirmGenerationVisitor implements AstVisitor {
 	}
 
 	@Override
-	public void visit(ParameterDeclaration parameterDefinition) {
-		Type type = parameterDefinition.getType();
+	public void visit(ParameterDeclaration parameterDeclaration) {
+		Type type = parameterDeclaration.getType();
 		Node reference = methodConstruction.getGraph().getArgs();
-		Node parameterProj = methodConstruction.newProj(reference, type.getMode(), parameterDefinition.getVariableNumber());
-		methodConstruction.setVariable(parameterDefinition.getVariableNumber(), parameterProj);
-		parameterDefinition.setFirmNode(parameterProj);
+		Node parameterProj = methodConstruction.newProj(reference, type.getMode(), parameterDeclaration.getVariableNumber());
+		methodConstruction.setVariable(parameterDeclaration.getVariableNumber(), parameterProj);
+		parameterDeclaration.setFirmNode(parameterProj);
 	}
 
 	@Override

@@ -52,7 +52,7 @@ import compiler.ast.visitor.AstVisitor;
 import compiler.lexer.Position;
 import compiler.semantic.exceptions.MultipleStaticMethodsException;
 import compiler.semantic.exceptions.NoMainFoundException;
-import compiler.semantic.exceptions.RedefinitionErrorException;
+import compiler.semantic.exceptions.ReDeclarationErrorException;
 import compiler.semantic.exceptions.SemanticAnalysisException;
 import compiler.semantic.exceptions.TypeErrorException;
 
@@ -100,7 +100,7 @@ public class PreNamingAnalysisVisitor implements AstVisitor {
 
 		Symbol identifier = classDeclaration.getIdentifier();
 		if (classScopes.containsKey(identifier)) {
-			throwRedefinitionError(identifier, classDeclaration.getPosition());
+			throwReDeclarationError(identifier, classDeclaration.getPosition());
 		} else {
 			getClassScopes().put(identifier, new ClassScope(classDeclaration, currentFieldsMap, currentMethodsMap));
 			currentFieldsMap = null;
@@ -110,12 +110,12 @@ public class PreNamingAnalysisVisitor implements AstVisitor {
 
 	@Override
 	public void visit(MethodDeclaration methodDeclaration) {
-		checkAndInsertDefinition(methodDeclaration);
+		checkAndInsertDeclaration(methodDeclaration);
 	}
 
 	@Override
 	public void visit(FieldDeclaration fieldDeclaration) {
-		checkAndInsertDefinition(fieldDeclaration);
+		checkAndInsertDeclaration(fieldDeclaration);
 	}
 
 	@Override
@@ -152,37 +152,37 @@ public class PreNamingAnalysisVisitor implements AstVisitor {
 		mainFound = true;
 		staticMethodDeclaration.getParameters().get(0)
 				.setType(new ArrayType(parameter.getPosition(), new Type(parameter.getPosition(), BasicType.STRING_ARGS)));
-		checkAndInsertDefinition(staticMethodDeclaration);
+		checkAndInsertDeclaration(staticMethodDeclaration);
 	}
 
-	private void checkAndInsertDefinition(MethodDeclaration definition) {
-		if (currentMethodsMap.containsKey(definition.getIdentifier())) {
-			throwRedefinitionError(definition.getIdentifier(), definition.getPosition());
+	private void checkAndInsertDeclaration(MethodDeclaration declaration) {
+		if (currentMethodsMap.containsKey(declaration.getIdentifier())) {
+			throwReDeclarationError(declaration.getIdentifier(), declaration.getPosition());
 			return;
 		}
 
-		currentMethodsMap.put(definition.getIdentifier(), definition);
+		currentMethodsMap.put(declaration.getIdentifier(), declaration);
 	}
 
-	private void checkAndInsertDefinition(FieldDeclaration definition) {
-		if (currentFieldsMap.containsKey(definition.getIdentifier())) {
-			throwRedefinitionError(definition.getIdentifier(), definition.getPosition());
+	private void checkAndInsertDeclaration(FieldDeclaration declaration) {
+		if (currentFieldsMap.containsKey(declaration.getIdentifier())) {
+			throwReDeclarationError(declaration.getIdentifier(), declaration.getPosition());
 			return;
 		}
 
-		currentFieldsMap.put(definition.getIdentifier(), definition);
+		currentFieldsMap.put(declaration.getIdentifier(), declaration);
 	}
 
 	private void throwTypeError(AstNode astNode, String message) {
 		exceptions.add(new TypeErrorException(astNode, message));
 	}
 
-	private void throwRedefinitionError(Symbol identifier, Position redefinition) {
-		exceptions.add(new RedefinitionErrorException(identifier, redefinition));
+	private void throwReDeclarationError(Symbol identifier, Position reDeclaration) {
+		exceptions.add(new ReDeclarationErrorException(identifier, reDeclaration));
 	}
 
-	private void throwMultipleStaticMethodsError(Position definition) {
-		exceptions.add(new MultipleStaticMethodsException(definition));
+	private void throwMultipleStaticMethodsError(Position declarationPosition) {
+		exceptions.add(new MultipleStaticMethodsException(declarationPosition));
 	}
 
 	/*
@@ -322,7 +322,7 @@ public class PreNamingAnalysisVisitor implements AstVisitor {
 	}
 
 	@Override
-	public void visit(ParameterDeclaration parameterDefinition) {
+	public void visit(ParameterDeclaration parameterDeclaration) {
 	}
 
 }

@@ -6,12 +6,12 @@ import compiler.ast.declaration.Declaration;
 class Change {
 
 	private final Symbol symbol;
-	private final Declaration prevDefinition;
+	private final Declaration previousDeclaration;
 	private final Scope prevScope;
 
 	protected Change(Symbol symbol, Declaration declaration, Scope prevScope) {
 		this.symbol = symbol;
-		this.prevDefinition = declaration;
+		this.previousDeclaration = declaration;
 		this.prevScope = prevScope;
 	}
 
@@ -19,8 +19,8 @@ class Change {
 		return symbol;
 	}
 
-	public Declaration getPrevDefinition() {
-		return prevDefinition;
+	public Declaration getPreviousDeclaration() {
+		return previousDeclaration;
 	}
 
 	public Scope getPrevScope() {

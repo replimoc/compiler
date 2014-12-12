@@ -8,15 +8,13 @@ public class NoSuchMemberException extends SemanticAnalysisException {
 
 	private final Symbol object;
 	private final Symbol member;
-	private final Position objDefinition;
-	private final Position memberDefinition;
+	private final Position objectDeclaration;
 
-	public NoSuchMemberException(Symbol object, Position objDefinition, Symbol member, Position memberDefinition) {
-		super(memberDefinition, buildMessage(object, objDefinition, member, memberDefinition));
+	public NoSuchMemberException(Symbol object, Position objectDeclaration, Symbol member, Position memberDeclaration) {
+		super(memberDeclaration, buildMessage(object, objectDeclaration, member, memberDeclaration));
 		this.object = object;
-		this.objDefinition = objDefinition;
+		this.objectDeclaration = objectDeclaration;
 		this.member = member;
-		this.memberDefinition = memberDefinition;
 	}
 
 	public Symbol getObjectIdentifier() {
@@ -27,16 +25,16 @@ public class NoSuchMemberException extends SemanticAnalysisException {
 		return member;
 	}
 
-	public Position getObjectDefinition() {
-		return objDefinition;
+	public Position getObjectDeclaration() {
+		return objectDeclaration;
 	}
 
-	public Position getMemberDefinition() {
-		return memberDefinition;
+	public Position getMemberDeclaration() {
+		return super.getPosition();
 	}
 
-	public static String buildMessage(Symbol object, Position objDefinition, Symbol member, Position memberDefinition) {
-		return "error: Member " + member + " at position " + memberDefinition + " is not available in object " + object + " defined at "
-				+ objDefinition;
+	public static String buildMessage(Symbol object, Position objectDeclaration, Symbol member, Position memberDeclaration) {
+		return "error: Member " + member + " at position " + memberDeclaration + " is not available in object " + object + " defined at "
+				+ objectDeclaration;
 	}
 }

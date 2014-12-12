@@ -567,10 +567,10 @@ public class PrettyPrinterVisitor implements AstVisitor {
 	}
 
 	@Override
-	public void visit(ParameterDeclaration parameterDefinition) {
-		parameterDefinition.getType().accept(this);
+	public void visit(ParameterDeclaration parameterDeclaration) {
+		parameterDeclaration.getType().accept(this);
 		stringBuilder.append(' ');
-		stringBuilder.append(parameterDefinition.getIdentifier());
+		stringBuilder.append(parameterDeclaration.getIdentifier());
 	}
 
 	@Override

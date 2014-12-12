@@ -41,11 +41,11 @@ public class MethodInvocationExpression extends PostfixExpression {
 		visitor.visit(this);
 	}
 
-	public MethodDeclaration getMethodDefinition() {
+	public MethodDeclaration getMethodDeclaration() {
 		return methodDeclaration;
 	}
 
-	public void setMethodDefinition(MethodDeclaration methodDeclaration) {
+	public void setMethodDeclaration(MethodDeclaration methodDeclaration) {
 		this.methodDeclaration = methodDeclaration;
 	}
 }

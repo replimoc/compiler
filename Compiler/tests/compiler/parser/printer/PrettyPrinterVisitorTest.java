@@ -288,7 +288,7 @@ public class PrettyPrinterVisitorTest {
 	}
 
 	@Test
-	public void testVisitParameterDefinition() {
+	public void testVisitParameterDeclaration() {
 		visitor.visit(new ParameterDeclaration(position, type, new Symbol("_")));
 		assertEquals("int _", visitor.getOutputString());
 	}

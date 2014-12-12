@@ -8,10 +8,8 @@ import compiler.semantic.symbolTable.Scope;
  */
 public class Symbol implements Comparable<Symbol> {
 	private final String value;
-	private Scope defScope;
-	private Declaration definition;
-
-	// definition
+	private Scope scope;
+	private Declaration declaration;
 
 	public Symbol(String value) {
 		this.value = value;
@@ -27,38 +25,38 @@ public class Symbol implements Comparable<Symbol> {
 	}
 
 	/**
-	 * Sets a reference to a definition in a certain scope.
+	 * Sets a reference to a {@link Declaration} in a certain scope.
 	 * 
 	 * @param scope
-	 *            Scope of definition
-	 * @param definition
-	 *            Definition object
+	 *            Scope of declaration
+	 * @param declaration
+	 *            {@link Declaration} object
 	 */
-	public void setDefintion(Scope scope, Declaration definition) {
-		this.defScope = scope;
-		this.definition = definition;
+	public void setDeclaration(Scope scope, Declaration declaration) {
+		this.scope = scope;
+		this.declaration = declaration;
 	}
 
 	/**
-	 * Returns the current definition scope. May be null.
+	 * Returns the current {@link Declaration}'s scope. May be null.
 	 * 
-	 * @return Current definition scope.
+	 * @return Current {@link Declaration}'s scope.
 	 */
-	public Scope getDefinitionScope() {
-		return defScope;
+	public Scope getDeclarationScope() {
+		return scope;
 	}
 
 	/**
-	 * Returns the current definition. May be null.
+	 * Returns the current {@link Declaration}. May be null.
 	 * 
-	 * @return Current definition
+	 * @return Current {@link Declaration}
 	 */
-	public Declaration getDefinition() {
-		return definition;
+	public Declaration getDeclaration() {
+		return declaration;
 	}
 
 	public boolean isDefined() {
-		return defScope != null && definition != null;
+		return scope != null && declaration != null;
 	}
 
 	@Override

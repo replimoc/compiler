@@ -11,7 +11,7 @@ import compiler.ast.declaration.StaticFieldDeclaration;
 
 public class ClassScope {
 	private final ClassDeclaration classDeclaration;
-	private final HashMap<Symbol, Declaration> fields;
+	private final HashMap<Symbol, Declaration> fields; // FIXME @Andreas Eberle: use field declaration
 	private final HashMap<Symbol, MethodDeclaration> methods;
 
 	public ClassScope(HashMap<Symbol, Declaration> fields, HashMap<Symbol, MethodDeclaration> methods) {
@@ -28,11 +28,11 @@ public class ClassScope {
 		return classDeclaration;
 	}
 
-	public MethodDeclaration getMethodDefinition(Symbol identifier) {
+	public MethodDeclaration getMethodDeclaration(Symbol identifier) {
 		return methods.get(identifier);
 	}
 
-	public Declaration getFieldDefinition(Symbol identifier) {
+	public Declaration getFieldDeclaration(Symbol identifier) {
 		return fields.get(identifier);
 	}
 
@@ -53,7 +53,7 @@ public class ClassScope {
 		return false;
 	}
 
-	public Declaration[] getFieldDefinitions() {
+	public Declaration[] getFieldDeclarations() {
 		Declaration[] fields = new Declaration[this.fields.size()];
 		int i = 0;
 		for (Entry<Symbol, Declaration> curr : this.fields.entrySet()) {
@@ -62,7 +62,7 @@ public class ClassScope {
 		return fields;
 	}
 
-	public MethodDeclaration[] getMethodDefinitions() {
+	public MethodDeclaration[] getMethodDeclarations() {
 		MethodDeclaration[] methods = new MethodDeclaration[this.methods.size()];
 		int i = 0;
 		for (Entry<Symbol, MethodDeclaration> curr : this.methods.entrySet()) {

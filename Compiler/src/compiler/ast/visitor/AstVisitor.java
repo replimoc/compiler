@@ -103,7 +103,7 @@ public interface AstVisitor {
 
 	public void visit(LocalVariableDeclaration localVariableDeclaration);
 
-	public void visit(ParameterDeclaration parameterDefinition);
+	public void visit(ParameterDeclaration parameterDeclaration);
 
 	public void visit(Program program);
 
