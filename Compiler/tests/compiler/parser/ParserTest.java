@@ -25,18 +25,27 @@ public class ParserTest {
 		return parser.parse();
 	}
 
+	private Program parseWithEofExpectNoErrors(TokenType... tokens) throws IOException, ParsingFailedException {
+		try {
+			return parseWithEof(tokens);
+		} catch (ParsingFailedException ex) {
+			ex.printParserExceptions();
+			throw ex;
+		}
+	}
+
 	private void parseWithExpectedErrors(int expectedErrors, TokenType... tokenTypes) throws IOException {
 		try {
 			parseWithEof(tokenTypes);
 			fail();
 		} catch (ParsingFailedException e) {
-			assertEquals(expectedErrors, e.getDetectedErrors());
+			assertEquals(expectedErrors, e.getDetectedErrors().size());
 		}
 	}
 
 	@Test
 	public void testParseEmptyFile() throws IOException, ParsingFailedException {
-		parseWithEof();
+		parseWithEofExpectNoErrors();
 	}
 
 	@Test
@@ -51,14 +60,14 @@ public class ParserTest {
 
 	@Test
 	public void testParseEmptyClass() throws IOException, ParsingFailedException {
-		parseWithEof( // class Class { }
+		parseWithEofExpectNoErrors( // class Class { }
 				TokenType.CLASS, TokenType.IDENTIFIER, TokenType.LCURLYBRACKET,
 				TokenType.RCURLYBRACKET);
 	}
 
 	@Test
 	public void testParseTwoEmptyClasses() throws IOException, ParsingFailedException {
-		parseWithEof( // class ClassA { } class ClassB { }
+		parseWithEofExpectNoErrors( // class ClassA { } class ClassB { }
 				TokenType.CLASS, TokenType.IDENTIFIER, TokenType.LCURLYBRACKET,
 				TokenType.RCURLYBRACKET,
 				TokenType.CLASS, TokenType.IDENTIFIER, TokenType.LCURLYBRACKET,
@@ -67,7 +76,7 @@ public class ParserTest {
 
 	@Test
 	public void testParseClassWithField() throws IOException, ParsingFailedException {
-		parseWithEof( // class Class { public void field; }
+		parseWithEofExpectNoErrors( // class Class { public void field; }
 				TokenType.CLASS, TokenType.IDENTIFIER, TokenType.LCURLYBRACKET,
 				TokenType.PUBLIC, TokenType.VOID, TokenType.IDENTIFIER, TokenType.SEMICOLON,
 				TokenType.RCURLYBRACKET);
@@ -75,7 +84,7 @@ public class ParserTest {
 
 	@Test
 	public void testParseClassWithEmptyMethod() throws IOException, ParsingFailedException {
-		parseWithEof( // class Class { public void method () {} }
+		parseWithEofExpectNoErrors( // class Class { public void method () {} }
 				TokenType.CLASS, TokenType.IDENTIFIER, TokenType.LCURLYBRACKET,
 				TokenType.PUBLIC, TokenType.VOID, TokenType.IDENTIFIER, TokenType.LP, TokenType.RP, TokenType.LCURLYBRACKET,
 				TokenType.RCURLYBRACKET,
@@ -84,7 +93,7 @@ public class ParserTest {
 
 	@Test
 	public void testParseClassWithEmptyMain() throws IOException, ParsingFailedException {
-		parseWithEof( // class Class { public static void main ( String [] args ) {} }
+		parseWithEofExpectNoErrors( // class Class { public static void main ( String [] args ) {} }
 				TokenType.CLASS, TokenType.IDENTIFIER, TokenType.LCURLYBRACKET,
 				TokenType.PUBLIC, TokenType.VOID, TokenType.IDENTIFIER, TokenType.LP, TokenType.IDENTIFIER, TokenType.LSQUAREBRACKET,
 				TokenType.RSQUAREBRACKET, TokenType.IDENTIFIER, TokenType.RP, TokenType.LCURLYBRACKET,

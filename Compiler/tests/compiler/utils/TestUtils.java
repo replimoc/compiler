@@ -19,6 +19,7 @@ import org.junit.Ignore;
 
 import compiler.StringTable;
 import compiler.Symbol;
+import compiler.ast.Program;
 import compiler.lexer.Lexer;
 import compiler.lexer.Token;
 import compiler.lexer.TokenType;
@@ -60,6 +61,17 @@ public class TestUtils {
 	public static Parser initParser(String program, StringTable stringTable) throws IOException {
 		Lexer lex = new Lexer(new StringReader(program), stringTable);
 		return new Parser(lex);
+	}
+
+	public static Program parse(String input) throws IOException, ParsingFailedException {
+		try {
+			Parser parser = initParser(input);
+			Program ast = parser.parse();
+			return ast;
+		} catch (ParsingFailedException ex) {
+			ex.printParserExceptions();
+			throw ex;
+		}
 	}
 
 	public static SemanticCheckResults checkSemantic(String program) throws IOException, ParsingFailedException {
@@ -163,4 +175,5 @@ public class TestUtils {
 			value2 = symbol2.getValue();
 		assertEquals(value1, value2);
 	}
+
 }

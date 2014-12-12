@@ -1,8 +1,7 @@
 package compiler.parser;
 
-import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.fail;
 
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
@@ -83,12 +82,25 @@ public class AutomatedAstComparisionTest implements TestFileVisitor.FileTester {
 
 			assertFalse(failingExpected);
 		} catch (ParsingFailedException e) {
-			int errors = e.getDetectedErrors();
-			assertTrue(failingExpected);
-			if (expectedOutput.size() > 1) {
-				assertEquals(Integer.parseInt(expectedOutput.get(1)), errors);
+			List<ParserException> errors = e.getDetectedErrors();
+
+			if (failingExpected) {
+				if (expectedOutput.size() > 1) {
+					if (Integer.parseInt(expectedOutput.get(1)) == errors.size()) {
+						return;
+					}
+				} else {
+					return; // ok;
+				}
 			}
+
+			failParsingException(e);
 		}
+	}
+
+	private static void failParsingException(ParsingFailedException e) {
+		e.printParserExceptions();
+		fail();
 	}
 
 	private String runParser(Path sourceFile) throws IOException, ParsingFailedException {

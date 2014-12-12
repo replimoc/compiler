@@ -67,28 +67,28 @@ public class AutomatedSemanticCheckTest implements TestFileVisitor.FileTester {
 			lines = Files.readAllLines(expectedResultFilePath, StandardCharsets.US_ASCII);
 		}
 		boolean isErrorExpected = !"correct".equals(lines.get(0));
-		int err_num = lines.size() > 1 ? Integer.parseInt(lines.get(1)) : -1;
+		int expectedNumberOfErrors = lines.size() > 1 ? Integer.parseInt(lines.get(1)) : -1;
 
 		// start lexer
 		StringTable stringTable = new StringTable();
 		Lexer lexer = new Lexer(Files.newBufferedReader(sourceFilePath, StandardCharsets.US_ASCII), stringTable);
 		Parser parser = new Parser(lexer);
-		boolean parsingError = false;
+		ParsingFailedException parsingError = null;
 		Program parserResult = null;
 		try {
 			parserResult = parser.parse();
 		} catch (ParsingFailedException e) {
-			parsingError = true;
+			parsingError = e;
 		}
 
 		SemanticCheckResults semanticResult = null;
-		if (!parsingError) {
+		if (parsingError == null) {
 			semanticResult = SemanticChecker.checkSemantic(parserResult, stringTable);
 		}
 		if (isErrorExpected) {
-			if (!parsingError && !semanticResult.hasErrors()) {
+			if (parsingError == null && !semanticResult.hasErrors()) {
 				Assert.fail("semantic analysis succeeded on incorrect program: " + sourceFilePath);
-			} else if (!parsingError && err_num == semanticResult.getNumberOfExceptions()) {
+			} else if (parsingError == null && expectedNumberOfErrors == semanticResult.getNumberOfExceptions()) {
 				// Incorrect program produces the right errors, write them to a log file
 				StringBuffer errors = new StringBuffer();
 
@@ -96,17 +96,19 @@ public class AutomatedSemanticCheckTest implements TestFileVisitor.FileTester {
 					errors.append(error.toString() + "\n");
 				}
 				TestUtils.writeToFile(expectedResultFilePath.toFile().getPath() + ".errors", errors);
-
 			}
-			if (err_num > 0)
-			{
-				Assert.assertEquals("wrong number of errors", err_num, semanticResult.getNumberOfExceptions());
+
+			if (expectedNumberOfErrors > 0) {
+				Assert.assertEquals("wrong number of errors", expectedNumberOfErrors, semanticResult.getNumberOfExceptions());
 			}
 		} else {
-			if (parsingError || semanticResult.hasErrors()) {
+			if (parsingError != null || semanticResult.hasErrors()) {
 				System.out.println("");
 				System.out.println("----------------------------------------------------------------------------");
 				System.err.println("Test for file = " + sourceFilePath + " failed");
+				if (parsingError != null) {
+					parsingError.printParserExceptions();
+				}
 				for (SemanticAnalysisException error : semanticResult.getExceptions()) {
 					error.printStackTrace();
 				}

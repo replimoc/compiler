@@ -6,7 +6,7 @@ import org.junit.Test;
 
 import compiler.utils.TestUtils;
 
-public class ParseMultipleErrors {
+public class ParseMultipleErrorsTest {
 	static String preamble = "class Test {\n\tpublic void test() {\n\t\t";
 	static String end = "\n\t}\n}";
 
@@ -25,7 +25,6 @@ public class ParseMultipleErrors {
 
 	@Test(expected = ParsingFailedException.class)
 	public void testOneWrongField() throws IOException, ParsingFailedException {
-		System.out.println("class Test {\n\tpublic int valid;\n\tpublic boolean[] valid;\n\tpublic [];\n\tpublic void valid;\t\n}");
 		Parser parser = TestUtils
 				.initParser("class Test {\n\tpublic int valid;\n\t\tpublic boolean[] valid;\n\t\tpublic [];\n\t\tpublic void valid;\n\t\n}");
 		parser.parse();
@@ -33,8 +32,6 @@ public class ParseMultipleErrors {
 
 	@Test(expected = ParsingFailedException.class)
 	public void testWrongMethods() throws IOException, ParsingFailedException {
-		System.out
-				.println("class Test {\n\tpublic int test(42++){return;}\n\t\tpublic boolean[] valid;\n\t\tpublic int test(42++){return;}\n\t\tpublic void valid;\n\t\n}");
 		Parser parser = TestUtils
 				.initParser("class Test {\n\tpublic int test(42++){return;}\n\t\tpublic boolean[] valid;\n\t\tpublic int test(42++){return;}\n\t\tpublic void valid;\n\t\n}");
 		parser.parse();
@@ -48,8 +45,6 @@ public class ParseMultipleErrors {
 
 	@Test(expected = ParsingFailedException.class)
 	public void testWrongClasses() throws IOException, ParsingFailedException {
-		System.out
-				.println("class Test (\n\tpublic int valid;\n\tpublic boolean[] valid;\n\tpublic [];\n\tpublic void valid;\t\n}");
 		Parser parser = TestUtils.initParser("class Test (\n\tpublic int valid;\n\tpublic boolean[] valid;\n\tpublic [];\n\tpublic void valid;\t\n}"
 				+ createTestString("public int test;public boolean[] main; public []; public void valid;"));
 		parser.parse();
@@ -57,10 +52,6 @@ public class ParseMultipleErrors {
 
 	@Test(expected = ParsingFailedException.class)
 	public void testWrongClasses2() throws IOException, ParsingFailedException {
-		System.out
-				.println("class Test (\n\tpublic int valid;\n\tpublic boolean[] valid;\n\tpublic [];\n\tpublic void valid;\t\n}");
-		System.out
-				.println("Test (\n\tpublic int valid;\n\tpublic boolean[] valid;\n\tpublic [];\n\tpublic void valid;\t\n}");
 		Parser parser = TestUtils.initParser("class Test (\n\tpublic int valid;\n\tpublic boolean[] valid;\n\tpublic [];\n\tpublic void valid;\t\n}"
 				+ "Test (\n\tpublic int valid;\n\tpublic boolean[] valid;\n\tpublic [];\n\tpublic void valid;\t\n}");
 		parser.parse();
@@ -68,12 +59,6 @@ public class ParseMultipleErrors {
 
 	@Test(expected = ParsingFailedException.class)
 	public void testWrongClasses3() throws IOException, ParsingFailedException {
-		System.out
-				.println("class Test (\n\tpublic int valid;\n\tpublic boolean[] valid;\n\tpublic [];\n\tpublic void valid;\t\n}");
-		System.out
-				.println("Test (\n\tpublic int valid;\n\tpublic boolean[] valid;\n\tpublic [];\n\tpublic void valid;\t\n}");
-		System.out
-				.println("class Test {\n\tpublic int valid;\n\tpublic boolean[] valid;\n\tpublic [];\n\tpublic void valid;\t\n}");
 		Parser parser = TestUtils.initParser("class Test (\n\tpublic int valid;\n\tpublic boolean[] valid;\n\tpublic [];\n\tpublic void valid;\t\n}"
 				+ "Test (\n\tpublic int valid;\n\tpublic boolean[] valid;\n\tpublic [];\n\tpublic void valid;\t\n}"
 				+ "class Test {\n\tpublic int valid;\n\tpublic boolean[] valid;\n\tpublic [];\n\tpublic void valid;\t\n}");

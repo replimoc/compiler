@@ -105,7 +105,7 @@ public final class CompilerApp {
 					try {
 						ast = parser.parse();
 					} catch (ParsingFailedException e) {
-						System.err.println(e.toString());
+						e.printParserExceptions();
 						return 1;
 					}
 

@@ -2,6 +2,7 @@ package compiler.parser;
 
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.LinkedList;
 import java.util.List;
 
 import compiler.Symbol;
@@ -59,17 +60,21 @@ import compiler.lexer.TokenType;
 public class Parser {
 
 	private final TokenSuppliable tokenSupplier;
+	private final List<ParserException> detectedErrors = new LinkedList<>();
+
 	/**
 	 * Current token.
 	 */
 	private Token token;
-	private int errorsDetected;
 	private Program ast;
 
 	public Parser(TokenSuppliable tokenSupplier) throws IOException {
 		this.tokenSupplier = tokenSupplier;
 		consumeToken();
-		errorsDetected = 0;
+	}
+
+	private void recordError(ParserException exception) {
+		detectedErrors.add(exception);
 	}
 
 	/**
@@ -83,14 +88,13 @@ public class Parser {
 		try {
 			ast = parseProgram();
 		} catch (ParserException e) {
-			errorsDetected++;
-			System.err.println(e);
+			recordError(e);
 		}
 
-		if (errorsDetected == 0) {
+		if (detectedErrors.isEmpty()) {
 			return ast;
 		} else {
-			throw new ParsingFailedException(errorsDetected);
+			throw new ParsingFailedException(detectedErrors);
 		}
 	}
 
@@ -123,8 +127,7 @@ public class Parser {
 						try {
 							classDecl.addClassMember(parseClassMember());
 						} catch (ParserException e) {
-							errorsDetected++;
-							System.err.println(e);
+							recordError(e);
 							consumeUntil(TokenType.SEMICOLON, TokenType.RCURLYBRACKET);
 						}
 					}
@@ -135,8 +138,7 @@ public class Parser {
 					program.addClassDeclaration(classDecl);
 				}
 			} catch (ParserException e) {
-				errorsDetected++;
-				System.err.println(e);
+				recordError(e);
 				consumeUntil(TokenType.RCURLYBRACKET);
 			}
 		}
@@ -366,8 +368,7 @@ public class Parser {
 				block.addStatement(parseBlock());
 				break;
 			} catch (ParserException e) {
-				errorsDetected++;
-				System.err.println(e);
+				recordError(e);
 				consumeUntil(TokenType.RCURLYBRACKET);
 				// throw another error in case our previous error handling consumed the last }
 				notExpect(TokenType.EOF, TokenType.RCURLYBRACKET);
@@ -382,8 +383,7 @@ public class Parser {
 			try {
 				block.addStatement(parseIfStatement());
 			} catch (ParserException e) {
-				errorsDetected++;
-				System.err.println(e);
+				recordError(e);
 				consumeUntil(TokenType.SEMICOLON, TokenType.RCURLYBRACKET);
 				// throw another error in case our previous error handling consumed the last } or ;
 				notExpect(TokenType.EOF, TokenType.RCURLYBRACKET);
@@ -394,8 +394,7 @@ public class Parser {
 			try {
 				block.addStatement(parseWhileStatement());
 			} catch (ParserException e) {
-				errorsDetected++;
-				System.err.println(e);
+				recordError(e);
 				consumeUntil(TokenType.SEMICOLON, TokenType.RCURLYBRACKET);
 				// throw another error in case our previous error handling consumed the last } or ;
 				notExpect(TokenType.EOF, TokenType.RCURLYBRACKET);
@@ -406,8 +405,7 @@ public class Parser {
 			try {
 				block.addStatement(parseReturnStatement());
 			} catch (ParserException e) {
-				errorsDetected++;
-				System.err.println(e);
+				recordError(e);
 				consumeUntil(TokenType.SEMICOLON);
 				// throw another error in case our previous error handling consumed the last }
 				notExpect(TokenType.EOF, TokenType.RCURLYBRACKET);
@@ -426,8 +424,7 @@ public class Parser {
 				try {
 					block.addStatement(parseLocalVariableDeclarationStatement());
 				} catch (ParserException e) {
-					errorsDetected++;
-					System.err.println(e);
+					recordError(e);
 					consumeUntil(TokenType.SEMICOLON);
 					// throw another error in case our previous error handling consumed the last ;
 					notExpect(TokenType.EOF, TokenType.RCURLYBRACKET);
@@ -438,8 +435,7 @@ public class Parser {
 					try {
 						block.addStatement(parseLocalVariableDeclarationStatement());
 					} catch (ParserException e) {
-						errorsDetected++;
-						System.err.println(e);
+						recordError(e);
 						consumeUntil(TokenType.SEMICOLON);
 						// throw another error in case our previous error handling consumed the last ;
 						notExpect(TokenType.EOF, TokenType.RCURLYBRACKET);
@@ -452,8 +448,7 @@ public class Parser {
 			try {
 				block.addStatement(parseExpression());
 			} catch (ParserException e) {
-				errorsDetected++;
-				System.err.println(e);
+				recordError(e);
 				consumeUntil(TokenType.SEMICOLON);
 				// break on EOF
 				notExpect(TokenType.EOF, TokenType.SEMICOLON);
