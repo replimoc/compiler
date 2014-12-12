@@ -366,12 +366,13 @@ public class DeepCheckingVisitor implements AstVisitor {
 			return;
 		}
 
-		for (int i = 0; i < methodDeclaration.getParameters().size(); i++) { // FIXME @Andreas Eberle: use iterator
-			Declaration parameterDeclaration = methodDeclaration.getParameters().get(i);
+		int i = 0;
+		for (ParameterDeclaration parameterDeclaration : methodDeclaration.getParameters()) {
 			Expression expression = methodInvocationExpression.getParameters()[i];
 			expression.accept(this);
 
 			expectType(parameterDeclaration.getType(), expression);
+			i++;
 		}
 
 		methodInvocationExpression.setType(methodDeclaration.getType());
