@@ -15,7 +15,7 @@ public class FirmGraphGenerator {
 		FirmHierarchy hierarchy = new FirmHierarchy();
 		hierarchy.initialize(classScopes);
 
-		FirmGenerationVisitor firmVisitor = new FirmGenerationVisitor(hierarchy);
+		FirmGenerationVisitor firmVisitor = new FirmGenerationVisitor();
 		ast.accept(firmVisitor);
 	}
 

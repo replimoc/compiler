@@ -20,7 +20,6 @@ import org.junit.Ignore;
 
 import compiler.ast.ClassMember;
 import compiler.firm.generation.FirmGenerationVisitor;
-import compiler.firm.generation.FirmHierarchy;
 import compiler.utils.TestUtils;
 
 import firm.Dump;
@@ -76,7 +75,7 @@ public final class FirmTestUtils {
 		compiler.ast.Program ast = TestUtils.getAstForFile(javaFile);
 
 		for (ClassMember classMember : ast.getClasses().get(0).getMembers()) {
-			classMember.accept(new FirmGenerationVisitor(new FirmHierarchy()));
+			classMember.accept(new FirmGenerationVisitor());
 		}
 
 		if (export) {

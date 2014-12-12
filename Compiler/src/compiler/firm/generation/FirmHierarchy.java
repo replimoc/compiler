@@ -17,28 +17,16 @@ import firm.ClassType;
 import firm.Entity;
 import firm.MethodType;
 import firm.Mode;
-import firm.PrimitiveType;
 
 /**
  * Methods to create and access entities
  */
 public class FirmHierarchy {
 
-	private final Entity calloc;
-
 	public FirmHierarchy() {
 		// set 64bit pointer as default
 		Mode.setDefaultModeP(FirmUtils.getModeReference());
 
-		// void* calloc_proxy (size_t num, size_t size);
-		MethodType callocType = new MethodType(
-				new firm.Type[] { new PrimitiveType(FirmUtils.getModeInteger()), new PrimitiveType(FirmUtils.getModeInteger()) },
-				new firm.Type[] { new PrimitiveType(FirmUtils.getModeReference()) });
-		this.calloc = new Entity(firm.Program.getGlobalType(), "calloc_proxy", callocType);
-	}
-
-	public Entity getCalloc() {
-		return calloc;
 	}
 
 	public void initialize(HashMap<Symbol, ClassScope> classScopes) {

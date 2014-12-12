@@ -56,6 +56,7 @@ import firm.Entity;
 import firm.Graph;
 import firm.MethodType;
 import firm.Mode;
+import firm.PrimitiveType;
 import firm.Relation;
 import firm.bindings.binding_ircons.op_pin_state;
 import firm.nodes.Call;
@@ -65,7 +66,7 @@ import firm.nodes.Store;
 
 public class FirmGenerationVisitor implements AstVisitor {
 
-	private final FirmHierarchy hierarchy;
+	private final Entity calloc;
 
 	// current definitions
 	private Construction methodConstruction = null;
@@ -79,16 +80,16 @@ public class FirmGenerationVisitor implements AstVisitor {
 	private firm.nodes.Block trueDestination;
 	private firm.nodes.Block falseDestination;
 
-	public FirmGenerationVisitor(FirmHierarchy hierarchy) {
-		this.hierarchy = hierarchy;
+	public FirmGenerationVisitor() {
+		// void* calloc_proxy (size_t num, size_t size);
+		MethodType callocType = new MethodType(
+				new firm.Type[] { new PrimitiveType(FirmUtils.getModeInteger()), new PrimitiveType(FirmUtils.getModeInteger()) },
+				new firm.Type[] { new PrimitiveType(FirmUtils.getModeReference()) });
+		calloc = new Entity(firm.Program.getGlobalType(), "calloc_proxy", callocType);
 	}
 
 	private Node getThisPointer() {
 		return methodConstruction.getVariable(0, FirmUtils.getModeReference());
-	}
-
-	private Node getCallocAddress() {
-		return methodConstruction.newAddress(hierarchy.getCalloc());
 	}
 
 	private static interface CreateBinaryFirmNode {
@@ -355,7 +356,9 @@ public class FirmGenerationVisitor implements AstVisitor {
 	}
 
 	private Node callCalloc(Node numberOfElements, Node sizeofClass) {
-		return callMethod(getCallocAddress(), new Node[] { numberOfElements, sizeofClass }, (MethodType) hierarchy.getCalloc().getType());
+		return callMethod(methodConstruction.newAddress(calloc),
+				new Node[] { numberOfElements, sizeofClass },
+				(MethodType) calloc.getType());
 	}
 
 	@Override
