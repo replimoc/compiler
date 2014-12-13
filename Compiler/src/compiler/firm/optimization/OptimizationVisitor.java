@@ -586,6 +586,12 @@ public class OptimizationVisitor implements NodeVisitor {
 				} else {
 					setTargetValue(phi, target, true);
 				}
+				if (oldTarget.isConstant() && remove != oldTarget.getTargetValue().isConstant()) {
+					// visit the depending nodes only once more
+					for (Edge edge : BackEdges.getOuts(phi)) {
+						edge.node.accept(this);
+					}
+				}
 			}
 		}
 	}
