@@ -44,7 +44,7 @@ public final class FirmOptimizer {
 			Target target = targetEntry.getValue();
 
 			if (node.getPredCount() > 0) {
-				if (target.isRemove() && target.getTargetValue().isConstant()) {
+				if (target.isConstant() && target.getTargetValue().isConstant()) {
 					Graph.exchange(node, graph.newConst(target.getTargetValue()));
 				}
 			}

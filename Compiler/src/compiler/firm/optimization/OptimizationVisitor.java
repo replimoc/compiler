@@ -97,7 +97,7 @@ public class OptimizationVisitor implements NodeVisitor {
 	}
 
 	private void setTargetValue(Node node, TargetValue targetValue) {
-		targets.put(node, new Target(targetValue));
+		setTargetValue(node, targetValue, true);
 	}
 
 	private void setTargetValue(Node node, TargetValue targetValue, boolean remove) {
@@ -134,7 +134,7 @@ public class OptimizationVisitor implements NodeVisitor {
 
 	private void divModTransferFunction(Node node, TargetValue leftTarget, TargetValue rightTarget, TargetValue newTargetValue) {
 		if (leftTarget.isNull()) {
-			specialProjDivModTargets.put(node, new Target(leftTarget));
+			specialProjDivModTargets.put(node, new Target(leftTarget, false));
 		} else if (leftTarget.isConstant() && rightTarget.isConstant()) {
 			specialProjDivModTargets.put(node, new Target(newTargetValue));
 		} else if (leftTarget.equals(TargetValue.getBad()) || rightTarget.equals(TargetValue.getBad())) {
@@ -153,7 +153,7 @@ public class OptimizationVisitor implements NodeVisitor {
 		} else {
 			// are we finished?
 			if (target.isConstant()) {
-				if (!targets.get(left).isRemove() || !targets.get(right).isRemove()) {
+				if (!targets.get(left).isConstant() || !targets.get(right).isConstant()) {
 					setTargetValue(node, target, false);
 					return false;
 				} else {
@@ -173,7 +173,7 @@ public class OptimizationVisitor implements NodeVisitor {
 		} else {
 			// are we finished?
 			if (target.isConstant()) {
-				if (!targets.get(operand).isRemove()) {
+				if (!targets.get(operand).isConstant()) {
 					setTargetValue(node, target, false);
 				} else {
 					setTargetValue(node, target, true);
@@ -190,10 +190,11 @@ public class OptimizationVisitor implements NodeVisitor {
 		} else {
 			// are we finished?
 			if (target.isConstant()) {
-				if (!targets.get(left).isRemove() || !targets.get(right).isRemove()) {
-					specialProjDivModTargets.put(node, new Target(target, false));
-				} else {
+				if ((targets.get(left).isConstant() && targets.get(right).isConstant())
+						|| (targets.get(left).isConstant() && targets.get(left).getTargetValue().isNull())) {
 					specialProjDivModTargets.put(node, new Target(target, true));
+				} else {
+					specialProjDivModTargets.put(node, new Target(target, false));
 				}
 			}
 		}
@@ -211,10 +212,10 @@ public class OptimizationVisitor implements NodeVisitor {
 		boolean fixpoint = binaryExpressionCleanup(add, add.getLeft(), add.getRight(), target);
 
 		if (fixpoint && !target.isConstant()) {
-			if (leftTarget.isNull() && targets.get(add.getLeft()).isRemove()) {
-				arithmeticTarget.put(add,
-						add.getRight());
-			} else if (rightTarget.isNull() && targets.get(add.getRight()).isRemove()) {
+			// reduce x = y + 0 if possible
+			if (leftTarget.isNull() && targets.get(add.getLeft()).isConstant()) {
+				arithmeticTarget.put(add, add.getRight());
+			} else if (rightTarget.isNull() && targets.get(add.getRight()).isConstant()) {
 				arithmeticTarget.put(add, add.getLeft());
 			}
 			else {
@@ -227,25 +228,21 @@ public class OptimizationVisitor implements NodeVisitor {
 	@Override
 	public void visit(Address arg0) {
 		// TODO Auto-generated method stub
-
 	}
 
 	@Override
 	public void visit(Align arg0) {
 		// TODO Auto-generated method stub
-
 	}
 
 	@Override
 	public void visit(Alloc arg0) {
-		// TODO Auto-generated method stub
-
+		// nothing to fold
 	}
 
 	@Override
 	public void visit(Anchor arg0) {
 		// TODO Auto-generated method stub
-
 	}
 
 	@Override
@@ -261,44 +258,37 @@ public class OptimizationVisitor implements NodeVisitor {
 
 	@Override
 	public void visit(Bad arg0) {
-		// TODO Auto-generated method stub
-
+		// nothing to fold
 	}
 
 	@Override
 	public void visit(Bitcast arg0) {
 		// TODO Auto-generated method stub
-
 	}
 
 	@Override
 	public void visit(Block arg0) {
-		// TODO Auto-generated method stub
-
+		// nothing to fold
 	}
 
 	@Override
 	public void visit(Builtin arg0) {
 		// TODO Auto-generated method stub
-
 	}
 
 	@Override
 	public void visit(Call arg0) {
-		// TODO Auto-generated method stub
-
+		// nothing to fold
 	}
 
 	@Override
 	public void visit(Cmp arg0) {
 		// TODO Auto-generated method stub
-
 	}
 
 	@Override
 	public void visit(Cond arg0) {
 		// TODO Auto-generated method stub
-
 	}
 
 	@Override
@@ -325,13 +315,11 @@ public class OptimizationVisitor implements NodeVisitor {
 	@Override
 	public void visit(CopyB arg0) {
 		// TODO Auto-generated method stub
-
 	}
 
 	@Override
 	public void visit(Deleted arg0) {
 		// TODO Auto-generated method stub
-
 	}
 
 	@Override
@@ -342,7 +330,7 @@ public class OptimizationVisitor implements NodeVisitor {
 		TargetValue leftTargetValue = leftTarget == null ? TargetValue.getUnknown() : leftTarget.getTargetValue();
 		TargetValue rightTargetValue = getTargetValue(div.getRight());
 		TargetValue newTargetValue;
-		if (leftTargetValue.isNull() && targets.get(div.getLeft()).isRemove()) {
+		if (leftTargetValue.isNull()) {
 			newTargetValue = leftTargetValue;
 		} else {
 			newTargetValue = (leftTargetValue.isConstant() && rightTargetValue.isConstant()) ? leftTargetValue.div(rightTargetValue) : TargetValue
@@ -356,55 +344,46 @@ public class OptimizationVisitor implements NodeVisitor {
 	@Override
 	public void visit(Dummy arg0) {
 		// TODO Auto-generated method stub
-
 	}
 
 	@Override
 	public void visit(End arg0) {
 		// TODO Auto-generated method stub
-
 	}
 
 	@Override
 	public void visit(Eor arg0) {
 		// TODO Auto-generated method stub
-
 	}
 
 	@Override
 	public void visit(Free arg0) {
-		// TODO Auto-generated method stub
-
+		// nothing to fold
 	}
 
 	@Override
 	public void visit(IJmp arg0) {
-		// TODO Auto-generated method stub
-
+		// nothing to fold
 	}
 
 	@Override
 	public void visit(Id arg0) {
 		// TODO Auto-generated method stub
-
 	}
 
 	@Override
 	public void visit(Jmp arg0) {
-		// TODO Auto-generated method stub
-
+		// nothing to fold
 	}
 
 	@Override
 	public void visit(Load arg0) {
-		// TODO Auto-generated method stub
-
+		// nothing to fold
 	}
 
 	@Override
 	public void visit(Member arg0) {
 		// TODO Auto-generated method stub
-
 	}
 
 	@Override
@@ -424,7 +403,7 @@ public class OptimizationVisitor implements NodeVisitor {
 		TargetValue leftTargetValue = leftTarget == null ? TargetValue.getUnknown() : leftTarget.getTargetValue();
 		TargetValue rightTargetValue = getTargetValue(mod.getRight());
 		TargetValue newTargetValue;
-		if (leftTargetValue.isNull() && targets.get(mod.getLeft()).isRemove()) {
+		if (leftTargetValue.isNull()) {
 			newTargetValue = leftTargetValue;
 		} else {
 			newTargetValue = (leftTargetValue.isConstant() && rightTargetValue.isConstant()) ? leftTargetValue.mod(rightTargetValue) : TargetValue
@@ -444,35 +423,60 @@ public class OptimizationVisitor implements NodeVisitor {
 
 		if (leftTarget.isConstant() && rightTarget.isConstant()) {
 			setTargetValue(mul, newTargetValue);
-		} else if (leftTarget.isNull() && targets.get(mul.getLeft()).isRemove()) {
-			setTargetValue(mul, new TargetValue(0, mul.getMode()));
-		} else if (rightTarget.isNull() && targets.get(mul.getRight()).isRemove()) {
-			setTargetValue(mul, new TargetValue(0, mul.getMode()));
+		} else if (leftTarget.isNull() || rightTarget.isNull()) {
+			setTargetValue(mul, new TargetValue(0, mul.getMode()), false);
 		} else if (leftTarget.equals(TargetValue.getBad()) || rightTarget.equals(TargetValue.getBad())) {
 			setTargetValue(mul, TargetValue.getBad());
 		} else {
 			setTargetValue(mul, TargetValue.getUnknown());
 		}
 
-		binaryExpressionCleanup(mul, mul.getLeft(), mul.getRight(), target);
+		if (target == null || !target.equals(getTargetValue(mul))) {
+			for (Edge edge : BackEdges.getOuts(mul)) {
+				workNode(edge.node);
+			}
+		} else {
+			// are we finished?
+			if (target.isConstant()) {
+				if ((targets.get(mul.getLeft()).isConstant() && targets.get(mul.getRight()).isConstant())
+						|| (targets.get(mul.getLeft()).isConstant() && leftTarget.isNull())
+						|| (targets.get(mul.getRight()).isConstant() && rightTarget.isNull())) {
+					setTargetValue(mul, target, true);
+				} else {
+					setTargetValue(mul, target, false);
+				}
+			} else {
+				if (leftTarget.isNull() && targets.get(mul.getLeft()) != null && targets.get(mul.getLeft()).isConstant()
+						|| (rightTarget.isNull() && targets.get(mul.getRight()).isConstant() && targets.get(mul.getRight()).isConstant())) {
+					setTargetValue(mul, target, true);
+				} else {
+					setTargetValue(mul, target, false);
+				}
+				// reduce x = y * 1 if possible
+				if (leftTarget.isOne() && targets.get(mul.getLeft()).isConstant()) {
+					arithmeticTarget.put(mul, mul.getRight());
+				} else if (rightTarget.isOne() && targets.get(mul.getRight()).isConstant()) {
+					arithmeticTarget.put(mul, mul.getLeft());
+				} else {
+					arithmeticTarget.remove(mul);
+				}
+			}
+		}
 	}
 
 	@Override
 	public void visit(Mulh arg0) {
 		// TODO Auto-generated method stub
-
 	}
 
 	@Override
 	public void visit(Mux arg0) {
 		// TODO Auto-generated method stub
-
 	}
 
 	@Override
 	public void visit(NoMem arg0) {
-		// TODO Auto-generated method stub
-
+		// nothing to fold
 	}
 
 	@Override
@@ -487,7 +491,6 @@ public class OptimizationVisitor implements NodeVisitor {
 	@Override
 	public void visit(Offset arg0) {
 		// TODO Auto-generated method stub
-
 	}
 
 	@Override
@@ -506,11 +509,12 @@ public class OptimizationVisitor implements NodeVisitor {
 		TargetValue target = getTargetValue(phi);
 		Target predTarget = getTarget(phi.getPred(0));
 		TargetValue predTargetValue = predTarget == null ? TargetValue.getUnknown() : predTarget.getTargetValue();
+
 		for (int i = 1; i < phi.getPredCount(); i++) {
 			Target tmpTarget = getTarget(phi.getPred(i));
 			TargetValue tmpTargetValue = tmpTarget == null ? TargetValue.getUnknown() : tmpTarget.getTargetValue();
 			if (predTargetValue.isConstant() && tmpTargetValue.isConstant() && predTargetValue.equals(tmpTargetValue)) {
-				if (predTarget.isRemove() && tmpTarget.isRemove()) {
+				if (predTarget.isConstant() && tmpTarget.isConstant()) {
 					setTargetValue(phi, predTargetValue, true);
 				} else {
 					// only propagate the temporary constant
@@ -536,8 +540,9 @@ public class OptimizationVisitor implements NodeVisitor {
 			// are we finished?
 			if (target.isConstant()) {
 				boolean remove = true;
+				// all predecessors constant?
 				for (int i = 0; i < phi.getPredCount(); i++) {
-					remove = remove && targets.get(phi.getPred(i)).isRemove();
+					remove = remove && targets.get(phi.getPred(i)).isConstant();
 				}
 				if (!remove) {
 					setTargetValue(phi, target, false);
@@ -551,19 +556,21 @@ public class OptimizationVisitor implements NodeVisitor {
 	@Override
 	public void visit(Pin arg0) {
 		// TODO Auto-generated method stub
-
 	}
 
 	@Override
 	public void visit(Proj proj) {
 		TargetValue target = getTargetValue(proj);
+		if (target == null) {
+			setTargetValue(proj, TargetValue.getUnknown());
+		}
 		if (proj.getPredCount() == 1) {
 			if (specialProjDivModTargets.containsKey(proj.getPred(0))) {
 				Target tar = specialProjDivModTargets.get(proj.getPred(0));
 				if (tar != null) {
 					TargetValue tarVal = tar.getTargetValue();
-					if (tarVal != null && tar.isRemove() && !target.equals(tarVal)) {
-						setTargetValue(proj, tarVal);
+					if (tarVal != null && tar.isConstant() && !target.equals(tarVal)) {
+						setTargetValue(proj, tarVal, true);
 						// we need to visit this node again to check if the div/mod will be removed
 						workNode(proj);
 					} else {
@@ -585,17 +592,19 @@ public class OptimizationVisitor implements NodeVisitor {
 					for (Node pred2 : pred.getPreds()) {
 						Target tar = specialProjDivModTargets.get(pred2);
 						if (tar != null) {
-							remove = remove && tar.isRemove();
+							remove = remove && tar.isConstant();
 						} else {
 							tar = targets.get(pred2);
 							if (tar != null) {
-								remove = remove && tar.isRemove();
+								remove = remove && tar.isConstant();
 							}
 						}
 					}
 				}
 				if (!remove) {
 					setTargetValue(proj, target, false);
+				} else {
+					setTargetValue(proj, target, true);
 				}
 			}
 		}
@@ -604,19 +613,16 @@ public class OptimizationVisitor implements NodeVisitor {
 	@Override
 	public void visit(Raise arg0) {
 		// TODO Auto-generated method stub
-
 	}
 
 	@Override
 	public void visit(Return arg0) {
 		// TODO Auto-generated method stub
-
 	}
 
 	@Override
 	public void visit(Sel arg0) {
-		// TODO Auto-generated method stub
-
+		// nothing to fold
 	}
 
 	@Override
@@ -655,19 +661,16 @@ public class OptimizationVisitor implements NodeVisitor {
 	@Override
 	public void visit(Size arg0) {
 		// TODO Auto-generated method stub
-
 	}
 
 	@Override
 	public void visit(Start arg0) {
 		// TODO Auto-generated method stub
-
 	}
 
 	@Override
 	public void visit(Store arg0) {
 		// TODO Auto-generated method stub
-
 	}
 
 	@Override
@@ -682,7 +685,8 @@ public class OptimizationVisitor implements NodeVisitor {
 		boolean fixpoint = binaryExpressionCleanup(sub, sub.getLeft(), sub.getRight(), target);
 
 		if (fixpoint && !target.isConstant()) {
-			if (rightTarget.isNull() && targets.get(sub.getRight()).isRemove()) {
+			// reduce x = y - 0 if possible
+			if (rightTarget.isNull() && targets.get(sub.getRight()).isConstant()) {
 				arithmeticTarget.put(sub, sub.getLeft());
 			} else {
 				arithmeticTarget.remove(sub);
@@ -694,31 +698,26 @@ public class OptimizationVisitor implements NodeVisitor {
 	@Override
 	public void visit(Switch arg0) {
 		// TODO Auto-generated method stub
-
 	}
 
 	@Override
 	public void visit(Sync arg0) {
 		// TODO Auto-generated method stub
-
 	}
 
 	@Override
 	public void visit(Tuple arg0) {
 		// TODO Auto-generated method stub
-
 	}
 
 	@Override
 	public void visit(Unknown arg0) {
-		// TODO Auto-generated method stub
-
+		// nothing to fold
 	}
 
 	@Override
 	public void visitUnknown(Node arg0) {
-		// TODO Auto-generated method stub
-
+		// nothing to fold
 	}
 
 	/**
@@ -733,11 +732,11 @@ public class OptimizationVisitor implements NodeVisitor {
 		/**
 		 * Flag if the node shall be removed from the graph.
 		 */
-		private boolean remove;
+		private boolean constant;
 
 		public Target(TargetValue target, boolean remove) {
 			this.target = target;
-			this.remove = remove;
+			this.constant = remove;
 		}
 
 		public Target(TargetValue target) {
@@ -748,8 +747,8 @@ public class OptimizationVisitor implements NodeVisitor {
 			return target;
 		}
 
-		public boolean isRemove() {
-			return remove;
+		public boolean isConstant() {
+			return constant;
 		}
 	}
 
