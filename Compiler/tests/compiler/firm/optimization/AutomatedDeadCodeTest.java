@@ -4,8 +4,6 @@ import static org.junit.Assert.assertEquals;
 
 import java.io.File;
 import java.io.IOException;
-import java.nio.charset.StandardCharsets;
-import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.List;
@@ -25,7 +23,7 @@ import compiler.utils.Utils;
  * This test tries to automatically check whether the compiler successfully has optimized given code.
  *
  */
-public class AutomatedOptimizationTest implements FileTester {
+public class AutomatedDeadCodeTest implements FileTester {
 
 	private static final String OUTPUT_FILE_EXTENSION = ".result";
 
@@ -59,35 +57,31 @@ public class AutomatedOptimizationTest implements FileTester {
 	private void testOptimizationForSingleFile(Path sourceFilePath, Path expectedResultFilePath) throws IOException {
 		System.out.println("Starting optimiziation test for " + sourceFilePath);
 
-		File nonOptExe = File.createTempFile("executable", Utils.getBinaryFileName(""));
-		nonOptExe.deleteOnExit();
-		Pair<Integer, List<String>> resNonOptExe = TestUtils.startCompilerApp("-o", nonOptExe.toString(), "--compile-firm --no-opt",
-				sourceFilePath.toAbsolutePath().toString());
-		assertEquals("compiling failed for " + sourceFilePath, 0, resNonOptExe.getFirst().intValue());
-
+		// optimized binary
 		File optExe = File.createTempFile("executable", Utils.getBinaryFileName(""));
 		optExe.deleteOnExit();
 		Pair<Integer, List<String>> resOptExes = TestUtils.startCompilerApp("-o", optExe.toString(), "--compile-firm",
 				sourceFilePath.toAbsolutePath().toString());
+
+		for (String line : resOptExes.getSecond()) {
+			System.out.println(line);
+		}
+
 		assertEquals("compiling failed for " + sourceFilePath, 0, resOptExes.getFirst().intValue());
 
-		// execute non optimized
-		resNonOptExe = Utils.systemExec(nonOptExe.toString());
-		assertEquals("execution of assembly failed for " + sourceFilePath, 0, resNonOptExe.getFirst().intValue());
+		// non optimized binary
+		File nonOptExe = File.createTempFile("executable", Utils.getBinaryFileName(""));
+		nonOptExe.deleteOnExit();
+		Pair<Integer, List<String>> resNonOptExe = TestUtils.startCompilerApp("-o", nonOptExe.toString(), "--compile-firm", "--no-opt",
+				sourceFilePath.toAbsolutePath().toString());
 
-		// execute optimized
-		resOptExes = Utils.systemExec(nonOptExe.toString());
-		assertEquals("execution of assembly failed for " + sourceFilePath, 0, resOptExes.getFirst().intValue());
-
-		// check output of non optimized executable against expected
-		List<String> expectedOutput = Files.readAllLines(expectedResultFilePath, StandardCharsets.US_ASCII);
-		TestUtils.assertLinesEqual(sourceFilePath, expectedOutput, resNonOptExe.getSecond().iterator());
-
-		// check output of optimized executable against expected
-		TestUtils.assertLinesEqual(sourceFilePath, expectedOutput, resOptExes.getSecond().iterator());
-
-		// TODO: Implement some comparison
+		for (String line : resNonOptExe.getSecond()) {
+			System.out.println(line);
+		}
 
 		assertEquals("compiling failed for " + sourceFilePath, 0, resNonOptExe.getFirst().intValue());
+
+		// Optimized binary is greater than non-opt
+		assert (optExe.length() <= nonOptExe.length());
 	}
 }
