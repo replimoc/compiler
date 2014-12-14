@@ -88,14 +88,6 @@ public class OptimizationVisitor implements NodeVisitor {
 		workList.offer(node);
 	}
 
-	private void workNodes(Iterable<Node> nodes) {
-		if (nodes == null)
-			return;
-		for (Node node : nodes) {
-			workList.offer(node);
-		}
-	}
-
 	private boolean fixpointReached(Target oldTarget, Node node) {
 		if (node instanceof Div || node instanceof Mod) {
 			if (oldTarget == null || !oldTarget.equals(specialProjDivModTargets.get(node))) {
