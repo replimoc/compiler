@@ -67,6 +67,8 @@ public final class CompilerApp {
 
 		options.addOption(null, DEBUG, false, "prints more detailed error messages (only useful in case of a crash)");
 		options.addOption(null, GRAPH_FIRM, false, "dump a firm graph to the current directory.");
+		options.addOption("s", null, true, "Used to define the suffix of the dumped firm graph. (Only to be used with --"
+				+ GRAPH_FIRM + ")");
 		options.addOption(null, OUTPUT_ASSEMBLER, false, "outputs the generated assembler into file assembler.s. (Only to be used with --"
 				+ COMPILE_FIRM + ")");
 		options.addOption(null, COMPILE_FIRM, false, "use the firm backend to produce amd64 code.");
@@ -134,7 +136,11 @@ public final class CompilerApp {
 					}
 
 					if (cmd.hasOption(GRAPH_FIRM)) {
-						FirmUtils.createFirmGraph();
+						String suffix = "";
+						if (cmd.hasOption('s')) {
+							suffix = cmd.getOptionValue('s');
+						}
+						FirmUtils.createFirmGraph(suffix);
 					}
 
 					int result = 0;

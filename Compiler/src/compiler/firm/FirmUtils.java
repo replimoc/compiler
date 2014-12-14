@@ -123,10 +123,10 @@ public final class FirmUtils {
 		return exitCode;
 	}
 
-	public static void createFirmGraph() {
+	public static void createFirmGraph(String suffix) {
 		for (Graph graph : Program.getGraphs()) {
 			graph.check();
-			Dump.dumpGraph(graph, "generated");
+			Dump.dumpGraph(graph, suffix.isEmpty() ? "generated" : suffix);
 		}
 	}
 
