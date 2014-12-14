@@ -4,13 +4,13 @@ import java.util.Collections;
 import java.util.List;
 
 import compiler.ast.Block;
-import compiler.ast.ClassDeclaration;
-import compiler.ast.ClassMember;
-import compiler.ast.FieldDeclaration;
-import compiler.ast.MethodDeclaration;
-import compiler.ast.ParameterDefinition;
 import compiler.ast.Program;
-import compiler.ast.StaticMethodDeclaration;
+import compiler.ast.declaration.ClassDeclaration;
+import compiler.ast.declaration.FieldDeclaration;
+import compiler.ast.declaration.MemberDeclaration;
+import compiler.ast.declaration.MethodDeclaration;
+import compiler.ast.declaration.ParameterDeclaration;
+import compiler.ast.declaration.StaticMethodDeclaration;
 import compiler.ast.statement.ArrayAccessExpression;
 import compiler.ast.statement.BlockBasedStatement;
 import compiler.ast.statement.BooleanConstantExpression;
@@ -475,10 +475,10 @@ public class PrettyPrinterVisitor implements AstVisitor {
 			stringBuilder.append('\n');
 			tabStops++;
 
-			List<ClassMember> members = classDeclaration.getMembers();
+			List<MemberDeclaration> members = classDeclaration.getMembers();
 			Collections.sort(members);
 
-			for (ClassMember member : members) {
+			for (MemberDeclaration member : members) {
 				printTabs();
 				member.accept(this);
 			}
@@ -567,10 +567,10 @@ public class PrettyPrinterVisitor implements AstVisitor {
 	}
 
 	@Override
-	public void visit(ParameterDefinition parameterDefinition) {
-		parameterDefinition.getType().accept(this);
+	public void visit(ParameterDeclaration parameterDeclaration) {
+		parameterDeclaration.getType().accept(this);
 		stringBuilder.append(' ');
-		stringBuilder.append(parameterDefinition.getIdentifier());
+		stringBuilder.append(parameterDeclaration.getIdentifier());
 	}
 
 	@Override
@@ -604,7 +604,7 @@ public class PrettyPrinterVisitor implements AstVisitor {
 		stringBuilder.append('(');
 		boolean first = true;
 
-		for (ParameterDefinition parameter : methodDeclaration.getParameters()) {
+		for (ParameterDeclaration parameter : methodDeclaration.getParameters()) {
 			if (first)
 				first = false;
 			else

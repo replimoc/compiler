@@ -12,10 +12,8 @@ public class FirmGraphGenerator {
 	}
 
 	public static void transformToFirm(AstNode ast, HashMap<Symbol, ClassScope> classScopes) {
-		FirmHierarchy hierarchy = new FirmHierarchy();
-		hierarchy.initialize(classScopes);
-
-		FirmGenerationVisitor firmVisitor = new FirmGenerationVisitor(hierarchy);
+		FirmGenerationVisitor firmVisitor = new FirmGenerationVisitor();
+		firmVisitor.initialize(classScopes);
 		ast.accept(firmVisitor);
 	}
 

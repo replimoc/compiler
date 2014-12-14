@@ -1,4 +1,4 @@
-package compiler.ast;
+package compiler.parser;
 
 import static org.junit.Assert.assertTrue;
 
@@ -6,29 +6,26 @@ import java.io.IOException;
 
 import org.junit.Test;
 
+import compiler.ast.Block;
+import compiler.ast.Program;
+import compiler.ast.declaration.FieldDeclaration;
+import compiler.ast.declaration.MethodDeclaration;
 import compiler.ast.type.ClassType;
-import compiler.parser.Parser;
 import compiler.parser.ParsingFailedException;
 import compiler.utils.TestUtils;
 
-public class ParserASTTest {
+public class ParserAstTest {
 
 	@Test
 	public void testAST() throws IOException, ParsingFailedException {
-		Parser parser;
-
-		parser = TestUtils.initParser("");
-
-		Program ast = parser.parse();
+		Program ast = TestUtils.parse("");
 		assertTrue(ast.getClasses().isEmpty());
 
-		parser = TestUtils.initParser("class Class {}");
-		ast = parser.parse();
+		ast = TestUtils.parse("class Class {}");
 		assertTrue(ast.getClasses().size() == 1);
 		assertTrue(ast.getClasses().get(0).getIdentifier().getValue().equals("Class"));
 
-		parser = TestUtils.initParser("class Class { public void function(int param) {} }");
-		ast = parser.parse();
+		ast = TestUtils.parse("class Class { public void function(int param) {} }");
 		assertTrue(ast.getClasses().size() == 1);
 		assertTrue(ast.getClasses().get(0).getMembers().isEmpty() == false);
 		MethodDeclaration func = (MethodDeclaration) ast.getClasses().get(0).getMembers().get(0); // DOWNCAST! - Yeah
@@ -36,8 +33,7 @@ public class ParserASTTest {
 		assertTrue(func.getParameters().size() == 1);
 		assertTrue(func.getParameters().get(0).getIdentifier().getValue().equals("param"));
 
-		parser = TestUtils.initParser("class Class { public void function(int paramA, void paramB) {} }");
-		ast = parser.parse();
+		ast = TestUtils.parse("class Class { public void function(int paramA, void paramB) {} }");
 		assertTrue(ast.getClasses().size() == 1);
 		assertTrue(ast.getClasses().get(0).getMembers().isEmpty() == false);
 		func = (MethodDeclaration) ast.getClasses().get(0).getMembers().get(0); // DOWNCAST! - Yeah
@@ -46,8 +42,7 @@ public class ParserASTTest {
 		assertTrue(func.getParameters().get(0).getIdentifier().getValue().equals("paramA"));
 		assertTrue(func.getParameters().get(1).getIdentifier().getValue().equals("paramB"));
 
-		parser = TestUtils.initParser("class Class { public void function(int paramA, void paramB, int[] paramC, int[][] paramD) {} }");
-		ast = parser.parse();
+		ast = TestUtils.parse("class Class { public void function(int paramA, void paramB, int[] paramC, int[][] paramD) {} }");
 		assertTrue(ast.getClasses().size() == 1);
 		assertTrue(ast.getClasses().get(0).getMembers().isEmpty() == false);
 		func = (MethodDeclaration) ast.getClasses().get(0).getMembers().get(0); // DOWNCAST! - Yeah
@@ -56,8 +51,7 @@ public class ParserASTTest {
 		assertTrue(func.getParameters().get(2).getIdentifier().getValue().equals("paramC"));
 		assertTrue(func.getParameters().get(3).getIdentifier().getValue().equals("paramD"));
 
-		parser = TestUtils.initParser("class Class { public void function() { {} } }");
-		ast = parser.parse();
+		ast = TestUtils.parse("class Class { public void function() { {} } }");
 		assertTrue(ast.getClasses().size() == 1);
 		assertTrue(ast.getClasses().get(0).getMembers().isEmpty() == false);
 		func = (MethodDeclaration) ast.getClasses().get(0).getMembers().get(0); // DOWNCAST! - Yeah
@@ -67,8 +61,7 @@ public class ParserASTTest {
 		Block blockStmt = (Block) func.getBlock().getStatements().get(0);
 		assertTrue(blockStmt.getStatements().isEmpty());
 
-		parser = TestUtils.initParser("class Class { public void function() { ; ; {} } }");
-		ast = parser.parse();
+		ast = TestUtils.parse("class Class { public void function() { ; ; {} } }");
 		assertTrue(ast.getClasses().size() == 1);
 		assertTrue(ast.getClasses().get(0).getMembers().isEmpty() == false);
 		func = (MethodDeclaration) ast.getClasses().get(0).getMembers().get(0); // DOWNCAST! - Yeah
@@ -78,8 +71,7 @@ public class ParserASTTest {
 		blockStmt = (Block) func.getBlock().getStatements().get(0);
 		assertTrue(blockStmt.getStatements().isEmpty());
 
-		parser = TestUtils.initParser("class Class { public void asdf; public asdf asdf; }");
-		ast = parser.parse();
+		ast = TestUtils.parse("class Class { public void asdf; public asdf asdf; }");
 		assertTrue(ast.getClasses().size() == 1);
 		assertTrue(ast.getClasses().get(0).getMembers().size() == 2);
 		FieldDeclaration fldDecl = (FieldDeclaration) ast.getClasses().get(0).getMembers().get(0); // DOWNCAST! - Yeah
@@ -88,20 +80,10 @@ public class ParserASTTest {
 		assertTrue(fldDecl.getIdentifier().getValue().equals("asdf"));
 		assertTrue(((ClassType) fldDecl.getType()).getIdentifier().getValue().equals("asdf"));
 
-		parser = TestUtils.initParser("class Loops {public static void main ( String[] args){int a; int b; int c; int d;}}");
-		parser.parse();
+		TestUtils.parse("class Loops {public static void main ( String[] args){int a; int b; int c; int d;}}");
 
-		parser = TestUtils.initParser("class Class { public int[] list; }");
-		parser.parse();
+		TestUtils.parse("class Class { public int[] list; }");
 
-		parser = TestUtils.initParser("class Class { public static void main (String[] args) { int[] asdf = 0; } }");
-		parser.parse();
-
-		/*
-		 * parser = TestUtils.initParser("class Class { public void function() { if () {} } }"); parser.parse(); parser =
-		 * TestUtils.initParser("class Class { public void function() { while () {} } }"); parser.parse(); parser =
-		 * TestUtils.initParser("class Class { public void function() { return; } }"); parser.parse(); parser =
-		 * TestUtils.initParser("class Class { public void function() { int asdf = ; } }"); parser.parse();
-		 */
+		TestUtils.parse("class Class { public static void main (String[] args) { int[] asdf = 0; } }");
 	}
 }

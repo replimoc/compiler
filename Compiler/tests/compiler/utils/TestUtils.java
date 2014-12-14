@@ -18,10 +18,14 @@ import org.junit.Assert;
 import org.junit.Ignore;
 
 import compiler.StringTable;
+import compiler.Symbol;
+import compiler.ast.Program;
 import compiler.lexer.Lexer;
+import compiler.lexer.Token;
 import compiler.lexer.TokenType;
 import compiler.main.CompilerApp;
 import compiler.parser.Parser;
+import compiler.parser.ParsingFailedException;
 import compiler.semantic.SemanticCheckResults;
 import compiler.semantic.SemanticChecker;
 import compiler.semantic.exceptions.SemanticAnalysisException;
@@ -51,8 +55,29 @@ public class TestUtils {
 	}
 
 	public static Parser initParser(String program) throws IOException {
-		Lexer lex = new Lexer(new StringReader(program), new StringTable());
+		return initParser(program, new StringTable());
+	}
+
+	public static Parser initParser(String program, StringTable stringTable) throws IOException {
+		Lexer lex = new Lexer(new StringReader(program), stringTable);
 		return new Parser(lex);
+	}
+
+	public static Program parse(String input) throws IOException, ParsingFailedException {
+		try {
+			Parser parser = initParser(input);
+			Program ast = parser.parse();
+			return ast;
+		} catch (ParsingFailedException ex) {
+			ex.printParserExceptions();
+			throw ex;
+		}
+	}
+
+	public static SemanticCheckResults checkSemantic(String program) throws IOException, ParsingFailedException {
+		StringTable stringTable = new StringTable();
+		Parser parser = TestUtils.initParser(program, stringTable);
+		return SemanticChecker.checkSemantic(parser.parse(), stringTable);
 	}
 
 	/**
@@ -72,10 +97,11 @@ public class TestUtils {
 	}
 
 	public static compiler.ast.Program getAstForFile(String fileName) throws Exception {
-		Lexer lexer = new Lexer(Files.newBufferedReader(Paths.get(fileName), StandardCharsets.US_ASCII), new StringTable());
+		StringTable stringTable = new StringTable();
+		Lexer lexer = new Lexer(Files.newBufferedReader(Paths.get(fileName), StandardCharsets.US_ASCII), stringTable);
 		Parser parser = new Parser(lexer);
 		compiler.ast.Program program = parser.parse();
-		SemanticCheckResults semanticResult = SemanticChecker.checkSemantic(program);
+		SemanticCheckResults semanticResult = SemanticChecker.checkSemantic(program, stringTable);
 		if (semanticResult.hasErrors()) {
 			for (SemanticAnalysisException error : semanticResult.getExceptions()) {
 				error.printStackTrace();
@@ -133,4 +159,21 @@ public class TestUtils {
 		output = null;
 		file = null;
 	}
+
+	public static void assertTokenEquals(Token token1, Token token2) {
+		assertEquals(token1.getPosition(), token2.getPosition());
+		assertEquals(token1.getType(), token2.getType());
+		assertSymbolEquals(token1.getSymbol(), token2.getSymbol());
+	}
+
+	public static void assertSymbolEquals(Symbol symbol1, Symbol symbol2) {
+		String value1 = null;
+		String value2 = null;
+		if (symbol1 != null)
+			value1 = symbol1.getValue();
+		if (symbol2 != null)
+			value2 = symbol2.getValue();
+		assertEquals(value1, value2);
+	}
+
 }

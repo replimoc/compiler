@@ -3,6 +3,7 @@ package compiler.ast;
 import java.util.ArrayList;
 import java.util.List;
 
+import compiler.ast.declaration.ClassDeclaration;
 import compiler.ast.visitor.AstVisitor;
 import compiler.lexer.Position;
 

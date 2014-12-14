@@ -7,6 +7,11 @@ import compiler.lexer.Position;
 public class ClassType extends Type {
 
 	private final Symbol identifier;
+	private firm.ClassType firmClassType;
+
+	public ClassType(Symbol identifier) {
+		this(null, identifier);
+	}
 
 	public ClassType(Position position, Symbol identifier) {
 		super(position, BasicType.CLASS);
@@ -16,6 +21,18 @@ public class ClassType extends Type {
 	@Override
 	public Symbol getIdentifier() {
 		return identifier;
+	}
+
+	public firm.ClassType getFirmClassType() {
+		if (firmClassType == null) {
+			firmClassType = new firm.ClassType(getIdentifier().getValue());
+		}
+		return firmClassType;
+	}
+
+	@Override
+	protected firm.Type generateFirmType() {
+		return new firm.PointerType(getFirmClassType());
 	}
 
 	@Override
@@ -37,6 +54,11 @@ public class ClassType extends Type {
 			return true;
 		if (!super.equals(obj))
 			return false;
+		if (!(obj instanceof Type))
+			return false;
+		Type otherT = (Type) obj;
+		if (getBasicType() == BasicType.NULL || otherT.getBasicType() == BasicType.NULL)
+			return true;
 		if (getClass() != obj.getClass())
 			return false;
 		ClassType other = (ClassType) obj;

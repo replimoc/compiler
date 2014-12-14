@@ -1,5 +1,6 @@
 package compiler.ast;
 
+import compiler.ast.type.BasicType;
 import compiler.ast.type.Type;
 import compiler.ast.visitor.AstVisitor;
 import compiler.lexer.Position;
@@ -33,6 +34,10 @@ public abstract class AstNode {
 
 	public void setType(Type type) {
 		this.type = type;
+	}
+
+	public void setType(BasicType basicType) {
+		setType(new Type(getPosition(), basicType));
 	}
 
 	public Node getFirmNode() {

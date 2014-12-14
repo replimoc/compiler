@@ -2,11 +2,15 @@ package compiler.ast.type;
 
 import compiler.Symbol;
 import compiler.ast.visitor.AstVisitor;
+import compiler.firm.FirmUtils;
 import compiler.lexer.Position;
+
+import firm.PrimitiveType;
 
 public class ArrayType extends Type {
 
 	private final Type subType;
+	private firm.Type firmArrayType;
 
 	public ArrayType(Position position, Type subType) {
 		super(position, BasicType.ARRAY);
@@ -32,6 +36,18 @@ public class ArrayType extends Type {
 	}
 
 	@Override
+	protected firm.Type generateFirmType() {
+		return new PrimitiveType(FirmUtils.getModeReference());
+	}
+
+	public firm.Type getFirmArrayType() {
+		if (firmArrayType == null) {
+			this.firmArrayType = new firm.ArrayType(getSubType().getFirmType());
+		}
+		return firmArrayType;
+	}
+
+	@Override
 	public void accept(AstVisitor visitor) {
 		visitor.visit(this);
 	}
@@ -50,6 +66,11 @@ public class ArrayType extends Type {
 			return true;
 		if (!super.equals(obj))
 			return false;
+		if (!(obj instanceof Type))
+			return false;
+		Type otherT = (Type) obj;
+		if (getBasicType() == BasicType.NULL || otherT.getBasicType() == BasicType.NULL)
+			return true;
 		if (getClass() != obj.getClass())
 			return false;
 		ArrayType other = (ArrayType) obj;

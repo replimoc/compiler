@@ -4,24 +4,36 @@ import java.util.HashMap;
 import java.util.Map.Entry;
 
 import compiler.Symbol;
-import compiler.semantic.symbolTable.Definition;
-import compiler.semantic.symbolTable.MethodDefinition;
+import compiler.ast.declaration.ClassDeclaration;
+import compiler.ast.declaration.Declaration;
+import compiler.ast.declaration.FieldDeclaration;
+import compiler.ast.declaration.MethodDeclaration;
+import compiler.ast.declaration.StaticFieldDeclaration;
 
 public class ClassScope {
+	private final ClassDeclaration classDeclaration;
+	private final HashMap<Symbol, FieldDeclaration> fields;
+	private final HashMap<Symbol, MethodDeclaration> methods;
 
-	private final HashMap<Symbol, Definition> fields;
-	private final HashMap<Symbol, MethodDefinition> methods;
+	public ClassScope(HashMap<Symbol, FieldDeclaration> fields, HashMap<Symbol, MethodDeclaration> methods) {
+		this(null, fields, methods);
+	}
 
-	public ClassScope(HashMap<Symbol, Definition> fields, HashMap<Symbol, MethodDefinition> methods) {
+	public ClassScope(ClassDeclaration classDeclaration, HashMap<Symbol, FieldDeclaration> fields, HashMap<Symbol, MethodDeclaration> methods) {
+		this.classDeclaration = classDeclaration;
 		this.fields = fields;
 		this.methods = methods;
 	}
 
-	public MethodDefinition getMethodDefinition(Symbol identifier) {
+	public ClassDeclaration getClassDeclaration() {
+		return classDeclaration;
+	}
+
+	public MethodDeclaration getMethodDeclaration(Symbol identifier) {
 		return methods.get(identifier);
 	}
 
-	public Definition getFieldDefinition(Symbol identifier) {
+	public Declaration getFieldDeclaration(Symbol identifier) {
 		return fields.get(identifier);
 	}
 
@@ -33,19 +45,28 @@ public class ClassScope {
 		return methods.size();
 	}
 
-	public Definition[] getFieldDefinitions() {
-		Definition[] fields = new Definition[this.fields.size()];
+	public boolean hasStaticField() {
+		for (Entry<Symbol, FieldDeclaration> curr : this.fields.entrySet()) {
+			if (curr.getValue() instanceof StaticFieldDeclaration) {
+				return true;
+			}
+		}
+		return false;
+	}
+
+	public FieldDeclaration[] getFieldDeclarations() {
+		FieldDeclaration[] fields = new FieldDeclaration[this.fields.size()];
 		int i = 0;
-		for (Entry<Symbol, Definition> curr : this.fields.entrySet()) {
+		for (Entry<Symbol, FieldDeclaration> curr : this.fields.entrySet()) {
 			fields[i++] = curr.getValue();
 		}
 		return fields;
 	}
 
-	public MethodDefinition[] getMethodDefinitions() {
-		MethodDefinition[] methods = new MethodDefinition[this.methods.size()];
+	public MethodDeclaration[] getMethodDeclarations() {
+		MethodDeclaration[] methods = new MethodDeclaration[this.methods.size()];
 		int i = 0;
-		for (Entry<Symbol, MethodDefinition> curr : this.methods.entrySet()) {
+		for (Entry<Symbol, MethodDeclaration> curr : this.methods.entrySet()) {
 			methods[i++] = curr.getValue();
 		}
 		return methods;

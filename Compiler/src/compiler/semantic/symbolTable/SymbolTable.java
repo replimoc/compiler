@@ -3,6 +3,7 @@ package compiler.semantic.symbolTable;
 import java.util.LinkedList;
 
 import compiler.Symbol;
+import compiler.ast.statement.LocalVariableDeclaration;
 import compiler.ast.type.Type;
 
 public class SymbolTable {
@@ -21,22 +22,22 @@ public class SymbolTable {
 
 		while (changeStack.size() > currentScope.getOldChangeStackSize()) {
 			Change change = changeStack.pop();
-			change.getSymbol().setDefintion(change.getPrevScope(), change.getPrevDefinition());
+			change.getSymbol().setDeclaration(change.getPrevScope(), change.getPreviousDeclaration());
 			localVariables--;
 		}
 		currentScope = currentScope.getParentScope();
 	}
 
 	public int insert(Symbol symbol, Type type) {
-		changeStack.push(new Change(symbol, symbol.getDefinition(), symbol.getDefinitionScope()));
+		changeStack.push(new Change(symbol, symbol.getDeclaration(), symbol.getDeclarationScope()));
 		int variableNumber = localVariables + 1; // +1 for this pointer
-		symbol.setDefintion(currentScope, new LocalVariableDefinition(symbol, type, variableNumber));
+		symbol.setDeclaration(currentScope, new LocalVariableDeclaration(type, symbol, variableNumber));
 		localVariables++;
 		return variableNumber;
 	}
 
 	public boolean isDefinedInCurrentScope(Symbol symbol) {
-		return symbol.getDefinitionScope() == currentScope;
+		return symbol.getDeclarationScope() == currentScope;
 	}
 
 	public void leaveAllScopes() {

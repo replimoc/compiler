@@ -1,12 +1,12 @@
 package compiler.ast.visitor;
 
 import compiler.ast.Block;
-import compiler.ast.ClassDeclaration;
-import compiler.ast.FieldDeclaration;
-import compiler.ast.MethodDeclaration;
-import compiler.ast.ParameterDefinition;
 import compiler.ast.Program;
-import compiler.ast.StaticMethodDeclaration;
+import compiler.ast.declaration.ClassDeclaration;
+import compiler.ast.declaration.FieldDeclaration;
+import compiler.ast.declaration.MethodDeclaration;
+import compiler.ast.declaration.ParameterDeclaration;
+import compiler.ast.declaration.StaticMethodDeclaration;
 import compiler.ast.statement.ArrayAccessExpression;
 import compiler.ast.statement.BooleanConstantExpression;
 import compiler.ast.statement.IfStatement;
@@ -103,7 +103,7 @@ public interface AstVisitor {
 
 	public void visit(LocalVariableDeclaration localVariableDeclaration);
 
-	public void visit(ParameterDefinition parameterDefinition);
+	public void visit(ParameterDeclaration parameterDeclaration);
 
 	public void visit(Program program);
 

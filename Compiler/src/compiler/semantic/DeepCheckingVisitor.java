@@ -7,13 +7,14 @@ import java.util.List;
 import compiler.Symbol;
 import compiler.ast.AstNode;
 import compiler.ast.Block;
-import compiler.ast.ClassDeclaration;
-import compiler.ast.ClassMember;
-import compiler.ast.FieldDeclaration;
-import compiler.ast.MethodDeclaration;
-import compiler.ast.ParameterDefinition;
 import compiler.ast.Program;
-import compiler.ast.StaticMethodDeclaration;
+import compiler.ast.declaration.ClassDeclaration;
+import compiler.ast.declaration.Declaration;
+import compiler.ast.declaration.FieldDeclaration;
+import compiler.ast.declaration.MemberDeclaration;
+import compiler.ast.declaration.MethodDeclaration;
+import compiler.ast.declaration.ParameterDeclaration;
+import compiler.ast.declaration.StaticMethodDeclaration;
 import compiler.ast.statement.ArrayAccessExpression;
 import compiler.ast.statement.BooleanConstantExpression;
 import compiler.ast.statement.Expression;
@@ -59,12 +60,10 @@ import compiler.semantic.exceptions.MainNotCallableException;
 import compiler.semantic.exceptions.MissingReturnStatementOnAPathException;
 import compiler.semantic.exceptions.NoSuchMemberException;
 import compiler.semantic.exceptions.NotAnExpressionStatementException;
-import compiler.semantic.exceptions.RedefinitionErrorException;
+import compiler.semantic.exceptions.ReDeclarationErrorException;
 import compiler.semantic.exceptions.SemanticAnalysisException;
 import compiler.semantic.exceptions.TypeErrorException;
 import compiler.semantic.exceptions.UndefinedSymbolException;
-import compiler.semantic.symbolTable.Definition;
-import compiler.semantic.symbolTable.MethodDefinition;
 import compiler.semantic.symbolTable.SymbolTable;
 
 public class DeepCheckingVisitor implements AstVisitor {
@@ -75,16 +74,14 @@ public class DeepCheckingVisitor implements AstVisitor {
 	private SymbolTable symbolTable = null;
 	private ClassDeclaration currentClassDeclaration;
 	private ClassScope currentClassScope = null;
-	private MethodDefinition currentMethodDefinition = null;
-	private final Definition systemDefinition;
+	private MethodDeclaration currentMethodDeclaration = null;
 
 	private boolean isStaticMethod;
 	private boolean returnOnAllPaths;
 	private boolean isExpressionStatement;
 
-	public DeepCheckingVisitor(HashMap<Symbol, ClassScope> classScopes, Definition systemDefinition) {
+	public DeepCheckingVisitor(HashMap<Symbol, ClassScope> classScopes) {
 		this.classScopes = classScopes;
-		this.systemDefinition = systemDefinition;
 	}
 
 	public List<SemanticAnalysisException> getExceptions() {
@@ -99,8 +96,8 @@ public class DeepCheckingVisitor implements AstVisitor {
 		exceptions.add(new TypeErrorException(astNode, message));
 	}
 
-	private void throwRedefinitionError(Symbol symbol, Position redefinition) {
-		exceptions.add(new RedefinitionErrorException(symbol, redefinition));
+	private void throwReDeclarationError(Symbol symbol, Position reDeclarationPosition) {
+		exceptions.add(new ReDeclarationErrorException(symbol, reDeclarationPosition));
 	}
 
 	private void throwUndefinedSymbolError(Symbol symbol, Position position) {
@@ -119,38 +116,28 @@ public class DeepCheckingVisitor implements AstVisitor {
 		exceptions.add(new MainNotCallableException(methodInvocation));
 	}
 
-	private boolean hasType(Type type, AstNode astNode) {
-		return (astNode.getType() == null
-				|| (type.getBasicType() != null && type.getBasicType() != BasicType.INT && type.getBasicType() != BasicType.BOOLEAN
-				&& astNode.getType().getBasicType() == BasicType.NULL)
-				|| astNode.getType().equals(type));
-	}
-
-	private boolean hasType(BasicType type, AstNode astNode) {
-		return (astNode.getType() == null || astNode.getType().getBasicType() == type);
-	}
-
-	private void expectType(Type type, AstNode astNode) {
-		if (!hasType(type, astNode)) {
+	private boolean expectType(Type type, AstNode astNode, boolean negate) {
+		boolean correctType = (astNode.getType() == null || astNode.getType().equals(type));
+		if (!negate && !correctType) {
 			throwTypeError(astNode);
+			return false;
+		} else if (negate && correctType) {
+			throwTypeError(astNode);
+			return false;
 		}
+		return true;
+	}
+
+	private boolean expectType(Type type, AstNode astNode) {
+		return expectType(type, astNode, false);
 	}
 
 	private boolean expectType(BasicType type, AstNode astNode) {
-		boolean result = true;
-		if (!hasType(type, astNode)) {
-			throwTypeError(astNode);
-			result = false;
-		}
-		return result;
+		return expectType(new Type(type), astNode, false);
 	}
 
-	private void setType(Type type, AstNode astNode) {
-		astNode.setType(type);
-	}
-
-	private void setType(BasicType basicType, AstNode astNode) {
-		setType(new Type(astNode.getPosition(), basicType), astNode);
+	private boolean expectTypeNot(BasicType type, AstNode astNode) {
+		return expectType(new Type(type), astNode, true);
 	}
 
 	private void checkBinaryOperandEquality(BinaryExpression binaryExpression) {
@@ -163,29 +150,17 @@ public class DeepCheckingVisitor implements AstVisitor {
 		}
 	}
 
-	private void checkBinaryOperandEqualityOrNull(BinaryExpression binaryExpression) {
-		AstNode left = binaryExpression.getOperand1();
-		AstNode right = binaryExpression.getOperand2();
-		left.accept(this);
-		right.accept(this);
-		if (left.getType() != null
-				&& right.getType() != null
-				&& !(left.getType().equals(right.getType()) || left.getType().getBasicType() == BasicType.NULL || right.getType().getBasicType() == BasicType.NULL)) {
-			throwTypeError(binaryExpression);
-		}
-	}
-
 	private void checkExpression(BinaryExpression binaryExpression, BasicType expected, BasicType result) {
 		checkBinaryOperandEquality(binaryExpression);
 		expectType(expected, binaryExpression.getOperand1());
-		setType(result, binaryExpression);
+		binaryExpression.setType(result);
 	}
 
 	private void checkExpression(UnaryExpression unaryExpression, BasicType expected, BasicType result) {
 		AstNode operand = unaryExpression.getOperand();
 		operand.accept(this);
 		expectType(expected, operand);
-		setType(result, unaryExpression);
+		unaryExpression.setType(result);
 	}
 
 	@Override
@@ -197,18 +172,14 @@ public class DeepCheckingVisitor implements AstVisitor {
 	public void visit(AssignmentExpression assignmentExpression) {
 		this.isExpressionStatement = true;
 
-		checkBinaryOperandEqualityOrNull(assignmentExpression);
+		checkBinaryOperandEquality(assignmentExpression);
 
 		Expression operand1 = assignmentExpression.getOperand1();
-		Expression operand2 = assignmentExpression.getOperand2();
 		if (!(operand1 instanceof VariableAccessExpression || operand1 instanceof ArrayAccessExpression)) {
 			throwTypeError(operand1, "Left side of assignment expression should variable or array.");
-		} else if (operand1.getType() != null && operand2.getType() != null &&
-				(hasType(BasicType.INT, operand1) || hasType(BasicType.BOOLEAN, operand1)) && hasType(BasicType.NULL, operand2)) {
-			throwTypeError(operand2);
 		}
 
-		setType(operand1.getType(), assignmentExpression);
+		assignmentExpression.setType(operand1.getType());
 	}
 
 	@Override
@@ -218,8 +189,8 @@ public class DeepCheckingVisitor implements AstVisitor {
 
 	@Override
 	public void visit(EqualityExpression equalityExpression) {
-		checkBinaryOperandEqualityOrNull(equalityExpression);
-		setType(BasicType.BOOLEAN, equalityExpression);
+		checkBinaryOperandEquality(equalityExpression);
+		equalityExpression.setType(BasicType.BOOLEAN);
 	}
 
 	@Override
@@ -264,8 +235,8 @@ public class DeepCheckingVisitor implements AstVisitor {
 
 	@Override
 	public void visit(NonEqualityExpression nonEqualityExpression) {
-		checkBinaryOperandEqualityOrNull(nonEqualityExpression);
-		setType(BasicType.BOOLEAN, nonEqualityExpression);
+		checkBinaryOperandEquality(nonEqualityExpression);
+		nonEqualityExpression.setType(BasicType.BOOLEAN);
 	}
 
 	@Override
@@ -275,12 +246,12 @@ public class DeepCheckingVisitor implements AstVisitor {
 
 	@Override
 	public void visit(BooleanConstantExpression booleanConstantExpression) {
-		setType(BasicType.BOOLEAN, booleanConstantExpression);
+		booleanConstantExpression.setType(BasicType.BOOLEAN);
 	}
 
 	@Override
 	public void visit(IntegerConstantExpression integerConstantExpression) {
-		setType(BasicType.INT, integerConstantExpression);
+		integerConstantExpression.setType(BasicType.INT);
 
 		try {
 			Integer.parseInt(integerConstantExpression.getIntegerLiteral());
@@ -300,7 +271,11 @@ public class DeepCheckingVisitor implements AstVisitor {
 	@Override
 	public void visit(NewObjectExpression newObjectExpression) {
 		ClassType type = new ClassType(newObjectExpression.getPosition(), newObjectExpression.getIdentifier());
-		visit(type);
+		type.accept(this);
+		if (classScopes.containsKey(newObjectExpression.getIdentifier())) {
+			ClassScope objectClass = classScopes.get(newObjectExpression.getIdentifier());
+			newObjectExpression.setObjectClass(objectClass.getClassDeclaration());
+		}
 		newObjectExpression.setType(type);
 	}
 
@@ -326,9 +301,9 @@ public class DeepCheckingVisitor implements AstVisitor {
 			}
 
 			// if left expression type is != BasicType.CLASS (e.g. int, boolean, void, array) throw error
-			if (leftExpressionType.getBasicType() != BasicType.CLASS) {
-				throwNoSuchMemberError(leftExpressionType.getIdentifier(), leftExpressionType.getPosition(),
-						methodInvocationExpression.getMethodIdentifier(), methodInvocationExpression.getPosition());
+			if (!leftExpressionType.is(BasicType.CLASS)) {
+				throwNoSuchMemberError(leftExpressionType.getIdentifier(),
+						leftExpressionType.getPosition(), methodInvocationExpression.getMethodIdentifier(), methodInvocationExpression.getPosition());
 				return;
 			}
 
@@ -344,35 +319,36 @@ public class DeepCheckingVisitor implements AstVisitor {
 
 	private void checkCallMethod(MethodInvocationExpression methodInvocation, ClassScope classScope) {
 		Symbol methodIdentifier = methodInvocation.getMethodIdentifier();
-		MethodDefinition methodDefinition = classScope.getMethodDefinition(methodIdentifier);
-		if (methodDefinition == null) {
+		MethodDeclaration methodDeclaration = classScope.getMethodDeclaration(methodIdentifier);
+		if (methodDeclaration == null) {
 			throwNoSuchMemberError(currentClassDeclaration.getIdentifier(), currentClassDeclaration.getPosition(),
 					methodIdentifier, methodInvocation.getPosition());
-		} else if (methodDefinition.isStaticMethod()) {
+		} else if (methodDeclaration instanceof StaticMethodDeclaration) {
 			throwMainNotCallableError(methodInvocation);
 		} else {
-			checkParameterDefinitionAndSetReturnType(methodInvocation, methodDefinition);
+			checkParameterDeclarationAndSetReturnType(methodInvocation, methodDeclaration);
 		}
 	}
 
-	private void checkParameterDefinitionAndSetReturnType(MethodInvocationExpression methodInvocationExpression, MethodDefinition methodDefinition) {
+	private void checkParameterDeclarationAndSetReturnType(MethodInvocationExpression methodInvocationExpression, MethodDeclaration methodDeclaration) {
 		// now check params
-		if (methodDefinition.getParameters().length != methodInvocationExpression.getParameters().length) {
+		if (methodDeclaration.getParameters().size() != methodInvocationExpression.getParameters().length) {
 			exceptions
 					.add(new InvalidMethodCallException(methodInvocationExpression.getMethodIdentifier(), methodInvocationExpression.getPosition()));
 			return;
 		}
 
-		for (int i = 0; i < methodDefinition.getParameters().length; i++) {
-			Definition parameterDefinition = methodDefinition.getParameters()[i];
+		int i = 0;
+		for (ParameterDeclaration parameterDeclaration : methodDeclaration.getParameters()) {
 			Expression expression = methodInvocationExpression.getParameters()[i];
 			expression.accept(this);
 
-			expectType(parameterDefinition.getType(), expression);
+			expectType(parameterDeclaration.getType(), expression);
+			i++;
 		}
 
-		methodInvocationExpression.setType(methodDefinition.getType());
-		methodInvocationExpression.setMethodDefinition(methodDefinition);
+		methodInvocationExpression.setType(methodDeclaration.getType());
+		methodInvocationExpression.setMethodDeclaration(methodDeclaration);
 	}
 
 	@Override
@@ -384,34 +360,40 @@ public class DeepCheckingVisitor implements AstVisitor {
 		if (expression == null) {
 			Symbol fieldIdentifier = variableAccessExpression.getFieldIdentifier();
 			Position position = variableAccessExpression.getPosition();
-			Definition definition = null;
+			Declaration declaration = null;
 			if (fieldIdentifier.isDefined()) {
 				if (isStaticMethod) {
-					if (fieldIdentifier.getDefinitionScope().getParentScope() == null) {
+					if (fieldIdentifier.getDeclarationScope().getParentScope() == null) {
 						// class field has no parent scope since there are no inner classes
 						// there are no static fields
 						throwIllegalAccessToNonStaticMemberError(position);
 						// continue
 					}
 				}
-				definition = fieldIdentifier.getDefinition();
-			} else if (currentClassScope.getFieldDefinition(fieldIdentifier) != null) {
+				declaration = fieldIdentifier.getDeclaration();
+			} else if (currentClassScope.getFieldDeclaration(fieldIdentifier) != null) {
 				// no static field defined in class scope possible
 				if (isStaticMethod) {
 					// there are no static fields
 					throwIllegalAccessToNonStaticMemberError(position);
 					// continue
 				}
-				definition = currentClassScope.getFieldDefinition(fieldIdentifier);
-				// special case is System
-			} else if (fieldIdentifier.getValue().equals("System")) {
-				definition = systemDefinition;
+				declaration = currentClassScope.getFieldDeclaration(fieldIdentifier);
+			} else if (classScopes.containsKey(fieldIdentifier)) {
+				// Static access
+				ClassScope staticScope = classScopes.get(fieldIdentifier);
+				declaration = staticScope.getClassDeclaration();
+
+				if (!staticScope.hasStaticField()) {
+					throwUndefinedSymbolError(fieldIdentifier, position);
+					return;
+				}
 			} else {
 				throwUndefinedSymbolError(fieldIdentifier, position);
 				return;
 			}
-			variableAccessExpression.setType(definition.getType());
-			variableAccessExpression.setDefinition(definition);
+			variableAccessExpression.setType(declaration.getType());
+			variableAccessExpression.setDeclaration(declaration);
 		} else {
 			expression.accept(this);
 
@@ -426,7 +408,7 @@ public class DeepCheckingVisitor implements AstVisitor {
 			}
 
 			// if left expression type is != class (e.g. int, boolean, void) then throw error
-			if (leftExpressionType.getBasicType() != BasicType.CLASS) {
+			if (!leftExpressionType.is(BasicType.CLASS)) {
 				throwNoSuchMemberError(leftExpressionType.getIdentifier(), leftExpressionType.getPosition(),
 						variableAccessExpression.getFieldIdentifier(),
 						variableAccessExpression.getPosition());
@@ -439,7 +421,7 @@ public class DeepCheckingVisitor implements AstVisitor {
 				return;
 			}
 			// check if member exists in this class
-			Definition fieldDef = classScope.getFieldDefinition(variableAccessExpression.getFieldIdentifier());
+			Declaration fieldDef = classScope.getFieldDeclaration(variableAccessExpression.getFieldIdentifier());
 			if (fieldDef == null) {
 				throwNoSuchMemberError(leftExpressionType.getIdentifier(), leftExpressionType.getPosition(),
 						variableAccessExpression.getFieldIdentifier(),
@@ -447,6 +429,7 @@ public class DeepCheckingVisitor implements AstVisitor {
 				return;
 			}
 
+			variableAccessExpression.setDeclaration(fieldDef);
 			variableAccessExpression.setType(fieldDef.getType());
 		}
 	}
@@ -462,8 +445,8 @@ public class DeepCheckingVisitor implements AstVisitor {
 			return; // Already an error thrown in an upper left array part.
 		}
 
-		if (arrayExpression.getType().getBasicType() == BasicType.ARRAY) {
-			if (arrayExpression.getType().getSubType().getBasicType() == BasicType.STRING_ARGS) {
+		if (arrayExpression.getType().is(BasicType.ARRAY)) {
+			if (arrayExpression.getType().getSubType().is(BasicType.STRING_ARGS)) {
 				throwTypeError(arrayAccessExpression, "Access on main method parameter forbidden.");
 			}
 			arrayAccessExpression.setType(arrayExpression.getType().getSubType());
@@ -486,7 +469,7 @@ public class DeepCheckingVisitor implements AstVisitor {
 	@Override
 	public void visit(ReturnStatement returnStatement) {
 		isExpressionStatement = true;
-		boolean isVoidMethod = currentMethodDefinition.getType().getBasicType() == BasicType.VOID;
+		boolean isVoidMethod = currentMethodDeclaration.getType().is(BasicType.VOID);
 
 		if (returnStatement.getOperand() != null) {
 			if (isVoidMethod) {
@@ -494,7 +477,7 @@ public class DeepCheckingVisitor implements AstVisitor {
 				return;
 			}
 			returnStatement.getOperand().accept(this);
-			expectType(currentMethodDefinition.getType(), returnStatement.getOperand());
+			expectType(currentMethodDeclaration.getType(), returnStatement.getOperand());
 			returnOnAllPaths = true;
 		} else if (!isVoidMethod) {
 			throwTypeError(returnStatement);
@@ -511,7 +494,7 @@ public class DeepCheckingVisitor implements AstVisitor {
 
 	@Override
 	public void visit(NullExpression nullExpression) {
-		setType(BasicType.NULL, nullExpression);
+		nullExpression.setType(BasicType.NULL);
 	}
 
 	@Override
@@ -570,7 +553,8 @@ public class DeepCheckingVisitor implements AstVisitor {
 		currentClassDeclaration = classDeclaration;
 		currentClassScope = classScopes.get(classDeclaration.getIdentifier());
 
-		for (ClassMember classMember : classDeclaration.getMembers()) {
+		for (MemberDeclaration classMember : classDeclaration.getMembers()) {
+			classMember.setClassDeclaration(classDeclaration);
 			classMember.accept(this);
 		}
 		currentClassDeclaration = null;
@@ -625,14 +609,13 @@ public class DeepCheckingVisitor implements AstVisitor {
 
 	@Override
 	public void visit(LocalVariableDeclaration localVariableDeclaration) {
+		localVariableDeclaration.setClassDeclaration(currentClassDeclaration);
 		localVariableDeclaration.getType().accept(this);
 
-		if (hasType(BasicType.VOID, localVariableDeclaration)) {
-			throwTypeError(localVariableDeclaration);
-		}
+		expectTypeNot(BasicType.VOID, localVariableDeclaration);
 
 		if (localVariableDeclaration.getIdentifier().isDefined()) {
-			throwRedefinitionError(localVariableDeclaration.getIdentifier(), localVariableDeclaration.getPosition());
+			throwReDeclarationError(localVariableDeclaration.getIdentifier(), localVariableDeclaration.getPosition());
 			return;
 		}
 
@@ -647,8 +630,9 @@ public class DeepCheckingVisitor implements AstVisitor {
 	}
 
 	@Override
-	public void visit(ParameterDefinition parameterDefinition) {
-		Type type = parameterDefinition.getType();
+	public void visit(ParameterDeclaration parameterDeclaration) {
+		parameterDeclaration.setClassDeclaration(currentClassDeclaration);
+		Type type = parameterDeclaration.getType();
 
 		if (isStaticMethod) { // special case for String[] args
 			type.setType(type);
@@ -656,17 +640,15 @@ public class DeepCheckingVisitor implements AstVisitor {
 			type.accept(this);
 		}
 
-		if (hasType(BasicType.VOID, parameterDefinition)) {
-			throwTypeError(parameterDefinition);
-		}
+		expectTypeNot(BasicType.VOID, parameterDeclaration);
 
 		// check if parameter already defined
-		if (symbolTable.isDefinedInCurrentScope(parameterDefinition.getIdentifier())) {
-			throwRedefinitionError(parameterDefinition.getIdentifier(), parameterDefinition.getPosition());
+		if (symbolTable.isDefinedInCurrentScope(parameterDeclaration.getIdentifier())) {
+			throwReDeclarationError(parameterDeclaration.getIdentifier(), parameterDeclaration.getPosition());
 			return;
 		}
-		int variableNumber = symbolTable.insert(parameterDefinition.getIdentifier(), type);
-		parameterDefinition.setVariableNumber(variableNumber);
+		int variableNumber = symbolTable.insert(parameterDeclaration.getIdentifier(), type);
+		parameterDeclaration.setVariableNumber(variableNumber);
 	}
 
 	@Override
@@ -685,9 +667,7 @@ public class DeepCheckingVisitor implements AstVisitor {
 	@Override
 	public void visit(FieldDeclaration fieldDeclaration) {
 		fieldDeclaration.getType().accept(this);
-		if (hasType(BasicType.VOID, fieldDeclaration)) {
-			throwTypeError(fieldDeclaration);
-		}
+		expectTypeNot(BasicType.VOID, fieldDeclaration);
 	}
 
 	@Override
@@ -703,18 +683,18 @@ public class DeepCheckingVisitor implements AstVisitor {
 		symbolTable = new SymbolTable();
 		symbolTable.enterScope();
 
-		for (ParameterDefinition parameterDefinition : methodDeclaration.getParameters()) {
-			parameterDefinition.accept(this);
+		for (ParameterDeclaration parameterDeclaration : methodDeclaration.getParameters()) {
+			parameterDeclaration.accept(this);
 		}
 
 		// visit body
-		currentMethodDefinition = currentClassScope.getMethodDefinition(methodDeclaration.getIdentifier());
-		if (currentMethodDefinition != null) {
+		currentMethodDeclaration = currentClassScope.getMethodDeclaration(methodDeclaration.getIdentifier());
+		if (currentMethodDeclaration != null) {
 			returnOnAllPaths = false;
 			methodDeclaration.getBlock().accept(this);
 
 			// if method has return type, check if all paths have a return statement
-			if (currentMethodDefinition.getType().getBasicType() != BasicType.VOID) {
+			if (!currentMethodDeclaration.getType().is(BasicType.VOID)) {
 				if (!returnOnAllPaths) {
 					exceptions.add(new MissingReturnStatementOnAPathException(methodDeclaration.getPosition(), methodDeclaration.getIdentifier()));
 				}
@@ -722,7 +702,7 @@ public class DeepCheckingVisitor implements AstVisitor {
 		}
 
 		// leave method scope.
-		currentMethodDefinition = null;
+		currentMethodDeclaration = null;
 		symbolTable.leaveAllScopes();
 
 		methodDeclaration.setNumberOfRequiredLocals(symbolTable.getRequiredLocalVariables());

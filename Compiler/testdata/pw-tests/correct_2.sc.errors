@@ -1,6 +1,8 @@
 error: No 'public static void main(String[] args)' method has been found.
 error: type error in token at position line   2, character 30: Can't create void arrays.
+error: type error in token at position line   3, character 37
 error: type error in token at position line   3, character 35: Left side of assignment expression should variable or array.
+error: type error in token at position line   3, character 29
 error: type error in token at position line   3, character 27: Left side of assignment expression should variable or array.
 error: type error in token at position line   3, character 29
 error: type error in token at position line   4, character 15

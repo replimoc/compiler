@@ -1,15 +1,15 @@
 package compiler.ast.statement;
 
 import compiler.Symbol;
+import compiler.ast.declaration.Declaration;
 import compiler.ast.statement.unary.PostfixExpression;
 import compiler.ast.visitor.AstVisitor;
 import compiler.lexer.Position;
-import compiler.semantic.symbolTable.Definition;
 
 public class VariableAccessExpression extends PostfixExpression {
 	private final Expression expression;
 	private final Symbol fieldIdentifier;
-	private Definition definition;
+	private Declaration declaration;
 
 	public VariableAccessExpression(Position position, Expression leftExpression, Symbol fieldIdentifier) {
 		super(position, leftExpression);
@@ -30,11 +30,11 @@ public class VariableAccessExpression extends PostfixExpression {
 		visitor.visit(this);
 	}
 
-	public Definition getDefinition() {
-		return definition;
+	public Declaration getDeclaration() {
+		return declaration;
 	}
 
-	public void setDefinition(Definition newDef) {
-		definition = newDef;
+	public void setDeclaration(Declaration declaration) {
+		this.declaration = declaration;
 	}
 }

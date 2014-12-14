@@ -7,13 +7,13 @@ import java.util.List;
 import compiler.Symbol;
 import compiler.ast.AstNode;
 import compiler.ast.Block;
-import compiler.ast.ClassDeclaration;
-import compiler.ast.ClassMember;
-import compiler.ast.FieldDeclaration;
-import compiler.ast.MethodDeclaration;
-import compiler.ast.ParameterDefinition;
 import compiler.ast.Program;
-import compiler.ast.StaticMethodDeclaration;
+import compiler.ast.declaration.ClassDeclaration;
+import compiler.ast.declaration.FieldDeclaration;
+import compiler.ast.declaration.MemberDeclaration;
+import compiler.ast.declaration.MethodDeclaration;
+import compiler.ast.declaration.ParameterDeclaration;
+import compiler.ast.declaration.StaticMethodDeclaration;
 import compiler.ast.statement.ArrayAccessExpression;
 import compiler.ast.statement.BooleanConstantExpression;
 import compiler.ast.statement.IfStatement;
@@ -51,18 +51,16 @@ import compiler.ast.visitor.AstVisitor;
 import compiler.lexer.Position;
 import compiler.semantic.exceptions.MultipleStaticMethodsException;
 import compiler.semantic.exceptions.NoMainFoundException;
-import compiler.semantic.exceptions.RedefinitionErrorException;
+import compiler.semantic.exceptions.ReDeclarationErrorException;
 import compiler.semantic.exceptions.SemanticAnalysisException;
 import compiler.semantic.exceptions.TypeErrorException;
-import compiler.semantic.symbolTable.Definition;
-import compiler.semantic.symbolTable.MethodDefinition;
 
 public class PreNamingAnalysisVisitor implements AstVisitor {
 
 	private final HashMap<Symbol, ClassScope> classScopes = new HashMap<>();
 
-	private HashMap<Symbol, Definition> currentFieldsMap;
-	private HashMap<Symbol, MethodDefinition> currentMethodsMap;
+	private HashMap<Symbol, FieldDeclaration> currentFieldsMap;
+	private HashMap<Symbol, MethodDeclaration> currentMethodsMap;
 
 	private boolean mainFound = false;
 	private final List<SemanticAnalysisException> exceptions = new ArrayList<>();
@@ -95,15 +93,15 @@ public class PreNamingAnalysisVisitor implements AstVisitor {
 		currentFieldsMap = new HashMap<>();
 		currentMethodsMap = new HashMap<>();
 
-		for (ClassMember curr : classDeclaration.getMembers()) {
+		for (MemberDeclaration curr : classDeclaration.getMembers()) {
 			curr.accept(this);
 		}
 
 		Symbol identifier = classDeclaration.getIdentifier();
 		if (classScopes.containsKey(identifier)) {
-			throwRedefinitionError(identifier, classDeclaration.getPosition());
+			throwReDeclarationError(identifier, classDeclaration.getPosition());
 		} else {
-			getClassScopes().put(identifier, new ClassScope(currentFieldsMap, currentMethodsMap));
+			getClassScopes().put(identifier, new ClassScope(classDeclaration, currentFieldsMap, currentMethodsMap));
 			currentFieldsMap = null;
 			currentMethodsMap = null;
 		}
@@ -111,26 +109,12 @@ public class PreNamingAnalysisVisitor implements AstVisitor {
 
 	@Override
 	public void visit(MethodDeclaration methodDeclaration) {
-		Symbol identifier = methodDeclaration.getIdentifier();
-		Type returnType = methodDeclaration.getType();
-		List<ParameterDefinition> parameters = methodDeclaration.getParameters();
-
-		Definition[] parameterDefinitions = new Definition[parameters.size()];
-
-		int i = 0;
-		for (ParameterDefinition currParameter : methodDeclaration.getParameters()) {
-			parameterDefinitions[i] = new Definition(currParameter.getIdentifier(), currParameter.getType());
-			i++;
-		}
-
-		MethodDefinition methodDefinition = new MethodDefinition(identifier, returnType, parameterDefinitions);
-
-		checkAndInsertDefinition(methodDefinition, methodDeclaration.getPosition());
+		checkAndInsertDeclaration(methodDeclaration);
 	}
 
 	@Override
 	public void visit(FieldDeclaration fieldDeclaration) {
-		checkAndInsertDefinition(new Definition(fieldDeclaration.getIdentifier(), fieldDeclaration.getType()), fieldDeclaration.getPosition());
+		checkAndInsertDeclaration(fieldDeclaration);
 	}
 
 	@Override
@@ -157,7 +141,7 @@ public class PreNamingAnalysisVisitor implements AstVisitor {
 			return;
 		}
 
-		ParameterDefinition parameter = staticMethodDeclaration.getParameters().get(0);
+		ParameterDeclaration parameter = staticMethodDeclaration.getParameters().get(0);
 		Type parameterType = parameter.getType();
 		if (parameterType.getBasicType() != BasicType.ARRAY || !"String".equals(parameterType.getSubType().getIdentifier().getValue())) {
 			throwTypeError(staticMethodDeclaration, "'public static void main' method must have a single argument of type String[].");
@@ -165,42 +149,39 @@ public class PreNamingAnalysisVisitor implements AstVisitor {
 		}
 
 		mainFound = true;
-		Position position = staticMethodDeclaration.getPosition();
-
-		Definition[] parameterTypes = new Definition[] { new Definition(parameter.getIdentifier(),
-				new Type(parameter.getPosition(), BasicType.STRING_ARGS)) };
-		parameter.setType(new ArrayType(parameter.getPosition(), new Type(parameter.getPosition(), BasicType.STRING_ARGS)));
-		checkAndInsertDefinition(new MethodDefinition(identifier, returnType, parameterTypes, true), position);
+		staticMethodDeclaration.getParameters().get(0)
+				.setType(new ArrayType(parameter.getPosition(), new Type(parameter.getPosition(), BasicType.STRING_ARGS)));
+		checkAndInsertDeclaration(staticMethodDeclaration);
 	}
 
-	private void checkAndInsertDefinition(MethodDefinition definition, Position position) {
-		if (currentMethodsMap.containsKey(definition.getSymbol())) {
-			throwRedefinitionError(definition.getSymbol(), position);
+	private void checkAndInsertDeclaration(MethodDeclaration declaration) {
+		if (currentMethodsMap.containsKey(declaration.getIdentifier())) {
+			throwReDeclarationError(declaration.getIdentifier(), declaration.getPosition());
 			return;
 		}
 
-		currentMethodsMap.put(definition.getSymbol(), definition);
+		currentMethodsMap.put(declaration.getIdentifier(), declaration);
 	}
 
-	private void checkAndInsertDefinition(Definition definition, Position position) {
-		if (currentFieldsMap.containsKey(definition.getSymbol())) {
-			throwRedefinitionError(definition.getSymbol(), position);
+	private void checkAndInsertDeclaration(FieldDeclaration declaration) {
+		if (currentFieldsMap.containsKey(declaration.getIdentifier())) {
+			throwReDeclarationError(declaration.getIdentifier(), declaration.getPosition());
 			return;
 		}
 
-		currentFieldsMap.put(definition.getSymbol(), definition);
+		currentFieldsMap.put(declaration.getIdentifier(), declaration);
 	}
 
 	private void throwTypeError(AstNode astNode, String message) {
 		exceptions.add(new TypeErrorException(astNode, message));
 	}
 
-	private void throwRedefinitionError(Symbol identifier, Position redefinition) {
-		exceptions.add(new RedefinitionErrorException(identifier, redefinition));
+	private void throwReDeclarationError(Symbol identifier, Position reDeclaration) {
+		exceptions.add(new ReDeclarationErrorException(identifier, reDeclaration));
 	}
 
-	private void throwMultipleStaticMethodsError(Position definition) {
-		exceptions.add(new MultipleStaticMethodsException(definition));
+	private void throwMultipleStaticMethodsError(Position declarationPosition) {
+		exceptions.add(new MultipleStaticMethodsException(declarationPosition));
 	}
 
 	/*
@@ -340,7 +321,7 @@ public class PreNamingAnalysisVisitor implements AstVisitor {
 	}
 
 	@Override
-	public void visit(ParameterDefinition parameterDefinition) {
+	public void visit(ParameterDeclaration parameterDeclaration) {
 	}
 
 }

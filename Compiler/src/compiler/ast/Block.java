@@ -7,7 +7,7 @@ import compiler.ast.statement.Statement;
 import compiler.ast.visitor.AstVisitor;
 import compiler.lexer.Position;
 
-public class Block extends Statement {
+public class Block extends AstNode implements Statement {
 
 	private final List<Statement> statements = new LinkedList<Statement>();
 
