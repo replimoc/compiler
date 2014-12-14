@@ -82,6 +82,12 @@ public class AutomatedDeadCodeTest implements FileTester {
 		assertEquals("compiling failed for " + sourceFilePath, 0, resNonOptExe.getFirst().intValue());
 
 		// Optimized binary is greater than non-opt
-		assert (optExe.length() <= nonOptExe.length());
+		long diffSize = nonOptExe.length() - optExe.length();
+		assert (diffSize >= 0);
+		if (diffSize > 0) {
+			System.out.println("Optimization applied: optimized version is " + diffSize + " byte smaller");
+		} else {
+			System.out.println("No optimization applied");
+		}
 	}
 }
