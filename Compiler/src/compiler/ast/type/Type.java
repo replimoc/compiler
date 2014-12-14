@@ -63,9 +63,20 @@ public class Type extends AstNode {
 			return true;
 		if (obj == null)
 			return false;
-		if (getClass() != obj.getClass())
+		if (!(obj instanceof Type))
 			return false;
 		Type other = (Type) obj;
+		BasicType t1 = basicType;
+		BasicType t2 = other.getBasicType();
+		// Swap basic types if t1 is NULL.
+		if (t2 == BasicType.NULL) {
+			t2 = t1;
+			t1 = BasicType.NULL;
+		}
+
+		// Allow also NULL as first basic type
+		if (t2 != BasicType.INT && t2 != BasicType.BOOLEAN && t1 == BasicType.NULL)
+			return true;
 		if (basicType != other.basicType)
 			return false;
 		return true;

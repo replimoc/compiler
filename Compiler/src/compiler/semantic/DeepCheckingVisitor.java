@@ -116,38 +116,28 @@ public class DeepCheckingVisitor implements AstVisitor {
 		exceptions.add(new MainNotCallableException(methodInvocation));
 	}
 
-	private boolean hasType(Type type, AstNode astNode) {
-		return (astNode.getType() == null
-				|| (!type.is(BasicType.INT) && !type.is(BasicType.BOOLEAN)
-				&& astNode.getType().is(BasicType.NULL))
-				|| astNode.getType().equals(type));
-	}
-
-	private boolean hasType(BasicType type, AstNode astNode) {
-		return (astNode.getType() == null || astNode.getType().is(type));
-	}
-
-	private void expectType(Type type, AstNode astNode) {
-		if (!hasType(type, astNode)) {
+	private boolean expectType(Type type, AstNode astNode, boolean negate) {
+		boolean correctType = (astNode.getType() == null || astNode.getType().equals(type));
+		if (!negate && !correctType) {
 			throwTypeError(astNode);
+			return false;
+		} else if (negate && correctType) {
+			throwTypeError(astNode);
+			return false;
 		}
+		return true;
+	}
+
+	private boolean expectType(Type type, AstNode astNode) {
+		return expectType(type, astNode, false);
 	}
 
 	private boolean expectType(BasicType type, AstNode astNode) {
-		boolean result = true;
-		if (!hasType(type, astNode)) {
-			throwTypeError(astNode);
-			result = false;
-		}
-		return result;
+		return expectType(new Type(type), astNode, false);
 	}
 
-	private void setType(Type type, AstNode astNode) {
-		astNode.setType(type);
-	}
-
-	private void setType(BasicType basicType, AstNode astNode) {
-		setType(new Type(astNode.getPosition(), basicType), astNode);
+	private boolean expectTypeNot(BasicType type, AstNode astNode) {
+		return expectType(new Type(type), astNode, true);
 	}
 
 	private void checkBinaryOperandEquality(BinaryExpression binaryExpression) {
@@ -160,31 +150,17 @@ public class DeepCheckingVisitor implements AstVisitor {
 		}
 	}
 
-	private void checkBinaryOperandEqualityOrNull(BinaryExpression binaryExpression) {
-		AstNode left = binaryExpression.getOperand1();
-		AstNode right = binaryExpression.getOperand2();
-		left.accept(this);
-		right.accept(this);
-		if (!(left.getType() == null
-				|| right.getType() == null
-				|| left.getType().equals(right.getType())
-				|| left.getType().is(BasicType.NULL)
-				|| right.getType().is(BasicType.NULL))) {
-			throwTypeError(binaryExpression);
-		}
-	}
-
 	private void checkExpression(BinaryExpression binaryExpression, BasicType expected, BasicType result) {
 		checkBinaryOperandEquality(binaryExpression);
 		expectType(expected, binaryExpression.getOperand1());
-		setType(result, binaryExpression);
+		binaryExpression.setType(result);
 	}
 
 	private void checkExpression(UnaryExpression unaryExpression, BasicType expected, BasicType result) {
 		AstNode operand = unaryExpression.getOperand();
 		operand.accept(this);
 		expectType(expected, operand);
-		setType(result, unaryExpression);
+		unaryExpression.setType(result);
 	}
 
 	@Override
@@ -196,18 +172,14 @@ public class DeepCheckingVisitor implements AstVisitor {
 	public void visit(AssignmentExpression assignmentExpression) {
 		this.isExpressionStatement = true;
 
-		checkBinaryOperandEqualityOrNull(assignmentExpression);
+		checkBinaryOperandEquality(assignmentExpression);
 
 		Expression operand1 = assignmentExpression.getOperand1();
-		Expression operand2 = assignmentExpression.getOperand2();
 		if (!(operand1 instanceof VariableAccessExpression || operand1 instanceof ArrayAccessExpression)) {
 			throwTypeError(operand1, "Left side of assignment expression should variable or array.");
-		} else if (operand1.getType() != null && operand2.getType() != null &&
-				(hasType(BasicType.INT, operand1) || hasType(BasicType.BOOLEAN, operand1)) && hasType(BasicType.NULL, operand2)) {
-			throwTypeError(operand2);
 		}
 
-		setType(operand1.getType(), assignmentExpression);
+		assignmentExpression.setType(operand1.getType());
 	}
 
 	@Override
@@ -217,8 +189,8 @@ public class DeepCheckingVisitor implements AstVisitor {
 
 	@Override
 	public void visit(EqualityExpression equalityExpression) {
-		checkBinaryOperandEqualityOrNull(equalityExpression);
-		setType(BasicType.BOOLEAN, equalityExpression);
+		checkBinaryOperandEquality(equalityExpression);
+		equalityExpression.setType(BasicType.BOOLEAN);
 	}
 
 	@Override
@@ -263,8 +235,8 @@ public class DeepCheckingVisitor implements AstVisitor {
 
 	@Override
 	public void visit(NonEqualityExpression nonEqualityExpression) {
-		checkBinaryOperandEqualityOrNull(nonEqualityExpression);
-		setType(BasicType.BOOLEAN, nonEqualityExpression);
+		checkBinaryOperandEquality(nonEqualityExpression);
+		nonEqualityExpression.setType(BasicType.BOOLEAN);
 	}
 
 	@Override
@@ -274,12 +246,12 @@ public class DeepCheckingVisitor implements AstVisitor {
 
 	@Override
 	public void visit(BooleanConstantExpression booleanConstantExpression) {
-		setType(BasicType.BOOLEAN, booleanConstantExpression);
+		booleanConstantExpression.setType(BasicType.BOOLEAN);
 	}
 
 	@Override
 	public void visit(IntegerConstantExpression integerConstantExpression) {
-		setType(BasicType.INT, integerConstantExpression);
+		integerConstantExpression.setType(BasicType.INT);
 
 		try {
 			Integer.parseInt(integerConstantExpression.getIntegerLiteral());
@@ -330,8 +302,8 @@ public class DeepCheckingVisitor implements AstVisitor {
 
 			// if left expression type is != BasicType.CLASS (e.g. int, boolean, void, array) throw error
 			if (!leftExpressionType.is(BasicType.CLASS)) {
-				throwNoSuchMemberError(leftExpressionType.getIdentifier(), leftExpressionType.getPosition(),
-						methodInvocationExpression.getMethodIdentifier(), methodInvocationExpression.getPosition());
+				throwNoSuchMemberError(leftExpressionType.getIdentifier(),
+						leftExpressionType.getPosition(), methodInvocationExpression.getMethodIdentifier(), methodInvocationExpression.getPosition());
 				return;
 			}
 
@@ -522,7 +494,7 @@ public class DeepCheckingVisitor implements AstVisitor {
 
 	@Override
 	public void visit(NullExpression nullExpression) {
-		setType(BasicType.NULL, nullExpression);
+		nullExpression.setType(BasicType.NULL);
 	}
 
 	@Override
@@ -640,9 +612,7 @@ public class DeepCheckingVisitor implements AstVisitor {
 		localVariableDeclaration.setClassDeclaration(currentClassDeclaration);
 		localVariableDeclaration.getType().accept(this);
 
-		if (hasType(BasicType.VOID, localVariableDeclaration)) {
-			throwTypeError(localVariableDeclaration);
-		}
+		expectTypeNot(BasicType.VOID, localVariableDeclaration);
 
 		if (localVariableDeclaration.getIdentifier().isDefined()) {
 			throwReDeclarationError(localVariableDeclaration.getIdentifier(), localVariableDeclaration.getPosition());
@@ -670,9 +640,7 @@ public class DeepCheckingVisitor implements AstVisitor {
 			type.accept(this);
 		}
 
-		if (hasType(BasicType.VOID, parameterDeclaration)) {
-			throwTypeError(parameterDeclaration);
-		}
+		expectTypeNot(BasicType.VOID, parameterDeclaration);
 
 		// check if parameter already defined
 		if (symbolTable.isDefinedInCurrentScope(parameterDeclaration.getIdentifier())) {
@@ -699,9 +667,7 @@ public class DeepCheckingVisitor implements AstVisitor {
 	@Override
 	public void visit(FieldDeclaration fieldDeclaration) {
 		fieldDeclaration.getType().accept(this);
-		if (hasType(BasicType.VOID, fieldDeclaration)) {
-			throwTypeError(fieldDeclaration);
-		}
+		expectTypeNot(BasicType.VOID, fieldDeclaration);
 	}
 
 	@Override

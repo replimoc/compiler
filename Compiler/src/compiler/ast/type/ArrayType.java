@@ -66,6 +66,11 @@ public class ArrayType extends Type {
 			return true;
 		if (!super.equals(obj))
 			return false;
+		if (!(obj instanceof Type))
+			return false;
+		Type otherT = (Type) obj;
+		if (getBasicType() == BasicType.NULL || otherT.getBasicType() == BasicType.NULL)
+			return true;
 		if (getClass() != obj.getClass())
 			return false;
 		ArrayType other = (ArrayType) obj;
