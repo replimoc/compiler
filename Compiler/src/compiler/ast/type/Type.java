@@ -22,7 +22,7 @@ public class Type extends AstNode {
 		this.basicType = basicType;
 	}
 
-	public BasicType getBasicType() {
+	public final BasicType getBasicType() {
 		return basicType;
 	}
 
@@ -40,8 +40,8 @@ public class Type extends AstNode {
 		return firmType;
 	}
 
-	public boolean is(BasicType basicType) {
-		return getBasicType() == basicType;
+	public final boolean is(BasicType basicType) {
+		return this.basicType == basicType;
 	}
 
 	@Override
