@@ -1,10 +1,10 @@
 class Test {
 	public static void main(String[] args) {
 		Test t = new Test();
-		System.out.println(t.optimizeMe(4, 2));
+		System.out.println(t.doNotOptimizeMe(4, 2));
 	}
 	
-	public int optimizeMe(int z, int a) {
+	public int doNotOptimizeMe(int z, int a) {
 		int x = 0;
 		int y = 1;
 		
