@@ -9,6 +9,7 @@ import compiler.firm.optimization.OptimizationVisitor.Target;
 import firm.BackEdges;
 import firm.Graph;
 import firm.Program;
+import firm.bindings.binding_irgopt;
 import firm.nodes.Node;
 
 public final class FirmOptimizer {
@@ -28,6 +29,9 @@ public final class FirmOptimizer {
 
 			replaceNodesWithConstantTargets(graph, visitor.getTargetValues());
 			replaceNodesWithArithmeticTargets(graph, visitor.getArithmeticTargets());
+
+			binding_irgopt.remove_unreachable_code(graph.ptr);
+			binding_irgopt.remove_bads(graph.ptr);
 		}
 	}
 
