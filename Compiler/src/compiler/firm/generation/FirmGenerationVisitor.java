@@ -556,9 +556,10 @@ public class FirmGenerationVisitor implements AstVisitor {
 
 	@Override
 	public void visit(ReturnStatement returnStatement) {
-		boolean hasOperand = returnStatement.getOperand() != null;
 		// prevent a second return from being set for this block
 		if (!methodReturns.containsKey(methodConstruction.getCurrentBlock())) {
+			boolean hasOperand = returnStatement.getOperand() != null;
+
 			Node returnNode;
 			if (hasOperand) {
 				Node exprNode;
@@ -575,6 +576,7 @@ public class FirmGenerationVisitor implements AstVisitor {
 			}
 
 			methodReturns.put(methodConstruction.getCurrentBlock(), returnNode);
+			methodConstruction.setUnreachable();
 		}
 	}
 
