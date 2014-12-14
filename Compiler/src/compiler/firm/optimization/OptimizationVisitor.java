@@ -283,51 +283,49 @@ public class OptimizationVisitor implements NodeVisitor {
 	 */
 	@Override
 	public void visit(Cmp compare) {
-		if (compare.getMode().equals(Mode.getb())) {
-			Node left = compare.getLeft();
-			Node right = compare.getRight();
+		Node left = compare.getLeft();
+		Node right = compare.getRight();
 
-			TargetValue leftTargetValue = getTargetValue(left);
-			TargetValue rightTargetValue = getTargetValue(right);
+		TargetValue leftTargetValue = getTargetValue(left);
+		TargetValue rightTargetValue = getTargetValue(right);
 
-			if (areConstant(left, right) && leftTargetValue.isConstant() && rightTargetValue.isConstant()) {
-				boolean result = false;
-				boolean success = true;
-				int leftInt = getInteger(leftTargetValue);
-				int rightInt = getInteger(rightTargetValue);
-				switch (compare.getRelation()) {
-				case Equal:
-					result = leftInt == rightInt;
-					break;
-				case LessGreater:
-					result = leftInt != rightInt;
-					break;
-				case Less:
-					result = leftInt < rightInt;
-					break;
-				case Greater:
-					result = leftInt > rightInt;
-					break;
-				case LessEqual:
-					result = leftInt <= rightInt;
-					break;
-				case GreaterEqual:
-					result = leftInt >= rightInt;
-					break;
-				default:
-					success = false;
-					break;
-				}
-				TargetValue target = TargetValue.getBad();
-				if (success) {
-					target = result ? TargetValue.getBTrue() : TargetValue.getBFalse();
-				}
-				setTargetValue(compare, target);
-			} else {
-				setTargetValue(compare, TargetValue.getBad());
+		if (areConstant(left, right) && leftTargetValue.isConstant() && rightTargetValue.isConstant()) {
+			boolean result = false;
+			boolean success = true;
+			int leftInt = getInteger(leftTargetValue);
+			int rightInt = getInteger(rightTargetValue);
+			switch (compare.getRelation()) {
+			case Equal:
+				result = leftInt == rightInt;
+				break;
+			case LessGreater:
+				result = leftInt != rightInt;
+				break;
+			case Less:
+				result = leftInt < rightInt;
+				break;
+			case Greater:
+				result = leftInt > rightInt;
+				break;
+			case LessEqual:
+				result = leftInt <= rightInt;
+				break;
+			case GreaterEqual:
+				result = leftInt >= rightInt;
+				break;
+			default:
+				success = false;
+				break;
 			}
-
+			TargetValue target = TargetValue.getBad();
+			if (success) {
+				target = result ? TargetValue.getBTrue() : TargetValue.getBFalse();
+			}
+			setTargetValue(compare, target);
+		} else {
+			setTargetValue(compare, TargetValue.getBad());
 		}
+
 	}
 
 	private int getInteger(TargetValue value) {
