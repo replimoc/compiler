@@ -3,6 +3,8 @@ package compiler.firm.optimization;
 import java.util.HashMap;
 import java.util.LinkedList;
 
+import compiler.firm.FirmUtils;
+
 import firm.BackEdges;
 import firm.BackEdges.Edge;
 import firm.Mode;
@@ -274,14 +276,66 @@ public class OptimizationVisitor implements NodeVisitor {
 		// nothing to fold
 	}
 
+	/**
+	 * Control flow optimization
+	 * 
+	 * @author Valentin Zickner
+	 */
 	@Override
-	public void visit(Cmp arg0) {
-		// TODO Auto-generated method stub
+	public void visit(Cmp compare) {
+		if (compare.getMode().equals(Mode.getb())) {
+			Node left = compare.getLeft();
+			Node right = compare.getRight();
+
+			TargetValue leftTargetValue = getTargetValue(left);
+			TargetValue rightTargetValue = getTargetValue(right);
+
+			if (areConstant(left, right) && leftTargetValue.isConstant() && rightTargetValue.isConstant()) {
+				switch (compare.getRelation()) {
+				case Equal:
+					setTargetValue(compare, leftTargetValue.equals(rightTargetValue) ? TargetValue.getBTrue() : TargetValue.getBFalse());
+					break;
+				default:
+					setTargetValue(compare, TargetValue.getBad());
+					break;
+
+				}
+			} else {
+				setTargetValue(compare, TargetValue.getBad());
+			}
+
+		}
 	}
 
+	/**
+	 * Control flow optimization
+	 * 
+	 * @author Valentin Zickner
+	 */
 	@Override
-	public void visit(Cond arg0) {
-		// TODO Auto-generated method stub
+	public void visit(Cond condition) {
+		boolean eliminate = true;
+		boolean useCase = false;
+
+		for (Node pred : condition.getPreds()) {
+			eliminate &= getTargetValue(pred).isConstant();
+			useCase = getTargetValue(pred).isOne();
+		}
+
+		if (eliminate) {
+			for (Edge edge : BackEdges.getOuts(condition)) {
+
+				Proj proj = (Proj) edge.node;
+
+				if ((proj.getNum() == FirmUtils.TRUE) == useCase) {
+					Block block = (Block) condition.getBlock();
+					Node jump = block.getGraph().newJmp(block);
+					arithmeticTarget.put(proj, jump);
+				} else {
+					arithmeticTarget.put(proj, proj.getGraph().newBad(proj.getPred().getMode()));
+				}
+			}
+		}
 	}
 
 	@Override
@@ -606,7 +660,7 @@ public class OptimizationVisitor implements NodeVisitor {
 				if (tar != null) {
 					TargetValue tarVal = tar.getTargetValue();
 					if (tarVal != null) {
-						setTargetValue(proj, tarVal, true);
+						setTargetValue(proj, tarVal, areConstant(proj.getPred(0)));
 						// we need to visit this node again to check if the div/mod will be removed
 					} else {
 						setTargetValue(proj, TargetValue.getUnknown());

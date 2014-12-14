@@ -26,6 +26,9 @@ public final class FirmUtils {
 	private static final String LIB_FIRM_FOLDER = "lib/firm/";
 	private static final String ISA_AMD64 = "isa=amd64";
 
+	public static final int TRUE = 1;
+	public static final int FALSE = 0;
+
 	private FirmUtils() { // no objects of this class shall be created
 	}
 
