@@ -1,13 +1,10 @@
 package compiler.firm.optimization.visitor;
 
 import java.util.HashMap;
-import java.util.Map.Entry;
-
-import compiler.firm.optimization.Target;
 
 import firm.BackEdges;
 import firm.BackEdges.Edge;
-import firm.TargetValue;
+import firm.Mode;
 import firm.nodes.Add;
 import firm.nodes.Address;
 import firm.nodes.Align;
@@ -67,59 +64,14 @@ import firm.nodes.Unknown;
 
 public class OptimizationVisitor implements NodeVisitor {
 
-	protected final HashMap<Node, Target> targets = new HashMap<>();
-	// Div and Mod nodes have a Proj successor which must be replaced instead of the Div and Mod nodes themselves
-	protected final HashMap<Node, Target> specialProjDivModTargets = new HashMap<>();
+	private HashMap<Node, Node> nodeReplacements = new HashMap<>();
 
-	public HashMap<Node, Target> getTargetValues() {
-		return targets;
+	public void addReplacement(Node source, Node target) {
+		nodeReplacements.put(source, target);
 	}
 
 	public HashMap<Node, Node> getNodeReplacements() {
-		HashMap<Node, Node> replacements = new HashMap<>();
-
-		for (Entry<Node, Target> targetEntry : targets.entrySet()) {
-			Node node = targetEntry.getKey();
-			Target target = targetEntry.getValue();
-			if (target.isNode()) {
-				replacements.put(node, target.getNode());
-			} else {
-				if (target.isFixpointReached() && target.getTargetValue().isConstant()) {
-					replacements.put(node, node.getGraph().newConst(target.getTargetValue()));
-				}
-			}
-		}
-		return replacements;
-	}
-
-	protected boolean fixpointReached(Target oldTarget, Node node) {
-		if (node instanceof Div || node instanceof Mod) {
-			if (oldTarget == null || !oldTarget.equals(specialProjDivModTargets.get(node))) {
-				return false;
-			}
-			return true;
-		} else {
-			if (oldTarget == null || !oldTarget.equals(getTarget(node))) {
-				return false;
-			}
-			return true;
-		}
-	}
-
-	protected void setTargetValue(Node node, TargetValue targetValue) {
-		setTargetValue(node, targetValue, false);
-	}
-
-	protected void setTargetValue(Node node, TargetValue targetValue, boolean remove) {
-		targets.put(node, new Target(targetValue, remove));
-	}
-
-	protected TargetValue getTargetValue(Node node) {
-		return targets.get(node) == null ? TargetValue.getUnknown() : targets.get(node).getTargetValue();
-	}
-
-	protected Target getTarget(Node node) {
-		return targets.get(node);
+		return nodeReplacements;
 	}
 
 	protected Node getFirstSuccessor(Node node) {
@@ -127,6 +79,11 @@ public class OptimizationVisitor implements NodeVisitor {
 			return edge.node;
 		}
 		return null;
+	}
+
+	protected boolean isConstant(Node node) {
+		return node instanceof Const &&
+				(node.getMode().equals(Mode.getIs()) || node.getMode().equals(Mode.getBu()) || node.getMode().equals(Mode.getLu()));
 	}
 
 	@Override
