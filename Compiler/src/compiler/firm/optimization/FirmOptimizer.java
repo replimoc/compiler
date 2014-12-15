@@ -4,6 +4,10 @@ import java.util.HashMap;
 import java.util.LinkedList;
 import java.util.Map.Entry;
 
+import compiler.firm.optimization.visitor.ControlFlowVisitor;
+import compiler.firm.optimization.visitor.OptimizationVisitor;
+import compiler.firm.optimization.visitor.OptimizationVisitorFactory;
+
 import firm.BackEdges;
 import firm.BackEdges.Edge;
 import firm.Graph;
@@ -22,35 +26,30 @@ public final class FirmOptimizer {
 		boolean finished = true;
 		do {
 			finished = true;
-			finished &= optimize(ConstantFoldingVisitor.class);
-			finished &= optimize(ArithmeticVisitor.class);
-			finished &= optimize(ControlFlowVisitor.class);
+			// finished &= optimize(ConstantFoldingVisitor.getFactory());
+			// finished &= optimize(ArithmeticVisitor.getFactory());
+			finished &= optimize(ControlFlowVisitor.getFactory());
 		} while (!finished);
 	}
 
-	public static <T extends OptimizationVisitor> boolean optimize(Class<T> visitorClass) {
+	public static boolean optimize(OptimizationVisitorFactory visitorFactory) {
 		boolean finished = true;
 		for (Graph graph : Program.getGraphs()) {
 			LinkedList<Node> workList = new LinkedList<>();
 
-			try {
-				T visitor = visitorClass.newInstance();
+			OptimizationVisitor visitor = visitorFactory.create();
 
-				BackEdges.enable(graph);
-				walkTopological(graph, workList, visitor);
-				// graph.walkTopological(visitor);
-				workList(workList, visitor);
-				BackEdges.disable(graph);
+			BackEdges.enable(graph);
+			// walkTopological(graph, workList, visitor);
+			graph.walkTopological(visitor);
+			workList(workList, visitor);
+			BackEdges.disable(graph);
 
-				HashMap<Node, Node> targetValues = visitor.getNodeReplacements();
+			HashMap<Node, Node> targetValues = visitor.getNodeReplacements();
 
-				finished &= targetValues.isEmpty();
+			finished &= targetValues.isEmpty();
 
-				replaceNodesWithTargets(graph, targetValues);
-			} catch (InstantiationException | IllegalAccessException e) {
-				// TODO Auto-generated catch block
-				e.printStackTrace();
-			}
+			replaceNodesWithTargets(graph, targetValues);
 
 			binding_irgopt.remove_unreachable_code(graph.ptr);
 			binding_irgopt.remove_bads(graph.ptr);

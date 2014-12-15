@@ -1,4 +1,6 @@
-package compiler.firm.optimization;
+package compiler.firm.optimization.visitor;
+
+import compiler.firm.optimization.Target;
 
 import firm.BackEdges;
 import firm.BackEdges.Edge;
@@ -27,7 +29,6 @@ import firm.nodes.Minus;
 import firm.nodes.Mod;
 import firm.nodes.Mul;
 import firm.nodes.Node;
-import firm.nodes.NodeVisitor;
 import firm.nodes.Not;
 import firm.nodes.Or;
 import firm.nodes.Phi;
@@ -37,9 +38,15 @@ import firm.nodes.Shr;
 import firm.nodes.Shrs;
 import firm.nodes.Sub;
 
-public class ConstantFoldingVisitor extends OptimizationVisitor implements NodeVisitor {
+public class ConstantFoldingVisitor extends OptimizationVisitor {
 
-	public ConstantFoldingVisitor() {
+	public static OptimizationVisitorFactory getFactory() {
+		return new OptimizationVisitorFactory() {
+			@Override
+			public OptimizationVisitor create() {
+				return new ConstantFoldingVisitor();
+			}
+		};
 	}
 
 	protected boolean hasFixpointReached(Node... nodes) {

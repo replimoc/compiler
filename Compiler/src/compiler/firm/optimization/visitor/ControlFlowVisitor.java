@@ -1,4 +1,4 @@
-package compiler.firm.optimization;
+package compiler.firm.optimization.visitor;
 
 import java.util.HashMap;
 
@@ -12,10 +12,18 @@ import firm.nodes.Cmp;
 import firm.nodes.Cond;
 import firm.nodes.Const;
 import firm.nodes.Node;
-import firm.nodes.NodeVisitor;
 import firm.nodes.Proj;
 
-public class ControlFlowVisitor extends OptimizationVisitor implements NodeVisitor {
+public class ControlFlowVisitor extends OptimizationVisitor {
+
+	public static OptimizationVisitorFactory getFactory() {
+		return new OptimizationVisitorFactory() {
+			@Override
+			public OptimizationVisitor create() {
+				return new ControlFlowVisitor();
+			}
+		};
+	}
 
 	private HashMap<Node, Node> nodeReplacements = new HashMap<>();
 
