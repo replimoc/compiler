@@ -38,22 +38,22 @@ public final class FirmOptimizer {
 
 				BackEdges.enable(graph);
 				walkTopological(graph, workList, visitor);
+				// graph.walkTopological(visitor);
 				workList(workList, visitor);
 				BackEdges.disable(graph);
 
-				HashMap<Node, Target> targetValues = visitor.getTargetValues();
+				HashMap<Node, Node> targetValues = visitor.getNodeReplacements();
 
 				finished &= targetValues.isEmpty();
 
 				replaceNodesWithTargets(graph, targetValues);
-
-				targetValues.clear();
-
-				binding_irgopt.remove_unreachable_code(graph.ptr);
-				binding_irgopt.remove_bads(graph.ptr);
 			} catch (InstantiationException | IllegalAccessException e) {
+				// TODO Auto-generated catch block
 				e.printStackTrace();
 			}
+
+			binding_irgopt.remove_unreachable_code(graph.ptr);
+			binding_irgopt.remove_bads(graph.ptr);
 		}
 		return finished;
 	}
@@ -111,19 +111,12 @@ public final class FirmOptimizer {
 		}
 	}
 
-	private static void replaceNodesWithTargets(Graph graph, HashMap<Node, Target> targetValuesMap) {
-		for (Entry<Node, Target> targetEntry : targetValuesMap.entrySet()) {
+	private static void replaceNodesWithTargets(Graph graph, HashMap<Node, Node> targetValuesMap) {
+		for (Entry<Node, Node> targetEntry : targetValuesMap.entrySet()) {
 			Node node = targetEntry.getKey();
-			Target target = targetEntry.getValue();
 
 			if (node.getPredCount() > 0) {
-				if (target.isNode()) {
-					Graph.exchange(node, target.getNode());
-				} else {
-					if (target.isFixpointReached() && target.getTargetValue().isConstant()) {
-						Graph.exchange(node, graph.newConst(target.getTargetValue()));
-					}
-				}
+				Graph.exchange(node, targetEntry.getValue());
 			}
 		}
 	}
