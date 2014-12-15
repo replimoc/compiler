@@ -9,6 +9,7 @@ import firm.nodes.Block;
 import firm.nodes.Cmp;
 import firm.nodes.Cond;
 import firm.nodes.Const;
+import firm.nodes.Jmp;
 import firm.nodes.Node;
 import firm.nodes.Proj;
 
@@ -113,6 +114,13 @@ public class ControlFlowVisitor extends OptimizationVisitor {
 					addReplacement(proj, proj.getGraph().newBad(proj.getPred().getMode()));
 				}
 			}
+		}
+	}
+
+	@Override
+	public void visit(Block block) {
+		if (block.getPredCount() == 1 && block.getPred(0) instanceof Jmp) {
+			addReplacement(block, block.getPred(0).getBlock());
 		}
 	}
 }
