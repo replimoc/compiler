@@ -1,10 +1,11 @@
 package compiler.firm.optimization;
 
+import java.util.HashMap;
+
 import compiler.firm.FirmUtils;
 
 import firm.BackEdges;
 import firm.BackEdges.Edge;
-import firm.Mode;
 import firm.TargetValue;
 import firm.nodes.Block;
 import firm.nodes.Cmp;
@@ -16,24 +17,28 @@ import firm.nodes.Proj;
 
 public class ControlFlowVisitor extends OptimizationVisitor implements NodeVisitor {
 
+	private HashMap<Node, Node> nodeReplacements = new HashMap<>();
+
+	@Override
+	public HashMap<Node, Node> getNodeReplacements() {
+		return nodeReplacements;
+	}
+
 	/**
 	 * Control flow optimization
 	 * 
 	 * @author Valentin Zickner
 	 */
-	@Override
-	public void visit(Cmp compare) {
+	private TargetValue optimizeCompare(Cmp compare) {
 		Node left = compare.getLeft();
 		Node right = compare.getRight();
 
-		TargetValue leftTargetValue = getTargetValue(left);
-		TargetValue rightTargetValue = getTargetValue(right);
-
-		if (leftTargetValue.isConstant() && rightTargetValue.isConstant()) {
+		if (left instanceof Const && right instanceof Const) {
 			boolean result = false;
 			boolean success = true;
-			int leftInt = getInteger(leftTargetValue);
-			int rightInt = getInteger(rightTargetValue);
+
+			int leftInt = getInteger(((Const) left).getTarval());
+			int rightInt = getInteger(((Const) right).getTarval());
 			switch (compare.getRelation()) {
 			case Equal:
 				result = leftInt == rightInt;
@@ -61,9 +66,9 @@ public class ControlFlowVisitor extends OptimizationVisitor implements NodeVisit
 			if (success) {
 				target = result ? TargetValue.getBTrue() : TargetValue.getBFalse();
 			}
-			setTargetValue(compare, target);
+			return target;
 		} else {
-			setTargetValue(compare, TargetValue.getBad());
+			return TargetValue.getBad();
 		}
 
 	}
@@ -89,8 +94,11 @@ public class ControlFlowVisitor extends OptimizationVisitor implements NodeVisit
 		boolean useCase = false;
 
 		for (Node pred : condition.getPreds()) {
-			eliminate &= getTargetValue(pred).isConstant();
-			useCase = getTargetValue(pred).isOne();
+			if (pred instanceof Cmp) {
+				TargetValue targetValue = optimizeCompare((Cmp) pred);
+				eliminate &= targetValue.isConstant();
+				useCase = targetValue.isOne();
+			}
 		}
 
 		if (eliminate) {
@@ -102,20 +110,11 @@ public class ControlFlowVisitor extends OptimizationVisitor implements NodeVisit
 					Block block = (Block) condition.getBlock();
 					Node jump = block.getGraph().newJmp(block);
 					// targets.put(proj, jump);
-					targets.put(proj, new Target(jump));
+					nodeReplacements.put(proj, jump);
 				} else {
-					// targets.put(proj, proj.getGraph().newBad(proj.getPred().getMode()));
-					targets.put(proj, new Target(proj.getGraph().newBad(proj.getPred().getMode())));
+					nodeReplacements.put(proj, proj.getGraph().newBad(proj.getPred().getMode()));
 				}
 			}
 		}
 	}
-
-	@Override
-	public void visit(Const constant) {
-		if (constant.getMode().equals(Mode.getIs()) || constant.getMode().equals(Mode.getBu()) || constant.getMode().equals(Mode.getLu())) {
-			setTargetValue(constant, constant.getTarval(), true);
-		}
-	}
-
 }

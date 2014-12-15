@@ -1,6 +1,7 @@
 package compiler.firm.optimization;
 
 import java.util.HashMap;
+import java.util.Map.Entry;
 
 import firm.BackEdges;
 import firm.BackEdges.Edge;
@@ -70,6 +71,23 @@ public class OptimizationVisitor implements NodeVisitor {
 
 	public HashMap<Node, Target> getTargetValues() {
 		return targets;
+	}
+
+	public HashMap<Node, Node> getNodeReplacements() {
+		HashMap<Node, Node> replacements = new HashMap<>();
+
+		for (Entry<Node, Target> targetEntry : targets.entrySet()) {
+			Node node = targetEntry.getKey();
+			Target target = targetEntry.getValue();
+			if (target.isNode()) {
+				replacements.put(node, target.getNode());
+			} else {
+				if (target.isFixpointReached() && target.getTargetValue().isConstant()) {
+					replacements.put(node, node.getGraph().newConst(target.getTargetValue()));
+				}
+			}
+		}
+		return replacements;
 	}
 
 	protected boolean fixpointReached(Target oldTarget, Node node) {
