@@ -81,7 +81,7 @@ public final class FirmOptimizer {
 				if (target.isNode()) {
 					Graph.exchange(node, target.getNode());
 				} else {
-					if (target.isConstant() && target.getTargetValue().isConstant()) {
+					if (target.isFixpointReached() && target.getTargetValue().isConstant()) {
 						Graph.exchange(node, graph.newConst(target.getTargetValue()));
 					}
 				}

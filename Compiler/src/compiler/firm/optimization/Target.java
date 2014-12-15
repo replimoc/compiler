@@ -15,20 +15,20 @@ public class Target {
 	private final Node node;
 
 	/**
-	 * Flag if the node shall be removed from the graph.
+	 * Flag if the node already reached a fixpoint.
 	 */
-	private final boolean constant;
+	private final boolean fixpointReached;
 
-	public Target(TargetValue target, boolean constant) {
+	public Target(TargetValue target, boolean fixpointReached) {
 		this.targetValue = target;
 		this.node = null;
-		this.constant = constant;
+		this.fixpointReached = fixpointReached;
 	}
 
 	public Target(Node target) {
 		this.targetValue = null;
 		this.node = target;
-		this.constant = true;
+		this.fixpointReached = true;
 	}
 
 	public Target(TargetValue target) {
@@ -39,8 +39,8 @@ public class Target {
 		return targetValue;
 	}
 
-	public boolean isConstant() {
-		return constant;
+	public boolean isFixpointReached() {
+		return fixpointReached;
 	}
 
 	public boolean isNode() {
@@ -55,7 +55,7 @@ public class Target {
 	public int hashCode() {
 		final int prime = 31;
 		int result = 1;
-		result = prime * result + (constant ? 1231 : 1237);
+		result = prime * result + (fixpointReached ? 1231 : 1237);
 		result = prime * result + ((node == null) ? 0 : node.hashCode());
 		result = prime * result + ((targetValue == null) ? 0 : targetValue.hashCode());
 		return result;
@@ -70,7 +70,7 @@ public class Target {
 		if (getClass() != obj.getClass())
 			return false;
 		Target other = (Target) obj;
-		if (constant != other.constant)
+		if (fixpointReached != other.fixpointReached)
 			return false;
 		if (node == null) {
 			if (other.node != null)

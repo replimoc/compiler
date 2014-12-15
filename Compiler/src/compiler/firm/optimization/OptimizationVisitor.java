@@ -128,10 +128,10 @@ public class OptimizationVisitor implements NodeVisitor {
 		return null;
 	}
 
-	private boolean areConstant(Node... nodes) {
+	private boolean hasFixpointReached(Node... nodes) {
 		for (Node n : nodes) {
 			Target tar = getTarget(n);
-			if (tar == null || !tar.isConstant()) {
+			if (tar == null || !tar.isFixpointReached()) {
 				return false;
 			}
 		}
@@ -140,7 +140,7 @@ public class OptimizationVisitor implements NodeVisitor {
 
 	private void biTransferFunction(Node node, TargetValue leftTarget, TargetValue rightTarget, TargetValue newTargetValue, Node left, Node right) {
 		if (leftTarget.isConstant() && rightTarget.isConstant()) {
-			setTargetValue(node, newTargetValue, areConstant(left, right));
+			setTargetValue(node, newTargetValue, hasFixpointReached(left, right));
 		} else if (leftTarget.equals(TargetValue.getBad()) || rightTarget.equals(TargetValue.getBad())) {
 			setTargetValue(node, TargetValue.getBad());
 		} else {
@@ -150,7 +150,7 @@ public class OptimizationVisitor implements NodeVisitor {
 
 	private void unaryTransferFunction(Node node, TargetValue newTargetValue, Node operand) {
 		if (newTargetValue.isConstant()) {
-			setTargetValue(node, newTargetValue, areConstant(operand));
+			setTargetValue(node, newTargetValue, hasFixpointReached(operand));
 		} else if (newTargetValue.equals(TargetValue.getBad())) {
 			setTargetValue(node, TargetValue.getBad());
 		} else {
@@ -160,9 +160,9 @@ public class OptimizationVisitor implements NodeVisitor {
 
 	private void divModTransferFunction(Node node, TargetValue leftTarget, TargetValue rightTarget, TargetValue newTargetValue, Node left, Node right) {
 		if (leftTarget.isNull()) {
-			specialProjDivModTargets.put(node, new Target(leftTarget, areConstant(left)));
+			specialProjDivModTargets.put(node, new Target(leftTarget, hasFixpointReached(left)));
 		} else if (leftTarget.isConstant() && rightTarget.isConstant()) {
-			specialProjDivModTargets.put(node, new Target(newTargetValue, areConstant(left, right)));
+			specialProjDivModTargets.put(node, new Target(newTargetValue, hasFixpointReached(left, right)));
 		} else if (leftTarget.equals(TargetValue.getBad()) || rightTarget.equals(TargetValue.getBad())) {
 			specialProjDivModTargets.put(node, new Target(TargetValue.getBad()));
 		} else {
@@ -174,7 +174,7 @@ public class OptimizationVisitor implements NodeVisitor {
 		if (fixpointReached(oldTarget, node)) {
 			// are we finished?
 			if (oldTarget.getTargetValue().isConstant()) {
-				setTargetValue(node, oldTarget.getTargetValue(), areConstant(left, right));
+				setTargetValue(node, oldTarget.getTargetValue(), hasFixpointReached(left, right));
 			}
 			return fixpointReached(oldTarget, node);
 		}
@@ -185,7 +185,7 @@ public class OptimizationVisitor implements NodeVisitor {
 		if (fixpointReached(oldTarget, node)) {
 			// are we finished?
 			if (oldTarget.getTargetValue().isConstant()) {
-				setTargetValue(node, oldTarget.getTargetValue(), areConstant(operand));
+				setTargetValue(node, oldTarget.getTargetValue(), hasFixpointReached(operand));
 			}
 			fixpointReached(oldTarget, node);
 		}
@@ -205,9 +205,9 @@ public class OptimizationVisitor implements NodeVisitor {
 
 		if (fixpoint && !target.isConstant()) {
 			// reduce x = y + 0 if possible
-			if (leftTarget.isNull() && areConstant(add.getLeft())) {
+			if (leftTarget.isNull() && hasFixpointReached(add.getLeft())) {
 				targets.put(add, new Target(add.getRight()));
-			} else if (rightTarget.isNull() && areConstant(add.getRight())) {
+			} else if (rightTarget.isNull() && hasFixpointReached(add.getRight())) {
 				targets.put(add, new Target(add.getLeft()));
 			} else {
 				targets.remove(add);
@@ -284,7 +284,7 @@ public class OptimizationVisitor implements NodeVisitor {
 		TargetValue leftTargetValue = getTargetValue(left);
 		TargetValue rightTargetValue = getTargetValue(right);
 
-		if (areConstant(left, right) && leftTargetValue.isConstant() && rightTargetValue.isConstant()) {
+		if (hasFixpointReached(left, right) && leftTargetValue.isConstant() && rightTargetValue.isConstant()) {
 			boolean result = false;
 			boolean success = true;
 			int leftInt = getInteger(leftTargetValue);
@@ -418,8 +418,8 @@ public class OptimizationVisitor implements NodeVisitor {
 		if (fixpointReached(oldTarget, div)) {
 			// are we finished?
 			if (target.isConstant()) {
-				if (areConstant(div.getLeft(), div.getRight())
-						|| (areConstant(div.getLeft()) && getTargetValue(div.getLeft()).isNull())) {
+				if (hasFixpointReached(div.getLeft(), div.getRight())
+						|| (hasFixpointReached(div.getLeft()) && getTargetValue(div.getLeft()).isNull())) {
 					specialProjDivModTargets.put(div, new Target(oldTarget.getTargetValue(), true));
 				} else {
 					specialProjDivModTargets.put(div, new Target(oldTarget.getTargetValue(), false));
@@ -427,7 +427,7 @@ public class OptimizationVisitor implements NodeVisitor {
 				fixpointReached(oldTarget, div);
 			} else {
 				// reduce x = y / 1 if possible
-				if (rightTargetValue.isOne() && areConstant(div.getRight())) {
+				if (rightTargetValue.isOne() && hasFixpointReached(div.getRight())) {
 					targets.put(getFirstSuccessor(div), new Target(div.getLeft()));
 				} else {
 					targets.remove(getFirstSuccessor(div));
@@ -501,11 +501,11 @@ public class OptimizationVisitor implements NodeVisitor {
 		TargetValue rightTargetValue = getTargetValue(mod.getRight());
 
 		if (leftTargetValue.isConstant() && rightTargetValue.isConstant()) {
-			specialProjDivModTargets.put(mod, new Target(leftTargetValue.mod(rightTargetValue), areConstant(mod.getLeft(), mod.getRight())));
+			specialProjDivModTargets.put(mod, new Target(leftTargetValue.mod(rightTargetValue), hasFixpointReached(mod.getLeft(), mod.getRight())));
 		} else if (leftTargetValue.isNull()) {
-			specialProjDivModTargets.put(mod, new Target(new TargetValue(0, mod.getLeft().getMode()), areConstant(mod.getLeft())));
+			specialProjDivModTargets.put(mod, new Target(new TargetValue(0, mod.getLeft().getMode()), hasFixpointReached(mod.getLeft())));
 		} else if (rightTargetValue.isOne()) {
-			specialProjDivModTargets.put(mod, new Target(new TargetValue(0, mod.getRight().getMode()), areConstant(mod.getRight())));
+			specialProjDivModTargets.put(mod, new Target(new TargetValue(0, mod.getRight().getMode()), hasFixpointReached(mod.getRight())));
 		} else if (leftTargetValue.equals(TargetValue.getBad()) || rightTargetValue.equals(TargetValue.getBad())) {
 			specialProjDivModTargets.put(mod, new Target(TargetValue.getBad()));
 		} else {
@@ -515,9 +515,9 @@ public class OptimizationVisitor implements NodeVisitor {
 		if (fixpointReached(oldTarget, mod)) {
 			// are we finished?
 			if (target.isConstant()) {
-				if (areConstant(mod.getLeft(), mod.getRight())
-						|| (areConstant(mod.getLeft()) && getTargetValue(mod.getLeft()).isNull()) ||
-						(areConstant(mod.getRight()) && getTargetValue(mod.getRight()).isOne())) {
+				if (hasFixpointReached(mod.getLeft(), mod.getRight())
+						|| (hasFixpointReached(mod.getLeft()) && getTargetValue(mod.getLeft()).isNull()) ||
+						(hasFixpointReached(mod.getRight()) && getTargetValue(mod.getRight()).isOne())) {
 					specialProjDivModTargets.put(mod, new Target(oldTarget.getTargetValue(), true));
 				} else {
 					specialProjDivModTargets.put(mod, new Target(oldTarget.getTargetValue(), false));
@@ -536,11 +536,11 @@ public class OptimizationVisitor implements NodeVisitor {
 		TargetValue newTargetValue = (leftTarget.isConstant() && rightTarget.isConstant()) ? leftTarget.mul(rightTarget) : TargetValue.getUnknown();
 
 		if (leftTarget.isConstant() && rightTarget.isConstant()) {
-			setTargetValue(mul, newTargetValue, areConstant(mul.getLeft(), mul.getRight()));
+			setTargetValue(mul, newTargetValue, hasFixpointReached(mul.getLeft(), mul.getRight()));
 		} else if (leftTarget.isNull()) {
-			setTargetValue(mul, new TargetValue(0, mul.getMode()), areConstant(mul.getLeft()));
+			setTargetValue(mul, new TargetValue(0, mul.getMode()), hasFixpointReached(mul.getLeft()));
 		} else if (rightTarget.isNull()) {
-			setTargetValue(mul, new TargetValue(0, mul.getMode()), areConstant(mul.getRight()));
+			setTargetValue(mul, new TargetValue(0, mul.getMode()), hasFixpointReached(mul.getRight()));
 		} else if (leftTarget.equals(TargetValue.getBad()) || rightTarget.equals(TargetValue.getBad())) {
 			setTargetValue(mul, TargetValue.getBad());
 		} else {
@@ -551,22 +551,22 @@ public class OptimizationVisitor implements NodeVisitor {
 			// are we finished?
 			if (target.isConstant()) {
 				if (leftTarget.isNull()) {
-					setTargetValue(mul, target, areConstant(mul.getLeft()));
+					setTargetValue(mul, target, hasFixpointReached(mul.getLeft()));
 				} else if (rightTarget.isNull()) {
-					setTargetValue(mul, target, areConstant(mul.getRight()));
+					setTargetValue(mul, target, hasFixpointReached(mul.getRight()));
 				} else {
-					setTargetValue(mul, target, areConstant(mul.getLeft(), mul.getRight()));
+					setTargetValue(mul, target, hasFixpointReached(mul.getLeft(), mul.getRight()));
 				}
 			} else {
 				if (leftTarget.isNull()) {
-					setTargetValue(mul, target, areConstant(mul.getLeft()));
+					setTargetValue(mul, target, hasFixpointReached(mul.getLeft()));
 				} else if (rightTarget.isNull()) {
-					setTargetValue(mul, target, areConstant(mul.getRight()));
+					setTargetValue(mul, target, hasFixpointReached(mul.getRight()));
 				}
 				// reduce x = y * 1 if possible
-				if (leftTarget.isOne() && areConstant(mul.getLeft())) {
+				if (leftTarget.isOne() && hasFixpointReached(mul.getLeft())) {
 					targets.put(mul, new Target(mul.getRight()));
-				} else if (rightTarget.isOne() && areConstant(mul.getRight())) {
+				} else if (rightTarget.isOne() && hasFixpointReached(mul.getRight())) {
 					targets.put(mul, new Target(mul.getLeft()));
 				} else {
 					targets.remove(mul);
@@ -650,7 +650,7 @@ public class OptimizationVisitor implements NodeVisitor {
 					if (tar == null) {
 						remove = false;
 					} else {
-						remove = remove && tar.isConstant();
+						remove = remove && tar.isFixpointReached();
 					}
 				}
 				if (!remove) {
@@ -658,7 +658,7 @@ public class OptimizationVisitor implements NodeVisitor {
 				} else {
 					setTargetValue(phi, target, true);
 				}
-				if (oldTarget.isConstant() && remove != oldTarget.getTargetValue().isConstant()) {
+				if (oldTarget.isFixpointReached() && remove != oldTarget.getTargetValue().isConstant()) {
 					// visit the depending nodes only once more
 					for (Edge edge : BackEdges.getOuts(phi)) {
 						edge.node.accept(this);
@@ -686,7 +686,7 @@ public class OptimizationVisitor implements NodeVisitor {
 				if (tar != null) {
 					TargetValue tarVal = tar.getTargetValue();
 					if (tarVal != null) {
-						setTargetValue(proj, tarVal, areConstant(proj.getPred(0)));
+						setTargetValue(proj, tarVal, hasFixpointReached(proj.getPred(0)));
 						// we need to visit this node again to check if the div/mod will be removed
 					} else {
 						setTargetValue(proj, TargetValue.getUnknown());
@@ -703,11 +703,11 @@ public class OptimizationVisitor implements NodeVisitor {
 					for (Node pred2 : pred.getPreds()) {
 						Target tar = specialProjDivModTargets.get(pred2);
 						if (tar != null) {
-							remove = remove && tar.isConstant();
+							remove = remove && tar.isFixpointReached();
 						} else {
 							tar = getTarget(pred2);
 							if (tar != null) {
-								remove = remove && tar.isConstant();
+								remove = remove && tar.isFixpointReached();
 							}
 						}
 					}
@@ -799,7 +799,7 @@ public class OptimizationVisitor implements NodeVisitor {
 
 		if (fixpoint && !target.isConstant()) {
 			// reduce x = y - 0 if possible
-			if (rightTarget.isNull() && areConstant(sub.getRight())) {
+			if (rightTarget.isNull() && hasFixpointReached(sub.getRight())) {
 				targets.put(sub, new Target(sub.getLeft()));
 			} else {
 				targets.remove(sub);
