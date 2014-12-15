@@ -11,12 +11,8 @@ import compiler.lexer.Position;
 
 public class StaticMethodDeclaration extends MethodDeclaration {
 
-	public StaticMethodDeclaration(Position position, Symbol identifier, Type returnType) {
-		super(position, identifier, returnType);
-	}
-
-	public StaticMethodDeclaration(Position position, Symbol identifier, Type returnType, Block block) {
-		super(position, identifier, returnType, block);
+	public StaticMethodDeclaration(Position position, Symbol identifier, List<ParameterDeclaration> parameters, Type returnType, Block block) {
+		super(position, identifier, parameters, returnType, block);
 	}
 
 	@Override

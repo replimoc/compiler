@@ -6,24 +6,30 @@ import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertTrue;
 
 import java.util.AbstractMap.SimpleEntry;
+import java.util.Arrays;
 import java.util.HashMap;
+import java.util.LinkedList;
+import java.util.List;
 import java.util.Map.Entry;
 
 import org.junit.Test;
 
 import compiler.StringTable;
 import compiler.Symbol;
+import compiler.ast.Block;
 import compiler.ast.Program;
 import compiler.ast.declaration.ClassDeclaration;
 import compiler.ast.declaration.Declaration;
 import compiler.ast.declaration.FieldDeclaration;
 import compiler.ast.declaration.MethodDeclaration;
+import compiler.ast.declaration.MethodMemberDeclaration;
 import compiler.ast.declaration.ParameterDeclaration;
 import compiler.ast.declaration.StaticMethodDeclaration;
 import compiler.ast.type.ArrayType;
 import compiler.ast.type.BasicType;
 import compiler.ast.type.ClassType;
 import compiler.ast.type.Type;
+import compiler.lexer.Position;
 import compiler.lexer.TokenType;
 
 public class PreNamingAnalysisVisitorTest {
@@ -220,22 +226,26 @@ public class PreNamingAnalysisVisitorTest {
 		return t;
 	}
 
-	private static ClassDeclaration createClassDeclaration(Symbol name, Declaration[] fields, MethodDeclaration[] methods) {
+	private static ClassDeclaration createClassDeclaration(Symbol name, Declaration[] fields, MethodMemberDeclaration[] methods) {
 		ClassDeclaration classDeclaration = new ClassDeclaration(null, name);
 		for (Declaration field : fields) {
 			classDeclaration.addClassMember(new FieldDeclaration(null, field.getType(), field.getIdentifier()));
 		}
-		for (MethodDeclaration method : methods) {
-			MethodDeclaration methodDeclaration;
-			if ("main".equals(method.getIdentifier().getValue())) { // hack to test static main
-				methodDeclaration = new StaticMethodDeclaration(null, method.getIdentifier(), method.getType());
-			} else {
-				methodDeclaration = new MethodDeclaration(null, method.getIdentifier(), method.getType());
+		for (MethodMemberDeclaration method : methods) {
+			List<ParameterDeclaration> parameters = new LinkedList<ParameterDeclaration>();
+			for (Declaration param : method.getParameters()) {
+				parameters.add(new ParameterDeclaration(null, param.getType(), param.getIdentifier()));
 			}
 
-			for (Declaration param : method.getParameters()) {
-				methodDeclaration.addParameter(new ParameterDeclaration(null, param.getType(), param.getIdentifier()));
+			MethodDeclaration methodDeclaration;
+			if ("main".equals(method.getIdentifier().getValue())) { // hack to test static main
+				methodDeclaration = new StaticMethodDeclaration(null, method.getIdentifier(),
+						parameters, method.getType(), new Block((Position) null));
+			} else {
+				methodDeclaration = new MethodDeclaration(null, method.getIdentifier(),
+						parameters, method.getType(), new Block((Position) null));
 			}
+
 			classDeclaration.addClassMember(methodDeclaration);
 		}
 		return classDeclaration;
@@ -251,14 +261,14 @@ public class PreNamingAnalysisVisitorTest {
 		return scopesMap;
 	}
 
-	private static ClassScope scope(FieldDeclaration[] fields, MethodDeclaration[] methods) {
+	private static ClassScope scope(FieldDeclaration[] fields, MethodMemberDeclaration[] methods) {
 		HashMap<Symbol, FieldDeclaration> fieldsMap = new HashMap<>();
-		HashMap<Symbol, MethodDeclaration> methodsMap = new HashMap<>();
+		HashMap<Symbol, MethodMemberDeclaration> methodsMap = new HashMap<>();
 
 		for (FieldDeclaration curr : fields) {
 			fieldsMap.put(curr.getIdentifier(), curr);
 		}
-		for (MethodDeclaration curr : methods) {
+		for (MethodMemberDeclaration curr : methods) {
 			methodsMap.put(curr.getIdentifier(), curr);
 		}
 
@@ -309,7 +319,7 @@ public class PreNamingAnalysisVisitorTest {
 	}
 
 	private MethodDeclaration m(String name, Type returnType, ParameterDeclaration... parameters) {
-		return new MethodDeclaration(s(name), returnType, parameters);
+		return new MethodDeclaration(null, s(name), Arrays.asList(parameters), returnType, new Block((Position) null));
 	}
 
 	private ParameterDeclaration pd(String name, Type type) {

@@ -7,19 +7,19 @@ import compiler.Symbol;
 import compiler.ast.declaration.ClassDeclaration;
 import compiler.ast.declaration.Declaration;
 import compiler.ast.declaration.FieldDeclaration;
-import compiler.ast.declaration.MethodDeclaration;
+import compiler.ast.declaration.MethodMemberDeclaration;
 import compiler.ast.declaration.StaticFieldDeclaration;
 
 public class ClassScope {
 	private final ClassDeclaration classDeclaration;
 	private final HashMap<Symbol, FieldDeclaration> fields;
-	private final HashMap<Symbol, MethodDeclaration> methods;
+	private final HashMap<Symbol, MethodMemberDeclaration> methods;
 
-	public ClassScope(HashMap<Symbol, FieldDeclaration> fields, HashMap<Symbol, MethodDeclaration> methods) {
+	public ClassScope(HashMap<Symbol, FieldDeclaration> fields, HashMap<Symbol, MethodMemberDeclaration> methods) {
 		this(null, fields, methods);
 	}
 
-	public ClassScope(ClassDeclaration classDeclaration, HashMap<Symbol, FieldDeclaration> fields, HashMap<Symbol, MethodDeclaration> methods) {
+	public ClassScope(ClassDeclaration classDeclaration, HashMap<Symbol, FieldDeclaration> fields, HashMap<Symbol, MethodMemberDeclaration> methods) {
 		this.classDeclaration = classDeclaration;
 		this.fields = fields;
 		this.methods = methods;
@@ -29,7 +29,7 @@ public class ClassScope {
 		return classDeclaration;
 	}
 
-	public MethodDeclaration getMethodDeclaration(Symbol identifier) {
+	public MethodMemberDeclaration getMethodDeclaration(Symbol identifier) {
 		return methods.get(identifier);
 	}
 
@@ -63,10 +63,10 @@ public class ClassScope {
 		return fields;
 	}
 
-	public MethodDeclaration[] getMethodDeclarations() {
-		MethodDeclaration[] methods = new MethodDeclaration[this.methods.size()];
+	public MethodMemberDeclaration[] getMethodDeclarations() {
+		MethodMemberDeclaration[] methods = new MethodMemberDeclaration[this.methods.size()];
 		int i = 0;
-		for (Entry<Symbol, MethodDeclaration> curr : this.methods.entrySet()) {
+		for (Entry<Symbol, MethodMemberDeclaration> curr : this.methods.entrySet()) {
 			methods[i++] = curr.getValue();
 		}
 		return methods;

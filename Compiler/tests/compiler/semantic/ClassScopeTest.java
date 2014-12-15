@@ -10,7 +10,7 @@ import org.junit.Test;
 
 import compiler.Symbol;
 import compiler.ast.declaration.FieldDeclaration;
-import compiler.ast.declaration.MethodDeclaration;
+import compiler.ast.declaration.MethodMemberDeclaration;
 
 public class ClassScopeTest {
 
@@ -51,7 +51,7 @@ public class ClassScopeTest {
 
 	@Test
 	public void testEqualsAndHashCode4() {
-		ClassScope s1 = new ClassScope(new HashMap<Symbol, FieldDeclaration>(), new HashMap<Symbol, MethodDeclaration>());
+		ClassScope s1 = new ClassScope(new HashMap<Symbol, FieldDeclaration>(), new HashMap<Symbol, MethodMemberDeclaration>());
 		ClassScope s2 = new ClassScope(new HashMap<Symbol, FieldDeclaration>(), null);
 
 		assertNotEquals(s1, s2);
@@ -60,8 +60,8 @@ public class ClassScopeTest {
 
 	@Test
 	public void testEqualsAndHashCode5() {
-		ClassScope s1 = new ClassScope(new HashMap<Symbol, FieldDeclaration>(), new HashMap<Symbol, MethodDeclaration>());
-		ClassScope s2 = new ClassScope(new HashMap<Symbol, FieldDeclaration>(), new HashMap<Symbol, MethodDeclaration>());
+		ClassScope s1 = new ClassScope(new HashMap<Symbol, FieldDeclaration>(), new HashMap<Symbol, MethodMemberDeclaration>());
+		ClassScope s2 = new ClassScope(new HashMap<Symbol, FieldDeclaration>(), new HashMap<Symbol, MethodMemberDeclaration>());
 
 		assertEquals(s1, s2);
 		assertEquals(s1.hashCode(), s2.hashCode());

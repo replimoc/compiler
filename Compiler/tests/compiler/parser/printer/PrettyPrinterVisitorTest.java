@@ -2,6 +2,8 @@ package compiler.parser.printer;
 
 import static org.junit.Assert.assertEquals;
 
+import java.util.Collections;
+
 import org.junit.Test;
 
 import compiler.Symbol;
@@ -303,8 +305,8 @@ public class PrettyPrinterVisitorTest {
 
 	@Test
 	public void testVisitMethodDeclaration1() {
-		MethodDeclaration methodDeclaration = new MethodDeclaration(position, new Symbol("_"), type);
-		methodDeclaration.setBlock(new Block((Position) null));
+		MethodDeclaration methodDeclaration = new MethodDeclaration(position, new Symbol("_"), Collections.<ParameterDeclaration> emptyList(), type,
+				new Block((Position) null));
 
 		visitor.visit(methodDeclaration);
 		assertEquals("public int _() { }\n", visitor.getOutputString());
@@ -312,19 +314,18 @@ public class PrettyPrinterVisitorTest {
 
 	@Test
 	public void testVisitMethodDeclaration2() {
-		MethodDeclaration methodDeclaration = new MethodDeclaration(position, new Symbol("_"), type);
-		Block block = new Block(position);
-		methodDeclaration.setBlock(block);
+		MethodDeclaration methodDeclaration = new MethodDeclaration(position, new Symbol("_"), Collections.<ParameterDeclaration> emptyList(),
+				type, new Block(position));
 		visitor.visit(methodDeclaration);
 		assertEquals("public int _() { }\n", visitor.getOutputString());
 	}
 
 	@Test
 	public void testVisitMethodDeclaration3() {
-		MethodDeclaration methodDeclaration = new MethodDeclaration(position, new Symbol("_"), type);
 		Block block = new Block(position);
-		methodDeclaration.setBlock(block);
 		block.addStatement(variable);
+		MethodDeclaration methodDeclaration = new MethodDeclaration(position, new Symbol("_"),
+				Collections.<ParameterDeclaration> emptyList(), type, block);
 		visitor.visit(methodDeclaration);
 		assertEquals("public int _() {\n\t_;\n}\n", visitor.getOutputString());
 	}

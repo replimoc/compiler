@@ -1,7 +1,7 @@
 package compiler.ast.statement;
 
 import compiler.Symbol;
-import compiler.ast.declaration.MethodDeclaration;
+import compiler.ast.declaration.MethodMemberDeclaration;
 import compiler.ast.statement.unary.PostfixExpression;
 import compiler.ast.visitor.AstVisitor;
 import compiler.lexer.Position;
@@ -11,7 +11,7 @@ public class MethodInvocationExpression extends PostfixExpression {
 	private final Symbol methodIdent;
 	private final Expression expression;
 	private final Expression[] parameters;
-	private MethodDeclaration methodDeclaration;
+	private MethodMemberDeclaration methodDeclaration;
 
 	public MethodInvocationExpression(Position position, Expression leftExpression, Symbol methodIdent, Expression[] parameters) {
 		super(position, leftExpression);
@@ -41,11 +41,11 @@ public class MethodInvocationExpression extends PostfixExpression {
 		visitor.visit(this);
 	}
 
-	public MethodDeclaration getMethodDeclaration() {
+	public MethodMemberDeclaration getMethodDeclaration() {
 		return methodDeclaration;
 	}
 
-	public void setMethodDeclaration(MethodDeclaration methodDeclaration) {
+	public void setMethodDeclaration(MethodMemberDeclaration methodDeclaration) {
 		this.methodDeclaration = methodDeclaration;
 	}
 }

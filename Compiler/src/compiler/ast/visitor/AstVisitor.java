@@ -5,6 +5,7 @@ import compiler.ast.Program;
 import compiler.ast.declaration.ClassDeclaration;
 import compiler.ast.declaration.FieldDeclaration;
 import compiler.ast.declaration.MethodDeclaration;
+import compiler.ast.declaration.NativeMethodDeclaration;
 import compiler.ast.declaration.ParameterDeclaration;
 import compiler.ast.declaration.StaticMethodDeclaration;
 import compiler.ast.statement.ArrayAccessExpression;
@@ -107,15 +108,18 @@ public interface AstVisitor {
 
 	public void visit(Program program);
 
-	public void visit(MethodDeclaration methodDeclaration);
-
 	public void visit(FieldDeclaration fieldDeclaration);
 
+	public void visit(MethodDeclaration methodDeclaration);
+
 	public void visit(StaticMethodDeclaration staticMethodDeclaration);
+
+	public void visit(NativeMethodDeclaration nativeMethodDeclaration);
 
 	public void visit(Type type);
 
 	public void visit(ClassType classType);
 
 	public void visit(ArrayType arrayType);
+
 }

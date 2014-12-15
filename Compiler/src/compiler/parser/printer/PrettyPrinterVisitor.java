@@ -9,6 +9,8 @@ import compiler.ast.declaration.ClassDeclaration;
 import compiler.ast.declaration.FieldDeclaration;
 import compiler.ast.declaration.MemberDeclaration;
 import compiler.ast.declaration.MethodDeclaration;
+import compiler.ast.declaration.MethodMemberDeclaration;
+import compiler.ast.declaration.NativeMethodDeclaration;
 import compiler.ast.declaration.ParameterDeclaration;
 import compiler.ast.declaration.StaticMethodDeclaration;
 import compiler.ast.statement.ArrayAccessExpression;
@@ -585,18 +587,25 @@ public class PrettyPrinterVisitor implements AstVisitor {
 
 	@Override
 	public void visit(MethodDeclaration methodDeclaration) {
-		printMethodDeclaration(methodDeclaration, false);
+		printMethodDeclaration(methodDeclaration, false, methodDeclaration.getBlock());
 	}
 
 	@Override
 	public void visit(StaticMethodDeclaration staticMethodDeclaration) {
-		printMethodDeclaration(staticMethodDeclaration, true);
+		printMethodDeclaration(staticMethodDeclaration, true, staticMethodDeclaration.getBlock());
 	}
 
-	private void printMethodDeclaration(MethodDeclaration methodDeclaration, boolean isStatic) {
+	@Override
+	public void visit(NativeMethodDeclaration nativeMethodDeclaration) {
+		printMethodDeclaration(nativeMethodDeclaration, false, null);
+	}
+
+	private void printMethodDeclaration(MethodMemberDeclaration methodDeclaration, boolean isStatic, Block block) {
 		stringBuilder.append("public ");
 		if (isStatic)
 			stringBuilder.append("static ");
+		if (block == null)
+			stringBuilder.append("native ");
 
 		methodDeclaration.getType().accept(this);
 		stringBuilder.append(' ');
@@ -612,9 +621,12 @@ public class PrettyPrinterVisitor implements AstVisitor {
 			parameter.accept(this);
 		}
 
-		stringBuilder.append(") ");
-		Block block = methodDeclaration.getBlock();
-		block.accept(this);
+		if (block != null) {
+			stringBuilder.append(") ");
+			block.accept(this);
+		} else {
+			stringBuilder.append(");");
+		}
 		stringBuilder.append('\n');
 	}
 
@@ -626,5 +638,4 @@ public class PrettyPrinterVisitor implements AstVisitor {
 		stringBuilder.append(fieldDeclaration.getIdentifier().getValue());
 		stringBuilder.append(";\n");
 	}
-
 }

@@ -2,6 +2,7 @@ package compiler.parser;
 
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.LinkedList;
 import java.util.List;
 
@@ -12,6 +13,7 @@ import compiler.ast.declaration.ClassDeclaration;
 import compiler.ast.declaration.FieldDeclaration;
 import compiler.ast.declaration.MemberDeclaration;
 import compiler.ast.declaration.MethodDeclaration;
+import compiler.ast.declaration.NativeMethodDeclaration;
 import compiler.ast.declaration.ParameterDeclaration;
 import compiler.ast.declaration.StaticMethodDeclaration;
 import compiler.ast.statement.ArrayAccessExpression;
@@ -159,6 +161,12 @@ public class Parser {
 		switch (token.getType()) {
 		case PUBLIC:
 			consumeToken();
+			boolean nativeMethod = false;
+			if (isTokenType(TokenType.NATIVE)) {
+				nativeMethod = true;
+				consumeToken();
+			}
+
 			// Type
 			if (isTokenType(TokenType.INT, TokenType.BOOLEAN, TokenType.VOID, TokenType.IDENTIFIER)) {
 				Type type = parseType();
@@ -174,16 +182,24 @@ public class Parser {
 						// public Type IDENT ( Parameters? ) Block
 					} else if (isTokenType(TokenType.LP)) {
 						consumeToken();
-						MethodDeclaration methDecl = new MethodDeclaration(firstToken.getPosition(), firstToken.getSymbol(), type);
+
+						List<ParameterDeclaration> parameters = new LinkedList<ParameterDeclaration>();
 
 						if (isTokenType(TokenType.RP)) {
 							consumeToken();
 						} else {
-							parseParameters(methDecl);
+							parseParameters(parameters);
 							expectAndConsume(TokenType.RP);
 						}
-						methDecl.setBlock(parseBlock());
-						return methDecl;
+
+						Symbol identifier = firstToken.getSymbol();
+						if (nativeMethod) {
+							isTokenType(TokenType.SEMICOLON);
+							consumeToken();
+							return new NativeMethodDeclaration(firstToken.getPosition(), identifier.getValue(), identifier, parameters, type);
+						} else {
+							return new MethodDeclaration(firstToken.getPosition(), firstToken.getSymbol(), parameters, type, parseBlock());
+						}
 					} else {
 						throw new ParserException(token);
 					}
@@ -195,7 +211,7 @@ public class Parser {
 				consumeToken();
 
 				// save void return type
-				Token retType = token;
+				Token returnType = token;
 				expectAndConsume(TokenType.VOID);
 
 				// save identifier
@@ -222,11 +238,10 @@ public class Parser {
 				expectAndConsume(TokenType.RP);
 
 				// new main method ast node
-				ParameterDeclaration param = new ParameterDeclaration(pos, new ArrayType(pos, new ClassType(pos, type)), ident);
-				MethodDeclaration decl = new StaticMethodDeclaration(firstToken.getPosition(), firstToken.getSymbol(),
-						new Type(retType.getPosition(), BasicType.VOID), parseBlock());
-				decl.addParameter(param);
-				return decl;
+				ParameterDeclaration parameter = new ParameterDeclaration(pos, new ArrayType(pos, new ClassType(pos, type)), ident);
+				MethodDeclaration declaration = new StaticMethodDeclaration(firstToken.getPosition(), firstToken.getSymbol(),
+						Arrays.asList(parameter), new Type(returnType.getPosition(), BasicType.VOID), parseBlock());
+				return declaration;
 			}
 		default:
 			throw new ParserException(token, TokenType.PUBLIC);
@@ -239,11 +254,11 @@ public class Parser {
 	 * @throws IOException
 	 * @throws ParserException
 	 */
-	private void parseParameters(MethodDeclaration methDecl) throws IOException, ParserException {
-		methDecl.addParameter(parseParameter());
+	private void parseParameters(List<ParameterDeclaration> parameterList) throws IOException, ParserException {
+		parameterList.add(parseParameter());
 		if (isTokenType(TokenType.COMMA)) {
 			consumeToken();
-			parseParameters(methDecl);
+			parseParameters(parameterList);
 		}
 	}
 
