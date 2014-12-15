@@ -157,7 +157,7 @@ public final class CompilerApp {
 						result = FirmUtils.createBinary(outputFile, cmd.hasOption(OUTPUT_ASSEMBLER));
 					}
 
-					if (cmd.hasOption(OUTPUT_ASSEMBLER)) {
+					if (!cmd.hasOption(COMPILE_FIRM) && cmd.hasOption(OUTPUT_ASSEMBLER)) {
 						String outputFile;
 						if (cmd.hasOption('o')) {
 							outputFile = cmd.getOptionValue('o');
