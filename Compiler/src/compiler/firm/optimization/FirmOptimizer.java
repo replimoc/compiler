@@ -5,7 +5,9 @@ import java.util.LinkedList;
 import java.util.Map.Entry;
 
 import firm.BackEdges;
+import firm.BackEdges.Edge;
 import firm.Graph;
+import firm.GraphBase;
 import firm.Program;
 import firm.bindings.binding_irgopt;
 import firm.nodes.Block;
@@ -20,10 +22,10 @@ public final class FirmOptimizer {
 		for (Graph graph : Program.getGraphs()) {
 			LinkedList<Node> workList = new LinkedList<>();
 
-			OptimizationVisitor visitor = new OptimizationVisitor(workList);
+			OptimizationVisitor visitor = new OptimizationVisitor();
 
 			BackEdges.enable(graph);
-			walkTopological(graph, visitor);
+			walkTopological(graph, workList, visitor);
 			workList(workList, visitor);
 			BackEdges.disable(graph);
 
@@ -34,11 +36,17 @@ public final class FirmOptimizer {
 		}
 	}
 
-	private static void walkTopological(Graph graph, OptimizationVisitor visitor) {
-		walkTopological(graph.getEnd(), visitor);
+	private static void walkTopological(Graph graph, LinkedList<Node> workList, OptimizationVisitor visitor) {
+		walkTopological(graph.getEnd(), workList, visitor);
 	}
 
-	private static void walkTopological(Node node, OptimizationVisitor visitor) {
+	/**
+	 * Algorithm taken from {@link GraphBase}.walkTopological() and adapted by @author Andreas Eberle
+	 * 
+	 * @param node
+	 * @param visitor
+	 */
+	private static void walkTopological(Node node, LinkedList<Node> workList, OptimizationVisitor visitor) {
 		if (node.visited())
 			return;
 
@@ -49,20 +57,29 @@ public final class FirmOptimizer {
 		}
 
 		if (node.getBlock() != null) {
-			walkTopological(node.getBlock(), visitor);
+			walkTopological(node.getBlock(), workList, visitor);
 		}
 		for (Node pred : node.getPreds()) {
-			walkTopological(pred, visitor);
+			walkTopological(pred, workList, visitor);
 		}
 
 		if (isLoopBreaker || !node.visited()) {
-			visitNode(node, visitor);
+			visitNode(node, workList, visitor);
 		}
 		node.markVisited();
 	}
 
-	private static void visitNode(Node node, OptimizationVisitor visitor) {
+	private static void visitNode(Node node, LinkedList<Node> workList, OptimizationVisitor visitor) {
+		HashMap<Node, Target> targetValues = visitor.getTargetValues();
+		Target oldTarget = targetValues.get(node);
 		node.accept(visitor);
+		Target newTarget = targetValues.get(node);
+
+		if (oldTarget == null || !oldTarget.equals(newTarget)) {
+			for (Edge e : BackEdges.getOuts(node)) {
+				workList.push(e.node);
+			}
+		}
 	}
 
 	private static void workList(LinkedList<Node> workList, OptimizationVisitor visitor) {
