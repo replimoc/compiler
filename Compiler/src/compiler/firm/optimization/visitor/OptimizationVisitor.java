@@ -1,7 +1,9 @@
-package compiler.firm.optimization;
+package compiler.firm.optimization.visitor;
 
 import java.util.HashMap;
 import java.util.Map.Entry;
+
+import compiler.firm.optimization.Target;
 
 import firm.BackEdges;
 import firm.BackEdges.Edge;

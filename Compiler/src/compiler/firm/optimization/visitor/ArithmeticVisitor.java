@@ -1,4 +1,6 @@
-package compiler.firm.optimization;
+package compiler.firm.optimization.visitor;
+
+import compiler.firm.optimization.Target;
 
 import firm.Mode;
 import firm.TargetValue;
@@ -6,12 +8,17 @@ import firm.nodes.Add;
 import firm.nodes.Const;
 import firm.nodes.Div;
 import firm.nodes.Mul;
-import firm.nodes.NodeVisitor;
 import firm.nodes.Sub;
 
-public class ArithmeticVisitor extends OptimizationVisitor implements NodeVisitor {
+public class ArithmeticVisitor extends OptimizationVisitor {
 
-	public ArithmeticVisitor() {
+	public static OptimizationVisitorFactory getFactory() {
+		return new OptimizationVisitorFactory() {
+			@Override
+			public OptimizationVisitor create() {
+				return new ArithmeticVisitor();
+			}
+		};
 	}
 
 	@Override
