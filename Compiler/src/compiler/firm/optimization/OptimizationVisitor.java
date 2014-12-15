@@ -1,7 +1,6 @@
 package compiler.firm.optimization;
 
 import java.util.HashMap;
-import java.util.LinkedList;
 
 import compiler.firm.FirmUtils;
 
@@ -68,37 +67,22 @@ import firm.nodes.Unknown;
 
 public class OptimizationVisitor implements NodeVisitor {
 
-	private final LinkedList<Node> workList;
 	private final HashMap<Node, Target> targets = new HashMap<>();
 	// Div and Mod nodes have a Proj successor which must be replaced instead of the Div and Mod nodes themselves
 	private final HashMap<Node, Target> specialProjDivModTargets = new HashMap<>();
-
-	public OptimizationVisitor(LinkedList<Node> workList) {
-		this.workList = workList;
-	}
 
 	public HashMap<Node, Target> getTargetValues() {
 		return targets;
 	}
 
-	private void workNode(Node node) {
-		workList.push(node);
-	}
-
 	private boolean fixpointReached(Target oldTarget, Node node) {
 		if (node instanceof Div || node instanceof Mod) {
 			if (oldTarget == null || !oldTarget.equals(specialProjDivModTargets.get(node))) {
-				for (Edge edge : BackEdges.getOuts(node)) {
-					workNode(edge.node);
-				}
 				return false;
 			}
 			return true;
 		} else {
 			if (oldTarget == null || !oldTarget.equals(getTarget(node))) {
-				for (Edge edge : BackEdges.getOuts(node)) {
-					workNode(edge.node);
-				}
 				return false;
 			}
 			return true;
