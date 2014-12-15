@@ -9,23 +9,9 @@ import firm.BackEdges;
 import firm.BackEdges.Edge;
 import firm.TargetValue;
 import firm.nodes.Add;
-import firm.nodes.Address;
-import firm.nodes.Align;
-import firm.nodes.Alloc;
-import firm.nodes.Anchor;
 import firm.nodes.And;
-import firm.nodes.Bad;
-import firm.nodes.Bitcast;
-import firm.nodes.Block;
-import firm.nodes.Builtin;
-import firm.nodes.Call;
-import firm.nodes.Cmp;
-import firm.nodes.Cond;
-import firm.nodes.Confirm;
 import firm.nodes.Const;
 import firm.nodes.Conv;
-import firm.nodes.CopyB;
-import firm.nodes.Deleted;
 import firm.nodes.Div;
 import firm.nodes.Minus;
 import firm.nodes.Mod;
@@ -42,6 +28,15 @@ import firm.nodes.Sub;
 
 public class ConstantFoldingVisitor extends OptimizationVisitor {
 
+	public static OptimizationVisitorFactory getFactory() {
+		return new OptimizationVisitorFactory() {
+			@Override
+			public OptimizationVisitor create() {
+				return new ConstantFoldingVisitor();
+			}
+		};
+	}
+
 	protected final HashMap<Node, Target> targets = new HashMap<>();
 	// Div and Mod nodes have a Proj successor which must be replaced instead of the Div and Mod nodes themselves
 	protected final HashMap<Node, Target> specialProjDivModTargets = new HashMap<>();
@@ -53,18 +48,14 @@ public class ConstantFoldingVisitor extends OptimizationVisitor {
 		for (Entry<Node, Target> targetEntry : targets.entrySet()) {
 			Node node = targetEntry.getKey();
 			Target target = targetEntry.getValue();
-			if (target.isNode()) {
-				replacements.put(node, target.getNode());
-			} else {
-				if (target.isFixpointReached() && target.getTargetValue().isConstant()) {
-					replacements.put(node, node.getGraph().newConst(target.getTargetValue()));
-				}
+			if (target.isFixpointReached() && target.getTargetValue().isConstant() && !(node instanceof Const)) {
+				replacements.put(node, node.getGraph().newConst(target.getTargetValue()));
 			}
 		}
 		return replacements;
 	}
 
-	protected boolean fixpointReached(Target oldTarget, Node node) {
+	private boolean fixpointReached(Target oldTarget, Node node) {
 		if (node instanceof Div || node instanceof Mod) {
 			if (oldTarget == null || !oldTarget.equals(specialProjDivModTargets.get(node))) {
 				return false;
@@ -78,36 +69,23 @@ public class ConstantFoldingVisitor extends OptimizationVisitor {
 		}
 	}
 
-	protected void setTargetValue(Node node, TargetValue targetValue) {
+	private void setTargetValue(Node node, TargetValue targetValue) {
 		setTargetValue(node, targetValue, false);
 	}
 
-	protected void setTargetValue(Node node, TargetValue targetValue, boolean remove) {
+	private void setTargetValue(Node node, TargetValue targetValue, boolean remove) {
 		targets.put(node, new Target(targetValue, remove));
 	}
 
-	protected TargetValue getTargetValue(Node node) {
+	private TargetValue getTargetValue(Node node) {
 		return targets.get(node) == null ? TargetValue.getUnknown() : targets.get(node).getTargetValue();
 	}
 
-	protected Target getTarget(Node node) {
+	private Target getTarget(Node node) {
 		return targets.get(node);
 	}
 
-	public HashMap<Node, Target> getTargetValues() {
-		return targets;
-	}
-
-	public static OptimizationVisitorFactory getFactory() {
-		return new OptimizationVisitorFactory() {
-			@Override
-			public OptimizationVisitor create() {
-				return new ConstantFoldingVisitor();
-			}
-		};
-	}
-
-	protected boolean hasFixpointReached(Node... nodes) {
+	private boolean hasFixpointReached(Node... nodes) {
 		for (Node n : nodes) {
 			Target tar = getTarget(n);
 			if (tar == null || !tar.isFixpointReached()) {
@@ -117,7 +95,7 @@ public class ConstantFoldingVisitor extends OptimizationVisitor {
 		return true;
 	}
 
-	protected void biTransferFunction(Node node, TargetValue leftTarget, TargetValue rightTarget, TargetValue newTargetValue, Node left, Node right) {
+	private void biTransferFunction(Node node, TargetValue leftTarget, TargetValue rightTarget, TargetValue newTargetValue, Node left, Node right) {
 		if (leftTarget.isConstant() && rightTarget.isConstant()) {
 			setTargetValue(node, newTargetValue, hasFixpointReached(left, right));
 		} else if (leftTarget.equals(TargetValue.getBad()) || rightTarget.equals(TargetValue.getBad())) {
@@ -127,7 +105,7 @@ public class ConstantFoldingVisitor extends OptimizationVisitor {
 		}
 	}
 
-	protected void unaryTransferFunction(Node node, TargetValue newTargetValue, Node operand) {
+	private void unaryTransferFunction(Node node, TargetValue newTargetValue, Node operand) {
 		if (newTargetValue.isConstant()) {
 			setTargetValue(node, newTargetValue, hasFixpointReached(operand));
 		} else if (newTargetValue.equals(TargetValue.getBad())) {
@@ -137,7 +115,7 @@ public class ConstantFoldingVisitor extends OptimizationVisitor {
 		}
 	}
 
-	protected void divModTransferFunction(Node node, TargetValue leftTarget, TargetValue rightTarget, TargetValue newTargetValue, Node left,
+	private void divModTransferFunction(Node node, TargetValue leftTarget, TargetValue rightTarget, TargetValue newTargetValue, Node left,
 			Node right) {
 		if (leftTarget.isNull()) {
 			specialProjDivModTargets.put(node, new Target(leftTarget, hasFixpointReached(left)));
@@ -209,90 +187,6 @@ public class ConstantFoldingVisitor extends OptimizationVisitor {
 
 		unaryTransferFunction(convertion, newTargetValue, convertion.getOp());
 		unaryExpressionCleanup(convertion, convertion.getOp(), oldTarget);
-	}
-
-	@Override
-	public void visit(Address arg0) {
-		// TODO Auto-generated method stub
-
-	}
-
-	@Override
-	public void visit(Align arg0) {
-		// TODO Auto-generated method stub
-
-	}
-
-	@Override
-	public void visit(Alloc arg0) {
-		// TODO Auto-generated method stub
-
-	}
-
-	@Override
-	public void visit(Anchor arg0) {
-		// TODO Auto-generated method stub
-
-	}
-
-	@Override
-	public void visit(Bad arg0) {
-		// TODO Auto-generated method stub
-
-	}
-
-	@Override
-	public void visit(Bitcast arg0) {
-		// TODO Auto-generated method stub
-
-	}
-
-	@Override
-	public void visit(Block arg0) {
-		// TODO Auto-generated method stub
-
-	}
-
-	@Override
-	public void visit(Builtin arg0) {
-		// TODO Auto-generated method stub
-
-	}
-
-	@Override
-	public void visit(Call arg0) {
-		// TODO Auto-generated method stub
-
-	}
-
-	@Override
-	public void visit(Cmp arg0) {
-		// TODO Auto-generated method stub
-
-	}
-
-	@Override
-	public void visit(Cond arg0) {
-		// TODO Auto-generated method stub
-
-	}
-
-	@Override
-	public void visit(Confirm arg0) {
-		// TODO Auto-generated method stub
-
-	}
-
-	@Override
-	public void visit(CopyB arg0) {
-		// TODO Auto-generated method stub
-
-	}
-
-	@Override
-	public void visit(Deleted arg0) {
-		// TODO Auto-generated method stub
-
 	}
 
 	@Override
@@ -569,23 +463,13 @@ public class ConstantFoldingVisitor extends OptimizationVisitor {
 	@Override
 	public void visit(Sub sub) {
 		Target oldTarget = getTarget(sub);
-		TargetValue target = getTargetValue(sub);
 		TargetValue leftTarget = getTargetValue(sub.getLeft());
 		TargetValue rightTarget = getTargetValue(sub.getRight());
 		TargetValue newTargetValue = (leftTarget.isConstant() && rightTarget.isConstant()) ? leftTarget.sub(rightTarget, sub.getMode()) : TargetValue
 				.getUnknown();
 
 		biTransferFunction(sub, leftTarget, rightTarget, newTargetValue, sub.getLeft(), sub.getRight());
-		boolean fixpoint = binaryExpressionCleanup(sub, sub.getLeft(), sub.getRight(), oldTarget);
-
-		if (fixpoint && !target.isConstant()) {
-			// reduce x = y - 0 if possible
-			if (rightTarget.isNull() && hasFixpointReached(sub.getRight())) {
-				targets.put(sub, new Target(sub.getLeft()));
-			} else {
-				targets.remove(sub);
-			}
-		}
+		binaryExpressionCleanup(sub, sub.getLeft(), sub.getRight(), oldTarget);
 	}
 
 }
