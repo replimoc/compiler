@@ -19,21 +19,43 @@ public final class FirmOptimizer {
 	}
 
 	public static void optimize() {
+		boolean finished = true;
+		do {
+			finished = true;
+			finished &= optimize(ConstantFoldingVisitor.class);
+			finished &= optimize(ArithmeticVisitor.class);
+			finished &= optimize(ControlFlowVisitor.class);
+		} while (!finished);
+	}
+
+	public static <T extends OptimizationVisitor> boolean optimize(Class<T> visitorClass) {
+		boolean finished = true;
 		for (Graph graph : Program.getGraphs()) {
 			LinkedList<Node> workList = new LinkedList<>();
 
-			OptimizationVisitor visitor = new OptimizationVisitor();
+			try {
+				T visitor = visitorClass.newInstance();
 
-			BackEdges.enable(graph);
-			walkTopological(graph, workList, visitor);
-			workList(workList, visitor);
-			BackEdges.disable(graph);
+				BackEdges.enable(graph);
+				walkTopological(graph, workList, visitor);
+				workList(workList, visitor);
+				BackEdges.disable(graph);
 
-			replaceNodesWithTargets(graph, visitor.getTargetValues());
+				HashMap<Node, Target> targetValues = visitor.getTargetValues();
 
-			binding_irgopt.remove_unreachable_code(graph.ptr);
-			binding_irgopt.remove_bads(graph.ptr);
+				finished &= targetValues.isEmpty();
+
+				replaceNodesWithTargets(graph, targetValues);
+
+				targetValues.clear();
+
+				binding_irgopt.remove_unreachable_code(graph.ptr);
+				binding_irgopt.remove_bads(graph.ptr);
+			} catch (InstantiationException | IllegalAccessException e) {
+				e.printStackTrace();
+			}
 		}
+		return finished;
 	}
 
 	private static void walkTopological(Graph graph, LinkedList<Node> workList, OptimizationVisitor visitor) {
