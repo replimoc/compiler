@@ -70,7 +70,6 @@ public class OptimizationVisitor implements NodeVisitor {
 
 	private final LinkedList<Node> workList;
 	private final HashMap<Node, Target> targets = new HashMap<>();
-	private final HashMap<Node, Node> arithmeticTarget = new HashMap<>();
 	// Div and Mod nodes have a Proj successor which must be replaced instead of the Div and Mod nodes themselves
 	private final HashMap<Node, Target> specialProjDivModTargets = new HashMap<>();
 
@@ -82,12 +81,8 @@ public class OptimizationVisitor implements NodeVisitor {
 		return targets;
 	}
 
-	public HashMap<Node, Node> getArithmeticTargets() {
-		return arithmeticTarget;
-	}
-
 	private void workNode(Node node) {
-		workList.offer(node);
+		workList.push(node);
 	}
 
 	private boolean fixpointReached(Target oldTarget, Node node) {
@@ -211,11 +206,11 @@ public class OptimizationVisitor implements NodeVisitor {
 		if (fixpoint && !target.isConstant()) {
 			// reduce x = y + 0 if possible
 			if (leftTarget.isNull() && areConstant(add.getLeft())) {
-				arithmeticTarget.put(add, add.getRight());
+				targets.put(add, new Target(add.getRight()));
 			} else if (rightTarget.isNull() && areConstant(add.getRight())) {
-				arithmeticTarget.put(add, add.getLeft());
+				targets.put(add, new Target(add.getLeft()));
 			} else {
-				arithmeticTarget.remove(add);
+				targets.remove(add);
 			}
 		}
 	}
@@ -361,9 +356,9 @@ public class OptimizationVisitor implements NodeVisitor {
 				if ((proj.getNum() == FirmUtils.TRUE) == useCase) {
 					Block block = (Block) condition.getBlock();
 					Node jump = block.getGraph().newJmp(block);
-					arithmeticTarget.put(proj, jump);
+					targets.put(proj, new Target(jump));
 				} else {
-					arithmeticTarget.put(proj, proj.getGraph().newBad(proj.getPred().getMode()));
+					targets.put(proj, new Target(proj.getGraph().newBad(proj.getPred().getMode())));
 				}
 			}
 		}
@@ -433,9 +428,9 @@ public class OptimizationVisitor implements NodeVisitor {
 			} else {
 				// reduce x = y / 1 if possible
 				if (rightTargetValue.isOne() && areConstant(div.getRight())) {
-					arithmeticTarget.put(getFirstSuccessor(div), div.getLeft());
+					targets.put(getFirstSuccessor(div), new Target(div.getLeft()));
 				} else {
-					arithmeticTarget.remove(getFirstSuccessor(div));
+					targets.remove(getFirstSuccessor(div));
 				}
 			}
 		}
@@ -570,11 +565,11 @@ public class OptimizationVisitor implements NodeVisitor {
 				}
 				// reduce x = y * 1 if possible
 				if (leftTarget.isOne() && areConstant(mul.getLeft())) {
-					arithmeticTarget.put(mul, mul.getRight());
+					targets.put(mul, new Target(mul.getRight()));
 				} else if (rightTarget.isOne() && areConstant(mul.getRight())) {
-					arithmeticTarget.put(mul, mul.getLeft());
+					targets.put(mul, new Target(mul.getLeft()));
 				} else {
-					arithmeticTarget.remove(mul);
+					targets.remove(mul);
 				}
 			}
 			fixpointReached(oldTarget, mul);
@@ -805,12 +800,11 @@ public class OptimizationVisitor implements NodeVisitor {
 		if (fixpoint && !target.isConstant()) {
 			// reduce x = y - 0 if possible
 			if (rightTarget.isNull() && areConstant(sub.getRight())) {
-				arithmeticTarget.put(sub, sub.getLeft());
+				targets.put(sub, new Target(sub.getLeft()));
 			} else {
-				arithmeticTarget.remove(sub);
+				targets.remove(sub);
 			}
 		}
-
 	}
 
 	@Override
@@ -836,67 +830,6 @@ public class OptimizationVisitor implements NodeVisitor {
 	@Override
 	public void visitUnknown(Node arg0) {
 		// nothing to fold
-	}
-
-	/**
-	 * Represents a target value for a node.
-	 *
-	 */
-	public class Target {
-		/**
-		 * Target value
-		 */
-		private TargetValue target;
-		/**
-		 * Flag if the node shall be removed from the graph.
-		 */
-		private boolean constant;
-
-		public Target(TargetValue target, boolean remove) {
-			this.target = target;
-			this.constant = remove;
-		}
-
-		public Target(TargetValue target) {
-			this(target, false);
-		}
-
-		public TargetValue getTargetValue() {
-			return target;
-		}
-
-		public boolean isConstant() {
-			return constant;
-		}
-
-		@Override
-		public int hashCode() {
-			final int prime = 31;
-			int result = 1;
-			result = prime * result + (constant ? 1231 : 1237);
-			result = prime * result + ((target == null) ? 0 : target.hashCode());
-			return result;
-		}
-
-		@Override
-		public boolean equals(Object obj) {
-			if (this == obj)
-				return true;
-			if (obj == null)
-				return false;
-			if (getClass() != obj.getClass())
-				return false;
-			Target other = (Target) obj;
-			if (constant != other.constant)
-				return false;
-			if (target == null) {
-				if (other.target != null)
-					return false;
-			} else if (!target.equals(other.target))
-				return false;
-			return true;
-		}
-
 	}
 
 }

@@ -4,13 +4,13 @@ import java.util.HashMap;
 import java.util.LinkedList;
 import java.util.Map.Entry;
 
-import compiler.firm.optimization.OptimizationVisitor.Target;
-
 import firm.BackEdges;
 import firm.Graph;
 import firm.Program;
 import firm.bindings.binding_irgopt;
+import firm.nodes.Block;
 import firm.nodes.Node;
+import firm.nodes.Phi;
 
 public final class FirmOptimizer {
 	private FirmOptimizer() {
@@ -23,16 +23,46 @@ public final class FirmOptimizer {
 			OptimizationVisitor visitor = new OptimizationVisitor(workList);
 
 			BackEdges.enable(graph);
-			graph.walkTopological(visitor);
+			walkTopological(graph, visitor);
 			workList(workList, visitor);
 			BackEdges.disable(graph);
 
-			replaceNodesWithConstantTargets(graph, visitor.getTargetValues());
-			replaceNodesWithArithmeticTargets(graph, visitor.getArithmeticTargets());
+			replaceNodesWithTargets(graph, visitor.getTargetValues());
 
 			binding_irgopt.remove_unreachable_code(graph.ptr);
 			binding_irgopt.remove_bads(graph.ptr);
 		}
+	}
+
+	private static void walkTopological(Graph graph, OptimizationVisitor visitor) {
+		walkTopological(graph.getEnd(), visitor);
+	}
+
+	private static void walkTopological(Node node, OptimizationVisitor visitor) {
+		if (node.visited())
+			return;
+
+		/* only break loops at phi/block nodes */
+		boolean isLoopBreaker = node.getClass() == Phi.class || node.getClass() == Block.class;
+		if (isLoopBreaker) {
+			node.markVisited();
+		}
+
+		if (node.getBlock() != null) {
+			walkTopological(node.getBlock(), visitor);
+		}
+		for (Node pred : node.getPreds()) {
+			walkTopological(pred, visitor);
+		}
+
+		if (isLoopBreaker || !node.visited()) {
+			visitNode(node, visitor);
+		}
+		node.markVisited();
+	}
+
+	private static void visitNode(Node node, OptimizationVisitor visitor) {
+		node.accept(visitor);
 	}
 
 	private static void workList(LinkedList<Node> workList, OptimizationVisitor visitor) {
@@ -42,26 +72,19 @@ public final class FirmOptimizer {
 		}
 	}
 
-	private static void replaceNodesWithConstantTargets(Graph graph, HashMap<Node, Target> targetValuesMap) {
+	private static void replaceNodesWithTargets(Graph graph, HashMap<Node, Target> targetValuesMap) {
 		for (Entry<Node, Target> targetEntry : targetValuesMap.entrySet()) {
 			Node node = targetEntry.getKey();
 			Target target = targetEntry.getValue();
 
 			if (node.getPredCount() > 0) {
-				if (target.isConstant() && target.getTargetValue().isConstant()) {
-					Graph.exchange(node, graph.newConst(target.getTargetValue()));
+				if (target.isNode()) {
+					Graph.exchange(node, target.getNode());
+				} else {
+					if (target.isConstant() && target.getTargetValue().isConstant()) {
+						Graph.exchange(node, graph.newConst(target.getTargetValue()));
+					}
 				}
-			}
-		}
-	}
-
-	private static void replaceNodesWithArithmeticTargets(Graph graph, HashMap<Node, Node> targetValuesMap) {
-		for (Entry<Node, Node> targetEntry : targetValuesMap.entrySet()) {
-			Node node = targetEntry.getKey();
-			Node target = targetEntry.getValue();
-
-			if (node.getPredCount() > 0) {
-				Graph.exchange(node, target);
 			}
 		}
 	}
