@@ -13,6 +13,8 @@ import compiler.ast.declaration.Declaration;
 import compiler.ast.declaration.FieldDeclaration;
 import compiler.ast.declaration.MemberDeclaration;
 import compiler.ast.declaration.MethodDeclaration;
+import compiler.ast.declaration.MethodMemberDeclaration;
+import compiler.ast.declaration.NativeMethodDeclaration;
 import compiler.ast.declaration.ParameterDeclaration;
 import compiler.ast.declaration.StaticMethodDeclaration;
 import compiler.ast.statement.ArrayAccessExpression;
@@ -74,7 +76,7 @@ public class DeepCheckingVisitor implements AstVisitor {
 	private SymbolTable symbolTable = null;
 	private ClassDeclaration currentClassDeclaration;
 	private ClassScope currentClassScope = null;
-	private MethodDeclaration currentMethodDeclaration = null;
+	private MethodMemberDeclaration currentMethodDeclaration = null;
 
 	private boolean isStaticMethod;
 	private boolean returnOnAllPaths;
@@ -319,7 +321,7 @@ public class DeepCheckingVisitor implements AstVisitor {
 
 	private void checkCallMethod(MethodInvocationExpression methodInvocation, ClassScope classScope) {
 		Symbol methodIdentifier = methodInvocation.getMethodIdentifier();
-		MethodDeclaration methodDeclaration = classScope.getMethodDeclaration(methodIdentifier);
+		MethodMemberDeclaration methodDeclaration = classScope.getMethodDeclaration(methodIdentifier);
 		if (methodDeclaration == null) {
 			throwNoSuchMemberError(currentClassDeclaration.getIdentifier(), currentClassDeclaration.getPosition(),
 					methodIdentifier, methodInvocation.getPosition());
@@ -330,7 +332,8 @@ public class DeepCheckingVisitor implements AstVisitor {
 		}
 	}
 
-	private void checkParameterDeclarationAndSetReturnType(MethodInvocationExpression methodInvocationExpression, MethodDeclaration methodDeclaration) {
+	private void checkParameterDeclarationAndSetReturnType(MethodInvocationExpression methodInvocationExpression,
+			MethodMemberDeclaration methodDeclaration) {
 		// now check params
 		if (methodDeclaration.getParameters().size() != methodInvocationExpression.getParameters().length) {
 			exceptions
@@ -677,6 +680,11 @@ public class DeepCheckingVisitor implements AstVisitor {
 		isStaticMethod = false;
 	}
 
+	@Override
+	public void visit(NativeMethodDeclaration nativeMethodDeclaration) {
+		// nothing to do
+	}
+
 	private void visitMethodDeclaration(MethodDeclaration methodDeclaration) {
 		methodDeclaration.getType().accept(this);
 
@@ -708,4 +716,5 @@ public class DeepCheckingVisitor implements AstVisitor {
 		methodDeclaration.setNumberOfRequiredLocals(symbolTable.getRequiredLocalVariables());
 		symbolTable = null;
 	}
+
 }

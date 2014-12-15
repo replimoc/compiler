@@ -12,6 +12,7 @@ import compiler.ast.declaration.Declaration;
 import compiler.ast.declaration.FieldDeclaration;
 import compiler.ast.declaration.MemberDeclaration;
 import compiler.ast.declaration.MethodDeclaration;
+import compiler.ast.declaration.MethodMemberDeclaration;
 import compiler.ast.declaration.NativeMethodDeclaration;
 import compiler.ast.declaration.ParameterDeclaration;
 import compiler.ast.declaration.StaticMethodDeclaration;
@@ -115,7 +116,7 @@ public class FirmGenerationVisitor implements AstVisitor {
 			for (Declaration currentField : scope.getFieldDeclarations()) {
 				new Entity(firmClassType, currentField.getAssemblerName(), currentField.getType().getFirmType());
 			}
-			for (MethodDeclaration currentMethod : scope.getMethodDeclarations()) {
+			for (MethodMemberDeclaration currentMethod : scope.getMethodDeclarations()) {
 				List<ParameterDeclaration> parameterDeclarations = currentMethod.getValidParameters();
 
 				// types of parameters
@@ -825,6 +826,11 @@ public class FirmGenerationVisitor implements AstVisitor {
 		methodConstruction.finish();
 	}
 
+	@Override
+	public void visit(NativeMethodDeclaration nativeMethodDeclaration) {
+		// nothing to do
+	}
+
 	private void createThisParameter(Node args) {
 		Node projThis = methodConstruction.newProj(args, FirmUtils.getModeReference(), 0);
 		methodConstruction.setVariable(0, projThis);
@@ -868,4 +874,5 @@ public class FirmGenerationVisitor implements AstVisitor {
 	private Entity getEntity(Declaration declaration) {
 		return declaration.getClassDeclaration().getType().getFirmClassType().getMemberByName(declaration.getAssemblerName());
 	}
+
 }

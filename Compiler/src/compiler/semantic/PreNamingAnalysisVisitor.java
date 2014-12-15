@@ -12,6 +12,8 @@ import compiler.ast.declaration.ClassDeclaration;
 import compiler.ast.declaration.FieldDeclaration;
 import compiler.ast.declaration.MemberDeclaration;
 import compiler.ast.declaration.MethodDeclaration;
+import compiler.ast.declaration.MethodMemberDeclaration;
+import compiler.ast.declaration.NativeMethodDeclaration;
 import compiler.ast.declaration.ParameterDeclaration;
 import compiler.ast.declaration.StaticMethodDeclaration;
 import compiler.ast.statement.ArrayAccessExpression;
@@ -59,8 +61,8 @@ public class PreNamingAnalysisVisitor implements AstVisitor {
 
 	private final HashMap<Symbol, ClassScope> classScopes = new HashMap<>();
 
-	private HashMap<Symbol, FieldDeclaration> currentFieldsMap;
-	private HashMap<Symbol, MethodDeclaration> currentMethodsMap;
+	private HashMap<Symbol, FieldDeclaration> currentFieldsMap = null;
+	private HashMap<Symbol, MethodMemberDeclaration> currentMethodsMap = null;
 
 	private boolean mainFound = false;
 	private final List<SemanticAnalysisException> exceptions = new ArrayList<>();
@@ -113,6 +115,11 @@ public class PreNamingAnalysisVisitor implements AstVisitor {
 	}
 
 	@Override
+	public void visit(NativeMethodDeclaration nativeMethodDeclaration) {
+		checkAndInsertDeclaration(nativeMethodDeclaration);
+	}
+
+	@Override
 	public void visit(FieldDeclaration fieldDeclaration) {
 		checkAndInsertDeclaration(fieldDeclaration);
 	}
@@ -154,7 +161,7 @@ public class PreNamingAnalysisVisitor implements AstVisitor {
 		checkAndInsertDeclaration(staticMethodDeclaration);
 	}
 
-	private void checkAndInsertDeclaration(MethodDeclaration declaration) {
+	private void checkAndInsertDeclaration(MethodMemberDeclaration declaration) {
 		if (currentMethodsMap.containsKey(declaration.getIdentifier())) {
 			throwReDeclarationError(declaration.getIdentifier(), declaration.getPosition());
 			return;

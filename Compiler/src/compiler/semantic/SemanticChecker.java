@@ -1,5 +1,6 @@
 package compiler.semantic;
 
+import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
 
@@ -32,16 +33,14 @@ public final class SemanticChecker {
 		if (!classScopes.containsKey(systemSymbol)) {
 			// create PrintStream class
 			Symbol printStreamName = getRandomName(stringTable, classScopes, "PrintStream");
-			ClassDeclaration printStream = new ClassDeclaration(
-					printStreamName,
-					new NativeMethodDeclaration("print_int", getSymbol(stringTable, "println"),
-							new Type(BasicType.VOID),
-							new ParameterDeclaration(new Type(BasicType.INT), getSymbol(stringTable, "arg0"))));
+			ClassDeclaration printStream = new ClassDeclaration(printStreamName,
+					new NativeMethodDeclaration(null, "print_int", getSymbol(stringTable, "println"),
+							Arrays.asList(new ParameterDeclaration(new Type(BasicType.INT), getSymbol(stringTable, "arg0"))),
+							new Type(BasicType.VOID)));
 			printStream.accept(preAnalysisVisitor);
 
-			// Create system class
-			ClassDeclaration system = new ClassDeclaration(
-					systemSymbol,
+			// Create System class
+			ClassDeclaration system = new ClassDeclaration(systemSymbol,
 					new StaticFieldDeclaration(printStream.getType(), getSymbol(stringTable, "out")));
 
 			system.accept(preAnalysisVisitor);
