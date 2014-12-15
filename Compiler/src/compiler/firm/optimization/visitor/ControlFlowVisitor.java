@@ -1,7 +1,5 @@
 package compiler.firm.optimization.visitor;
 
-import java.util.HashMap;
-
 import compiler.firm.FirmUtils;
 
 import firm.BackEdges;
@@ -25,13 +23,6 @@ public class ControlFlowVisitor extends OptimizationVisitor {
 		};
 	}
 
-	private HashMap<Node, Node> nodeReplacements = new HashMap<>();
-
-	@Override
-	public HashMap<Node, Node> getNodeReplacements() {
-		return nodeReplacements;
-	}
-
 	/**
 	 * Control flow optimization
 	 * 
@@ -41,7 +32,7 @@ public class ControlFlowVisitor extends OptimizationVisitor {
 		Node left = compare.getLeft();
 		Node right = compare.getRight();
 
-		if (left instanceof Const && right instanceof Const) {
+		if (isConstant(left) && isConstant(right)) {
 			boolean result = false;
 			boolean success = true;
 
@@ -117,10 +108,9 @@ public class ControlFlowVisitor extends OptimizationVisitor {
 				if ((proj.getNum() == FirmUtils.TRUE) == useCase) {
 					Block block = (Block) condition.getBlock();
 					Node jump = block.getGraph().newJmp(block);
-					// targets.put(proj, jump);
-					nodeReplacements.put(proj, jump);
+					addReplacement(proj, jump);
 				} else {
-					nodeReplacements.put(proj, proj.getGraph().newBad(proj.getPred().getMode()));
+					addReplacement(proj, proj.getGraph().newBad(proj.getPred().getMode()));
 				}
 			}
 		}

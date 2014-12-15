@@ -1,10 +1,12 @@
 package compiler.firm.optimization.visitor;
 
+import java.util.HashMap;
+import java.util.Map.Entry;
+
 import compiler.firm.optimization.Target;
 
 import firm.BackEdges;
 import firm.BackEdges.Edge;
-import firm.Mode;
 import firm.TargetValue;
 import firm.nodes.Add;
 import firm.nodes.Address;
@@ -39,6 +41,62 @@ import firm.nodes.Shrs;
 import firm.nodes.Sub;
 
 public class ConstantFoldingVisitor extends OptimizationVisitor {
+
+	protected final HashMap<Node, Target> targets = new HashMap<>();
+	// Div and Mod nodes have a Proj successor which must be replaced instead of the Div and Mod nodes themselves
+	protected final HashMap<Node, Target> specialProjDivModTargets = new HashMap<>();
+
+	@Override
+	public HashMap<Node, Node> getNodeReplacements() {
+		HashMap<Node, Node> replacements = new HashMap<>();
+
+		for (Entry<Node, Target> targetEntry : targets.entrySet()) {
+			Node node = targetEntry.getKey();
+			Target target = targetEntry.getValue();
+			if (target.isNode()) {
+				replacements.put(node, target.getNode());
+			} else {
+				if (target.isFixpointReached() && target.getTargetValue().isConstant()) {
+					replacements.put(node, node.getGraph().newConst(target.getTargetValue()));
+				}
+			}
+		}
+		return replacements;
+	}
+
+	protected boolean fixpointReached(Target oldTarget, Node node) {
+		if (node instanceof Div || node instanceof Mod) {
+			if (oldTarget == null || !oldTarget.equals(specialProjDivModTargets.get(node))) {
+				return false;
+			}
+			return true;
+		} else {
+			if (oldTarget == null || !oldTarget.equals(getTarget(node))) {
+				return false;
+			}
+			return true;
+		}
+	}
+
+	protected void setTargetValue(Node node, TargetValue targetValue) {
+		setTargetValue(node, targetValue, false);
+	}
+
+	protected void setTargetValue(Node node, TargetValue targetValue, boolean remove) {
+		targets.put(node, new Target(targetValue, remove));
+	}
+
+	protected TargetValue getTargetValue(Node node) {
+		return targets.get(node) == null ? TargetValue.getUnknown() : targets.get(node).getTargetValue();
+	}
+
+	protected Target getTarget(Node node) {
+		return targets.get(node);
+	}
+
+	public HashMap<Node, Target> getTargetValues() {
+		return targets;
+	}
 
 	public static OptimizationVisitorFactory getFactory() {
 		return new OptimizationVisitorFactory() {
@@ -138,7 +196,7 @@ public class ConstantFoldingVisitor extends OptimizationVisitor {
 
 	@Override
 	public void visit(Const constant) {
-		if (constant.getMode().equals(Mode.getIs()) || constant.getMode().equals(Mode.getBu()) || constant.getMode().equals(Mode.getLu())) {
+		if (isConstant(constant)) {
 			setTargetValue(constant, constant.getTarval(), true);
 		}
 	}

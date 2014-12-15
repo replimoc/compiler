@@ -4,6 +4,7 @@ import java.util.HashMap;
 import java.util.LinkedList;
 import java.util.Map.Entry;
 
+import compiler.firm.optimization.visitor.ArithmeticVisitor;
 import compiler.firm.optimization.visitor.ControlFlowVisitor;
 import compiler.firm.optimization.visitor.OptimizationVisitor;
 import compiler.firm.optimization.visitor.OptimizationVisitorFactory;
@@ -28,7 +29,7 @@ public final class FirmOptimizer {
 		do {
 			finished = true;
 			// finished &= optimize(ConstantFoldingVisitor.getFactory());
-			// finished &= optimize(ArithmeticVisitor.getFactory());
+			finished &= optimize(ArithmeticVisitor.getFactory());
 			finished &= optimize(ControlFlowVisitor.getFactory());
 		} while (!finished);
 	}
@@ -93,10 +94,10 @@ public final class FirmOptimizer {
 	}
 
 	private static void visitNode(Node node, LinkedList<Node> workList, OptimizationVisitor visitor) {
-		HashMap<Node, Target> targetValues = visitor.getTargetValues();
-		Target oldTarget = targetValues.get(node);
+		HashMap<Node, Node> targetValues = visitor.getNodeReplacements();
+		Node oldTarget = targetValues.get(node);
 		node.accept(visitor);
-		Target newTarget = targetValues.get(node);
+		Node newTarget = targetValues.get(node);
 
 		if (oldTarget == null || !oldTarget.equals(newTarget)) {
 			for (Edge e : BackEdges.getOuts(node)) {
