@@ -14,6 +14,7 @@ import firm.Graph;
 import firm.GraphBase;
 import firm.Program;
 import firm.bindings.binding_irgopt;
+import firm.bindings.binding_irgraph;
 import firm.nodes.Block;
 import firm.nodes.Node;
 import firm.nodes.Phi;
@@ -40,8 +41,8 @@ public final class FirmOptimizer {
 			OptimizationVisitor visitor = visitorFactory.create();
 
 			BackEdges.enable(graph);
-			// walkTopological(graph, workList, visitor);
-			graph.walkTopological(visitor);
+			walkTopological(graph, workList, visitor);
+			// graph.walkTopological(visitor);
 			workList(workList, visitor);
 			BackEdges.disable(graph);
 
@@ -58,6 +59,7 @@ public final class FirmOptimizer {
 	}
 
 	private static void walkTopological(Graph graph, LinkedList<Node> workList, OptimizationVisitor visitor) {
+		binding_irgraph.inc_irg_visited(graph.ptr);
 		walkTopological(graph.getEnd(), workList, visitor);
 	}
 
