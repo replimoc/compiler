@@ -18,9 +18,9 @@ public class MovlOperation extends AssemblerOperation {
 	}
 
 	public MovlOperation(Integer sourceConstant, Register source, Integer destinationConstant, Register destination) {
-		this.sourceConstant = sourceConstant == null ? null : "$0x" + String.format("%x", sourceConstant);
+		this.sourceConstant = sourceConstant == null ? null : String.format("%x", sourceConstant);
 		this.source = source;
-		this.destinationConstant = destinationConstant == null ? null : "$0x" + String.format("%x", destinationConstant);
+		this.destinationConstant = destinationConstant == null ? null : String.format("%x", destinationConstant);
 		this.destination = destination;
 	}
 
@@ -30,7 +30,6 @@ public class MovlOperation extends AssemblerOperation {
 
 	@Override
 	public String toString() {
-
 		String source = sourceConstant == null ? "" : sourceConstant;
 		if (this.source != null) {
 			if (sourceConstant == null) {
@@ -38,7 +37,10 @@ public class MovlOperation extends AssemblerOperation {
 			} else {
 				source += "(" + this.source.toString() + ")";
 			}
+		} else {
+			source = "$0x" + source;
 		}
+
 		String dest = destinationConstant == null ? "" : destinationConstant;
 		if (this.destination != null) {
 			if (destinationConstant == null) {
@@ -46,6 +48,8 @@ public class MovlOperation extends AssemblerOperation {
 			} else {
 				dest += "(" + this.destination.toString() + ")";
 			}
+		} else {
+			dest = "$0x" + dest;
 		}
 
 		return String.format("\tmovl %s, %s\n", source, dest);
