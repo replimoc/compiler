@@ -3,7 +3,9 @@ package compiler.firm.backend;
 import java.util.LinkedList;
 import java.util.List;
 
+import compiler.firm.backend.operations.AddOperation;
 import compiler.firm.backend.operations.AssemblerOperation;
+
 import firm.nodes.Add;
 import firm.nodes.Address;
 import firm.nodes.Align;
@@ -69,10 +71,14 @@ public class X8664AssemblerGenerationVisitor implements NodeVisitor {
 		return assembler;
 	}
 
+	private void operation(AssemblerOperation assemblerOption) {
+		assembler.add(assemblerOption);
+	}
+
 	@Override
 	public void visit(Add node) {
-		// TODO Auto-generated method stub
-
+		// TODO: Sample for principal usage, please correct registers!
+		operation(new AddOperation(Register.RAX, Register.RAX));
 	}
 
 	@Override

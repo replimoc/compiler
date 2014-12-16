@@ -10,6 +10,7 @@ import java.util.List;
 import java.util.Map.Entry;
 
 import compiler.firm.backend.operations.AssemblerOperation;
+
 import firm.Graph;
 import firm.Program;
 
@@ -37,5 +38,6 @@ public final class AssemblerGenerator {
 				writer.write(operation.toString());
 			}
 		}
+		writer.close();
 	}
 }
