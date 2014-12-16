@@ -46,10 +46,18 @@ public class MovlOperation extends AssemblerOperation {
 			if (constant == null) {
 				result = register.toString();
 			} else {
-				result = String.format("%x(%s)", constant, register.toString());
+				if (constant < 0) {
+					result = String.format("-%x(%s)", -constant, register.toString());
+				} else {
+					result = String.format("%x(%s)", constant, register.toString());
+				}
 			}
 		} else {
-			result = String.format("$0x%x", constant);
+			if (constant < 0) {
+				result = String.format("$0x-0x%x", constant);
+			} else {
+				result = String.format("$0x%x", constant);
+			}
 		}
 		return result;
 	}

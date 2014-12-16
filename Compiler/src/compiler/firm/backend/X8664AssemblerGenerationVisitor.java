@@ -10,6 +10,7 @@ import compiler.firm.backend.operations.AndqOperation;
 import compiler.firm.backend.operations.AssemblerOperation;
 import compiler.firm.backend.operations.CallOperation;
 import compiler.firm.backend.operations.Comment;
+import compiler.firm.backend.operations.Debug;
 import compiler.firm.backend.operations.LabelOperation;
 import compiler.firm.backend.operations.MovlOperation;
 import compiler.firm.backend.operations.MovqOperation;
@@ -107,8 +108,7 @@ public class X8664AssemblerGenerationVisitor implements NodeVisitor {
 
 	private void storeValue(Node node, int value) {
 		nodeStackOffsets.put(node, currentStackOffset);
-		currentStackOffset += 8; // 8 bytes per node
-		// TODO: findout why assembler code isn't compiling: don't delete the next line!!!
+		currentStackOffset -= 8; // 8 bytes per node
 		operation(new MovlOperation(value, nodeStackOffsets.get(node), Register.RBP));
 	}
 
@@ -224,8 +224,6 @@ public class X8664AssemblerGenerationVisitor implements NodeVisitor {
 					}
 				}
 				operation(new CallOperation(methodName));
-
-				currentStackOffset = 0;
 
 				operation(new Comment("restore old stack pointer"));
 				operation(new MovqOperation(Register.RSP, Register.RSP, 8));
@@ -388,7 +386,6 @@ public class X8664AssemblerGenerationVisitor implements NodeVisitor {
 	@Override
 	public void visit(Or node) {
 		// TODO Auto-generated method stub
-
 	}
 
 	@Override
@@ -417,6 +414,10 @@ public class X8664AssemblerGenerationVisitor implements NodeVisitor {
 
 	@Override
 	public void visit(Return node) {
+		currentStackOffset = 0;
+		operation(new Comment("restore stack size"));
+		operation(new Debug("movq %rbp, %rsp"));
+		operation(new Debug("popq %rbp"));
 		operation(new RetOperation());
 	}
 
@@ -452,6 +453,12 @@ public class X8664AssemblerGenerationVisitor implements NodeVisitor {
 
 	@Override
 	public void visit(Start node) {
+		operation(new Comment("allocate stack size"));
+		operation(new Debug("pushq %rbp"));
+		operation(new Debug("movq %rsp, %rbp"));
+		// TODO: determine somehow how big the stack should be
+		final int stackSize = 16;
+		operation(new Debug("subq $" + stackSize + ", %rsp"));
 	}
 
 	@Override
