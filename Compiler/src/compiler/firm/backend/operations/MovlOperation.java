@@ -7,7 +7,7 @@ public class MovlOperation extends ConstantRegisterOperation {
 	private final Register source;
 
 	public MovlOperation(int constant, Register destination) {
-		this(constant, destination, null);
+		this(constant, null, destination);
 	}
 
 	public MovlOperation(int constant, Register source, Register destination) {
