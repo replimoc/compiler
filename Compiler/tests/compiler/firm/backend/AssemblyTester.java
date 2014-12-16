@@ -6,9 +6,12 @@ import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.List;
 
+import org.junit.Ignore;
+
 import compiler.utils.Pair;
 import compiler.utils.TestUtils;
 
+@Ignore
 public class AssemblyTester {
 
 	public static void main(String[] args) throws Exception {
