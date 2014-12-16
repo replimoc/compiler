@@ -14,7 +14,7 @@ public class MovlOperation extends AssemblerOperation {
 	}
 
 	public MovlOperation(Register source, Register destination) {
-		this(0, source, null, destination);
+		this(null, source, null, destination);
 	}
 
 	public MovlOperation(int constant, Register source, Register destination) {
