@@ -4,21 +4,21 @@ import compiler.firm.backend.Register;
 
 public class MovlOperation extends AssemblerOperation {
 
-	private final int sourceConstant;
+	private final Integer sourceConstant;
 	private final Register sourceRegister;
-	private final int destinationConstant;
+	private final Integer destinationConstant;
 	private final Register destinationRegister;
 
 	public MovlOperation(int constant, Register destination) {
-		this(constant, null, 0, destination);
+		this(constant, null, null, destination);
 	}
 
 	public MovlOperation(Register source, Register destination) {
-		this(0, source, 0, destination);
+		this(0, source, null, destination);
 	}
 
 	public MovlOperation(int constant, Register source, Register destination) {
-		this(constant, source, 0, destination);
+		this(constant, source, null, destination);
 	}
 
 	public MovlOperation(Integer sourceConstant, Integer destinationConstant, Register destinationReg) {
@@ -40,10 +40,10 @@ public class MovlOperation extends AssemblerOperation {
 		return String.format("\tmovl %s, %s\n", source, destination);
 	}
 
-	private String buildName(int constant, Register register) {
+	private String buildName(Integer constant, Register register) {
 		String result = "";
 		if (register != null) {
-			if (constant == 0) {
+			if (constant == null) {
 				result = register.toString();
 			} else {
 				result = String.format("%x(%s)", constant, register.toString());
