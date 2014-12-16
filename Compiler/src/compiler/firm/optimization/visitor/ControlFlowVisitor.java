@@ -13,6 +13,11 @@ import firm.nodes.Jmp;
 import firm.nodes.Node;
 import firm.nodes.Proj;
 
+/**
+ * Control flow optimization
+ * 
+ * @author Valentin Zickner
+ */
 public class ControlFlowVisitor extends OptimizationVisitor {
 
 	public static OptimizationVisitorFactory getFactory() {
@@ -24,11 +29,6 @@ public class ControlFlowVisitor extends OptimizationVisitor {
 		};
 	}
 
-	/**
-	 * Control flow optimization
-	 * 
-	 * @author Valentin Zickner
-	 */
 	private TargetValue optimizeCompare(Cmp compare) {
 		Node left = compare.getLeft();
 		Node right = compare.getRight();
@@ -37,8 +37,8 @@ public class ControlFlowVisitor extends OptimizationVisitor {
 			boolean result = false;
 			boolean success = true;
 
-			int leftInt = getInteger(((Const) left).getTarval());
-			int rightInt = getInteger(((Const) right).getTarval());
+			int leftInt = ((Const) left).getTarval().asInt();
+			int rightInt = ((Const) right).getTarval().asInt();
 			switch (compare.getRelation()) {
 			case Equal:
 				result = leftInt == rightInt;
@@ -73,21 +73,6 @@ public class ControlFlowVisitor extends OptimizationVisitor {
 
 	}
 
-	private int getInteger(TargetValue value) {
-		String result = new StringBuilder(value.getBitpattern()).reverse().toString();
-		String negative = result.substring(1);
-		if (result.charAt(0) == '1') {
-			return (int) -(Math.pow(2, negative.length()) - Math.abs(Integer.parseInt(negative, 2)));
-		} else {
-			return Integer.parseInt(result, 2);
-		}
-	}
-
-	/**
-	 * Control flow optimization
-	 * 
-	 * @author Valentin Zickner
-	 */
 	@Override
 	public void visit(Cond condition) {
 		boolean eliminate = true;
