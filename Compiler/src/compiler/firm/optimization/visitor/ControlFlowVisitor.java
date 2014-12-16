@@ -1,5 +1,7 @@
 package compiler.firm.optimization.visitor;
 
+import java.util.HashMap;
+
 import compiler.firm.FirmUtils;
 
 import firm.BackEdges;
@@ -18,15 +20,20 @@ import firm.nodes.Proj;
  * 
  * @author Valentin Zickner
  */
-public class ControlFlowVisitor extends OptimizationVisitor {
+public class ControlFlowVisitor extends OptimizationVisitor<Node> {
 
 	public static OptimizationVisitorFactory getFactory() {
 		return new OptimizationVisitorFactory() {
 			@Override
-			public OptimizationVisitor create() {
+			public OptimizationVisitor<Node> create() {
 				return new ControlFlowVisitor();
 			}
 		};
+	}
+
+	@Override
+	public HashMap<Node, Node> getLatticeValues() {
+		return getNodeReplacements();
 	}
 
 	private TargetValue optimizeCompare(Cmp compare) {
@@ -108,4 +115,5 @@ public class ControlFlowVisitor extends OptimizationVisitor {
 			addReplacement(block, block.getPred(0).getBlock());
 		}
 	}
+
 }
