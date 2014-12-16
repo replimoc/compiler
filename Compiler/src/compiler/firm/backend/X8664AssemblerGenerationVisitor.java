@@ -9,6 +9,7 @@ import compiler.firm.backend.operations.AddOperation;
 import compiler.firm.backend.operations.AndqOperation;
 import compiler.firm.backend.operations.AssemblerOperation;
 import compiler.firm.backend.operations.CallOperation;
+import compiler.firm.backend.operations.GetNodeValue;
 import compiler.firm.backend.operations.LabelOperation;
 import compiler.firm.backend.operations.MovlOperation;
 import compiler.firm.backend.operations.MovqOperation;
@@ -79,6 +80,7 @@ public class X8664AssemblerGenerationVisitor implements NodeVisitor {
 
 	private HashMap<String, CallingConvention> callingConventions;
 	private final List<AssemblerOperation> assembler = new LinkedList<AssemblerOperation>();
+	private final HashMap<Node, Integer> nodeStackOffsets = new HashMap<>();
 
 	public X8664AssemblerGenerationVisitor(HashMap<String, CallingConvention> callingConventions) {
 		this.callingConventions = callingConventions;
@@ -94,8 +96,14 @@ public class X8664AssemblerGenerationVisitor implements NodeVisitor {
 
 	@Override
 	public void visit(Add node) {
-		// TODO: Sample for principal usage, please correct registers!
-		operation(new AddOperation(Register.RAX, Register.RAX));
+		// TODO: Sample for basic usage
+
+		// move left node to RAX
+		operation(new GetNodeValue(nodeStackOffsets.get(node.getLeft()), Register.RAX));
+		// move right node to RBX
+		operation(new GetNodeValue(nodeStackOffsets.get(node.getRight()), Register.RBX));
+		// add RAX to RBX
+		operation(new AddOperation(Register.RAX, Register.RBX));
 	}
 
 	@Override

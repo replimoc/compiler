@@ -16,7 +16,7 @@ public class AssemblyTester {
 		Path assemblyFilePath = Paths.get("assembly-backend.s");
 
 		Pair<Integer, List<String>> res = TestUtils.startCompilerApp("--no-opt", "--assembler", assemblyFilePath.toAbsolutePath().toString(),
-				"--compile-firm",
+				// "--compile-firm",
 				sourceFilePath.toAbsolutePath().toString());
 
 		for (String line : res.getSecond()) {
