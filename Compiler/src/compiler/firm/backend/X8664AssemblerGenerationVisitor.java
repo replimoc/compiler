@@ -80,6 +80,7 @@ public class X8664AssemblerGenerationVisitor implements NodeVisitor {
 	private HashMap<String, CallingConvention> callingConventions;
 	private final List<AssemblerOperation> assembler = new LinkedList<AssemblerOperation>();
 	private final HashMap<Node, Integer> nodeStackOffsets = new HashMap<>();
+	private int currentStackOffset;
 
 	public X8664AssemblerGenerationVisitor(HashMap<String, CallingConvention> callingConventions) {
 		this.callingConventions = callingConventions;
@@ -94,7 +95,23 @@ public class X8664AssemblerGenerationVisitor implements NodeVisitor {
 	}
 
 	private void getValue(Node node, Register register) {
-		operation(new MovlOperation(nodeStackOffsets.get(node), Register.RBP, register));
+		// if variable was assigned, than simply load if from stack
+		if (variableAssigned(node)) {
+			operation(new MovlOperation(nodeStackOffsets.get(node), Register.RBP, register));
+			// else we must collect all operations and save the result in register
+		} else {
+
+		}
+	}
+
+	private void storeValue(Node node, int value) {
+		nodeStackOffsets.put(node, currentStackOffset);
+		currentStackOffset += 8; // 8 bytes per node
+		operation(new MovlOperation(value, Register.RBP, nodeStackOffsets.get(node)));
+	}
+
+	private boolean variableAssigned(Node node) {
+		return nodeStackOffsets.containsKey(node);
 	}
 
 	@Override
@@ -200,7 +217,10 @@ public class X8664AssemblerGenerationVisitor implements NodeVisitor {
 					}
 				}
 				operation(new CallOperation(methodName));
-				operation(new MovqOperation(Register.RSP, Register.RSP, 8));
+				// TODO: count nodes and allocate for each node stack
+				final int numberNodes = 42;
+				currentStackOffset = 0;
+				operation(new MovqOperation(Register.RSP, Register.RSP, 8 + numberNodes * 8));
 				break;
 			}
 		}
@@ -227,8 +247,7 @@ public class X8664AssemblerGenerationVisitor implements NodeVisitor {
 
 	@Override
 	public void visit(Const node) {
-		// TODO Auto-generated method stub
-
+		storeValue(node, node.getTarval().asInt());
 	}
 
 	@Override

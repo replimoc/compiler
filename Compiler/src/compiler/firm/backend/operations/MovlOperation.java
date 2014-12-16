@@ -15,6 +15,11 @@ public class MovlOperation extends ConstantRegisterOperation {
 		this.source = source;
 	}
 
+	public MovlOperation(int constant, Register rbp, int offset) {
+		super(constant, rbp);
+		this.source = null;
+	}
+
 	@Override
 	public String toString() {
 		String source = "";
