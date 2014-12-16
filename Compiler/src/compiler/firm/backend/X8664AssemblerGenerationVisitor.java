@@ -93,16 +93,18 @@ public class X8664AssemblerGenerationVisitor implements NodeVisitor {
 		assembler.add(assemblerOption);
 	}
 
-	private void getValue(Node node, Register destRegister) {
-		operation(new MovlOperation(nodeStackOffsets.get(node), Register.RBP, destRegister));
+	private void getValue(Node node, Register register) {
+		operation(new MovlOperation(nodeStackOffsets.get(node), Register.RBP, register));
 	}
 
 	@Override
 	public void visit(Add node) {
+		// TODO: Sample for basic usage
+
 		// move left node to RAX
 		getValue(node.getLeft(), Register.RAX);
 		// move right node to RBX
-		getValue(node.getLeft(), Register.RBX);
+		getValue(node.getRight(), Register.RBX);
 		// add RAX to RBX
 		operation(new AddOperation(Register.RAX, Register.RBX));
 	}
