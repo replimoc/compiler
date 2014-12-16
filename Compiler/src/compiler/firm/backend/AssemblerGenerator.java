@@ -9,8 +9,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map.Entry;
 
-import compiler.backend.operations.AssemblerOperation;
-
+import compiler.firm.backend.operations.AssemblerOperation;
 import firm.Graph;
 import firm.Program;
 

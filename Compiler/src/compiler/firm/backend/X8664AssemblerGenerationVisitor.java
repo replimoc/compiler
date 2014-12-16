@@ -3,8 +3,7 @@ package compiler.firm.backend;
 import java.util.LinkedList;
 import java.util.List;
 
-import compiler.backend.operations.AssemblerOperation;
-
+import compiler.firm.backend.operations.AssemblerOperation;
 import firm.nodes.Add;
 import firm.nodes.Address;
 import firm.nodes.Align;

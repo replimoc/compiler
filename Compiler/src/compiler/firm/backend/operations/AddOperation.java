@@ -1,4 +1,4 @@
-package compiler.backend.operations;
+package compiler.firm.backend.operations;
 
 import compiler.firm.backend.Register;
 

@@ -1,4 +1,4 @@
-package compiler.backend.operations;
+package compiler.firm.backend.operations;
 
 public abstract class AssemblerOperation {
 
