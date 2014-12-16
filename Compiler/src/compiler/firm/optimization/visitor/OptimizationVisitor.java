@@ -62,7 +62,7 @@ import firm.nodes.Sync;
 import firm.nodes.Tuple;
 import firm.nodes.Unknown;
 
-public class OptimizationVisitor implements NodeVisitor {
+public abstract class OptimizationVisitor<T extends Object> implements NodeVisitor {
 
 	private HashMap<Node, Node> nodeReplacements = new HashMap<>();
 
@@ -73,6 +73,8 @@ public class OptimizationVisitor implements NodeVisitor {
 	public HashMap<Node, Node> getNodeReplacements() {
 		return nodeReplacements;
 	}
+
+	public abstract HashMap<Node, T> getLatticeValues();
 
 	protected Node getFirstSuccessor(Node node) {
 		for (Edge edge : BackEdges.getOuts(node)) {

@@ -1,5 +1,7 @@
 package compiler.firm.optimization.visitor;
 
+import java.util.HashMap;
+
 import firm.TargetValue;
 import firm.nodes.Add;
 import firm.nodes.Const;
@@ -8,7 +10,7 @@ import firm.nodes.Mul;
 import firm.nodes.Node;
 import firm.nodes.Sub;
 
-public class ArithmeticVisitor extends OptimizationVisitor {
+public class ArithmeticVisitor extends OptimizationVisitor<Node> {
 
 	public static OptimizationVisitorFactory getFactory() {
 		return new OptimizationVisitorFactory() {
@@ -19,11 +21,16 @@ public class ArithmeticVisitor extends OptimizationVisitor {
 		};
 	}
 
+	@Override
+	public HashMap<Node, Node> getLatticeValues() {
+		return getNodeReplacements();
+	}
+
 	private TargetValue getTargetValue(Node node) {
 		if (node instanceof Const) {
 			return ((Const) node).getTarval();
 		}
-		return null;
+		return TargetValue.getUnknown();
 	}
 
 	@Override
@@ -53,21 +60,40 @@ public class ArithmeticVisitor extends OptimizationVisitor {
 	public void visit(Mul multiplication) {
 		Node left = multiplication.getLeft();
 		Node right = multiplication.getRight();
+		TargetValue leftTarget = getTargetValue(left);
+		TargetValue rightTarget = getTargetValue(right);
 
 		// reduce x = y * 1 if possible
-		if (isConstant(left) && getTargetValue(left).isOne()) {
+		if (isConstant(left) && leftTarget.isOne()) {
 			addReplacement(multiplication, multiplication.getRight());
-		} else if (isConstant(right) && getTargetValue(right).isOne()) {
+		} else if (isConstant(right) && rightTarget.isOne()) {
 			addReplacement(multiplication, multiplication.getLeft());
-		}
+		} /*
+		 * else if (isConstant(left) && (leftTarget.asInt() & (leftTarget.asInt() - 1)) == 0 && !leftTarget.isNull()) { // left side is divisible by
+		 * power of 2 Node constant = multiplication.getGraph().newConst(new TargetValue(Integer.numberOfTrailingZeros(leftTarget.asInt()),
+		 * Mode.getIu())); Node shl = multiplication.getGraph().newShl(multiplication.getBlock(), multiplication.getRight(), constant,
+		 * multiplication.getMode()); addReplacement(multiplication, shl); } else if (rightTarget.isConstant() && (rightTarget.asInt() &
+		 * (rightTarget.asInt() - 1)) == 0 && !rightTarget.isNull()) { // right side is divisible by power of 2 Node constant =
+		 * multiplication.getGraph().newConst(new TargetValue(Integer.numberOfTrailingZeros(rightTarget.asInt()), Mode.getIu())); Node shl =
+		 * multiplication.getGraph().newShl(multiplication.getBlock(), multiplication.getLeft(), constant, multiplication.getMode());
+		 * 
+		 * addReplacement(multiplication, shl); }
+		 */
 	}
 
 	@Override
-	public void visit(Sub sub) {
-		Node right = sub.getRight();
+	public void visit(Sub subtraction) {
+		Node right = subtraction.getRight();
+		Node left = subtraction.getLeft();
+
 		// reduce x = y - 0 if possible
 		if (isConstant(right) && getTargetValue(right).isNull()) {
-			addReplacement(sub, sub.getLeft());
+			addReplacement(subtraction, subtraction.getLeft());
+		} else if (getTargetValue(left).isNull()) {
+			// replace x = 0 - y with x = -y
+			Node minus = subtraction.getGraph().newMinus(subtraction.getBlock(), subtraction.getRight(), subtraction.getRight().getMode());
+			addReplacement(subtraction, minus);
 		}
 	}
+
 }

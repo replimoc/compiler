@@ -5,6 +5,7 @@ import java.util.LinkedList;
 import java.util.Map.Entry;
 
 import compiler.firm.optimization.visitor.ArithmeticVisitor;
+import compiler.firm.optimization.visitor.ConstantFoldingVisitor;
 import compiler.firm.optimization.visitor.ControlFlowVisitor;
 import compiler.firm.optimization.visitor.OptimizationVisitor;
 import compiler.firm.optimization.visitor.OptimizationVisitorFactory;
@@ -28,22 +29,21 @@ public final class FirmOptimizer {
 		boolean finished = true;
 		do {
 			finished = true;
-			// finished &= optimize(ConstantFoldingVisitor.getFactory());
+			finished &= optimize(ConstantFoldingVisitor.getFactory());
 			finished &= optimize(ArithmeticVisitor.getFactory());
 			finished &= optimize(ControlFlowVisitor.getFactory());
 		} while (!finished);
 	}
 
-	public static boolean optimize(OptimizationVisitorFactory visitorFactory) {
+	public static <T> boolean optimize(OptimizationVisitorFactory<T> visitorFactory) {
 		boolean finished = true;
 		for (Graph graph : Program.getGraphs()) {
 			LinkedList<Node> workList = new LinkedList<>();
 
-			OptimizationVisitor visitor = visitorFactory.create();
+			OptimizationVisitor<T> visitor = visitorFactory.create();
 
 			BackEdges.enable(graph);
 			walkTopological(graph, workList, visitor);
-			// graph.walkTopological(visitor);
 			workList(workList, visitor);
 			BackEdges.disable(graph);
 
@@ -59,7 +59,7 @@ public final class FirmOptimizer {
 		return finished;
 	}
 
-	private static void walkTopological(Graph graph, LinkedList<Node> workList, OptimizationVisitor visitor) {
+	public static <T> void walkTopological(Graph graph, LinkedList<Node> workList, OptimizationVisitor<T> visitor) {
 		binding_irgraph.inc_irg_visited(graph.ptr);
 		walkTopological(graph.getEnd(), workList, visitor);
 	}
@@ -70,7 +70,7 @@ public final class FirmOptimizer {
 	 * @param node
 	 * @param visitor
 	 */
-	private static void walkTopological(Node node, LinkedList<Node> workList, OptimizationVisitor visitor) {
+	private static <T> void walkTopological(Node node, LinkedList<Node> workList, OptimizationVisitor<T> visitor) {
 		if (node.visited())
 			return;
 
@@ -93,11 +93,11 @@ public final class FirmOptimizer {
 		node.markVisited();
 	}
 
-	private static void visitNode(Node node, LinkedList<Node> workList, OptimizationVisitor visitor) {
-		HashMap<Node, Node> targetValues = visitor.getNodeReplacements();
-		Node oldTarget = targetValues.get(node);
+	private static <T> void visitNode(Node node, LinkedList<Node> workList, OptimizationVisitor<T> visitor) {
+		HashMap<Node, T> targetValues = visitor.getLatticeValues();
+		T oldTarget = targetValues.get(node);
 		node.accept(visitor);
-		Node newTarget = targetValues.get(node);
+		T newTarget = targetValues.get(node);
 
 		if (oldTarget == null || !oldTarget.equals(newTarget)) {
 			for (Edge e : BackEdges.getOuts(node)) {
@@ -106,7 +106,7 @@ public final class FirmOptimizer {
 		}
 	}
 
-	private static void workList(LinkedList<Node> workList, OptimizationVisitor visitor) {
+	public static <T> void workList(LinkedList<Node> workList, OptimizationVisitor<T> visitor) {
 		while (!workList.isEmpty()) {
 			Node node = workList.pop();
 			node.accept(visitor);
