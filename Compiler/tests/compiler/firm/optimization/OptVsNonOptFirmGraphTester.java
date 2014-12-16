@@ -30,6 +30,10 @@ public class OptVsNonOptFirmGraphTester {
 		Pair<Integer, List<String>> resOptExes = TestUtils.startCompilerApp("-s", "optimized", "--graph-firm", "--compile-firm",
 				sourceFilePath.toAbsolutePath().toString());
 
+		for (String line : resOptExes.getSecond()) {
+			System.out.println(line);
+		}
+
 		assertEquals("compiling failed for " + sourceFilePath, 0, resOptExes.getFirst().intValue());
 
 		// non optimized binary
@@ -37,6 +41,10 @@ public class OptVsNonOptFirmGraphTester {
 		nonOptExe.deleteOnExit();
 		Pair<Integer, List<String>> resNonOptExe = TestUtils.startCompilerApp("-s", "non-optimized", "--graph-firm", "--no-opt", "--compile-firm",
 				sourceFilePath.toAbsolutePath().toString());
+
+		for (String line : resNonOptExe.getSecond()) {
+			System.out.println(line);
+		}
 
 		assertEquals("compiling failed for " + sourceFilePath, 0, resNonOptExe.getFirst().intValue());
 	}
