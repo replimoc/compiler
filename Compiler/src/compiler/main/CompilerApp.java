@@ -1,5 +1,6 @@
 package compiler.main;
 
+import java.io.File;
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
@@ -16,6 +17,8 @@ import org.apache.commons.cli.ParseException;
 import compiler.StringTable;
 import compiler.ast.AstNode;
 import compiler.firm.FirmUtils;
+import compiler.firm.FirmUtils.AssemblerCreator;
+import compiler.firm.backend.AssemblerGenerator;
 import compiler.firm.generation.FirmGraphGenerator;
 import compiler.firm.optimization.FirmOptimizer;
 import compiler.lexer.Lexer;
@@ -69,8 +72,7 @@ public final class CompilerApp {
 		options.addOption(null, GRAPH_FIRM, false, "dump a firm graph to the current directory.");
 		options.addOption("s", null, true, "Used to define the suffix of the dumped firm graph. (Only to be used with --"
 				+ GRAPH_FIRM + ")");
-		options.addOption(null, OUTPUT_ASSEMBLER, false, "outputs the generated assembler into file assembler.s. (Only to be used with --"
-				+ COMPILE_FIRM + ")");
+		options.addOption(null, OUTPUT_ASSEMBLER, true, "outputs the generated assembler into a specified file.");
 		options.addOption(null, COMPILE_FIRM, false, "use the firm backend to produce amd64 code.");
 		options.addOption("o", null, true, "Used to define the filename/path of the generated executable. (Only to be used with --"
 				+ COMPILE_FIRM + ")");
@@ -145,27 +147,38 @@ public final class CompilerApp {
 					}
 
 					int result = 0;
+
+					String outputFile;
+					if (cmd.hasOption('o')) {
+						outputFile = cmd.getOptionValue('o');
+					} else {
+						outputFile = Utils.getBinaryFileName("a");
+					}
+
+					String assemblerName = null;
+					if (cmd.hasOption(OUTPUT_ASSEMBLER)) {
+						assemblerName = cmd.getOptionValue(OUTPUT_ASSEMBLER);
+					}
+
+					FirmUtils.AssemblerCreator assemblerCreator = null;
 					if (cmd.hasOption(COMPILE_FIRM)) {
-						String outputFile;
-						if (cmd.hasOption('o')) {
-							outputFile = cmd.getOptionValue('o');
-						} else {
-							outputFile = Utils.getBinaryFileName("a");
-						}
+						assemblerCreator = new AssemblerCreator() {
 
-						result = FirmUtils.createBinary(outputFile, cmd.hasOption(OUTPUT_ASSEMBLER));
+							@Override
+							public void create(File file) throws IOException {
+								FirmUtils.createAssembler(file.getAbsolutePath());
+							}
+						};
+					} else { // Default case: use our own assembler
+						assemblerCreator = new AssemblerCreator() {
+
+							@Override
+							public void create(File file) throws IOException {
+								AssemblerGenerator.createAssemblerX8664(file.toPath());
+							}
+						};
 					}
-
-					if (!cmd.hasOption(COMPILE_FIRM) && cmd.hasOption(OUTPUT_ASSEMBLER)) {
-						String outputFile;
-						if (cmd.hasOption('o')) {
-							outputFile = cmd.getOptionValue('o');
-						} else {
-							outputFile = Utils.getBinaryFileName("assembler");
-						}
-
-						FirmUtils.createAssembler(outputFile);
-					}
+					result = FirmUtils.createBinary(outputFile, assemblerName, assemblerCreator);
 
 					FirmUtils.finishFirm();
 

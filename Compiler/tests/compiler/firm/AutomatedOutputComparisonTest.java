@@ -58,7 +58,7 @@ public class AutomatedOutputComparisonTest implements TestFileVisitor.FileTester
 		File binarFile = File.createTempFile("executable", Utils.getBinaryFileName(""));
 		binarFile.deleteOnExit();
 
-		Pair<Integer, List<String>> compilingState = TestUtils.startCompilerApp("-o", binarFile.toString(), "--compile-firm",
+		Pair<Integer, List<String>> compilingState = TestUtils.startCompilerApp("-o", binarFile.toString(),
 				sourceFile.toAbsolutePath().toString());
 		for (String line : compilingState.getSecond()) {
 			System.out.println(line);

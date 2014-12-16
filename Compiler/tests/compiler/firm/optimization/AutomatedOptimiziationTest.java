@@ -31,7 +31,7 @@ public class AutomatedOptimiziationTest implements FileTester {
 		// optimized binary
 		File optExe = File.createTempFile("assembler", ".s");
 		optExe.deleteOnExit();
-		Pair<Integer, List<String>> resOptExes = TestUtils.startCompilerApp("-o", optExe.toString(), "--assembler",
+		Pair<Integer, List<String>> resOptExes = TestUtils.startCompilerApp("--assembler", optExe.toString(),
 				sourceFilePath.toAbsolutePath().toString());
 
 		assertEquals("compiling failed for " + sourceFilePath, 0, resOptExes.getFirst().intValue());
@@ -39,8 +39,8 @@ public class AutomatedOptimiziationTest implements FileTester {
 		// non optimized binary
 		File nonOptExe = File.createTempFile("assembler", ".s");
 		nonOptExe.deleteOnExit();
-		Pair<Integer, List<String>> resNonOptExe = TestUtils.startCompilerApp("-o", nonOptExe.toString(), "--no-opt",
-				"--assembler", sourceFilePath.toAbsolutePath().toString());
+		Pair<Integer, List<String>> resNonOptExe = TestUtils.startCompilerApp("--assembler", nonOptExe.toString(), "--no-opt",
+				sourceFilePath.toAbsolutePath().toString());
 
 		assertEquals("compiling failed for " + sourceFilePath, 0, resNonOptExe.getFirst().intValue());
 
