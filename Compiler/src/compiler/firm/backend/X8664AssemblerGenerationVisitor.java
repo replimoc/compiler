@@ -107,7 +107,8 @@ public class X8664AssemblerGenerationVisitor implements NodeVisitor {
 	private void storeValue(Node node, int value) {
 		nodeStackOffsets.put(node, currentStackOffset);
 		currentStackOffset += 8; // 8 bytes per node
-		// operation(new MovlOperation(value, nodeStackOffsets.get(node), Register.RBP));
+		// TODO: findout why assembler code isn't compiling: don't delete the next line!!!
+		operation(new MovlOperation(value, nodeStackOffsets.get(node), Register.RBP));
 	}
 
 	private boolean variableAssigned(Node node) {

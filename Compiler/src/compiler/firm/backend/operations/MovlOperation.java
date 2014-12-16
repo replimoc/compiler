@@ -30,23 +30,23 @@ public class MovlOperation extends AssemblerOperation {
 
 	@Override
 	public String toString() {
-		String source = sourceConstant == null ? "" : sourceConstant;
+		String source = "";
 		if (this.source != null) {
 			if (sourceConstant == null) {
-				source += this.source.toString();
+				source = this.source.toString();
 			} else {
-				source += "(" + this.source.toString() + ")";
+				source += sourceConstant + "(" + this.source.toString() + ")";
 			}
 		} else {
-			source = "$0x" + source;
+			source = "$0x" + sourceConstant;
 		}
 
-		String dest = destinationConstant == null ? "" : destinationConstant;
+		String dest = "";
 		if (this.destination != null) {
 			if (destinationConstant == null) {
-				dest += this.destination.toString();
+				dest = this.destination.toString();
 			} else {
-				dest += "(" + this.destination.toString() + ")";
+				dest = destinationConstant + "(" + this.destination.toString() + ")";
 			}
 		} else {
 			dest = "$0x" + dest;
