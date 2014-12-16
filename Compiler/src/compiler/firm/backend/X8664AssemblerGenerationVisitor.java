@@ -107,7 +107,7 @@ public class X8664AssemblerGenerationVisitor implements NodeVisitor {
 	private void storeValue(Node node, int value) {
 		nodeStackOffsets.put(node, currentStackOffset);
 		currentStackOffset += 8; // 8 bytes per node
-		operation(new MovlOperation(value, Register.RBP, nodeStackOffsets.get(node)));
+		// operation(new MovlOperation(value, nodeStackOffsets.get(node), Register.RBP));
 	}
 
 	private boolean variableAssigned(Node node) {
@@ -217,10 +217,12 @@ public class X8664AssemblerGenerationVisitor implements NodeVisitor {
 					}
 				}
 				operation(new CallOperation(methodName));
+
 				// TODO: count nodes and allocate for each node stack
 				final int numberNodes = 42;
 				currentStackOffset = 0;
-				operation(new MovqOperation(Register.RSP, Register.RSP, 8 + numberNodes * 8));
+
+				operation(new MovqOperation(Register.RSP, Register.RSP, 8));
 				break;
 			}
 		}
