@@ -208,10 +208,10 @@ public class X8664AssemblerGenerationVisitor implements NodeVisitor {
 			case SYSTEMV_ABI:
 				operation(new Comment(methodName));
 				// Use System-V ABI calling convention
-				operation(new Comment("# Save old stack pointer"));
+				operation(new Comment("aave old stack pointer"));
 				operation(new PushqOperation(Register.RSP, false));
 				operation(new PushqOperation(Register.RSP, true));
-				operation(new Comment("# Align stack to 16 bytes"));
+				operation(new Comment("align stack to 16 bytes"));
 				operation(new AndqOperation("-0x10", Register.RSP));
 				Register[] callingRegisters = { Register.EDI, Register.ESI, Register.EDX, Register.ECX };
 				for (int i = 2; i < predCount && (i - 2) < callingRegisters.length; i++) {
@@ -227,7 +227,7 @@ public class X8664AssemblerGenerationVisitor implements NodeVisitor {
 
 				currentStackOffset = 0;
 
-				operation(new Comment("Restore old stack pointer"));
+				operation(new Comment("restore old stack pointer"));
 				operation(new MovqOperation(Register.RSP, Register.RSP, 8));
 				break;
 			}
