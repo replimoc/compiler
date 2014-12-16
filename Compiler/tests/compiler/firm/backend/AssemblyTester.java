@@ -15,7 +15,7 @@ import compiler.utils.TestUtils;
 public class AssemblyTester {
 
 	public static void main(String[] args) throws Exception {
-		Path sourceFilePath = Paths.get("testdata/backend/EmptyMain.java");
+		Path sourceFilePath = Paths.get("testdata/backend/AddTest.java");
 		Path assemblyFilePath = Paths.get("assembly-backend.s");
 
 		Pair<Integer, List<String>> res = TestUtils.startCompilerApp("--no-opt", "--assembler", assemblyFilePath.toAbsolutePath().toString(),

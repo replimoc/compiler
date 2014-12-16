@@ -134,7 +134,7 @@ public class X8664AssemblerGenerationVisitor implements NodeVisitor {
 		// add RAX to RBX
 		operation(new AddOperation(Register.EAX, Register.EDX));
 		// store on stack
-		storeValue(node, Register.EAX);
+		storeValue(node, Register.EDX);
 	}
 
 	@Override
