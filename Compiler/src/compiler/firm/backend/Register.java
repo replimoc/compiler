@@ -3,16 +3,16 @@ package compiler.firm.backend;
 // Map for registers: https://upload.wikimedia.org/wikipedia/commons/4/41/Table_of_x86_Registers.png
 public enum Register {
 	RAX("%rax"), // accumulator
-	RBX("%rbx"), 
+	RBX("%rbx"),
 	RSP("%rsp"), // stack pointer
 	RBP("%rbp"), // frame pointer
 
 	// 32-bit registers
 	EDI("%edi"),
-	ESI("%esi"), 
+	ESI("%esi"),
 	EAX("%eax"), // gcc uses eax and edx for arithmetic operations
 	EDX("%edx"),
-	ECX("%ecx"), // counter (for loop counters);
+	ECX("%ecx"); // counter (for loop counters);
 
 	private final String registerName;
 
