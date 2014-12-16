@@ -6,8 +6,10 @@ import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
 
+import compiler.ast.CallingConvention;
 import compiler.firm.backend.operations.AssemblerOperation;
 import compiler.firm.backend.operations.FunctionSpecificationOperation;
 import compiler.firm.backend.operations.P2AlignOperation;
@@ -21,7 +23,7 @@ public final class AssemblerGenerator {
 	private AssemblerGenerator() {
 	}
 
-	public static void createAssemblerX8664(Path outputFile) throws IOException {
+	public static void createAssemblerX8664(Path outputFile, HashMap<String, CallingConvention> callingConvention) throws IOException {
 		List<AssemblerOperation> assembler = new ArrayList<>();
 
 		assembler.add(new TextOperation());
@@ -32,7 +34,7 @@ public final class AssemblerGenerator {
 		}
 
 		for (Graph graph : Program.getGraphs()) {
-			X8664AssemblerGenerationVisitor visitor = new X8664AssemblerGenerationVisitor();
+			X8664AssemblerGenerationVisitor visitor = new X8664AssemblerGenerationVisitor(callingConvention);
 			graph.walkTopological(visitor);
 			assembler.addAll(visitor.getAssembler());
 		}

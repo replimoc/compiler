@@ -3,6 +3,7 @@ package compiler.ast.declaration;
 import java.util.List;
 
 import compiler.Symbol;
+import compiler.ast.CallingConvention;
 import compiler.ast.type.Type;
 import compiler.lexer.Position;
 
@@ -40,6 +41,8 @@ public abstract class MethodMemberDeclaration extends MemberDeclaration {
 	public String getMemberType() {
 		return MEMBER_TYPE;
 	}
+
+	public abstract CallingConvention getCallingConvention();
 
 	@Override
 	public int hashCode() {

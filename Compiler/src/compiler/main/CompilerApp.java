@@ -118,7 +118,7 @@ public final class CompilerApp {
 						return 0;
 					}
 
-					SemanticCheckResults semanticResult = SemanticChecker.checkSemantic(ast, stringTable);
+					final SemanticCheckResults semanticResult = SemanticChecker.checkSemantic(ast, stringTable);
 					if (semanticResult.hasErrors()) {
 						for (SemanticAnalysisException curr : semanticResult.getExceptions()) {
 							System.err.println(curr.getMessage());
@@ -174,7 +174,7 @@ public final class CompilerApp {
 
 							@Override
 							public void create(File file) throws IOException {
-								AssemblerGenerator.createAssemblerX8664(file.toPath());
+								AssemblerGenerator.createAssemblerX8664(file.toPath(), semanticResult.getCallingConventions());
 							}
 						};
 					}

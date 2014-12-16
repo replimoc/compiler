@@ -1,8 +1,10 @@
 package compiler.firm.backend;
 
+import java.util.HashMap;
 import java.util.LinkedList;
 import java.util.List;
 
+import compiler.ast.CallingConvention;
 import compiler.firm.backend.operations.AddOperation;
 import compiler.firm.backend.operations.AndqOperation;
 import compiler.firm.backend.operations.AssemblerOperation;
@@ -74,7 +76,12 @@ import firm.nodes.Unknown;
 
 public class X8664AssemblerGenerationVisitor implements NodeVisitor {
 
+	private HashMap<String, CallingConvention> callingConventions;
 	private final List<AssemblerOperation> assembler = new LinkedList<AssemblerOperation>();
+
+	public X8664AssemblerGenerationVisitor(HashMap<String, CallingConvention> callingConventions) {
+		this.callingConventions = callingConventions;
+	}
 
 	public List<AssemblerOperation> getAssembler() {
 		return assembler;
@@ -154,20 +161,34 @@ public class X8664AssemblerGenerationVisitor implements NodeVisitor {
 		int predCount = node.getPredCount();
 		if (predCount >= 2 && node.getPred(1) instanceof Address) { // Minimum for all calls
 			Address callAddress = (Address) node.getPred(1);
+			String methodName = callAddress.getEntity().getLdName();
 
-			operation(new PushqOperation(Register.RSP, false));
-			operation(new PushqOperation(Register.RSP, true));
-			operation(new AndqOperation("-0x10", Register.RSP));
-			Register[] callingRegisters = { Register.EDI, Register.ESI, Register.EDX, Register.ECX };
-			for (int i = 2; i < predCount && (i - 2) < callingRegisters.length; i++) {
-				// Copy parameters in registers for System-V calling convention
-				Node parameter = node.getPred(i);
-				if (parameter instanceof Const) {
-					operation(new MovlOperation(((Const) parameter).getTarval().asInt(), callingRegisters[i - 2]));
-				}
+			CallingConvention callingConvention = CallingConvention.SYSTEMV_ABI;
+			if (callingConventions.containsKey(methodName)) {
+				callingConvention = callingConventions.get(methodName);
 			}
-			operation(new CallOperation(callAddress.getEntity().getLdName()));
-			operation(new MovqOperation(Register.RSP, Register.RSP, 8));
+			switch (callingConvention) {
+			case OWN:
+				// TODO: Use our own calling convention
+				// Until its implemented, use SYSTEMV_ABI.
+				// break;
+			case SYSTEMV_ABI:
+				// Use System-V ABI calling convention
+				operation(new PushqOperation(Register.RSP, false));
+				operation(new PushqOperation(Register.RSP, true));
+				operation(new AndqOperation("-0x10", Register.RSP));
+				Register[] callingRegisters = { Register.EDI, Register.ESI, Register.EDX, Register.ECX };
+				for (int i = 2; i < predCount && (i - 2) < callingRegisters.length; i++) {
+					// Copy parameters in registers for System-V calling convention
+					Node parameter = node.getPred(i);
+					if (parameter instanceof Const) {
+						operation(new MovlOperation(((Const) parameter).getTarval().asInt(), callingRegisters[i - 2]));
+					}
+				}
+				operation(new CallOperation(methodName));
+				operation(new MovqOperation(Register.RSP, Register.RSP, 8));
+				break;
+			}
 		}
 
 	}

@@ -5,6 +5,7 @@ import java.util.List;
 
 import compiler.Symbol;
 import compiler.ast.Block;
+import compiler.ast.CallingConvention;
 import compiler.ast.type.Type;
 import compiler.ast.visitor.AstVisitor;
 import compiler.lexer.Position;
@@ -12,6 +13,7 @@ import compiler.lexer.Position;
 public class MethodDeclaration extends MethodMemberDeclaration {
 	private final Block block;
 	private int numberOfLocalVariables;
+	private static final CallingConvention CALLING_CONVENTION = CallingConvention.OWN;
 
 	public MethodDeclaration(Position position, Symbol identifier, List<ParameterDeclaration> parameters, Type returnType, Block body) {
 		super(position, identifier, parameters, returnType);
@@ -36,6 +38,11 @@ public class MethodDeclaration extends MethodMemberDeclaration {
 
 	public void setNumberOfLocalVariables(int numberOfLocalVariables) {
 		this.numberOfLocalVariables = numberOfLocalVariables;
+	}
+
+	@Override
+	public CallingConvention getCallingConvention() {
+		return CALLING_CONVENTION;
 	}
 
 	@Override
