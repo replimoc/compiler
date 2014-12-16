@@ -13,6 +13,10 @@ public class MovlOperation extends AssemblerOperation {
 		this(constant, null, null, destination);
 	}
 
+	public MovlOperation(Register source, Register destination) {
+		this(null, source, null, destination);
+	}
+
 	public MovlOperation(int constant, Register source, Register destination) {
 		this(constant, source, null, destination);
 	}

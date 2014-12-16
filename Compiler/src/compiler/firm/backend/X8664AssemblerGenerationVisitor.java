@@ -9,6 +9,7 @@ import compiler.firm.backend.operations.AddOperation;
 import compiler.firm.backend.operations.AndqOperation;
 import compiler.firm.backend.operations.AssemblerOperation;
 import compiler.firm.backend.operations.CallOperation;
+import compiler.firm.backend.operations.Comment;
 import compiler.firm.backend.operations.LabelOperation;
 import compiler.firm.backend.operations.MovlOperation;
 import compiler.firm.backend.operations.MovqOperation;
@@ -117,14 +118,14 @@ public class X8664AssemblerGenerationVisitor implements NodeVisitor {
 
 	@Override
 	public void visit(Add node) {
-		// TODO: Sample for basic usage
+		operation(new Comment("add operation"));
 
 		// move left node to RAX
-		getValue(node.getLeft(), Register.RAX);
+		getValue(node.getLeft(), Register.EAX);
 		// move right node to RBX
-		getValue(node.getRight(), Register.RBX);
+		getValue(node.getRight(), Register.EDX);
 		// add RAX to RBX
-		operation(new AddOperation(Register.RAX, Register.RBX));
+		operation(new AddOperation(Register.EAX, Register.EDX));
 	}
 
 	@Override
@@ -205,6 +206,7 @@ public class X8664AssemblerGenerationVisitor implements NodeVisitor {
 				// Until its implemented, use SYSTEMV_ABI.
 				// break;
 			case SYSTEMV_ABI:
+				operation(new Comment(methodName));
 				// Use System-V ABI calling convention
 				operation(new PushqOperation(Register.RSP, false));
 				operation(new PushqOperation(Register.RSP, true));
@@ -214,7 +216,9 @@ public class X8664AssemblerGenerationVisitor implements NodeVisitor {
 					// Copy parameters in registers for System-V calling convention
 					Node parameter = node.getPred(i);
 					if (parameter instanceof Const) {
-						operation(new MovlOperation(((Const) parameter).getTarval().asInt(), callingRegisters[i - 2]));
+						// get value of parameter and save it in EAX
+						getValue(parameter, Register.EAX);
+						operation(new MovlOperation(Register.EAX, callingRegisters[i - 2]));
 					}
 				}
 				operation(new CallOperation(methodName));
@@ -250,6 +254,7 @@ public class X8664AssemblerGenerationVisitor implements NodeVisitor {
 
 	@Override
 	public void visit(Const node) {
+		operation(new Comment("store const"));
 		storeValue(node, node.getTarval().asInt());
 	}
 
