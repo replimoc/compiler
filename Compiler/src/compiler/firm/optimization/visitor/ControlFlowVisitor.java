@@ -22,8 +22,8 @@ import firm.nodes.Proj;
  */
 public class ControlFlowVisitor extends OptimizationVisitor<Node> {
 
-	public static OptimizationVisitorFactory getFactory() {
-		return new OptimizationVisitorFactory() {
+	public static OptimizationVisitorFactory<Node> getFactory() {
+		return new OptimizationVisitorFactory<Node>() {
 			@Override
 			public OptimizationVisitor<Node> create() {
 				return new ControlFlowVisitor();

@@ -32,8 +32,8 @@ public class ConstantFoldingVisitor extends OptimizationVisitor<TargetValue> {
 
 	protected HashMap<Node, TargetValue> targets = new HashMap<>();
 
-	public static OptimizationVisitorFactory getFactory() {
-		return new OptimizationVisitorFactory() {
+	public static OptimizationVisitorFactory<TargetValue> getFactory() {
+		return new OptimizationVisitorFactory<TargetValue>() {
 			@Override
 			public OptimizationVisitor<TargetValue> create() {
 				return new ConstantFoldingVisitor();
