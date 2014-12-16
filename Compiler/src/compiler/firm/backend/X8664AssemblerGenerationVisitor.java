@@ -208,7 +208,7 @@ public class X8664AssemblerGenerationVisitor implements NodeVisitor {
 			case SYSTEMV_ABI:
 				operation(new Comment(methodName));
 				// Use System-V ABI calling convention
-				operation(new Comment("aave old stack pointer"));
+				operation(new Comment("save old stack pointer"));
 				operation(new PushqOperation(Register.RSP, false));
 				operation(new PushqOperation(Register.RSP, true));
 				operation(new Comment("align stack to 16 bytes"));
