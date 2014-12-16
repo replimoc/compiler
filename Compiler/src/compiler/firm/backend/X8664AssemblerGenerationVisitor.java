@@ -15,6 +15,7 @@ import compiler.firm.backend.operations.MovqOperation;
 import compiler.firm.backend.operations.PushqOperation;
 import compiler.firm.backend.operations.RetOperation;
 import compiler.firm.backend.operations.SizeOperation;
+import compiler.utils.Utils;
 
 import firm.Graph;
 import firm.nodes.Add;
@@ -146,7 +147,9 @@ public class X8664AssemblerGenerationVisitor implements NodeVisitor {
 		if (node.equals(graph.getStartBlock())) { // Start Block
 			operation(new LabelOperation(methodName));
 		} else if (node.equals(graph.getEndBlock())) {
-			operation(new SizeOperation(methodName));
+			if (!Utils.isWindows()) {
+				operation(new SizeOperation(methodName));
+			}
 		}
 	}
 
