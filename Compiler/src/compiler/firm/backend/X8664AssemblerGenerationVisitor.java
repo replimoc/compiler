@@ -97,6 +97,7 @@ public class X8664AssemblerGenerationVisitor implements NodeVisitor {
 	}
 
 	private void getValue(Node node, Register register) {
+		operation(new Comment("get value"));
 		// if variable was assigned, than simply load if from stack
 		if (variableAssigned(node)) {
 			operation(new MovlOperation(nodeStackOffsets.get(node), Register.RBP, register));
@@ -110,6 +111,12 @@ public class X8664AssemblerGenerationVisitor implements NodeVisitor {
 		nodeStackOffsets.put(node, currentStackOffset);
 		currentStackOffset -= 8; // 8 bytes per node
 		operation(new MovlOperation(value, nodeStackOffsets.get(node), Register.RBP));
+	}
+
+	private void storeValue(Node node, Register value) {
+		nodeStackOffsets.put(node, currentStackOffset);
+		currentStackOffset -= 8; // 8 bytes per node
+		operation(new MovlOperation(null, value, nodeStackOffsets.get(node), Register.RBP));
 	}
 
 	private boolean variableAssigned(Node node) {
@@ -126,6 +133,8 @@ public class X8664AssemblerGenerationVisitor implements NodeVisitor {
 		getValue(node.getRight(), Register.EDX);
 		// add RAX to RBX
 		operation(new AddOperation(Register.EAX, Register.EDX));
+		// store on stack
+		storeValue(node, Register.EAX);
 	}
 
 	@Override
@@ -217,11 +226,9 @@ public class X8664AssemblerGenerationVisitor implements NodeVisitor {
 				for (int i = 2; i < predCount && (i - 2) < callingRegisters.length; i++) {
 					// Copy parameters in registers for System-V calling convention
 					Node parameter = node.getPred(i);
-					if (parameter instanceof Const) {
-						// get value of parameter and save it in EAX
-						getValue(parameter, Register.EAX);
-						operation(new MovlOperation(Register.EAX, callingRegisters[i - 2]));
-					}
+					// get value of parameter and save it in EAX
+					getValue(parameter, Register.EAX);
+					operation(new MovlOperation(Register.EAX, callingRegisters[i - 2]));
 				}
 				operation(new CallOperation(methodName));
 
@@ -457,7 +464,7 @@ public class X8664AssemblerGenerationVisitor implements NodeVisitor {
 		operation(new Debug("pushq %rbp"));
 		operation(new Debug("movq %rsp, %rbp"));
 		// TODO: determine somehow how big the stack should be
-		final int stackSize = 16;
+		final int stackSize = 64; // 8 ints
 		operation(new Debug("subq $" + stackSize + ", %rsp"));
 	}
 
