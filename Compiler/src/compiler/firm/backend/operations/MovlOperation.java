@@ -4,59 +4,54 @@ import compiler.firm.backend.Register;
 
 public class MovlOperation extends AssemblerOperation {
 
-	private final String sourceConstant;
-	private final Register source;
-	private final String destinationConstant;
-	private final Register destination;
+	private final int sourceConstant;
+	private final Register sourceRegister;
+	private final int destinationConstant;
+	private final Register destinationRegister;
 
 	public MovlOperation(int constant, Register destination) {
-		this(constant, null, null, destination);
+		this(constant, null, 0, destination);
 	}
 
 	public MovlOperation(Register source, Register destination) {
-		this(null, source, null, destination);
+		this(0, source, 0, destination);
 	}
 
 	public MovlOperation(int constant, Register source, Register destination) {
-		this(constant, source, null, destination);
-	}
-
-	public MovlOperation(Integer sourceConstant, Register source, Integer destinationConstant, Register destination) {
-		this.sourceConstant = sourceConstant == null ? null : String.format("%x", sourceConstant);
-		this.source = source;
-		this.destinationConstant = destinationConstant == null ? null : String.format("%x", destinationConstant);
-		this.destination = destination;
+		this(constant, source, 0, destination);
 	}
 
 	public MovlOperation(Integer sourceConstant, Integer destinationConstant, Register destinationReg) {
 		this(sourceConstant, null, destinationConstant, destinationReg);
 	}
 
+	public MovlOperation(Integer sourceConstant, Register source, Integer destinationConstant, Register destination) {
+		this.sourceConstant = sourceConstant;
+		this.sourceRegister = source;
+		this.destinationConstant = destinationConstant;
+		this.destinationRegister = destination;
+	}
+
 	@Override
 	public String toString() {
-		String source = "";
-		if (this.source != null) {
-			if (sourceConstant == null) {
-				source = this.source.toString();
+		String source = buildName(this.sourceConstant, this.sourceRegister);
+		String destination = buildName(this.destinationConstant, this.destinationRegister);
+
+		return String.format("\tmovl %s, %s\n", source, destination);
+	}
+
+	private String buildName(int constant, Register register) {
+		String result = "";
+		if (register != null) {
+			if (constant == 0) {
+				result = register.toString();
 			} else {
-				source += sourceConstant + "(" + this.source.toString() + ")";
+				result = String.format("%x(%s)", constant, register.toString());
 			}
 		} else {
-			source = "$0x" + sourceConstant;
+			result = String.format("$0x%x", constant);
 		}
-
-		String dest = "";
-		if (this.destination != null) {
-			if (destinationConstant == null) {
-				dest = this.destination.toString();
-			} else {
-				dest = destinationConstant + "(" + this.destination.toString() + ")";
-			}
-		} else {
-			dest = "$0x" + dest;
-		}
-
-		return String.format("\tmovl %s, %s\n", source, dest);
+		return result;
 	}
 
 }
