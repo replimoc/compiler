@@ -223,8 +223,6 @@ public class X8664AssemblerGenerationVisitor implements NodeVisitor {
 				}
 				operation(new CallOperation(methodName));
 
-				// TODO: count nodes and allocate for each node stack
-				final int numberNodes = 42;
 				currentStackOffset = 0;
 
 				operation(new MovqOperation(Register.RSP, Register.RSP, 8));
