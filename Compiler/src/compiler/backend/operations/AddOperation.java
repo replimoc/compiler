@@ -1,6 +1,6 @@
 package compiler.backend.operations;
 
-import compiler.backend.Register;
+import compiler.firm.backend.Register;
 
 public class AddOperation extends AssemblerOperation {
 

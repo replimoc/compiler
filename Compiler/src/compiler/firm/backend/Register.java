@@ -1,4 +1,4 @@
-package compiler.backend;
+package compiler.firm.backend;
 
 public enum Register {
 	RAX("%rax"), // accumulator

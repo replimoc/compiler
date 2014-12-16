@@ -1,4 +1,4 @@
-package compiler.backend;
+package compiler.firm.backend;
 
 import java.io.BufferedWriter;
 import java.io.IOException;

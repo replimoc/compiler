@@ -1,4 +1,4 @@
-package compiler.backend;
+package compiler.firm.backend;
 
 import java.util.LinkedList;
 import java.util.List;
