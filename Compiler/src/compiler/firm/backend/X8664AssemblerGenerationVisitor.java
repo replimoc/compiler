@@ -5,7 +5,11 @@ import java.util.List;
 
 import compiler.firm.backend.operations.AddOperation;
 import compiler.firm.backend.operations.AssemblerOperation;
+import compiler.firm.backend.operations.LabelOperation;
+import compiler.firm.backend.operations.RetOperation;
+import compiler.firm.backend.operations.SizeOperation;
 
+import firm.Graph;
 import firm.nodes.Add;
 import firm.nodes.Address;
 import firm.nodes.Align;
@@ -125,8 +129,13 @@ public class X8664AssemblerGenerationVisitor implements NodeVisitor {
 
 	@Override
 	public void visit(Block node) {
-		// TODO Auto-generated method stub
-
+		Graph graph = node.getGraph();
+		String methodName = graph.getEntity().getLdName();
+		if (node.equals(graph.getStartBlock())) { // Start Block
+			operation(new LabelOperation(methodName));
+		} else if (node.equals(graph.getEndBlock())) {
+			operation(new SizeOperation(methodName));
+		}
 	}
 
 	@Override
@@ -323,8 +332,7 @@ public class X8664AssemblerGenerationVisitor implements NodeVisitor {
 
 	@Override
 	public void visit(Return node) {
-		// TODO Auto-generated method stub
-
+		operation(new RetOperation());
 	}
 
 	@Override

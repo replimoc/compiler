@@ -13,4 +13,9 @@ public enum Register {
 	public String getRegisterName() {
 		return registerName;
 	}
+
+	@Override
+	public String toString() {
+		return getRegisterName();
+	}
 }
