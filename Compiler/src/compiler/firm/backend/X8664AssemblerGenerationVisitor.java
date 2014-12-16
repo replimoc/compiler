@@ -9,7 +9,6 @@ import compiler.firm.backend.operations.AddOperation;
 import compiler.firm.backend.operations.AndqOperation;
 import compiler.firm.backend.operations.AssemblerOperation;
 import compiler.firm.backend.operations.CallOperation;
-import compiler.firm.backend.operations.GetNodeValue;
 import compiler.firm.backend.operations.LabelOperation;
 import compiler.firm.backend.operations.MovlOperation;
 import compiler.firm.backend.operations.MovqOperation;
@@ -99,9 +98,9 @@ public class X8664AssemblerGenerationVisitor implements NodeVisitor {
 		// TODO: Sample for basic usage
 
 		// move left node to RAX
-		operation(new GetNodeValue(nodeStackOffsets.get(node.getLeft()), Register.RAX));
+		operation(new MovlOperation(nodeStackOffsets.get(node.getLeft()), Register.RBP, Register.RAX));
 		// move right node to RBX
-		operation(new GetNodeValue(nodeStackOffsets.get(node.getRight()), Register.RBX));
+		operation(new MovlOperation(nodeStackOffsets.get(node.getRight()), Register.RBP, Register.RBX));
 		// add RAX to RBX
 		operation(new AddOperation(Register.RAX, Register.RBX));
 	}

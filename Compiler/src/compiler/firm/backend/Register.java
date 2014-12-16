@@ -5,6 +5,7 @@ public enum Register {
 	RAX("%rax"), // accumulator
 	RBX("%rbx"),
 	RSP("%rsp"), // stack pointer
+	RBP("%rbp"),
 
 	// 32-bit registers
 	EDI("%edi"),
