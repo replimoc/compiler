@@ -4,8 +4,13 @@ import java.util.LinkedList;
 import java.util.List;
 
 import compiler.firm.backend.operations.AddOperation;
+import compiler.firm.backend.operations.AndqOperation;
 import compiler.firm.backend.operations.AssemblerOperation;
+import compiler.firm.backend.operations.CallOperation;
 import compiler.firm.backend.operations.LabelOperation;
+import compiler.firm.backend.operations.MovlOperation;
+import compiler.firm.backend.operations.MovqOperation;
+import compiler.firm.backend.operations.PushqOperation;
 import compiler.firm.backend.operations.RetOperation;
 import compiler.firm.backend.operations.SizeOperation;
 
@@ -146,7 +151,24 @@ public class X8664AssemblerGenerationVisitor implements NodeVisitor {
 
 	@Override
 	public void visit(Call node) {
-		// TODO Auto-generated method stub
+		int predCount = node.getPredCount();
+		if (predCount >= 2 && node.getPred(1) instanceof Address) { // Minimum for all calls
+			Address callAddress = (Address) node.getPred(1);
+
+			operation(new PushqOperation(Register.RSP, false));
+			operation(new PushqOperation(Register.RSP, true));
+			operation(new AndqOperation("-0x10", Register.RSP));
+			Register[] callingRegisters = { Register.EDI, Register.ESI, Register.EDX, Register.ECX };
+			for (int i = 2; i < predCount && (i - 2) < callingRegisters.length; i++) {
+				// Copy parameters in registers for System-V calling convention
+				Node parameter = node.getPred(i);
+				if (parameter instanceof Const) {
+					operation(new MovlOperation(((Const) parameter).getTarval().asInt(), callingRegisters[i - 2]));
+				}
+			}
+			operation(new CallOperation(callAddress.getEntity().getLdName()));
+			operation(new MovqOperation(Register.RSP, Register.RSP, 8));
+		}
 
 	}
 
