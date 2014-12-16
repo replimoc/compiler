@@ -18,7 +18,7 @@ import compiler.utils.Utils;
 public class OptVsNonOptFirmGraphTester {
 
 	public static void main(String[] args) throws Exception {
-		testSingleFile(Paths.get("testdata/optimization/constantFolding/Add.java"));
+		testSingleFile(Paths.get("testdata/backend/EmptyMain.java"));
 	}
 
 	private static void testSingleFile(Path sourceFilePath) throws IOException {
@@ -27,7 +27,7 @@ public class OptVsNonOptFirmGraphTester {
 		// optimized binary
 		File optExe = File.createTempFile("executable", Utils.getBinaryFileName(""));
 		optExe.deleteOnExit();
-		Pair<Integer, List<String>> resOptExes = TestUtils.startCompilerApp("-s", "optimized", "--graph-firm",
+		Pair<Integer, List<String>> resOptExes = TestUtils.startCompilerApp("-s", "optimized", "--graph-firm", "--compile-firm",
 				sourceFilePath.toAbsolutePath().toString());
 
 		assertEquals("compiling failed for " + sourceFilePath, 0, resOptExes.getFirst().intValue());
@@ -35,7 +35,7 @@ public class OptVsNonOptFirmGraphTester {
 		// non optimized binary
 		File nonOptExe = File.createTempFile("executable", Utils.getBinaryFileName(""));
 		nonOptExe.deleteOnExit();
-		Pair<Integer, List<String>> resNonOptExe = TestUtils.startCompilerApp("-s", "non-optimized", "--graph-firm", "--no-opt",
+		Pair<Integer, List<String>> resNonOptExe = TestUtils.startCompilerApp("-s", "non-optimized", "--graph-firm", "--no-opt", "--compile-firm",
 				sourceFilePath.toAbsolutePath().toString());
 
 		assertEquals("compiling failed for " + sourceFilePath, 0, resNonOptExe.getFirst().intValue());
