@@ -16,9 +16,9 @@ public class StackPointer extends Storage {
 		if (offset == 0) {
 			result = String.format("(%s)", register);
 		} else if (offset < 0) {
-			result = String.format("-%x(%s)", -offset, register);
+			result = String.format("-0x%x(%s)", -offset, register);
 		} else {
-			result = String.format("%x(%s)", offset, register);
+			result = String.format("0x%x(%s)", offset, register);
 		}
 		return result;
 	}
