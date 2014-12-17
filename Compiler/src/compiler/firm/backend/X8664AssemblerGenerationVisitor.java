@@ -10,13 +10,14 @@ import compiler.firm.backend.operations.AndqOperation;
 import compiler.firm.backend.operations.AssemblerOperation;
 import compiler.firm.backend.operations.CallOperation;
 import compiler.firm.backend.operations.Comment;
-import compiler.firm.backend.operations.Debug;
 import compiler.firm.backend.operations.LabelOperation;
 import compiler.firm.backend.operations.MovlOperation;
 import compiler.firm.backend.operations.MovqOperation;
+import compiler.firm.backend.operations.PopqOperation;
 import compiler.firm.backend.operations.PushqOperation;
 import compiler.firm.backend.operations.RetOperation;
 import compiler.firm.backend.operations.SizeOperation;
+import compiler.firm.backend.operations.SubqOperation;
 import compiler.firm.backend.storage.Constant;
 import compiler.firm.backend.storage.Register;
 import compiler.firm.backend.storage.StackPointer;
@@ -425,8 +426,8 @@ public class X8664AssemblerGenerationVisitor implements NodeVisitor {
 	public void visit(Return node) {
 		currentStackOffset = 0;
 		operation(new Comment("restore stack size"));
-		operation(new Debug("movq %rbp, %rsp"));
-		operation(new Debug("popq %rbp"));
+		operation(new MovqOperation(Register.RBP, Register.RSP));
+		operation(new PopqOperation(Register.RBP));
 		operation(new RetOperation());
 	}
 
@@ -463,11 +464,11 @@ public class X8664AssemblerGenerationVisitor implements NodeVisitor {
 	@Override
 	public void visit(Start node) {
 		operation(new Comment("allocate stack size"));
-		operation(new Debug("pushq %rbp"));
-		operation(new Debug("movq %rsp, %rbp"));
+		operation(new PushqOperation(Register.RBP));
+		operation(new MovqOperation(Register.RSP, Register.RBP));
 		// TODO: determine somehow how big the stack should be
 		final int stackSize = 64; // 8 ints
-		operation(new Debug("subq $" + stackSize + ", %rsp"));
+		operation(new SubqOperation(new Constant(stackSize), Register.RSP));
 	}
 
 	@Override
