@@ -9,7 +9,7 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 
-import compiler.ast.CallingConvention;
+import compiler.firm.backend.calling.CallingConvention;
 import compiler.firm.backend.operations.general.FunctionSpecificationOperation;
 import compiler.firm.backend.operations.general.P2AlignOperation;
 import compiler.firm.backend.operations.general.TextOperation;

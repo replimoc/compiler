@@ -5,9 +5,9 @@ import java.util.List;
 
 import compiler.Symbol;
 import compiler.ast.Block;
-import compiler.ast.CallingConvention;
 import compiler.ast.type.Type;
 import compiler.ast.visitor.AstVisitor;
+import compiler.firm.backend.calling.CallingConvention;
 import compiler.lexer.Position;
 
 public class MethodDeclaration extends MethodMemberDeclaration {

@@ -4,13 +4,12 @@ import java.util.HashMap;
 import java.util.LinkedList;
 import java.util.List;
 
-import compiler.ast.CallingConvention;
+import compiler.firm.backend.calling.CallingConvention;
 import compiler.firm.backend.operations.bit32.AddlOperation;
 import compiler.firm.backend.operations.bit32.MovlOperation;
 import compiler.firm.backend.operations.bit32.SublOperation;
 import compiler.firm.backend.operations.bit32.TwoRegOperandsOperation;
 import compiler.firm.backend.operations.bit64.AddqOperation;
-import compiler.firm.backend.operations.bit64.AndqOperation;
 import compiler.firm.backend.operations.bit64.CallOperation;
 import compiler.firm.backend.operations.bit64.MovqOperation;
 import compiler.firm.backend.operations.bit64.PopqOperation;
@@ -221,7 +220,8 @@ public class X8664AssemblerGenerationVisitor implements NodeVisitor {
 	public void visit(Call node) {
 		int predCount = node.getPredCount();
 		if (predCount >= 2 && node.getPred(1) instanceof Address) { // Minimum for all calls
-			int parametersCount = (predCount - 2);
+			int firmOffset = 2;
+			int parametersCount = (predCount - firmOffset);
 			Address callAddress = (Address) node.getPred(1);
 			String methodName = callAddress.getEntity().getLdName();
 
@@ -229,54 +229,49 @@ public class X8664AssemblerGenerationVisitor implements NodeVisitor {
 			if (callingConventions.containsKey(methodName)) {
 				callingConvention = callingConventions.get(methodName);
 			}
-			switch (callingConvention) {
-			case OWN:
-				Constant parameterSize = new Constant(STACK_ITEM_SIZE * (parametersCount + 1));
+
+			for (AssemblerOperation operation : callingConvention.getPrefixOperations()) {
+				addOperation(operation);
+			}
+
+			Register[] callingRegisters = callingConvention.getParameterRegisters();
+
+			// The following is before filling registers to have no problem with register allocation.
+			int remainingParameters = parametersCount - callingRegisters.length;
+			firmOffset += callingRegisters.length;
+			Constant parameterSize = new Constant(STACK_ITEM_SIZE * (remainingParameters + 1));
+
+			if (remainingParameters > 0) {
 				addOperation(new SubqOperation(parameterSize, Register.RSP));
 
 				// TODO: Address of object
 
-				for (int i = 1; i < parametersCount; i++) {
-					int parameterOffset = getStackOffset(node.getPred(i + 2));
+				for (int i = 1; i < remainingParameters; i++) {
+					int parameterOffset = getStackOffset(node.getPred(i + firmOffset));
 					// Copy parameter
 					addOperation(new MovlOperation(new StackPointer(parameterOffset, Register.RBP), Register.EAX));
 					addOperation(new MovlOperation(Register.EAX, new StackPointer((i + 1) * STACK_ITEM_SIZE, Register.RSP)));
 				}
-				addOperation(new CallOperation(methodName));
+			}
+			firmOffset -= callingRegisters.length;
 
-				// TODO: Save return parameter
+			// TODO: Register Allocation: Possible save all conflict registers.
 
+			for (int i = 0; i < parametersCount && i < callingRegisters.length; i++) {
+				// Copy parameters in registers
+				getValue(node.getPred(i + firmOffset), callingRegisters[i]);
+			}
+
+			addOperation(new CallOperation(methodName));
+
+			// TODO: Save return parameter
+
+			if (remainingParameters > 0) {
 				addOperation(new AddqOperation(parameterSize, Register.RSP));
-				break;
-			case SYSTEMV_ABI:
-				addOperation(new Comment(methodName));
-				// Use System-V ABI calling convention
-				addOperation(new Comment("save old stack pointer"));
-				addOperation(new PushqOperation(Register.RSP));
-				addOperation(new PushqOperation(new StackPointer(0, Register.RSP)));
-				addOperation(new Comment("align stack to 16 bytes"));
-				addOperation(new AndqOperation(new Constant(-0x10), Register.RSP));
-				Register[] callingRegisters = { Register.EDI, Register.ESI, Register.EDX, Register.ECX };
-				/*
-				 * DON'T REMOVE ME. IT'S A PROBLEM OF OUR CODE, THAT SHOULD BE CONSIDERED
-				 * 
-				 * Does it make sense handling Proj nodes? I think we should ignore them and start from index 3
-				 * 
-				 * If we start iterating from index 3, than the first parameter should be passed in ESI register. (print_int expects it at least)
-				 * 
-				 * Currently the order EDI, ESI, ... seems to be wrong at least for print_int.
-				 */
-				for (int i = 2; i < predCount && (i - 2) < callingRegisters.length; i++) {
-					// Copy parameters in registers for System-V calling convention
-					getValue(node.getPred(i), callingRegisters[i - 2]);
-				}
-				addOperation(new CallOperation(methodName));
+			}
 
-				addOperation(new Comment("restore old stack pointer"));
-				addOperation(new MovqOperation(new StackPointer(8, Register.RSP), Register.RSP));
-
-				// TODO: Save return parameter
-				break;
+			for (AssemblerOperation operation : callingConvention.getSuffixOperations()) {
+				addOperation(operation);
 			}
 		}
 

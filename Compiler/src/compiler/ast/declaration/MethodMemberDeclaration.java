@@ -3,8 +3,8 @@ package compiler.ast.declaration;
 import java.util.List;
 
 import compiler.Symbol;
-import compiler.ast.CallingConvention;
 import compiler.ast.type.Type;
+import compiler.firm.backend.calling.CallingConvention;
 import compiler.lexer.Position;
 
 public abstract class MethodMemberDeclaration extends MemberDeclaration {

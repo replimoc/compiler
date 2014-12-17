@@ -5,8 +5,8 @@ import java.util.List;
 import java.util.Map.Entry;
 
 import compiler.Symbol;
-import compiler.ast.CallingConvention;
 import compiler.ast.declaration.MethodMemberDeclaration;
+import compiler.firm.backend.calling.CallingConvention;
 import compiler.semantic.exceptions.SemanticAnalysisException;
 
 public class SemanticCheckResults {
