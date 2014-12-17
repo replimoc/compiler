@@ -10,11 +10,12 @@ import java.util.HashMap;
 import java.util.List;
 
 import compiler.ast.CallingConvention;
-import compiler.firm.backend.operations.AssemblerOperation;
-import compiler.firm.backend.operations.FunctionSpecificationOperation;
-import compiler.firm.backend.operations.P2AlignOperation;
-import compiler.firm.backend.operations.TextOperation;
+import compiler.firm.backend.operations.general.FunctionSpecificationOperation;
+import compiler.firm.backend.operations.general.P2AlignOperation;
+import compiler.firm.backend.operations.general.TextOperation;
+import compiler.firm.backend.operations.templates.AssemblerOperation;
 
+import firm.BackEdges;
 import firm.Graph;
 import firm.Program;
 
@@ -35,7 +36,9 @@ public final class AssemblerGenerator {
 
 		for (Graph graph : Program.getGraphs()) {
 			X8664AssemblerGenerationVisitor visitor = new X8664AssemblerGenerationVisitor(callingConvention);
+			BackEdges.enable(graph);
 			graph.walkTopological(visitor);
+			BackEdges.disable(graph);
 			assembler.addAll(visitor.getAssembler());
 		}
 
