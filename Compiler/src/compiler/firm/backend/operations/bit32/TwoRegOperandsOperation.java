@@ -8,9 +8,12 @@ public abstract class TwoRegOperandsOperation extends AssemblerOperation {
 	private Register input;
 	private Register destination;
 
+	public TwoRegOperandsOperation() {
+
+	}
+
 	public TwoRegOperandsOperation(Register input, Register destination) {
-		this.input = input;
-		this.destination = destination;
+		initialize(input, destination);
 	}
 
 	public Register getInputRegister() {
@@ -19,5 +22,10 @@ public abstract class TwoRegOperandsOperation extends AssemblerOperation {
 
 	public Register getDestinationRegister() {
 		return destination;
+	}
+
+	public void initialize(Register input, Register destination) {
+		this.input = input;
+		this.destination = destination;
 	}
 }

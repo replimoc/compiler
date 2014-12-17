@@ -7,6 +7,8 @@ import java.util.List;
 import compiler.ast.CallingConvention;
 import compiler.firm.backend.operations.bit32.AddlOperation;
 import compiler.firm.backend.operations.bit32.MovlOperation;
+import compiler.firm.backend.operations.bit32.SublOperation;
+import compiler.firm.backend.operations.bit32.TwoRegOperandsOperation;
 import compiler.firm.backend.operations.bit64.AddqOperation;
 import compiler.firm.backend.operations.bit64.AndqOperation;
 import compiler.firm.backend.operations.bit64.CallOperation;
@@ -135,18 +137,25 @@ public class X8664AssemblerGenerationVisitor implements NodeVisitor {
 		return nodeStackOffsets.containsKey(node);
 	}
 
+	private <T extends TwoRegOperandsOperation> void visitTwoOperandsNode(T operation, Node parent, Node left,
+			Node right) {
+		// move left node to RAX
+		getValue(left, Register.EAX);
+		// move right node to RBX
+		getValue(right, Register.EDX);
+		// TODO: find a nicer way to instantiate T directly instead of passing an instance and then initializing
+		operation.initialize(Register.EAX, Register.EDX);
+		// add RAX to RBX
+		addOperation(operation);
+		// store on stack
+		storeValue(parent, Register.EDX);
+	}
+
 	@Override
 	public void visit(Add node) {
 		addOperation(new Comment("add operation"));
 
-		// move left node to RAX
-		getValue(node.getLeft(), Register.EAX);
-		// move right node to RBX
-		getValue(node.getRight(), Register.EDX);
-		// add RAX to RBX
-		addOperation(new AddlOperation(Register.EAX, Register.EDX));
-		// store on stack
-		storeValue(node, Register.EDX);
+		visitTwoOperandsNode(new AddlOperation(), node, node.getLeft(), node.getRight());
 	}
 
 	@Override
@@ -519,8 +528,9 @@ public class X8664AssemblerGenerationVisitor implements NodeVisitor {
 
 	@Override
 	public void visit(Sub node) {
-		// TODO Auto-generated method stub
+		addOperation(new Comment("sub operation"));
 
+		visitTwoOperandsNode(new SublOperation(), node, node.getLeft(), node.getRight());
 	}
 
 	@Override
