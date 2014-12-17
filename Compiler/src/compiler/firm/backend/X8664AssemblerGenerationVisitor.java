@@ -7,6 +7,7 @@ import java.util.List;
 import compiler.ast.CallingConvention;
 import compiler.firm.backend.operations.bit32.AddlOperation;
 import compiler.firm.backend.operations.bit32.MovlOperation;
+import compiler.firm.backend.operations.bit64.AddqOperation;
 import compiler.firm.backend.operations.bit64.AndqOperation;
 import compiler.firm.backend.operations.bit64.CallOperation;
 import compiler.firm.backend.operations.bit64.MovqOperation;
@@ -23,6 +24,7 @@ import compiler.firm.backend.storage.Register;
 import compiler.firm.backend.storage.StackPointer;
 import compiler.firm.backend.storage.Storage;
 import compiler.utils.Utils;
+
 import firm.Graph;
 import firm.nodes.Add;
 import firm.nodes.Address;
@@ -83,6 +85,8 @@ import firm.nodes.Unknown;
 
 public class X8664AssemblerGenerationVisitor implements NodeVisitor {
 
+	private static final int STACK_ITEM_SIZE = 8;
+
 	private HashMap<String, CallingConvention> callingConventions;
 	private final List<AssemblerOperation> assembler = new LinkedList<AssemblerOperation>();
 	private final HashMap<Node, Integer> nodeStackOffsets = new HashMap<>();
@@ -116,8 +120,11 @@ public class X8664AssemblerGenerationVisitor implements NodeVisitor {
 	}
 
 	private void storeValue(Node node, Storage storage) {
+		// Allocate stack
+		operation(new SubqOperation(new Constant(STACK_ITEM_SIZE), Register.RSP));
+
 		nodeStackOffsets.put(node, currentStackOffset);
-		currentStackOffset -= 8; // 8 bytes per node
+		currentStackOffset -= STACK_ITEM_SIZE;
 		operation(new MovlOperation(storage, new StackPointer(getStackOffset(node), Register.RBP)));
 	}
 
@@ -184,10 +191,8 @@ public class X8664AssemblerGenerationVisitor implements NodeVisitor {
 	@Override
 	public void visit(Block node) {
 		Graph graph = node.getGraph();
-		String methodName = graph.getEntity().getLdName();
-		if (node.equals(graph.getStartBlock())) { // Start Block
-			operation(new LabelOperation(methodName));
-		} else if (node.equals(graph.getEndBlock())) {
+		if (node.equals(graph.getEndBlock())) {
+			String methodName = graph.getEntity().getLdName();
 			if (!Utils.isWindows()) {
 				operation(new SizeOperation(methodName));
 			}
@@ -213,9 +218,12 @@ public class X8664AssemblerGenerationVisitor implements NodeVisitor {
 			}
 			switch (callingConvention) {
 			case OWN:
+				// TODO: Add arguments and empty return value to stack
+				// TODO: Is a static link necessary?
+				operation(new CallOperation(methodName));
+
 				// TODO: Use our own calling convention
-				// Until its implemented, use SYSTEMV_ABI.
-				// break;
+				break;
 			case SYSTEMV_ABI:
 				operation(new Comment(methodName));
 				// Use System-V ABI calling convention
@@ -423,11 +431,12 @@ public class X8664AssemblerGenerationVisitor implements NodeVisitor {
 
 	@Override
 	public void visit(Return node) {
-		currentStackOffset = 0;
 		operation(new Comment("restore stack size"));
-		operation(new MovqOperation(Register.RBP, Register.RSP));
+		operation(new AddqOperation(new Constant(-currentStackOffset), Register.RSP));
 		operation(new PopqOperation(Register.RBP));
 		operation(new RetOperation());
+		currentStackOffset = 0;
+
 	}
 
 	@Override
@@ -462,12 +471,12 @@ public class X8664AssemblerGenerationVisitor implements NodeVisitor {
 
 	@Override
 	public void visit(Start node) {
-		operation(new Comment("allocate stack size"));
-		operation(new PushqOperation(Register.RBP));
+		Graph graph = node.getGraph();
+		String methodName = graph.getEntity().getLdName();
+		operation(new LabelOperation(methodName));
+
+		operation(new PushqOperation(Register.RBP)); // Dynamic Link
 		operation(new MovqOperation(Register.RSP, Register.RBP));
-		// TODO: determine somehow how big the stack should be
-		final int stackSize = 64; // 8 ints
-		operation(new SubqOperation(new Constant(stackSize), Register.RSP));
 	}
 
 	@Override

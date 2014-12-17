@@ -111,13 +111,13 @@ public final class FirmUtils {
 
 		int result = 0;
 		String assemblerFile = assembler.getAbsolutePath();
-		result = printOutput(Utils.systemExec("gcc", "-c", assemblerFile, "-o", buildFile));
+		result = printOutput(Utils.systemExec("gcc", "-g3", "-c", assemblerFile, "-o", buildFile));
 		if (result != 0)
 			return result;
-		result = printOutput(Utils.systemExec("gcc", "-c", base + "resources/standardlib.c", "-o", standardlibO));
+		result = printOutput(Utils.systemExec("gcc", "-g3", "-c", base + "resources/standardlib.c", "-o", standardlibO));
 		if (result != 0)
 			return result;
-		result = printOutput(Utils.systemExec("gcc", "-o", outputFileName, buildFile, standardlibO));
+		result = printOutput(Utils.systemExec("gcc", "-g3", "-o", outputFileName, buildFile, standardlibO));
 
 		return result;
 	}
