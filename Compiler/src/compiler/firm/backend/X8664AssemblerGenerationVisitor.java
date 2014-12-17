@@ -10,7 +10,6 @@ import compiler.firm.backend.operations.AndqOperation;
 import compiler.firm.backend.operations.AssemblerOperation;
 import compiler.firm.backend.operations.CallOperation;
 import compiler.firm.backend.operations.Comment;
-import compiler.firm.backend.operations.Debug;
 import compiler.firm.backend.operations.LabelOperation;
 import compiler.firm.backend.operations.MovlOperation;
 import compiler.firm.backend.operations.MovqOperation;
@@ -223,6 +222,15 @@ public class X8664AssemblerGenerationVisitor implements NodeVisitor {
 				operation(new Comment("align stack to 16 bytes"));
 				operation(new AndqOperation("-0x10", Register.RSP));
 				Register[] callingRegisters = { Register.EDI, Register.ESI, Register.EDX, Register.ECX };
+				/*
+				 * DON'T REMOVE ME. IT'S A PROBLEM OF OUR CODE, THAT SHOULD BE CONSIDERED
+				 * 
+				 * Does it make sense handling Proj nodes? I think we should ignore them and start from index 3
+				 * 
+				 * If we start iterating from index 3, than the first parameter should be passed in ESI register. (print_int expects it at least)
+				 * 
+				 * Currently the order EDI, ESI, ... seems to be wrong at least for print_int.
+				 */
 				for (int i = 2; i < predCount && (i - 2) < callingRegisters.length; i++) {
 					// Copy parameters in registers for System-V calling convention
 					Node parameter = node.getPred(i);
