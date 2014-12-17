@@ -25,7 +25,10 @@ import compiler.firm.backend.storage.StackPointer;
 import compiler.firm.backend.storage.Storage;
 import compiler.utils.Utils;
 
+import firm.BackEdges;
+import firm.BackEdges.Edge;
 import firm.Graph;
+import firm.Mode;
 import firm.nodes.Add;
 import firm.nodes.Address;
 import firm.nodes.Align;
@@ -209,6 +212,7 @@ public class X8664AssemblerGenerationVisitor implements NodeVisitor {
 	public void visit(Call node) {
 		int predCount = node.getPredCount();
 		if (predCount >= 2 && node.getPred(1) instanceof Address) { // Minimum for all calls
+			int parametersCount = (predCount - 2);
 			Address callAddress = (Address) node.getPred(1);
 			String methodName = callAddress.getEntity().getLdName();
 
@@ -218,11 +222,22 @@ public class X8664AssemblerGenerationVisitor implements NodeVisitor {
 			}
 			switch (callingConvention) {
 			case OWN:
-				// TODO: Add arguments and empty return value to stack
-				// TODO: Is a static link necessary?
+				Constant parameterSize = new Constant(STACK_ITEM_SIZE * (parametersCount + 1));
+				operation(new SubqOperation(parameterSize, Register.RSP));
+
+				// TODO: Address of object
+
+				for (int i = 1; i < parametersCount; i++) {
+					int parameterOffset = getStackOffset(node.getPred(i + 2));
+					// Copy parameter
+					operation(new MovlOperation(new StackPointer(parameterOffset, Register.RBP), Register.EAX));
+					operation(new MovlOperation(Register.EAX, new StackPointer((i + 1) * STACK_ITEM_SIZE, Register.RSP)));
+				}
 				operation(new CallOperation(methodName));
 
-				// TODO: Use our own calling convention
+				// TODO: Save return parameter
+
+				operation(new AddqOperation(parameterSize, Register.RSP));
 				break;
 			case SYSTEMV_ABI:
 				operation(new Comment(methodName));
@@ -244,6 +259,8 @@ public class X8664AssemblerGenerationVisitor implements NodeVisitor {
 
 				operation(new Comment("restore old stack pointer"));
 				operation(new MovqOperation(new StackPointer(8, Register.RSP), Register.RSP));
+
+				// TODO: Save return parameter
 				break;
 			}
 		}
@@ -419,7 +436,13 @@ public class X8664AssemblerGenerationVisitor implements NodeVisitor {
 
 	@Override
 	public void visit(Proj node) {
-		// TODO Auto-generated method stub
+		if (node.getPredCount() == 1 && node.getPred(0) instanceof Start && node.getMode().equals(Mode.getT())) {
+			int stackPointerReference = STACK_ITEM_SIZE * 2; // Dynamic Link, Return Value
+			for (Edge edge : BackEdges.getOuts(node)) {
+				stackPointerReference += STACK_ITEM_SIZE;
+				nodeStackOffsets.put(edge.node, stackPointerReference);
+			}
+		}
 
 	}
 
