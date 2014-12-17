@@ -17,8 +17,12 @@ import compiler.firm.backend.operations.MovqOperation;
 import compiler.firm.backend.operations.PushqOperation;
 import compiler.firm.backend.operations.RetOperation;
 import compiler.firm.backend.operations.SizeOperation;
+import compiler.firm.backend.storage.Constant;
 import compiler.firm.backend.storage.Register;
+import compiler.firm.backend.storage.StackPointer;
+import compiler.firm.backend.storage.Storage;
 import compiler.utils.Utils;
+
 import firm.Graph;
 import firm.nodes.Add;
 import firm.nodes.Address;
@@ -100,23 +104,21 @@ public class X8664AssemblerGenerationVisitor implements NodeVisitor {
 		operation(new Comment("get value"));
 		// if variable was assigned, than simply load if from stack
 		if (variableAssigned(node)) {
-			operation(new MovlOperation(nodeStackOffsets.get(node), Register.RBP, register));
+			operation(new MovlOperation(new StackPointer(getStackOffset(node), Register.RBP), register));
 			// else we must collect all operations and save the result in register
 		} else {
 
 		}
 	}
 
-	private void storeValue(Node node, int value) {
-		nodeStackOffsets.put(node, currentStackOffset);
-		currentStackOffset -= 8; // 8 bytes per node
-		operation(new MovlOperation(value, nodeStackOffsets.get(node), Register.RBP));
+	private int getStackOffset(Node node) {
+		return nodeStackOffsets.get(node);
 	}
 
-	private void storeValue(Node node, Register value) {
+	private void storeValue(Node node, Storage storage) {
 		nodeStackOffsets.put(node, currentStackOffset);
 		currentStackOffset -= 8; // 8 bytes per node
-		operation(new MovlOperation(null, value, nodeStackOffsets.get(node), Register.RBP));
+		operation(new MovlOperation(storage, new StackPointer(getStackOffset(node), Register.RBP)));
 	}
 
 	private boolean variableAssigned(Node node) {
@@ -261,7 +263,7 @@ public class X8664AssemblerGenerationVisitor implements NodeVisitor {
 	@Override
 	public void visit(Const node) {
 		operation(new Comment("store const"));
-		storeValue(node, node.getTarval().asInt());
+		storeValue(node, new Constant(node.getTarval().asInt()));
 	}
 
 	@Override
