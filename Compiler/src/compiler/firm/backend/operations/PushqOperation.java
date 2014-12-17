@@ -1,23 +1,18 @@
 package compiler.firm.backend.operations;
 
-import compiler.firm.backend.storage.Register;
+import compiler.firm.backend.storage.Storage;
 
 public class PushqOperation extends AssemblerOperation {
 
-	private final Register register;
-	private final boolean oldContent;
+	private final Storage storage;
 
-	public PushqOperation(Register register, boolean oldContent) {
-		this.register = register;
-		this.oldContent = oldContent;
+	public PushqOperation(Storage storage) {
+		this.storage = storage;
 	}
 
 	@Override
 	public String toString() {
-		String registerName = register.toString();
-		if (oldContent)
-			registerName = "(" + registerName + ")";
-		return String.format("\tpushq %s\n", registerName);
+		return String.format("\tpushq %s\n", storage);
 	}
 
 }

@@ -220,10 +220,10 @@ public class X8664AssemblerGenerationVisitor implements NodeVisitor {
 				operation(new Comment(methodName));
 				// Use System-V ABI calling convention
 				operation(new Comment("save old stack pointer"));
-				operation(new PushqOperation(Register.RSP, false));
-				operation(new PushqOperation(Register.RSP, true));
+				operation(new PushqOperation(Register.RSP));
+				operation(new PushqOperation(new StackPointer(0, Register.RSP)));
 				operation(new Comment("align stack to 16 bytes"));
-				operation(new AndqOperation("-0x10", Register.RSP));
+				operation(new AndqOperation(new Constant(-0x10), Register.RSP));
 				Register[] callingRegisters = { Register.EDI, Register.ESI, Register.EDX, Register.ECX };
 				for (int i = 2; i < predCount && (i - 2) < callingRegisters.length; i++) {
 					// Copy parameters in registers for System-V calling convention
