@@ -103,15 +103,15 @@ public class X8664AssemblerGenerationVisitor implements NodeVisitor {
 		return assembler;
 	}
 
-	private void operation(AssemblerOperation assemblerOption) {
+	private void addOperation(AssemblerOperation assemblerOption) {
 		assembler.add(assemblerOption);
 	}
 
 	private void getValue(Node node, Register register) {
-		operation(new Comment("get value"));
+		addOperation(new Comment("get value"));
 		// if variable was assigned, than simply load if from stack
 		if (variableAssigned(node)) {
-			operation(new MovlOperation(new StackPointer(getStackOffset(node), Register.RBP), register));
+			addOperation(new MovlOperation(new StackPointer(getStackOffset(node), Register.RBP), register));
 			// else we must collect all operations and save the result in register
 		} else {
 
@@ -124,11 +124,11 @@ public class X8664AssemblerGenerationVisitor implements NodeVisitor {
 
 	private void storeValue(Node node, Storage storage) {
 		// Allocate stack
-		operation(new SubqOperation(new Constant(STACK_ITEM_SIZE), Register.RSP));
+		addOperation(new SubqOperation(new Constant(STACK_ITEM_SIZE), Register.RSP));
 
 		nodeStackOffsets.put(node, currentStackOffset);
 		currentStackOffset -= STACK_ITEM_SIZE;
-		operation(new MovlOperation(storage, new StackPointer(getStackOffset(node), Register.RBP)));
+		addOperation(new MovlOperation(storage, new StackPointer(getStackOffset(node), Register.RBP)));
 	}
 
 	private boolean variableAssigned(Node node) {
@@ -137,14 +137,14 @@ public class X8664AssemblerGenerationVisitor implements NodeVisitor {
 
 	@Override
 	public void visit(Add node) {
-		operation(new Comment("add operation"));
+		addOperation(new Comment("add operation"));
 
 		// move left node to RAX
 		getValue(node.getLeft(), Register.EAX);
 		// move right node to RBX
 		getValue(node.getRight(), Register.EDX);
 		// add RAX to RBX
-		operation(new AddlOperation(Register.EAX, Register.EDX));
+		addOperation(new AddlOperation(Register.EAX, Register.EDX));
 		// store on stack
 		storeValue(node, Register.EDX);
 	}
@@ -197,7 +197,7 @@ public class X8664AssemblerGenerationVisitor implements NodeVisitor {
 		if (node.equals(graph.getEndBlock())) {
 			String methodName = graph.getEntity().getLdName();
 			if (!Utils.isWindows()) {
-				operation(new SizeOperation(methodName));
+				addOperation(new SizeOperation(methodName));
 			}
 		}
 	}
@@ -223,30 +223,30 @@ public class X8664AssemblerGenerationVisitor implements NodeVisitor {
 			switch (callingConvention) {
 			case OWN:
 				Constant parameterSize = new Constant(STACK_ITEM_SIZE * (parametersCount + 1));
-				operation(new SubqOperation(parameterSize, Register.RSP));
+				addOperation(new SubqOperation(parameterSize, Register.RSP));
 
 				// TODO: Address of object
 
 				for (int i = 1; i < parametersCount; i++) {
 					int parameterOffset = getStackOffset(node.getPred(i + 2));
 					// Copy parameter
-					operation(new MovlOperation(new StackPointer(parameterOffset, Register.RBP), Register.EAX));
-					operation(new MovlOperation(Register.EAX, new StackPointer((i + 1) * STACK_ITEM_SIZE, Register.RSP)));
+					addOperation(new MovlOperation(new StackPointer(parameterOffset, Register.RBP), Register.EAX));
+					addOperation(new MovlOperation(Register.EAX, new StackPointer((i + 1) * STACK_ITEM_SIZE, Register.RSP)));
 				}
-				operation(new CallOperation(methodName));
+				addOperation(new CallOperation(methodName));
 
 				// TODO: Save return parameter
 
-				operation(new AddqOperation(parameterSize, Register.RSP));
+				addOperation(new AddqOperation(parameterSize, Register.RSP));
 				break;
 			case SYSTEMV_ABI:
-				operation(new Comment(methodName));
+				addOperation(new Comment(methodName));
 				// Use System-V ABI calling convention
-				operation(new Comment("save old stack pointer"));
-				operation(new PushqOperation(Register.RSP));
-				operation(new PushqOperation(new StackPointer(0, Register.RSP)));
-				operation(new Comment("align stack to 16 bytes"));
-				operation(new AndqOperation(new Constant(-0x10), Register.RSP));
+				addOperation(new Comment("save old stack pointer"));
+				addOperation(new PushqOperation(Register.RSP));
+				addOperation(new PushqOperation(new StackPointer(0, Register.RSP)));
+				addOperation(new Comment("align stack to 16 bytes"));
+				addOperation(new AndqOperation(new Constant(-0x10), Register.RSP));
 				Register[] callingRegisters = { Register.EDI, Register.ESI, Register.EDX, Register.ECX };
 				/*
 				 * DON'T REMOVE ME. IT'S A PROBLEM OF OUR CODE, THAT SHOULD BE CONSIDERED
@@ -262,12 +262,12 @@ public class X8664AssemblerGenerationVisitor implements NodeVisitor {
 					Node parameter = node.getPred(i);
 					// get value of parameter and save it in EAX
 					getValue(parameter, Register.EAX);
-					operation(new MovlOperation(Register.EAX, callingRegisters[i - 2]));
+					addOperation(new MovlOperation(Register.EAX, callingRegisters[i - 2]));
 				}
-				operation(new CallOperation(methodName));
+				addOperation(new CallOperation(methodName));
 
-				operation(new Comment("restore old stack pointer"));
-				operation(new MovqOperation(new StackPointer(8, Register.RSP), Register.RSP));
+				addOperation(new Comment("restore old stack pointer"));
+				addOperation(new MovqOperation(new StackPointer(8, Register.RSP), Register.RSP));
 
 				// TODO: Save return parameter
 				break;
@@ -296,7 +296,7 @@ public class X8664AssemblerGenerationVisitor implements NodeVisitor {
 
 	@Override
 	public void visit(Const node) {
-		operation(new Comment("store const"));
+		addOperation(new Comment("store const"));
 		storeValue(node, new Constant(node.getTarval().asInt()));
 	}
 
@@ -463,10 +463,10 @@ public class X8664AssemblerGenerationVisitor implements NodeVisitor {
 
 	@Override
 	public void visit(Return node) {
-		operation(new Comment("restore stack size"));
-		operation(new AddqOperation(new Constant(-currentStackOffset), Register.RSP));
-		operation(new PopqOperation(Register.RBP));
-		operation(new RetOperation());
+		addOperation(new Comment("restore stack size"));
+		addOperation(new AddqOperation(new Constant(-currentStackOffset), Register.RSP));
+		addOperation(new PopqOperation(Register.RBP));
+		addOperation(new RetOperation());
 		currentStackOffset = 0;
 
 	}
@@ -505,10 +505,10 @@ public class X8664AssemblerGenerationVisitor implements NodeVisitor {
 	public void visit(Start node) {
 		Graph graph = node.getGraph();
 		String methodName = graph.getEntity().getLdName();
-		operation(new LabelOperation(methodName));
+		addOperation(new LabelOperation(methodName));
 
-		operation(new PushqOperation(Register.RBP)); // Dynamic Link
-		operation(new MovqOperation(Register.RSP, Register.RBP));
+		addOperation(new PushqOperation(Register.RBP)); // Dynamic Link
+		addOperation(new MovqOperation(Register.RSP, Register.RBP));
 	}
 
 	@Override
