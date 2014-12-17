@@ -17,8 +17,8 @@ import compiler.firm.backend.operations.MovqOperation;
 import compiler.firm.backend.operations.PushqOperation;
 import compiler.firm.backend.operations.RetOperation;
 import compiler.firm.backend.operations.SizeOperation;
+import compiler.firm.backend.storage.Register;
 import compiler.utils.Utils;
-
 import firm.Graph;
 import firm.nodes.Add;
 import firm.nodes.Address;

@@ -1,6 +1,6 @@
 package compiler.firm.backend.operations;
 
-import compiler.firm.backend.Register;
+import compiler.firm.backend.storage.Register;
 
 public class MovqOperation extends AssemblerOperation {
 
