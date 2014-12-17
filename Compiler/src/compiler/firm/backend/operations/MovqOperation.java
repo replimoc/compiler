@@ -1,22 +1,16 @@
 package compiler.firm.backend.operations;
 
-import compiler.firm.backend.storage.Register;
+import compiler.firm.backend.storage.Storage;
 
-public class MovqOperation extends AssemblerOperation {
+public class MovqOperation extends SourceDestinationOperation {
 
-	private final Register source;
-	private final Register destination;
-	private final int offset;
-
-	public MovqOperation(Register source, Register destination, int offset) {
-		this.source = source;
-		this.destination = destination;
-		this.offset = offset;
+	public MovqOperation(Storage source, Storage destination) {
+		super(source, destination);
 	}
 
 	@Override
 	public String toString() {
-		return String.format("\tmovq %d(%s), %s\n", offset, source, destination);
+		return String.format("\tmovq %s, %s\n", getSource(), getDestination());
 	}
 
 }

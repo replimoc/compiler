@@ -235,7 +235,7 @@ public class X8664AssemblerGenerationVisitor implements NodeVisitor {
 				operation(new CallOperation(methodName));
 
 				operation(new Comment("restore old stack pointer"));
-				operation(new MovqOperation(Register.RSP, Register.RSP, 8));
+				operation(new MovqOperation(new StackPointer(8, Register.RSP), Register.RSP));
 				break;
 			}
 		}
