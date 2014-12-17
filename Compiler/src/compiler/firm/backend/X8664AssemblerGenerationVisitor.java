@@ -268,10 +268,7 @@ public class X8664AssemblerGenerationVisitor implements NodeVisitor {
 				 */
 				for (int i = 2; i < predCount && (i - 2) < callingRegisters.length; i++) {
 					// Copy parameters in registers for System-V calling convention
-					Node parameter = node.getPred(i);
-					// get value of parameter and save it in EAX
-					getValue(parameter, Register.EAX);
-					addOperation(new MovlOperation(Register.EAX, callingRegisters[i - 2]));
+					getValue(node.getPred(i), callingRegisters[i - 2]);
 				}
 				addOperation(new CallOperation(methodName));
 
