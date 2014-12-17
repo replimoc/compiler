@@ -1,4 +1,4 @@
-package compiler.firm.backend.operations;
+package compiler.firm.backend.operations.templates;
 
 import compiler.firm.backend.storage.Storage;
 

@@ -1,4 +1,7 @@
-package compiler.firm.backend.operations;
+package compiler.firm.backend.operations.general;
+
+import compiler.firm.backend.operations.templates.AssemblerOperation;
+
 
 public class LabelOperation extends AssemblerOperation {
 

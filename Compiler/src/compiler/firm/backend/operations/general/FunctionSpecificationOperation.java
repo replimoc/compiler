@@ -1,5 +1,6 @@
-package compiler.firm.backend.operations;
+package compiler.firm.backend.operations.general;
 
+import compiler.firm.backend.operations.templates.AssemblerOperation;
 import compiler.utils.Utils;
 
 public class FunctionSpecificationOperation extends AssemblerOperation {

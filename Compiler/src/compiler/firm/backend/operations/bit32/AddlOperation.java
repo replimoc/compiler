@@ -1,13 +1,14 @@
-package compiler.firm.backend.operations;
+package compiler.firm.backend.operations.bit32;
 
+import compiler.firm.backend.operations.templates.AssemblerOperation;
 import compiler.firm.backend.storage.Register;
 
-public class AddOperation extends AssemblerOperation {
+public class AddlOperation extends AssemblerOperation {
 
 	private Register input;
 	private Register destination;
 
-	public AddOperation(Register input, Register destinationRegister) {
+	public AddlOperation(Register input, Register destinationRegister) {
 		this.input = input;
 		this.destination = destinationRegister;
 	}

@@ -5,25 +5,24 @@ import java.util.LinkedList;
 import java.util.List;
 
 import compiler.ast.CallingConvention;
-import compiler.firm.backend.operations.AddOperation;
-import compiler.firm.backend.operations.AndqOperation;
-import compiler.firm.backend.operations.AssemblerOperation;
-import compiler.firm.backend.operations.CallOperation;
-import compiler.firm.backend.operations.Comment;
-import compiler.firm.backend.operations.LabelOperation;
-import compiler.firm.backend.operations.MovlOperation;
-import compiler.firm.backend.operations.MovqOperation;
-import compiler.firm.backend.operations.PopqOperation;
-import compiler.firm.backend.operations.PushqOperation;
-import compiler.firm.backend.operations.RetOperation;
-import compiler.firm.backend.operations.SizeOperation;
-import compiler.firm.backend.operations.SubqOperation;
+import compiler.firm.backend.operations.bit32.AddlOperation;
+import compiler.firm.backend.operations.bit32.MovlOperation;
+import compiler.firm.backend.operations.bit64.AndqOperation;
+import compiler.firm.backend.operations.bit64.CallOperation;
+import compiler.firm.backend.operations.bit64.MovqOperation;
+import compiler.firm.backend.operations.bit64.PopqOperation;
+import compiler.firm.backend.operations.bit64.PushqOperation;
+import compiler.firm.backend.operations.bit64.RetOperation;
+import compiler.firm.backend.operations.bit64.SubqOperation;
+import compiler.firm.backend.operations.general.Comment;
+import compiler.firm.backend.operations.general.LabelOperation;
+import compiler.firm.backend.operations.general.SizeOperation;
+import compiler.firm.backend.operations.templates.AssemblerOperation;
 import compiler.firm.backend.storage.Constant;
 import compiler.firm.backend.storage.Register;
 import compiler.firm.backend.storage.StackPointer;
 import compiler.firm.backend.storage.Storage;
 import compiler.utils.Utils;
-
 import firm.Graph;
 import firm.nodes.Add;
 import firm.nodes.Address;
@@ -135,7 +134,7 @@ public class X8664AssemblerGenerationVisitor implements NodeVisitor {
 		// move right node to RBX
 		getValue(node.getRight(), Register.EDX);
 		// add RAX to RBX
-		operation(new AddOperation(Register.EAX, Register.EDX));
+		operation(new AddlOperation(Register.EAX, Register.EDX));
 		// store on stack
 		storeValue(node, Register.EDX);
 	}

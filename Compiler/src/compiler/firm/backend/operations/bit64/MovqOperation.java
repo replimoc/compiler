@@ -1,5 +1,6 @@
-package compiler.firm.backend.operations;
+package compiler.firm.backend.operations.bit64;
 
+import compiler.firm.backend.operations.templates.SourceDestinationOperation;
 import compiler.firm.backend.storage.Storage;
 
 public class MovqOperation extends SourceDestinationOperation {
