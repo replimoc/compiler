@@ -15,8 +15,4 @@ public class AddlOperation extends TwoRegOperandsOperation {
 	public String toString() {
 		return String.format("\taddl %s, %s\n", getInputRegister(), getDestinationRegister());
 	}
-
-	public static TwoRegOperandsOperation generate(Register input, Register destination) {
-		return new AddlOperation(input, destination);
-	}
 }

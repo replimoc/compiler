@@ -15,8 +15,4 @@ public class SublOperation extends TwoRegOperandsOperation {
 	public String toString() {
 		return String.format("\tsubl %s, %s\n", getInputRegister(), getDestinationRegister());
 	}
-
-	public static TwoRegOperandsOperation generate(Register input, Register destination) {
-		return new SublOperation(input, destination);
-	}
 }
