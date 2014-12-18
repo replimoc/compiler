@@ -136,7 +136,7 @@
 
 	<target name="test" depends="buildTests">
 		<junit printsummary="on" fork="true" dir="${basedir}"
-			haltonfailure="yes">
+			haltonfailure="yes" maxmemory="1g">
 			<classpath>
 				<path refid="classpath.test" />
 			</classpath>
