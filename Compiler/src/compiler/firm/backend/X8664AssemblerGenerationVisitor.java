@@ -125,11 +125,11 @@ public class X8664AssemblerGenerationVisitor implements NodeVisitor {
 
 	private void storeValue(Node node, Storage storage) {
 		// Allocate stack
+		currentStackOffset -= STACK_ITEM_SIZE;
 		addOperation(new SubqOperation(new Constant(STACK_ITEM_SIZE), Register.RSP));
 
 		nodeStackOffsets.put(node, currentStackOffset);
-		currentStackOffset -= STACK_ITEM_SIZE;
-		addOperation(new MovlOperation(storage, new StackPointer(getStackOffset(node), Register.RBP)));
+		addOperation(new MovlOperation(storage, new StackPointer(currentStackOffset, Register.RBP)));
 	}
 
 	private boolean variableAssigned(Node node) {
@@ -225,6 +225,8 @@ public class X8664AssemblerGenerationVisitor implements NodeVisitor {
 			Address callAddress = (Address) node.getPred(1);
 			String methodName = callAddress.getEntity().getLdName();
 
+			addOperation(new Comment("Call " + methodName));
+
 			CallingConvention callingConvention = CallingConvention.SYSTEMV_ABI;
 			if (callingConventions.containsKey(methodName)) {
 				callingConvention = callingConventions.get(methodName);
@@ -239,18 +241,16 @@ public class X8664AssemblerGenerationVisitor implements NodeVisitor {
 			// The following is before filling registers to have no problem with register allocation.
 			int remainingParameters = parametersCount - callingRegisters.length;
 			firmOffset += callingRegisters.length;
-			Constant parameterSize = new Constant(STACK_ITEM_SIZE * (remainingParameters + 1));
+			Constant parameterSize = new Constant(STACK_ITEM_SIZE * remainingParameters);
 
 			if (remainingParameters > 0) {
 				addOperation(new SubqOperation(parameterSize, Register.RSP));
 
-				// TODO: Address of object
-
-				for (int i = 1; i < remainingParameters; i++) {
+				for (int i = 0; i < remainingParameters; i++) {
 					int parameterOffset = getStackOffset(node.getPred(i + firmOffset));
 					// Copy parameter
 					addOperation(new MovlOperation(new StackPointer(parameterOffset, Register.RBP), Register.EAX));
-					addOperation(new MovlOperation(Register.EAX, new StackPointer((i + 1) * STACK_ITEM_SIZE, Register.RSP)));
+					addOperation(new MovlOperation(Register.EAX, new StackPointer(i * STACK_ITEM_SIZE, Register.RSP)));
 				}
 			}
 			firmOffset -= callingRegisters.length;
@@ -264,8 +264,6 @@ public class X8664AssemblerGenerationVisitor implements NodeVisitor {
 
 			addOperation(new CallOperation(methodName));
 
-			// TODO: Save return parameter
-
 			if (remainingParameters > 0) {
 				addOperation(new AddqOperation(parameterSize, Register.RSP));
 			}
@@ -273,6 +271,16 @@ public class X8664AssemblerGenerationVisitor implements NodeVisitor {
 			for (AssemblerOperation operation : callingConvention.getSuffixOperations()) {
 				addOperation(operation);
 			}
+
+			// TODO: Check if this also works for pointers
+			for (Edge edge : BackEdges.getOuts(node)) {
+				if (edge.node.getMode().equals(Mode.getT())) {
+					for (Edge innerEdge : BackEdges.getOuts(edge.node)) {
+						storeValue(innerEdge.node, Register.EAX); // Return value is in EAX
+					}
+				}
+			}
+
 		}
 
 	}
@@ -447,7 +455,7 @@ public class X8664AssemblerGenerationVisitor implements NodeVisitor {
 	@Override
 	public void visit(Proj node) {
 		if (node.getPredCount() == 1 && node.getPred(0) instanceof Start && node.getMode().equals(Mode.getT())) {
-			int stackPointerReference = STACK_ITEM_SIZE * 2; // Dynamic Link, Return Value
+			int stackPointerReference = STACK_ITEM_SIZE; // Dynamic Link
 			for (Edge edge : BackEdges.getOuts(node)) {
 				stackPointerReference += STACK_ITEM_SIZE;
 				nodeStackOffsets.put(edge.node, stackPointerReference);
@@ -465,6 +473,11 @@ public class X8664AssemblerGenerationVisitor implements NodeVisitor {
 	@Override
 	public void visit(Return node) {
 		addOperation(new Comment("restore stack size"));
+		if (node.getPredCount() > 1) {
+			// Store return value in EAX register
+			getValue(node.getPred(1), Register.EAX);
+		}
+
 		addOperation(new AddqOperation(new Constant(-currentStackOffset), Register.RSP));
 		addOperation(new PopqOperation(Register.RBP));
 		addOperation(new RetOperation());
