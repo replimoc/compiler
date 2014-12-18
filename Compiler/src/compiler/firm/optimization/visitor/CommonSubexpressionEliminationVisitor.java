@@ -17,14 +17,12 @@ import firm.nodes.Sub;
 
 public class CommonSubexpressionEliminationVisitor extends OptimizationVisitor<Node> {
 
-	public static OptimizationVisitorFactory<Node> getFactory() {
-		return new OptimizationVisitorFactory<Node>() {
-			@Override
-			public OptimizationVisitor<Node> create() {
-				return new CommonSubexpressionEliminationVisitor();
-			}
-		};
-	}
+	public static final OptimizationVisitorFactory<Node> FACTORY = new OptimizationVisitorFactory<Node>() {
+		@Override
+		public OptimizationVisitor<Node> create() {
+			return new CommonSubexpressionEliminationVisitor();
+		}
+	};
 
 	private HashMap<NodeValue, Node> nodeValues = new HashMap<>();
 

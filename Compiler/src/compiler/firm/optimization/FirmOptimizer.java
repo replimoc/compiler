@@ -30,10 +30,10 @@ public final class FirmOptimizer {
 		boolean finished = true;
 		do {
 			finished = true;
-			finished &= optimize(ConstantFoldingVisitor.getFactory());
-			finished &= optimize(ArithmeticVisitor.getFactory());
-			finished &= optimize(ControlFlowVisitor.getFactory());
-			finished &= optimize(CommonSubexpressionEliminationVisitor.getFactory());
+			finished &= optimize(ConstantFoldingVisitor.FACTORY);
+			finished &= optimize(ArithmeticVisitor.FACTORY);
+			finished &= optimize(ControlFlowVisitor.FACTORY);
+			finished &= optimize(CommonSubexpressionEliminationVisitor.FACTORY);
 		} while (!finished);
 	}
 

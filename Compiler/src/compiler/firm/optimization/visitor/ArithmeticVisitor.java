@@ -13,14 +13,12 @@ import firm.nodes.Sub;
 
 public class ArithmeticVisitor extends OptimizationVisitor<Node> {
 
-	public static OptimizationVisitorFactory<Node> getFactory() {
-		return new OptimizationVisitorFactory<Node>() {
-			@Override
-			public OptimizationVisitor<Node> create() {
-				return new ArithmeticVisitor();
-			}
-		};
-	}
+	public static final OptimizationVisitorFactory<Node> FACTORY = new OptimizationVisitorFactory<Node>() {
+		@Override
+		public OptimizationVisitor<Node> create() {
+			return new ArithmeticVisitor();
+		}
+	};
 
 	@Override
 	public HashMap<Node, Node> getLatticeValues() {

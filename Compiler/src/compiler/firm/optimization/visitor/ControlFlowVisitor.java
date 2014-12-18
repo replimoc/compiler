@@ -22,14 +22,12 @@ import firm.nodes.Proj;
  */
 public class ControlFlowVisitor extends OptimizationVisitor<Node> {
 
-	public static OptimizationVisitorFactory<Node> getFactory() {
-		return new OptimizationVisitorFactory<Node>() {
-			@Override
-			public OptimizationVisitor<Node> create() {
-				return new ControlFlowVisitor();
-			}
-		};
-	}
+	public static final OptimizationVisitorFactory<Node> FACTORY = new OptimizationVisitorFactory<Node>() {
+		@Override
+		public OptimizationVisitor<Node> create() {
+			return new ControlFlowVisitor();
+		}
+	};
 
 	@Override
 	public HashMap<Node, Node> getLatticeValues() {
