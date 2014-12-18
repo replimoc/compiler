@@ -1,0 +1,98 @@
+class Test {
+	public static void main(String[] args) {
+		int x1 = 1;
+		int x2 = 2;
+		int x3 = 3;
+		int x4 = 4;
+		int x5 = 5;
+		int x6 = 6;
+		int x7 = 7;
+		int x8 = 8;
+		int x9 = 9;
+		int x10 = 10;
+		int x11 = 11;
+		int x12 = 12;
+		int x13 = 13;
+		int x14 = 14;
+		int x15 = 15;
+		int x16 = 16;
+		int x17 = 17;
+		int x18 = 18;
+		int x19 = 19;
+		int x20 = 20;
+		int x21 = 21;
+		int x22 = 22;
+		int x23 = 23;
+		int x24 = 24;
+		int x25 = 25;
+		int x26 = 26;
+		int x27 = 27;
+		int x28 = 28;
+		int x29 = 29;
+		int x30 = 30;
+		
+		while(x30 < 31) {
+			x1 = x1 + 1;
+			x2 = x2 + 2;
+			x3 = x3 + 3;
+			x4 = x4 + 4;
+			x5 = x5 + 5;
+			x6 = x6 + 6;
+			x7 = x7 + 7;
+			x8 = x8 + 8;
+			x9 = x9 + 9;
+			x10 = x10 + 10;
+			x11 = x11 + 11;
+			x12 = x12 + 12;
+			x13 = x13 + 13;
+			x14 = x14 + 14;
+			x15 = x15 + 15;
+			x16 = x16 + 16;
+			x17 = x17 + 17;
+			x18 = x18 + 18;
+			x19 = x19 + 19;
+			x20 = x20 + 20;
+			x21 = x21 + 21;
+			x22 = x22 + 22;
+			x23 = x23 + 23;
+			x24 = x24 + 24;
+			x25 = x25 + 25;
+			x26 = x26 + 26;
+			x27 = x27 + 27;
+			x28 = x28 + 28;
+			x29 = x29 + 29;
+			x30 = x30 + 30;
+		}
+		
+		System.out.println(x1);
+		System.out.println(x2);
+		System.out.println(x3);
+		System.out.println(x4);
+		System.out.println(x5);
+		System.out.println(x6);
+		System.out.println(x7);
+		System.out.println(x8);
+		System.out.println(x9);
+		System.out.println(x10);
+		System.out.println(x11);
+		System.out.println(x12);
+		System.out.println(x13);
+		System.out.println(x14);
+		System.out.println(x15);
+		System.out.println(x16);
+		System.out.println(x17);
+		System.out.println(x18);
+		System.out.println(x19);
+		System.out.println(x20);
+		System.out.println(x21);
+		System.out.println(x22);
+		System.out.println(x23);
+		System.out.println(x24);
+		System.out.println(x25);
+		System.out.println(x26);
+		System.out.println(x27);
+		System.out.println(x28);
+		System.out.println(x29);
+		System.out.println(x30);
+	}
+}

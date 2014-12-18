@@ -10,8 +10,7 @@ env:
   - TARGET=buildJar
   - TARGET=test
 
-
-script: ant -buildfile ./Compiler/build/build.xml $TARGET
+script: ANT_OPTS="-Xmx2048m" ant -buildfile ./Compiler/build/build.xml $TARGET
 
 notifications:
   email:
