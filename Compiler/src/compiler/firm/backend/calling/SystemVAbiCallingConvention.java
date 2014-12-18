@@ -28,7 +28,7 @@ public class SystemVAbiCallingConvention extends CallingConvention {
 
 	@Override
 	public Register[] getParameterRegisters() {
-		return new Register[] { Register.EDI, Register.ESI, Register.EDX, Register.ECX, Register.R8, Register.R9 };
+		return new Register[] { Register.EDI, Register.ESI, Register.EDX, Register.ECX, Register.R8D, Register.R9D };
 	}
 
 	@Override
