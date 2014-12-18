@@ -6,6 +6,7 @@ import java.util.List;
 
 import compiler.firm.backend.calling.CallingConvention;
 import compiler.firm.backend.operations.bit32.AddlOperation;
+import compiler.firm.backend.operations.bit32.ImullOperation;
 import compiler.firm.backend.operations.bit32.MovlOperation;
 import compiler.firm.backend.operations.bit32.SublOperation;
 import compiler.firm.backend.operations.bit32.TwoRegOperandsOperation;
@@ -436,8 +437,10 @@ public class X8664AssemblerGenerationVisitor implements NodeVisitor {
 
 	@Override
 	public void visit(Mul node) {
-		// TODO Auto-generated method stub
+		addOperation(new Comment("sub operation"));
 
+		// we subtract the right node from the left, not the otherway around
+		visitTwoOperandsNode(new ImullOperation(), node, node.getRight(), node.getLeft());
 	}
 
 	@Override
