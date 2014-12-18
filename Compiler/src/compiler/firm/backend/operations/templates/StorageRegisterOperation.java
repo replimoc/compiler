@@ -5,8 +5,12 @@ import compiler.firm.backend.storage.Storage;
 
 public abstract class StorageRegisterOperation extends AssemblerOperation {
 
-	private final Storage storage;
-	private final Register destination;
+	private Storage storage;
+	private Register destination;
+
+	public StorageRegisterOperation(String comment) {
+		super(comment);
+	}
 
 	public StorageRegisterOperation(String comment, Storage storage, Register destination) {
 		super(comment);
@@ -20,5 +24,10 @@ public abstract class StorageRegisterOperation extends AssemblerOperation {
 
 	public Register getDestination() {
 		return destination;
+	}
+
+	public void initialize(Storage storage, Register destination) {
+		this.storage = storage;
+		this.destination = destination;
 	}
 }

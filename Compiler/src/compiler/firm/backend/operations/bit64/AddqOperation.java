@@ -1,10 +1,10 @@
 package compiler.firm.backend.operations.bit64;
 
-import compiler.firm.backend.operations.bit32.TwoRegOperandsOperation;
+import compiler.firm.backend.operations.templates.StorageRegisterOperation;
 import compiler.firm.backend.storage.Register;
 import compiler.firm.backend.storage.Storage;
 
-public class AddqOperation extends TwoRegOperandsOperation {
+public class AddqOperation extends StorageRegisterOperation {
 
 	public AddqOperation() {
 		super(null);
@@ -24,6 +24,6 @@ public class AddqOperation extends TwoRegOperandsOperation {
 
 	@Override
 	public String getOperationString() {
-		return String.format("\taddq %s, %s", getInputRegister().toString64(), getDestinationRegister().toString64());
+		return String.format("\taddq %s, %s", getStorage().toString64(), getDestination().toString64());
 	}
 }

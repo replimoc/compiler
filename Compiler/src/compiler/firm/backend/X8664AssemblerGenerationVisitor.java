@@ -11,7 +11,6 @@ import compiler.firm.backend.operations.bit32.CmpOperation;
 import compiler.firm.backend.operations.bit32.ImullOperation;
 import compiler.firm.backend.operations.bit32.MovlOperation;
 import compiler.firm.backend.operations.bit32.SublOperation;
-import compiler.firm.backend.operations.bit32.TwoRegOperandsOperation;
 import compiler.firm.backend.operations.bit64.AddqOperation;
 import compiler.firm.backend.operations.bit64.CallOperation;
 import compiler.firm.backend.operations.bit64.MovqOperation;
@@ -23,6 +22,7 @@ import compiler.firm.backend.operations.general.Comment;
 import compiler.firm.backend.operations.general.LabelOperation;
 import compiler.firm.backend.operations.general.SizeOperation;
 import compiler.firm.backend.operations.templates.AssemblerOperation;
+import compiler.firm.backend.operations.templates.StorageRegisterOperation;
 import compiler.firm.backend.storage.Constant;
 import compiler.firm.backend.storage.Register;
 import compiler.firm.backend.storage.StackPointer;
@@ -154,7 +154,7 @@ public class X8664AssemblerGenerationVisitor implements NodeVisitor {
 		return nodeStackOffsets.containsKey(node);
 	}
 
-	private <T extends TwoRegOperandsOperation> void visitTwoOperandsNode(T operation, Node parent, Node left,
+	private <T extends StorageRegisterOperation> void visitTwoOperandsNode(T operation, Node parent, Node left,
 			Node right) {
 		// move left node to RAX
 		getValue(left, Register.EAX);
