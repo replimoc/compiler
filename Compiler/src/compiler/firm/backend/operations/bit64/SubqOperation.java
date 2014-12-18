@@ -7,11 +7,15 @@ import compiler.firm.backend.storage.Storage;
 public class SubqOperation extends StorageRegisterOperation {
 
 	public SubqOperation(Storage storage, Register destination) {
-		super(storage, destination);
+		super(null, storage, destination);
+	}
+
+	public SubqOperation(String comment, Storage storage, Register destination) {
+		super(comment, storage, destination);
 	}
 
 	@Override
-	public String toString() {
-		return String.format("\tsubq %s, %s\n", getStorage().toString64(), getDestination().toString64());
+	public String getOperationString() {
+		return String.format("\tsubq %s, %s", getStorage().toString64(), getDestination().toString64());
 	}
 }

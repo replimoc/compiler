@@ -6,12 +6,16 @@ import compiler.firm.backend.storage.Storage;
 public class MovqOperation extends SourceDestinationOperation {
 
 	public MovqOperation(Storage source, Storage destination) {
-		super(source, destination);
+		super(null, source, destination);
+	}
+
+	public MovqOperation(String comment, Storage source, Storage destination) {
+		super(comment, source, destination);
 	}
 
 	@Override
-	public String toString() {
-		return String.format("\tmovq %s, %s\n", getSource().toString64(), getDestination().toString64());
+	public String getOperationString() {
+		return String.format("\tmovq %s, %s", getSource().toString64(), getDestination().toString64());
 	}
 
 }

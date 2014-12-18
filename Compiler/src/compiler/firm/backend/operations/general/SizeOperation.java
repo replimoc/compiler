@@ -2,7 +2,6 @@ package compiler.firm.backend.operations.general;
 
 import compiler.firm.backend.operations.templates.AssemblerOperation;
 
-
 public class SizeOperation extends AssemblerOperation {
 
 	private String name;
@@ -12,7 +11,7 @@ public class SizeOperation extends AssemblerOperation {
 	}
 
 	@Override
-	public String toString() {
-		return String.format("\t.size\t%s, .-%s\n", name, name);
+	public String getOperationString() {
+		return String.format("\t.size\t%s, .-%s", name, name);
 	}
 }

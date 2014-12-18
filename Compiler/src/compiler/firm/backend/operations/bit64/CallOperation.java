@@ -11,8 +11,8 @@ public class CallOperation extends AssemblerOperation {
 	}
 
 	@Override
-	public String toString() {
-		return String.format("\tcall %s\n", name);
+	public String getOperationString() {
+		return String.format("\tcall %s", name);
 	}
 
 }

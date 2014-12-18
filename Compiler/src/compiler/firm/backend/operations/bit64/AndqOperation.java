@@ -7,11 +7,15 @@ import compiler.firm.backend.storage.Storage;
 public class AndqOperation extends StorageRegisterOperation {
 
 	public AndqOperation(Storage storage, Register destination) {
-		super(storage, destination);
+		super(null, storage, destination);
+	}
+
+	public AndqOperation(String comment, Storage storage, Register destination) {
+		super(comment, storage, destination);
 	}
 
 	@Override
-	public String toString() {
-		return String.format("\tandq %s, %s\n", getStorage().toString64(), getDestination().toString64());
+	public String getOperationString() {
+		return String.format("\tandq %s, %s", getStorage().toString64(), getDestination().toString64());
 	}
 }

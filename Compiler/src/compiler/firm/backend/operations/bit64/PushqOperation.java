@@ -8,12 +8,18 @@ public class PushqOperation extends AssemblerOperation {
 	private final Storage storage;
 
 	public PushqOperation(Storage storage) {
+		super(null);
+		this.storage = storage;
+	}
+
+	public PushqOperation(String comment, Storage storage) {
+		super(comment);
 		this.storage = storage;
 	}
 
 	@Override
-	public String toString() {
-		return String.format("\tpushq %s\n", storage.toString64());
+	public String getOperationString() {
+		return String.format("\tpushq %s", storage.toString64());
 	}
 
 }

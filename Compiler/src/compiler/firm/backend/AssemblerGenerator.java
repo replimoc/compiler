@@ -50,6 +50,7 @@ public final class AssemblerGenerator {
 
 		for (AssemblerOperation operation : assembler) {
 			writer.write(operation.toString());
+			writer.newLine();
 		}
 		writer.close();
 	}

@@ -2,12 +2,15 @@ package compiler.firm.backend.operations.general;
 
 import compiler.firm.backend.operations.templates.AssemblerOperation;
 
-
 public class TextOperation extends AssemblerOperation {
 
+	public TextOperation() {
+		super(null);
+	}
+
 	@Override
-	public String toString() {
-		return "\t.text\n";
+	public String getOperationString() {
+		return "\t.text";
 	}
 
 }

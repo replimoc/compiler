@@ -7,11 +7,17 @@ public class PopqOperation extends AssemblerOperation {
 	private final Register register;
 
 	public PopqOperation(Register register) {
+		super(null);
+		this.register = register;
+	}
+
+	public PopqOperation(String comment, Register register) {
+		super(comment);
 		this.register = register;
 	}
 
 	@Override
-	public String toString() {
-		return String.format("\tpopq %s\n", register.toString64());
+	public String getOperationString() {
+		return String.format("\tpopq %s", register.toString64());
 	}
 }

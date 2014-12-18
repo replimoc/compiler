@@ -7,7 +7,8 @@ public abstract class SourceDestinationOperation extends AssemblerOperation {
 	private final Storage source;
 	private final Storage destination;
 
-	public SourceDestinationOperation(Storage source, Storage destination) {
+	public SourceDestinationOperation(String comment, Storage source, Storage destination) {
+		super(comment);
 		this.source = source;
 		this.destination = destination;
 	}

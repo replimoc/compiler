@@ -5,14 +5,23 @@ import compiler.firm.backend.storage.Register;
 public class ImullOperation extends TwoRegOperandsOperation {
 
 	public ImullOperation() {
+		this(null);
+	}
+
+	public ImullOperation(String comment) {
+		super(comment);
 	}
 
 	public ImullOperation(Register input, Register destinationRegister) {
-		super(input, destinationRegister);
+		this(null, input, destinationRegister);
+	}
+
+	public ImullOperation(String comment, Register input, Register destinationRegister) {
+		super(comment, input, destinationRegister);
 	}
 
 	@Override
-	public String toString() {
-		return String.format("\timull %s, %s\n", getInputRegister().toString32(), getDestinationRegister().toString32());
+	public String getOperationString() {
+		return String.format("\timull %s, %s", getInputRegister().toString32(), getDestinationRegister().toString32());
 	}
 }

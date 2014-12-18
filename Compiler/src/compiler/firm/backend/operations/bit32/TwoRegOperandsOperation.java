@@ -8,11 +8,12 @@ public abstract class TwoRegOperandsOperation extends AssemblerOperation {
 	private Register input;
 	private Register destination;
 
-	public TwoRegOperandsOperation() {
-
+	public TwoRegOperandsOperation(String comment) {
+		super(comment);
 	}
 
-	public TwoRegOperandsOperation(Register input, Register destination) {
+	public TwoRegOperandsOperation(String comment, Register input, Register destination) {
+		super(comment);
 		initialize(input, destination);
 	}
 

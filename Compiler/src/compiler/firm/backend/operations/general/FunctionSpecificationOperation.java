@@ -12,11 +12,11 @@ public class FunctionSpecificationOperation extends AssemblerOperation {
 	}
 
 	@Override
-	public String toString() {
+	public String getOperationString() {
 		if (Utils.isWindows()) {
-			return String.format("\t.globl %s\n\t.def\t%s;  .scl    2;      .type   32;     .endef\n", name, name);
+			return String.format("\t.globl %s\n\t.def\t%s;  .scl    2;      .type   32;     .endef", name, name);
 		} else {
-			return String.format("\t.globl %s\n\t.type\t%s, @function\n", name, name);
+			return String.format("\t.globl %s\n\t.type\t%s, @function", name, name);
 		}
 	}
 }

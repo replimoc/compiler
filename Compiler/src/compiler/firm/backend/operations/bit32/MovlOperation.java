@@ -6,12 +6,16 @@ import compiler.firm.backend.storage.Storage;
 public class MovlOperation extends SourceDestinationOperation {
 
 	public MovlOperation(Storage source, Storage destination) {
-		super(source, destination);
+		super(null, source, destination);
+	}
+
+	public MovlOperation(String comment, Storage source, Storage destination) {
+		super(comment, source, destination);
 	}
 
 	@Override
-	public String toString() {
-		return String.format("\tmovl %s, %s\n", getSource().toString32(), getDestination().toString32());
+	public String getOperationString() {
+		return String.format("\tmovl %s, %s", getSource().toString32(), getDestination().toString32());
 	}
 
 }

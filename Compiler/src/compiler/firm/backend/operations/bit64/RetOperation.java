@@ -5,8 +5,8 @@ import compiler.firm.backend.operations.templates.AssemblerOperation;
 public class RetOperation extends AssemblerOperation {
 
 	@Override
-	public String toString() {
-		return "\tret\n";
+	public String getOperationString() {
+		return "\tret";
 	}
 
 }
