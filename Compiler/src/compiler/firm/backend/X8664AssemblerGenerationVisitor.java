@@ -499,10 +499,11 @@ public class X8664AssemblerGenerationVisitor implements NodeVisitor {
 	@Override
 	public void visit(Proj node) {
 		if (node.getPredCount() == 1 && node.getPred(0) instanceof Start && node.getMode().equals(Mode.getT())) {
-			int stackPointerReference = STACK_ITEM_SIZE; // Dynamic Link
 			for (Edge edge : BackEdges.getOuts(node)) {
-				stackPointerReference += STACK_ITEM_SIZE;
-				nodeStackOffsets.put(edge.node, stackPointerReference);
+				if (edge.node instanceof Proj) {
+					Proj proj = (Proj) edge.node;
+					nodeStackOffsets.put(proj, STACK_ITEM_SIZE * (proj.getNum() + 2)); // + 2 for dynamic link
+				}
 			}
 		}
 	}
