@@ -6,6 +6,7 @@ import java.util.List;
 
 import compiler.firm.backend.calling.CallingConvention;
 import compiler.firm.backend.operations.bit32.AddlOperation;
+import compiler.firm.backend.operations.bit32.CmpOperation;
 import compiler.firm.backend.operations.bit32.ImullOperation;
 import compiler.firm.backend.operations.bit32.MovlOperation;
 import compiler.firm.backend.operations.bit32.SublOperation;
@@ -171,9 +172,7 @@ public class X8664AssemblerGenerationVisitor implements NodeVisitor {
 
 	@Override
 	public void visit(Add node) {
-		addOperation(new Comment("add operation"));
-
-		visitTwoOperandsNode(new AddlOperation(), node, node.getLeft(), node.getRight());
+		visitTwoOperandsNode(new AddlOperation("add operation"), node, node.getLeft(), node.getRight());
 	}
 
 	@Override
@@ -323,8 +322,7 @@ public class X8664AssemblerGenerationVisitor implements NodeVisitor {
 
 	@Override
 	public void visit(Cmp node) {
-		// TODO Auto-generated method stub
-
+		visitTwoOperandsNode(new CmpOperation("cmp operation"), node, node.getLeft(), node.getRight());
 	}
 
 	@Override
@@ -443,10 +441,8 @@ public class X8664AssemblerGenerationVisitor implements NodeVisitor {
 
 	@Override
 	public void visit(Mul node) {
-		addOperation(new Comment("sub operation"));
-
 		// we subtract the right node from the left, not the otherway around
-		visitTwoOperandsNode(new ImullOperation(), node, node.getRight(), node.getLeft());
+		visitTwoOperandsNode(new ImullOperation("mul operation"), node, node.getRight(), node.getLeft());
 	}
 
 	@Override
@@ -505,7 +501,6 @@ public class X8664AssemblerGenerationVisitor implements NodeVisitor {
 				nodeStackOffsets.put(edge.node, stackPointerReference);
 			}
 		}
-
 	}
 
 	@Override
@@ -578,10 +573,8 @@ public class X8664AssemblerGenerationVisitor implements NodeVisitor {
 
 	@Override
 	public void visit(Sub node) {
-		addOperation(new Comment("sub operation"));
-
 		// we subtract the right node from the left, not the otherway around
-		visitTwoOperandsNode(new SublOperation(), node, node.getRight(), node.getLeft());
+		visitTwoOperandsNode(new SublOperation("sub operation"), node, node.getRight(), node.getLeft());
 	}
 
 	@Override
