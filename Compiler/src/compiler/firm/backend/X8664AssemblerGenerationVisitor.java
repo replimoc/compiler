@@ -570,7 +570,8 @@ public class X8664AssemblerGenerationVisitor implements NodeVisitor {
 	public void visit(Sub node) {
 		addOperation(new Comment("sub operation"));
 
-		visitTwoOperandsNode(new SublOperation(), node, node.getLeft(), node.getRight());
+		// we subtract the right node from the left, not the otherway around
+		visitTwoOperandsNode(new SublOperation(), node, node.getRight(), node.getLeft());
 	}
 
 	@Override
