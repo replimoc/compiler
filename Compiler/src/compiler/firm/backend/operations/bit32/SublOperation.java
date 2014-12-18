@@ -13,6 +13,6 @@ public class SublOperation extends TwoRegOperandsOperation {
 
 	@Override
 	public String toString() {
-		return String.format("\tsubl %s, %s\n", getInputRegister(), getDestinationRegister());
+		return String.format("\tsubl %s, %s\n", getInputRegister().toString32(), getDestinationRegister().toString32());
 	}
 }

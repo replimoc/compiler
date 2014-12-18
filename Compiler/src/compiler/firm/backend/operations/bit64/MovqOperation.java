@@ -11,7 +11,7 @@ public class MovqOperation extends SourceDestinationOperation {
 
 	@Override
 	public String toString() {
-		return String.format("\tmovq %s, %s\n", getSource(), getDestination());
+		return String.format("\tmovq %s, %s\n", getSource().toString64(), getDestination().toString64());
 	}
 
 }

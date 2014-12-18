@@ -12,6 +12,6 @@ public class AndqOperation extends StorageRegisterOperation {
 
 	@Override
 	public String toString() {
-		return String.format("\tandq %s, %s\n", getStorage(), getDestination());
+		return String.format("\tandq %s, %s\n", getStorage().toString64(), getDestination().toString64());
 	}
 }

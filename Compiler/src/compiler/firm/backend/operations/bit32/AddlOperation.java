@@ -13,6 +13,6 @@ public class AddlOperation extends TwoRegOperandsOperation {
 
 	@Override
 	public String toString() {
-		return String.format("\taddl %s, %s\n", getInputRegister(), getDestinationRegister());
+		return String.format("\taddl %s, %s\n", getInputRegister().toString32(), getDestinationRegister().toString32());
 	}
 }

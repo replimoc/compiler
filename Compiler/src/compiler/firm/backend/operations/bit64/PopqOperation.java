@@ -12,6 +12,6 @@ public class PopqOperation extends AssemblerOperation {
 
 	@Override
 	public String toString() {
-		return String.format("\tpopq %s\n", register);
+		return String.format("\tpopq %s\n", register.toString64());
 	}
 }

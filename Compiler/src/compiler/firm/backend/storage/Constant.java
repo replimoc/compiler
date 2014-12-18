@@ -17,4 +17,14 @@ public class Constant extends Storage {
 		}
 		return result;
 	}
+
+	@Override
+	public String toString32() {
+		return toString();
+	}
+
+	@Override
+	public String toString64() {
+		return toString();
+	}
 }

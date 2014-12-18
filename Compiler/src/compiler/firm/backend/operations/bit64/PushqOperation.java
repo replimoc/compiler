@@ -13,7 +13,7 @@ public class PushqOperation extends AssemblerOperation {
 
 	@Override
 	public String toString() {
-		return String.format("\tpushq %s\n", storage);
+		return String.format("\tpushq %s\n", storage.toString64());
 	}
 
 }

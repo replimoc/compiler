@@ -11,7 +11,7 @@ public class MovlOperation extends SourceDestinationOperation {
 
 	@Override
 	public String toString() {
-		return String.format("\tmovl %s, %s\n", getSource(), getDestination());
+		return String.format("\tmovl %s, %s\n", getSource().toString32(), getDestination().toString32());
 	}
 
 }
