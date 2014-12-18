@@ -112,7 +112,8 @@ public class X8664AssemblerGenerationVisitor implements NodeVisitor {
 	private void getValue(Node node, Register register) {
 		// if variable was assigned, than simply load if from stack
 		if (variableAssigned(node)) {
-			addOperation(new MovlOperation(new StackPointer(getStackOffset(node), Register.RBP), register));
+			addOperation(new MovlOperation("Load node " + node.toString(),
+					new StackPointer(getStackOffset(node), Register.RBP), register));
 			// else we must collect all operations and save the result in register
 		} else {
 
@@ -122,7 +123,8 @@ public class X8664AssemblerGenerationVisitor implements NodeVisitor {
 	private void getProjValue(Proj node, Register register) {
 		// if variable was assigned, than simply load if from stack
 		if (variableAssigned(node)) {
-			addOperation(new MovqOperation(new StackPointer(getStackOffset(node), Register.RBP), register));
+			addOperation(new MovqOperation("Load address " + node.toString(),
+					new StackPointer(getStackOffset(node), Register.RBP), register));
 			// else we must collect all operations and save the result in register
 		} else {
 
@@ -136,10 +138,11 @@ public class X8664AssemblerGenerationVisitor implements NodeVisitor {
 	private void storeValue(Node node, Storage storage) {
 		// Allocate stack
 		currentStackOffset -= STACK_ITEM_SIZE;
-		addOperation(new SubqOperation(new Constant(STACK_ITEM_SIZE), Register.RSP));
+		addOperation(new SubqOperation("Increment stack size", new Constant(STACK_ITEM_SIZE), Register.RSP));
 
 		nodeStackOffsets.put(node, currentStackOffset);
-		addOperation(new MovlOperation(storage, new StackPointer(currentStackOffset, Register.RBP)));
+		addOperation(new MovlOperation("Store node " + node,
+				storage, new StackPointer(currentStackOffset, Register.RBP)));
 	}
 
 	private void storeProjValue(Proj node, Storage storage) {
@@ -148,7 +151,8 @@ public class X8664AssemblerGenerationVisitor implements NodeVisitor {
 		addOperation(new SubqOperation(new Constant(STACK_ITEM_SIZE), Register.RSP));
 
 		nodeStackOffsets.put(node, currentStackOffset);
-		addOperation(new MovqOperation(storage, new StackPointer(currentStackOffset, Register.RBP)));
+		addOperation(new MovqOperation("Store address " + node,
+				storage, new StackPointer(currentStackOffset, Register.RBP)));
 	}
 
 	private boolean variableAssigned(Node node) {
