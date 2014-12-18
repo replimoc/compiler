@@ -276,7 +276,7 @@ public class X8664AssemblerGenerationVisitor implements NodeVisitor {
 			for (Edge edge : BackEdges.getOuts(node)) {
 				if (edge.node.getMode().equals(Mode.getT())) {
 					for (Edge innerEdge : BackEdges.getOuts(edge.node)) {
-						storeValue(innerEdge.node, Register.EAX); // Return value is in EAX
+						storeValue(innerEdge.node, callingConvention.getReturnRegister());
 					}
 				}
 			}

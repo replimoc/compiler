@@ -14,6 +14,9 @@ public class Register extends Storage {
 	public static final Register EDX = new Register("%edx");
 	public static final Register ECX = new Register("%ecx"); // counter (for loop counters);
 
+	public static final Register R8 = new Register("%r8");
+	public static final Register R9 = new Register("%r9");
+
 	private final String registerName;
 
 	Register(String registerName) {

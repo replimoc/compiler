@@ -22,7 +22,7 @@ public class StackCallingConvention extends CallingConvention {
 
 	@Override
 	public Register getReturnRegister() {
-		return null;
+		return Register.EAX;
 	}
 
 }
