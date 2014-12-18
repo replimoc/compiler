@@ -417,7 +417,12 @@ public class X8664AssemblerGenerationVisitor implements NodeVisitor {
 
 	@Override
 	public void visit(Load node) {
-		getProjValue((Proj) node.getPred(1), Register.EAX);
+		Node referenceNode = node.getPred(1);
+		if (referenceNode instanceof Proj) {
+			getProjValue((Proj) referenceNode, Register.EAX);
+		} else {
+			getValue(referenceNode, Register.EAX);
+		}
 		addOperation(new MovqOperation(new StackPointer(0, Register.EAX), Register.EAX));
 		for (Edge edge : BackEdges.getOuts(node)) {
 			Node edgeNode = edge.node;
@@ -587,7 +592,12 @@ public class X8664AssemblerGenerationVisitor implements NodeVisitor {
 
 	@Override
 	public void visit(Store node) {
-		getProjValue((Proj) node.getPred(1), Register.EAX);
+		Node source = node.getPred(1);
+		if (source instanceof Proj) {
+			getProjValue((Proj) source, Register.EAX);
+		} else {
+			getValue(source, Register.EAX);
+		}
 		getValue(node.getPred(2), Register.ECX);
 		addOperation(new MovlOperation(Register.ECX, new StackPointer(0, Register.EAX)));
 	}
