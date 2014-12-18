@@ -109,10 +109,19 @@ public class X8664AssemblerGenerationVisitor implements NodeVisitor {
 	}
 
 	private void getValue(Node node, Register register) {
-		addOperation(new Comment("get value"));
 		// if variable was assigned, than simply load if from stack
 		if (variableAssigned(node)) {
 			addOperation(new MovlOperation(new StackPointer(getStackOffset(node), Register.RBP), register));
+			// else we must collect all operations and save the result in register
+		} else {
+
+		}
+	}
+
+	private void getProjValue(Proj node, Register register) {
+		// if variable was assigned, than simply load if from stack
+		if (variableAssigned(node)) {
+			addOperation(new MovqOperation(new StackPointer(getStackOffset(node), Register.RBP), register));
 			// else we must collect all operations and save the result in register
 		} else {
 
@@ -130,6 +139,15 @@ public class X8664AssemblerGenerationVisitor implements NodeVisitor {
 
 		nodeStackOffsets.put(node, currentStackOffset);
 		addOperation(new MovlOperation(storage, new StackPointer(currentStackOffset, Register.RBP)));
+	}
+
+	private void storeProjValue(Proj node, Storage storage) {
+		// Allocate stack
+		currentStackOffset -= STACK_ITEM_SIZE;
+		addOperation(new SubqOperation(new Constant(STACK_ITEM_SIZE), Register.RSP));
+
+		nodeStackOffsets.put(node, currentStackOffset);
+		addOperation(new MovqOperation(storage, new StackPointer(currentStackOffset, Register.RBP)));
 	}
 
 	private boolean variableAssigned(Node node) {
@@ -249,8 +267,16 @@ public class X8664AssemblerGenerationVisitor implements NodeVisitor {
 				for (int i = 0; i < remainingParameters; i++) {
 					int parameterOffset = getStackOffset(node.getPred(i + firmOffset));
 					// Copy parameter
-					addOperation(new MovlOperation(new StackPointer(parameterOffset, Register.RBP), Register.EAX));
-					addOperation(new MovlOperation(Register.EAX, new StackPointer(i * STACK_ITEM_SIZE, Register.RSP)));
+					StackPointer sourcePointer = new StackPointer(parameterOffset, Register.RBP);
+					Register temporaryRegister = Register.EAX;
+					StackPointer destinationPointer = new StackPointer(i * STACK_ITEM_SIZE, Register.RSP);
+					if (node.getPred(i + firmOffset) instanceof Proj) {
+						addOperation(new MovqOperation(sourcePointer, temporaryRegister));
+						addOperation(new MovqOperation(temporaryRegister, destinationPointer));
+					} else {
+						addOperation(new MovlOperation(sourcePointer, temporaryRegister));
+						addOperation(new MovlOperation(temporaryRegister, destinationPointer));
+					}
 				}
 			}
 			firmOffset -= callingRegisters.length;
@@ -259,7 +285,12 @@ public class X8664AssemblerGenerationVisitor implements NodeVisitor {
 
 			for (int i = 0; i < parametersCount && i < callingRegisters.length; i++) {
 				// Copy parameters in registers
-				getValue(node.getPred(i + firmOffset), callingRegisters[i]);
+				Node parameterNode = node.getPred(i + firmOffset);
+				if (parameterNode instanceof Proj) {
+					getProjValue((Proj) parameterNode, callingRegisters[i]);
+				} else {
+					getValue(parameterNode, callingRegisters[i]);
+				}
 			}
 
 			addOperation(new CallOperation(methodName));
@@ -276,7 +307,11 @@ public class X8664AssemblerGenerationVisitor implements NodeVisitor {
 			for (Edge edge : BackEdges.getOuts(node)) {
 				if (edge.node.getMode().equals(Mode.getT())) {
 					for (Edge innerEdge : BackEdges.getOuts(edge.node)) {
-						storeValue(innerEdge.node, callingConvention.getReturnRegister());
+						if (edge.node instanceof Proj) {
+							storeProjValue((Proj) innerEdge.node, callingConvention.getReturnRegister());
+						} else {
+							storeValue(innerEdge.node, callingConvention.getReturnRegister());
+						}
 					}
 				}
 			}
