@@ -9,6 +9,7 @@ class Test {
 	public int a(int a) {
 		int c = 10;
 		Test d = b();
+		System.out.println(a);
 		d.d();
 		return c;
 	}
