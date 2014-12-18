@@ -137,6 +137,7 @@ public class TestUtils {
 		arguments.add("java");
 		arguments.add("-cp");
 		arguments.add(classpath);
+		arguments.add("-Xmx700m");
 		arguments.add(CompilerApp.class.getName());
 		for (String arg : args) {
 			arguments.add(arg);
