@@ -64,7 +64,7 @@ import firm.nodes.Unknown;
 
 public abstract class OptimizationVisitor<T extends Object> implements NodeVisitor {
 
-	private HashMap<Node, Node> nodeReplacements = new HashMap<>();
+	protected HashMap<Node, Node> nodeReplacements = new HashMap<>();
 
 	public void addReplacement(Node source, Node target) {
 		nodeReplacements.put(source, target);
@@ -110,7 +110,6 @@ public abstract class OptimizationVisitor<T extends Object> implements NodeVisit
 
 	@Override
 	public void visit(And arg0) {
-
 	}
 
 	@Override

@@ -5,6 +5,7 @@ import java.util.LinkedList;
 import java.util.Map.Entry;
 
 import compiler.firm.optimization.visitor.ArithmeticVisitor;
+import compiler.firm.optimization.visitor.CommonSubexpressionEliminationVisitor;
 import compiler.firm.optimization.visitor.ConstantFoldingVisitor;
 import compiler.firm.optimization.visitor.ControlFlowVisitor;
 import compiler.firm.optimization.visitor.OptimizationVisitor;
@@ -32,6 +33,7 @@ public final class FirmOptimizer {
 			finished &= optimize(ConstantFoldingVisitor.getFactory());
 			finished &= optimize(ArithmeticVisitor.getFactory());
 			finished &= optimize(ControlFlowVisitor.getFactory());
+			finished &= optimize(CommonSubexpressionEliminationVisitor.getFactory());
 		} while (!finished);
 	}
 
@@ -117,7 +119,7 @@ public final class FirmOptimizer {
 		for (Entry<Node, Node> targetEntry : targetValuesMap.entrySet()) {
 			Node node = targetEntry.getKey();
 
-			if (node.getPredCount() > 0) {
+			if (node.getPredCount() > 0 && !node.equals(targetEntry.getValue())) {
 				Graph.exchange(node, targetEntry.getValue());
 			}
 		}
