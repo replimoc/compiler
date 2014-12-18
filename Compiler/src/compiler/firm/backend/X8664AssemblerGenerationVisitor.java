@@ -413,8 +413,14 @@ public class X8664AssemblerGenerationVisitor implements NodeVisitor {
 
 	@Override
 	public void visit(Load node) {
-		// TODO Auto-generated method stub
-
+		getProjValue((Proj) node.getPred(1), Register.EAX);
+		addOperation(new MovqOperation(new StackPointer(0, Register.EAX), Register.EAX));
+		for (Edge edge : BackEdges.getOuts(node)) {
+			Node edgeNode = edge.node;
+			if (!edgeNode.getMode().equals(Mode.getM())) {
+				storeValue(edgeNode, Register.EAX);
+			}
+		}
 	}
 
 	@Override
@@ -565,8 +571,9 @@ public class X8664AssemblerGenerationVisitor implements NodeVisitor {
 
 	@Override
 	public void visit(Store node) {
-		// TODO Auto-generated method stub
-
+		getProjValue((Proj) node.getPred(1), Register.EAX);
+		getValue(node.getPred(2), Register.ECX);
+		addOperation(new MovlOperation(Register.ECX, new StackPointer(0, Register.EAX)));
 	}
 
 	@Override
