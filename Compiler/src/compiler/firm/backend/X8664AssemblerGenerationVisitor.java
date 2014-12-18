@@ -502,7 +502,7 @@ public class X8664AssemblerGenerationVisitor implements NodeVisitor {
 		// predecessor must have been cmp node, which has generated cmp operation
 		Cmp cmp = (Cmp) node.getPred(0);
 		if (cmp.getRelation() == Relation.Equal) {
-			// TODO: generate an operation jz LABELXXX and put the label into a hashmap<Node, Label>
+			// TODO: generate an operation jz LABELXXX and put two labels (true, false case) into a hashmap<Node, 2xLabels>
 			// TODO: at each block we get the label through it's pred and prepend before the first operation of the block.
 		} else if (cmp.getRelation() == Relation.False) {
 			// etc.
@@ -513,10 +513,11 @@ public class X8664AssemblerGenerationVisitor implements NodeVisitor {
 	@Override
 	public void visit(Proj node) {
 		if (node.getPredCount() == 1 && node.getPred(0) instanceof Start && node.getMode().equals(Mode.getT())) {
-			int stackPointerReference = STACK_ITEM_SIZE; // Dynamic Link
 			for (Edge edge : BackEdges.getOuts(node)) {
-				stackPointerReference += STACK_ITEM_SIZE;
-				nodeStackOffsets.put(edge.node, stackPointerReference);
+				if (edge.node instanceof Proj) {
+					Proj proj = (Proj) edge.node;
+					nodeStackOffsets.put(proj, STACK_ITEM_SIZE * (proj.getNum() + 2)); // + 2 for dynamic link
+				}
 			}
 		} else if (node.getPred() instanceof Cond) { // if parent is cond
 			visitCondNodeAndJumpTo((Cond) node.getPred());
