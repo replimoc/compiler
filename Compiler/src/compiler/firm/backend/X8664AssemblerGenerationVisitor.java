@@ -32,6 +32,7 @@ import firm.BackEdges;
 import firm.BackEdges.Edge;
 import firm.Graph;
 import firm.Mode;
+import firm.Relation;
 import firm.nodes.Add;
 import firm.nodes.Address;
 import firm.nodes.Align;
@@ -327,6 +328,7 @@ public class X8664AssemblerGenerationVisitor implements NodeVisitor {
 	@Override
 	public void visit(Cmp node) {
 		visitTwoOperandsNode(new CmpOperation("cmp operation"), node, node.getLeft(), node.getRight());
+		// the action after
 	}
 
 	@Override
@@ -496,6 +498,18 @@ public class X8664AssemblerGenerationVisitor implements NodeVisitor {
 
 	}
 
+	private void visitCondNodeAndJumpTo(Cond node) {
+		// predecessor must have been cmp node, which has generated cmp operation
+		Cmp cmp = (Cmp) node.getPred(0);
+		if (cmp.getRelation() == Relation.Equal) {
+			// TODO: generate an operation jz LABELXXX and put the label into a hashmap<Node, Label>
+			// TODO: at each block we get the label through it's pred and prepend before the first operation of the block.
+		} else if (cmp.getRelation() == Relation.False) {
+			// etc.
+		}
+		// TODO: find the corresponding jump operations for each releation
+	}
+
 	@Override
 	public void visit(Proj node) {
 		if (node.getPredCount() == 1 && node.getPred(0) instanceof Start && node.getMode().equals(Mode.getT())) {
@@ -504,6 +518,8 @@ public class X8664AssemblerGenerationVisitor implements NodeVisitor {
 				stackPointerReference += STACK_ITEM_SIZE;
 				nodeStackOffsets.put(edge.node, stackPointerReference);
 			}
+		} else if (node.getPred() instanceof Cond) { // if parent is cond
+			visitCondNodeAndJumpTo((Cond) node.getPred());
 		}
 	}
 
