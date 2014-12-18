@@ -4,6 +4,7 @@ import java.util.HashMap;
 import java.util.LinkedList;
 import java.util.List;
 
+import compiler.firm.FirmUtils;
 import compiler.firm.backend.calling.CallingConvention;
 import compiler.firm.backend.operations.bit32.AddlOperation;
 import compiler.firm.backend.operations.bit32.CmpOperation;
@@ -147,7 +148,7 @@ public class X8664AssemblerGenerationVisitor implements NodeVisitor {
 				storage, new StackPointer(currentStackOffset, Register.RBP)));
 	}
 
-	private void storeProjValue(Proj node, Storage storage) {
+	private void store64Value(Node node, Storage storage) {
 		// Allocate stack
 		currentStackOffset -= STACK_ITEM_SIZE;
 		addOperation(new SubqOperation(new Constant(STACK_ITEM_SIZE), Register.RSP));
@@ -177,7 +178,11 @@ public class X8664AssemblerGenerationVisitor implements NodeVisitor {
 
 	@Override
 	public void visit(Add node) {
-		visitTwoOperandsNode(new AddlOperation("add operation"), node, node.getLeft(), node.getRight());
+		if (node.getMode().equals(FirmUtils.getModeReference())) {
+			visitTwoOperandsNode(new AddqOperation("add operation"), node, node.getLeft(), node.getRight());
+		} else {
+			visitTwoOperandsNode(new AddlOperation("add operation"), node, node.getLeft(), node.getRight());
+		}
 	}
 
 	@Override
@@ -313,7 +318,7 @@ public class X8664AssemblerGenerationVisitor implements NodeVisitor {
 				if (edge.node.getMode().equals(Mode.getT())) {
 					for (Edge innerEdge : BackEdges.getOuts(edge.node)) {
 						if (edge.node instanceof Proj) {
-							storeProjValue((Proj) innerEdge.node, callingConvention.getReturnRegister());
+							store64Value(innerEdge.node, callingConvention.getReturnRegister());
 						} else {
 							storeValue(innerEdge.node, callingConvention.getReturnRegister());
 						}
@@ -351,8 +356,11 @@ public class X8664AssemblerGenerationVisitor implements NodeVisitor {
 
 	@Override
 	public void visit(Conv node) {
-		// TODO Auto-generated method stub
-
+		if (node.getPredCount() >= 1) {
+			// TODO: This should maybe optimized with register allocation.
+			getValue(node.getPred(0), Register.EAX);
+			store64Value(node, Register.EAX);
+		}
 	}
 
 	@Override
