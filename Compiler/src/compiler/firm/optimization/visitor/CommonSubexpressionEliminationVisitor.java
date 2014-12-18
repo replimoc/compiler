@@ -42,12 +42,10 @@ public class CommonSubexpressionEliminationVisitor extends OptimizationVisitor<N
 			return ((Const) node).getTarval().asInt();
 		} else if (node instanceof Conv) {
 			return getValue(node.getPred(0));
+		} else if (nodeReplacements.containsKey(node)) {
+			return getValue(nodeReplacements.get(node));
 		} else {
-			if (nodeReplacements.containsKey(node)) {
-				return getValue(nodeReplacements.get(node));
-			} else {
-				return node.getNr();
-			}
+			return node.getNr();
 		}
 	}
 
@@ -114,8 +112,10 @@ public class CommonSubexpressionEliminationVisitor extends OptimizationVisitor<N
 
 	@Override
 	public void visit(Add add) {
-		Node leftNode = nodeReplacements.get(add.getLeft()) == null ? add.getLeft() : nodeReplacements.get(add.getLeft());
-		Node rightNode = nodeReplacements.get(add.getRight()) == null ? add.getRight() : nodeReplacements.get(add.getRight());
+		Node leftReplacement = nodeReplacements.get(add.getLeft());
+		Node leftNode = leftReplacement == null ? add.getLeft() : leftReplacement;
+		Node rightReplacement = nodeReplacements.get(add.getRight());
+		Node rightNode = rightReplacement == null ? add.getRight() : rightReplacement;
 		int left = getValue(leftNode);
 		int right = getValue(rightNode);
 
