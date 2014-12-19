@@ -7,7 +7,9 @@ import java.util.List;
 import compiler.firm.FirmUtils;
 import compiler.firm.backend.calling.CallingConvention;
 import compiler.firm.backend.operations.bit32.AddlOperation;
+import compiler.firm.backend.operations.bit32.CltdOperation;
 import compiler.firm.backend.operations.bit32.CmpOperation;
+import compiler.firm.backend.operations.bit32.DivOperation;
 import compiler.firm.backend.operations.bit32.ImullOperation;
 import compiler.firm.backend.operations.bit32.MovlOperation;
 import compiler.firm.backend.operations.bit32.SublOperation;
@@ -363,8 +365,16 @@ public class X8664AssemblerGenerationVisitor implements NodeVisitor {
 
 	@Override
 	public void visit(Div node) {
-		// TODO Auto-generated method stub
-
+		addOperation(new Comment("div operation"));
+		// move left node to EAX
+		getValue(node.getLeft(), Register.EAX);
+		addOperation(new CltdOperation());
+		// move right node to RBX
+		getValue(node.getRight(), Register.ESI);
+		// idivl (eax / esi)
+		addOperation(new DivOperation(Register.ESI));
+		// store on stack
+		storeValue(node, Register.EAX);
 	}
 
 	@Override
@@ -442,7 +452,6 @@ public class X8664AssemblerGenerationVisitor implements NodeVisitor {
 
 	@Override
 	public void visit(Mul node) {
-		// we subtract the right node from the left, not the otherway around
 		visitTwoOperandsNode(new ImullOperation("mul operation"), node, node.getRight(), node.getLeft());
 	}
 
@@ -516,6 +525,10 @@ public class X8664AssemblerGenerationVisitor implements NodeVisitor {
 			}
 		} else if (node.getPred() instanceof Cond) { // if parent is cond
 			visitCondNodeAndJumpTo((Cond) node.getPred());
+		} else if (node.getPred() instanceof Div) {
+			// div nodes seems to be projected always, so pass the node offset to Proj node
+			getValue(node.getPred(), Register.EAX);
+			storeValue(node, Register.EAX);
 		}
 	}
 
