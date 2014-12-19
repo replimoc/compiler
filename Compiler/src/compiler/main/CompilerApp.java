@@ -39,6 +39,7 @@ public final class CompilerApp {
 	private static final String OUTPUT_ASSEMBLER = "assembler";
 	private static final String COMPILE_FIRM = "compile-firm";
 	private static final String NO_OPT = "no-opt";
+	private static final String C_INCLUDE = "c-include";
 
 	/**
 	 * Private constructor, as no objects of this class shall be created.
@@ -75,6 +76,7 @@ public final class CompilerApp {
 		options.addOption("o", null, true, "Used to define the filename/path of the generated executable. (Only to be used with --"
 				+ COMPILE_FIRM + ")");
 		options.addOption(null, NO_OPT, false, "deactivate optimizations");
+		options.addOption(null, C_INCLUDE, true, "Compile the given file and use it for the mapping of native methods.");
 
 		CommandLineParser commandLineParser = new BasicParser();
 		try {
@@ -154,7 +156,7 @@ public final class CompilerApp {
 							outputFile = Utils.getBinaryFileName("a");
 						}
 
-						result = FirmUtils.createBinary(outputFile, cmd.hasOption(OUTPUT_ASSEMBLER));
+						result = FirmUtils.createBinary(outputFile, cmd.hasOption(OUTPUT_ASSEMBLER), cmd.getOptionValue(C_INCLUDE));
 					}
 
 					if (!cmd.hasOption(COMPILE_FIRM) && cmd.hasOption(OUTPUT_ASSEMBLER)) {

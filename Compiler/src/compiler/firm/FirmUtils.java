@@ -87,6 +87,18 @@ public final class FirmUtils {
 	 * @throws IOException
 	 */
 	public static int createBinary(String outputFileName, boolean keepAssembler) throws IOException {
+		return createBinary(outputFileName, keepAssembler, null);
+	}
+
+	/**
+	 * Expect escaped outputFileName.
+	 * 
+	 * @param outputFileName
+	 *            File for the binary executable.
+	 * @return
+	 * @throws IOException
+	 */
+	public static int createBinary(String outputFileName, boolean keepAssembler, String cInclude) throws IOException {
 		String base = Utils.getJarLocation() + File.separator;
 		File assembler = new File("assembler.s");
 		if (!keepAssembler) {
@@ -100,20 +112,32 @@ public final class FirmUtils {
 		new File(standardlibO).deleteOnExit();
 
 		String assemblerFile = assembler.getAbsolutePath();
-		String buildFile = build.getAbsolutePath();
+		String buildFileO = build.getAbsolutePath();
 
 		createAssembler(assemblerFile);
 
 		int result = 0;
-		result = printOutput(Utils.systemExec("gcc", "-c", assemblerFile, "-o", buildFile));
+		result = printOutput(Utils.systemExec("gcc", "-c", assemblerFile, "-o", buildFileO));
 		if (result != 0)
 			return result;
 		result = printOutput(Utils.systemExec("gcc", "-c", base + "resources/standardlib.c", "-o", standardlibO));
 		if (result != 0)
 			return result;
-		result = printOutput(Utils.systemExec("gcc", "-o", outputFileName, buildFile, standardlibO));
 
-		return result;
+		Pair<Integer, List<String>> linkResult;
+		if (cInclude != null) {
+			String cIncludeO = Files.createTempFile("cInclude", ".o").toString();
+			new File(standardlibO).deleteOnExit();
+			result = printOutput(Utils.systemExec("gcc", "-c", cInclude, "-o", cIncludeO));
+			if (result != 0)
+				return result;
+
+			linkResult = Utils.systemExec("gcc", "-o", outputFileName, buildFileO, standardlibO, cIncludeO);
+		} else {
+			linkResult = Utils.systemExec("gcc", "-o", outputFileName, buildFileO, standardlibO);
+		}
+
+		return printOutput(linkResult);
 	}
 
 	private static int printOutput(Pair<Integer, List<String>> executionState) {
