@@ -27,11 +27,12 @@ import org.junit.Ignore;
 public class TestFileVisitor extends SimpleFileVisitor<Path> {
 
 	public interface FileTester {
-		void testSourceFile(Path sourceFilePath, Path expectedResultFilePath) throws Exception;
+		void testSourceFile(Path sourceFilePath, Path expectedResultFilePath, Path cIncludeFilePath) throws Exception;
 	}
 
 	public static final String JAVA_EXTENSION = ".java";
 	public static final String MINIJAVA_EXTENSION = ".mj";
+	private static final String C_FILE_EXTENSION = ".c";
 
 	private final String expectedResultFileExtension;
 	private final String sourceFileExtension;
@@ -110,15 +111,17 @@ public class TestFileVisitor extends SimpleFileVisitor<Path> {
 
 	private void testFile(Path file, String fileName) {
 		String sourceFilename = fileName.replace(expectedResultFileExtension, sourceFileExtension);
+		String cFilename = fileName.replace(expectedResultFileExtension, C_FILE_EXTENSION);
 
 		Path sourceFilePath = file.getParent().resolve(sourceFilename);
+		Path cFilePath = file.getParent().resolve(cFilename);
 
 		try {
 			if (!Files.exists(sourceFilePath)) {
 				Assert.fail("cannot find program to output " + sourceFilePath);
 			}
 
-			fileTester.testSourceFile(sourceFilePath, file);
+			fileTester.testSourceFile(sourceFilePath, file, cFilePath);
 		} catch (Throwable e) {
 			testFailed(sourceFilePath, e);
 		}

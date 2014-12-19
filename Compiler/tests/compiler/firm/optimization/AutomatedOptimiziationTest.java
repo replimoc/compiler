@@ -25,7 +25,7 @@ public class AutomatedOptimiziationTest implements FileTester {
 	}
 
 	@Override
-	public void testSourceFile(Path sourceFilePath, Path expectedResultFilePath) throws Exception {
+	public void testSourceFile(Path sourceFilePath, Path expectedResultFilePath, Path cIncludeFilePath) throws Exception {
 		System.out.println("Starting optimiziation test for " + sourceFilePath);
 
 		// optimized binary

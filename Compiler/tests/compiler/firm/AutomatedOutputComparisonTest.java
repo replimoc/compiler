@@ -53,13 +53,19 @@ public class AutomatedOutputComparisonTest implements TestFileVisitor.FileTester
 	}
 
 	@Override
-	public void testSourceFile(Path sourceFile, Path expectedFile) throws Exception {
+	public void testSourceFile(Path sourceFile, Path expectedFile, Path cIncludeFilePath) throws Exception {
 		System.out.println("Testing execution result of " + sourceFile);
 		File binarFile = File.createTempFile("executable", Utils.getBinaryFileName(""));
 		binarFile.deleteOnExit();
 
-		Pair<Integer, List<String>> compilingState = TestUtils.startCompilerApp("-o", binarFile.toString(), "--compile-firm",
-				sourceFile.toAbsolutePath().toString());
+		Pair<Integer, List<String>> compilingState;
+		if (Files.exists(cIncludeFilePath)) {
+			compilingState = TestUtils.startCompilerApp("-o", binarFile.toString(), "--c-include", cIncludeFilePath.toString(), "--compile-firm",
+					sourceFile.toAbsolutePath().toString());
+		} else {
+			compilingState = TestUtils.startCompilerApp("-o", binarFile.toString(), "--compile-firm", sourceFile.toAbsolutePath().toString());
+		}
+
 		for (String line : compilingState.getSecond()) {
 			System.out.println(line);
 		}
