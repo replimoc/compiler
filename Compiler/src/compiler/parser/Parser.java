@@ -11,6 +11,7 @@ import compiler.ast.Block;
 import compiler.ast.Program;
 import compiler.ast.declaration.ClassDeclaration;
 import compiler.ast.declaration.FieldDeclaration;
+import compiler.ast.declaration.LocalVariableDeclaration;
 import compiler.ast.declaration.MemberDeclaration;
 import compiler.ast.declaration.MethodDeclaration;
 import compiler.ast.declaration.NativeMethodDeclaration;
@@ -21,7 +22,6 @@ import compiler.ast.statement.BooleanConstantExpression;
 import compiler.ast.statement.Expression;
 import compiler.ast.statement.IfStatement;
 import compiler.ast.statement.IntegerConstantExpression;
-import compiler.ast.statement.LocalVariableDeclaration;
 import compiler.ast.statement.MethodInvocationExpression;
 import compiler.ast.statement.NewArrayExpression;
 import compiler.ast.statement.NewObjectExpression;
@@ -196,7 +196,7 @@ public class Parser {
 						if (nativeMethod) {
 							isTokenType(TokenType.SEMICOLON);
 							consumeToken();
-							return new NativeMethodDeclaration(firstToken.getPosition(), identifier.getValue(), identifier, parameters, type);
+							return new NativeMethodDeclaration(firstToken.getPosition(), identifier, parameters, type);
 						} else {
 							return new MethodDeclaration(firstToken.getPosition(), firstToken.getSymbol(), parameters, type, parseBlock());
 						}

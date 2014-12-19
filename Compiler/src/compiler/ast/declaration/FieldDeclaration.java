@@ -6,7 +6,6 @@ import compiler.ast.visitor.AstVisitor;
 import compiler.lexer.Position;
 
 public class FieldDeclaration extends MemberDeclaration {
-	private static final String MEMBER_TYPE = "f";
 	private final Type type;
 
 	public FieldDeclaration(Type type, Symbol identifier) {
@@ -18,6 +17,7 @@ public class FieldDeclaration extends MemberDeclaration {
 		this.type = type;
 	}
 
+	@Override
 	public Type getType() {
 		return type;
 	}
@@ -30,11 +30,6 @@ public class FieldDeclaration extends MemberDeclaration {
 	@Override
 	protected int getSortPriority() {
 		return 1;
-	}
-
-	@Override
-	public String getMemberType() {
-		return MEMBER_TYPE;
 	}
 
 	@Override

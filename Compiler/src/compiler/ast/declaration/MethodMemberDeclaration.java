@@ -7,7 +7,6 @@ import compiler.ast.type.Type;
 import compiler.lexer.Position;
 
 public abstract class MethodMemberDeclaration extends MemberDeclaration {
-	private static final String MEMBER_TYPE = "m";
 
 	private final List<ParameterDeclaration> parameters;
 	private final Type returnType;
@@ -34,11 +33,6 @@ public abstract class MethodMemberDeclaration extends MemberDeclaration {
 	@Override
 	protected int getSortPriority() {
 		return 0;
-	}
-
-	@Override
-	public String getMemberType() {
-		return MEMBER_TYPE;
 	}
 
 	@Override

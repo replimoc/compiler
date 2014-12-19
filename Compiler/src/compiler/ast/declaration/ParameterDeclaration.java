@@ -6,7 +6,6 @@ import compiler.ast.visitor.AstVisitor;
 import compiler.lexer.Position;
 
 public class ParameterDeclaration extends Declaration {
-	private static final String MEMBER_TYPE = "l";
 	private int variableNumber;
 
 	public ParameterDeclaration(Position position, Type type, Symbol identifier) {
@@ -28,10 +27,5 @@ public class ParameterDeclaration extends Declaration {
 
 	public int getVariableNumber() {
 		return variableNumber;
-	}
-
-	@Override
-	public String getMemberType() {
-		return MEMBER_TYPE;
 	}
 }

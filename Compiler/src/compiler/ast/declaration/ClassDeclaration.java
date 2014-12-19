@@ -9,7 +9,6 @@ import compiler.ast.visitor.AstVisitor;
 import compiler.lexer.Position;
 
 public class ClassDeclaration extends Declaration implements Comparable<ClassDeclaration> {
-	private static final String MEMBER_TYPE = "c";
 	private final List<MemberDeclaration> members = new ArrayList<MemberDeclaration>();
 
 	public ClassDeclaration(Position position, Symbol identifier) {
@@ -47,10 +46,5 @@ public class ClassDeclaration extends Declaration implements Comparable<ClassDec
 	@Override
 	public int compareTo(ClassDeclaration o) {
 		return getIdentifier().getValue().compareTo(o.getIdentifier().getValue());
-	}
-
-	@Override
-	public String getMemberType() {
-		return MEMBER_TYPE;
 	}
 }

@@ -8,7 +8,7 @@ import compiler.StringTable;
 import compiler.Symbol;
 import compiler.ast.AstNode;
 import compiler.ast.declaration.ClassDeclaration;
-import compiler.ast.declaration.NativeMethodDeclaration;
+import compiler.ast.declaration.NativeMethodFixedNameDeclaration;
 import compiler.ast.declaration.ParameterDeclaration;
 import compiler.ast.declaration.StaticFieldDeclaration;
 import compiler.ast.type.BasicType;
@@ -34,7 +34,7 @@ public final class SemanticChecker {
 			// create PrintStream class
 			Symbol printStreamName = getRandomName(stringTable, classScopes, "PrintStream");
 			ClassDeclaration printStream = new ClassDeclaration(printStreamName,
-					new NativeMethodDeclaration(null, "print_int", getSymbol(stringTable, "println"),
+					new NativeMethodFixedNameDeclaration(null, "print_int", getSymbol(stringTable, "println"),
 							Arrays.asList(new ParameterDeclaration(new Type(BasicType.INT), getSymbol(stringTable, "arg0"))),
 							new Type(BasicType.VOID)));
 			printStream.accept(preAnalysisVisitor);

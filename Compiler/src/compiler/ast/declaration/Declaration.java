@@ -24,16 +24,8 @@ public abstract class Declaration extends AstNode {
 	}
 
 	public String getAssemblerName() {
-		return "_" + escapeName(getClassName()) + "_"
-				+ escapeName(getMemberType()) + "_"
-				+ escapeName(getIdentifier().getValue());
+		return getClassName() + "$" + getIdentifier().getValue();
 	}
-
-	private String escapeName(String name) {
-		return name.replaceAll("_", "__");
-	}
-
-	public abstract String getMemberType();
 
 	public void setClassDeclaration(ClassDeclaration classDeclaration) {
 		this.classDeclaration = classDeclaration;

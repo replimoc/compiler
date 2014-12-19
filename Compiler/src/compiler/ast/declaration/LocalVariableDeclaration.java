@@ -1,14 +1,14 @@
-package compiler.ast.statement;
+package compiler.ast.declaration;
 
 import compiler.Symbol;
-import compiler.ast.declaration.Declaration;
+import compiler.ast.statement.Expression;
+import compiler.ast.statement.Statement;
 import compiler.ast.type.Type;
 import compiler.ast.visitor.AstVisitor;
 import compiler.lexer.Position;
 
 public class LocalVariableDeclaration extends Declaration implements Statement {
 
-	private static final String MEMBER_TYPE = "l";
 	private final Expression expression;
 	private int variableNumber;
 
@@ -49,10 +49,5 @@ public class LocalVariableDeclaration extends Declaration implements Statement {
 
 	public void setVariableNumber(int variableNumber) {
 		this.variableNumber = variableNumber;
-	}
-
-	@Override
-	public String getMemberType() {
-		return MEMBER_TYPE;
 	}
 }
