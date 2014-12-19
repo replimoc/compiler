@@ -14,6 +14,11 @@ public class NativeMethodDeclaration extends MethodMemberDeclaration {
 	}
 
 	@Override
+	protected String getAssemblerNamePrefix() {
+		return "";
+	}
+
+	@Override
 	public void accept(AstVisitor visitor) {
 		visitor.visit(this);
 	}

@@ -17,6 +17,11 @@ public class ParameterDeclaration extends Declaration {
 	}
 
 	@Override
+	protected String getAssemblerNamePrefix() {
+		return "p$";
+	}
+
+	@Override
 	public void accept(AstVisitor visitor) {
 		visitor.visit(this);
 	}

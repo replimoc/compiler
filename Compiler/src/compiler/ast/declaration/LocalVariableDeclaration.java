@@ -39,6 +39,11 @@ public class LocalVariableDeclaration extends Declaration implements Statement {
 	}
 
 	@Override
+	protected String getAssemblerNamePrefix() {
+		return "l$";
+	}
+
+	@Override
 	public void accept(AstVisitor visitor) {
 		visitor.visit(this);
 	}

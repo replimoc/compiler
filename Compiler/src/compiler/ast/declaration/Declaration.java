@@ -24,8 +24,10 @@ public abstract class Declaration extends AstNode {
 	}
 
 	public String getAssemblerName() {
-		return getClassName() + "$" + getIdentifier().getValue();
+		return getAssemblerNamePrefix() + getClassName() + "$" + getIdentifier().getValue();
 	}
+
+	protected abstract String getAssemblerNamePrefix();
 
 	public void setClassDeclaration(ClassDeclaration classDeclaration) {
 		this.classDeclaration = classDeclaration;

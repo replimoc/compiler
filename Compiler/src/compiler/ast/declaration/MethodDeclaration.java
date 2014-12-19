@@ -39,6 +39,11 @@ public class MethodDeclaration extends MethodMemberDeclaration {
 	}
 
 	@Override
+	protected String getAssemblerNamePrefix() {
+		return "m$";
+	}
+
+	@Override
 	public void accept(AstVisitor visitor) {
 		visitor.visit(this);
 	}

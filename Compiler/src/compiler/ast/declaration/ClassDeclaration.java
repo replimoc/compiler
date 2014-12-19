@@ -39,6 +39,11 @@ public class ClassDeclaration extends Declaration implements Comparable<ClassDec
 	}
 
 	@Override
+	protected String getAssemblerNamePrefix() {
+		return "c$";
+	}
+
+	@Override
 	public void accept(AstVisitor visitor) {
 		visitor.visit(this);
 	}
