@@ -16,8 +16,10 @@ import compiler.firm.backend.operations.general.TextOperation;
 import compiler.firm.backend.operations.templates.AssemblerOperation;
 
 import firm.BackEdges;
+import firm.BlockWalker;
 import firm.Graph;
 import firm.Program;
+import firm.nodes.Block;
 
 public final class AssemblerGenerator {
 
@@ -39,7 +41,20 @@ public final class AssemblerGenerator {
 			BackEdges.enable(graph);
 			graph.walkTopological(visitor);
 			BackEdges.disable(graph);
-			assembler.addAll(visitor.getAssembler());
+			// walk the blocks and order them
+			graph.walkBlocks(new BlockWalker() {
+
+				@Override
+				public void visitBlock(Block block) {
+					List<AssemblerOperation> ap = visitor.getAssembler(block);
+					if (ap == null) {
+						System.out.println(42);
+					} else {
+						assembler.addAll(ap);
+					}
+				}
+
+			});
 		}
 
 		generateAssemblerFile(outputFile, assembler);
