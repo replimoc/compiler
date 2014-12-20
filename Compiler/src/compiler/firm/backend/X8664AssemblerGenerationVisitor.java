@@ -11,6 +11,7 @@ import compiler.firm.backend.operations.bit32.CltdOperation;
 import compiler.firm.backend.operations.bit32.CmpOperation;
 import compiler.firm.backend.operations.bit32.DivOperation;
 import compiler.firm.backend.operations.bit32.ImullOperation;
+import compiler.firm.backend.operations.bit32.JumpOperation;
 import compiler.firm.backend.operations.bit32.MovlOperation;
 import compiler.firm.backend.operations.bit32.SublOperation;
 import compiler.firm.backend.operations.bit64.AddqOperation;
@@ -98,9 +99,13 @@ public class X8664AssemblerGenerationVisitor implements NodeVisitor {
 	private static final int STACK_ITEM_SIZE = 8;
 
 	private HashMap<String, CallingConvention> callingConventions;
+	// resulting assembler operations
 	private final List<AssemblerOperation> assembler = new LinkedList<AssemblerOperation>();
+	// stack management
 	private final HashMap<Node, Integer> nodeStackOffsets = new HashMap<>();
 	private int currentStackOffset;
+	// labels for the functions
+	private final HashMap<Node, String> condBranchLabels = new HashMap<>();
 
 	public X8664AssemblerGenerationVisitor(HashMap<String, CallingConvention> callingConventions) {
 		this.callingConventions = callingConventions;
@@ -164,7 +169,7 @@ public class X8664AssemblerGenerationVisitor implements NodeVisitor {
 		getValue(right, Register.EDX);
 		// TODO: find a nicer way to instantiate T directly instead of passing an instance and then initializing
 		operation.initialize(Register.EAX, Register.EDX);
-		// add RAX to RBX
+		// execute operation on RAX, RBX
 		addOperation(operation);
 		// store on stack
 		storeValue(parent, Register.EDX);
@@ -228,6 +233,13 @@ public class X8664AssemblerGenerationVisitor implements NodeVisitor {
 			String methodName = graph.getEntity().getLdName();
 			if (!Utils.isWindows()) {
 				addOperation(new SizeOperation(methodName));
+			}
+		}
+		// prepend a label to jump to
+		if (node.getPredCount() > 0) {
+			String label = condBranchLabels.get(node.getPred(0));
+			if (label != null) {
+				addOperation(new LabelOperation(label));
 			}
 		}
 	}
@@ -320,8 +332,8 @@ public class X8664AssemblerGenerationVisitor implements NodeVisitor {
 
 	@Override
 	public void visit(Cmp node) {
-		visitTwoOperandsNode(new CmpOperation("cmp operation"), node, node.getLeft(), node.getRight());
-		// the action after
+		// TODO Auto-generated method stub
+
 	}
 
 	@Override
@@ -502,12 +514,37 @@ public class X8664AssemblerGenerationVisitor implements NodeVisitor {
 
 	}
 
-	private void visitCondNodeAndJumpTo(Cond node) {
+	private final HashMap<Cond, Boolean> isCondInstructionInserted = new HashMap<>();
+	private static int currentLabelIndex = 0;
+
+	private void visitCondNode(Cond node, Node leftNode, Node rightNode) {
+		getValue(leftNode, Register.EAX);
+		getValue(rightNode, Register.EDX);
+		addOperation(new CmpOperation("cmp operation", Register.EAX, Register.EDX));
+	}
+
+	private void visitCondNodeAndJumpTo(Proj projNode, Cond condNode) {
 		// predecessor must have been cmp node, which has generated cmp operation
-		Cmp cmp = (Cmp) node.getPred(0);
+		Cmp cmp = (Cmp) condNode.getPred(0);
 		if (cmp.getRelation() == Relation.Equal) {
 			// TODO: generate an operation jz LABELXXX and put two labels (true, false case) into a hashmap<Node, 2xLabels>
 			// TODO: at each block we get the label through it's pred and prepend before the first operation of the block.
+
+			Boolean alreadyInserted = isCondInstructionInserted.get(condNode);
+			if (alreadyInserted != null && alreadyInserted == false) {
+				visitCondNode(condNode, cmp.getLeft(), cmp.getRight());
+			}
+
+			// create new label
+			condBranchLabels.put(projNode, "CNDBRANCH_" + currentLabelIndex);
+			currentLabelIndex++;
+
+			// proj true branch
+			if (projNode.getNum() == FirmUtils.TRUE) {
+				addOperation(JumpOperation.createJumpZero(condBranchLabels.get(projNode)));
+			} else {
+				addOperation(JumpOperation.createJumpNoZero(condBranchLabels.get(projNode)));
+			}
 		} else if (cmp.getRelation() == Relation.False) {
 			// etc.
 		}
@@ -524,7 +561,7 @@ public class X8664AssemblerGenerationVisitor implements NodeVisitor {
 				}
 			}
 		} else if (node.getPred() instanceof Cond) { // if parent is cond
-			visitCondNodeAndJumpTo((Cond) node.getPred());
+			visitCondNodeAndJumpTo(node, (Cond) node.getPred());
 		} else if (node.getPred() instanceof Div) {
 			// div nodes seems to be projected always, so pass the node offset to Proj node
 			getValue(node.getPred(), Register.EAX);
