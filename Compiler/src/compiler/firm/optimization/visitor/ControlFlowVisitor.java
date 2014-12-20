@@ -13,6 +13,7 @@ import firm.nodes.Cond;
 import firm.nodes.Const;
 import firm.nodes.Jmp;
 import firm.nodes.Node;
+import firm.nodes.Phi;
 import firm.nodes.Proj;
 
 /**
@@ -114,4 +115,20 @@ public class ControlFlowVisitor extends OptimizationVisitor<Node> {
 		}
 	}
 
+	@Override
+	public void visit(Phi phi) {
+		boolean isTrivial = false;
+		Node otherNode = null;
+		for (Node predecessor : phi.getPreds()) {
+			if (predecessor.equals(phi)) {
+				isTrivial = true;
+			} else {
+				otherNode = predecessor;
+			}
+		}
+
+		if (isTrivial && phi.getLoop() == 0) {
+			addReplacement(phi, otherNode);
+		}
+	}
 }
