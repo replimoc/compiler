@@ -20,6 +20,10 @@ public class Utils {
 		return System.getProperty("os.name").startsWith("Windows");
 	}
 
+	public static Pair<Integer, List<String>> systemExec(List<String> strings) throws IOException {
+		return runProcessBuilder(new ProcessBuilder(strings));
+	}
+
 	public static Pair<Integer, List<String>> systemExec(String... strings) throws IOException {
 		return runProcessBuilder(new ProcessBuilder(strings));
 	}

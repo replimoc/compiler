@@ -3,6 +3,8 @@ package compiler.firm;
 import java.io.File;
 import java.io.IOException;
 import java.nio.file.Files;
+import java.util.Arrays;
+import java.util.LinkedList;
 import java.util.List;
 
 import compiler.utils.Pair;
@@ -86,19 +88,7 @@ public final class FirmUtils {
 	 * @return
 	 * @throws IOException
 	 */
-	public static int createBinary(String outputFileName, boolean keepAssembler) throws IOException {
-		return createBinary(outputFileName, keepAssembler, null);
-	}
-
-	/**
-	 * Expect escaped outputFileName.
-	 * 
-	 * @param outputFileName
-	 *            File for the binary executable.
-	 * @return
-	 * @throws IOException
-	 */
-	public static int createBinary(String outputFileName, boolean keepAssembler, String cInclude) throws IOException {
+	public static int createBinary(String outputFileName, boolean keepAssembler, String cInclude, String cLibrary) throws IOException {
 		String base = Utils.getJarLocation() + File.separator;
 		File assembler = new File("assembler.s");
 		if (!keepAssembler) {
@@ -124,7 +114,9 @@ public final class FirmUtils {
 		if (result != 0)
 			return result;
 
-		Pair<Integer, List<String>> linkResult;
+		List<String> execOptions = new LinkedList<String>();
+		execOptions.addAll(Arrays.asList("gcc", "-o", outputFileName, buildFileO, standardlibO));
+
 		if (cInclude != null) {
 			String cIncludeO = Files.createTempFile("cInclude", ".o").toString();
 			new File(standardlibO).deleteOnExit();
@@ -132,12 +124,14 @@ public final class FirmUtils {
 			if (result != 0)
 				return result;
 
-			linkResult = Utils.systemExec("gcc", "-o", outputFileName, buildFileO, standardlibO, cIncludeO);
-		} else {
-			linkResult = Utils.systemExec("gcc", "-o", outputFileName, buildFileO, standardlibO);
+			execOptions.add(cIncludeO);
 		}
 
-		return printOutput(linkResult);
+		if (cLibrary != null) {
+			execOptions.add("-l" + cLibrary);
+		}
+
+		return printOutput(Utils.systemExec(execOptions));
 	}
 
 	private static int printOutput(Pair<Integer, List<String>> executionState) {

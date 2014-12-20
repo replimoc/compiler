@@ -6,12 +6,12 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 
-import org.apache.commons.cli.BasicParser;
 import org.apache.commons.cli.CommandLine;
 import org.apache.commons.cli.CommandLineParser;
 import org.apache.commons.cli.HelpFormatter;
 import org.apache.commons.cli.Options;
 import org.apache.commons.cli.ParseException;
+import org.apache.commons.cli.PosixParser;
 
 import compiler.StringTable;
 import compiler.ast.AstNode;
@@ -40,6 +40,7 @@ public final class CompilerApp {
 	private static final String COMPILE_FIRM = "compile-firm";
 	private static final String NO_OPT = "no-opt";
 	private static final String C_INCLUDE = "c-include";
+	private static final String C_LIBRARY = "l";
 
 	/**
 	 * Private constructor, as no objects of this class shall be created.
@@ -73,12 +74,13 @@ public final class CompilerApp {
 		options.addOption(null, OUTPUT_ASSEMBLER, false, "outputs the generated assembler into file assembler.s. (Only to be used with --"
 				+ COMPILE_FIRM + ")");
 		options.addOption(null, COMPILE_FIRM, false, "use the firm backend to produce amd64 code.");
-		options.addOption("o", null, true, "Used to define the filename/path of the generated executable. (Only to be used with --"
+		options.addOption("o", true, "Used to define the filename/path of the generated executable. (Only to be used with --"
 				+ COMPILE_FIRM + ")");
 		options.addOption(null, NO_OPT, false, "deactivate optimizations");
 		options.addOption(null, C_INCLUDE, true, "Compile the given file and use it for the mapping of native methods.");
+		options.addOption(C_LIBRARY, true, "Use the given library for linking the c file given with --" + C_INCLUDE + ".");
 
-		CommandLineParser commandLineParser = new BasicParser();
+		CommandLineParser commandLineParser = new PosixParser();
 		try {
 			CommandLine cmd = commandLineParser.parse(options, args);
 			debug = cmd.hasOption(DEBUG);
@@ -156,7 +158,8 @@ public final class CompilerApp {
 							outputFile = Utils.getBinaryFileName("a");
 						}
 
-						result = FirmUtils.createBinary(outputFile, cmd.hasOption(OUTPUT_ASSEMBLER), cmd.getOptionValue(C_INCLUDE));
+						result = FirmUtils.createBinary(outputFile, cmd.hasOption(OUTPUT_ASSEMBLER), cmd.getOptionValue(C_INCLUDE),
+								cmd.getOptionValue(C_LIBRARY));
 					}
 
 					if (!cmd.hasOption(COMPILE_FIRM) && cmd.hasOption(OUTPUT_ASSEMBLER)) {
