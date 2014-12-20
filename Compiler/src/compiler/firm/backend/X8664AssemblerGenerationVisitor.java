@@ -1,7 +1,7 @@
 package compiler.firm.backend;
 
+import java.util.ArrayList;
 import java.util.HashMap;
-import java.util.LinkedList;
 import java.util.List;
 
 import compiler.firm.FirmUtils;
@@ -9,6 +9,7 @@ import compiler.firm.backend.calling.CallingConvention;
 import compiler.firm.backend.operations.bit32.AddlOperation;
 import compiler.firm.backend.operations.bit32.CltdOperation;
 import compiler.firm.backend.operations.bit32.CmpOperation;
+import compiler.firm.backend.operations.bit32.CondJumpOperation;
 import compiler.firm.backend.operations.bit32.DivOperation;
 import compiler.firm.backend.operations.bit32.ImullOperation;
 import compiler.firm.backend.operations.bit32.JumpOperation;
@@ -99,24 +100,39 @@ public class X8664AssemblerGenerationVisitor implements NodeVisitor {
 	private static final int STACK_ITEM_SIZE = 8;
 
 	private HashMap<String, CallingConvention> callingConventions;
-	// resulting assembler operations
-	private final List<AssemblerOperation> assembler = new LinkedList<AssemblerOperation>();
 	// stack management
 	private final HashMap<Node, Integer> nodeStackOffsets = new HashMap<>();
 	private int currentStackOffset;
 	// labels for the functions
 	private final HashMap<Node, String> condBranchLabels = new HashMap<>();
+	// instruction list per Block
+	private final HashMap<Node, String> blockLabels = new HashMap<>();
+	private final HashMap<Node, List<AssemblerOperation>> blockOperations = new HashMap<>();
 
 	public X8664AssemblerGenerationVisitor(HashMap<String, CallingConvention> callingConventions) {
 		this.callingConventions = callingConventions;
 	}
 
-	public List<AssemblerOperation> getAssembler() {
-		return assembler;
+	public List<AssemblerOperation> getAssembler(Block block) {
+
+		List<AssemblerOperation> instructions = blockOperations.get(block);
+		for (int j = 0; j < instructions.size(); j++) {
+			if (instructions.get(j) instanceof JumpOperation) {
+				AssemblerOperation ap = instructions.remove(j);
+				instructions.add(ap);
+				break;
+			}
+		}
+		return instructions;
 	}
 
-	private void addOperation(AssemblerOperation assemblerOption) {
-		assembler.add(assemblerOption);
+	private void addOperation(Node block, AssemblerOperation assemblerOption) {
+		// System.out.println("block " + block);
+		// System.out.println("\t " + assemblerOption.toString());
+		if (blockOperations.containsKey(block) == false) {
+			blockOperations.put(block, new ArrayList<AssemblerOperation>());
+		}
+		blockOperations.get(block).add(assemblerOption);
 	}
 
 	private boolean is64bitNode(Node node) {
@@ -129,9 +145,9 @@ public class X8664AssemblerGenerationVisitor implements NodeVisitor {
 
 			StackPointer stackPointer = new StackPointer(getStackOffset(node), Register.RBP);
 			if (is64bitNode(node)) {
-				addOperation(new MovqOperation("Load address " + node.toString(), stackPointer, register));
+				addOperation(node.getBlock(), new MovqOperation("Load address " + node.toString(), stackPointer, register));
 			} else {
-				addOperation(new MovlOperation("Load node " + node.toString(), stackPointer, register));
+				addOperation(node.getBlock(), new MovlOperation("Load node " + node.toString(), stackPointer, register));
 			}
 			// else we must collect all operations and save the result in register
 		} else {
@@ -146,14 +162,14 @@ public class X8664AssemblerGenerationVisitor implements NodeVisitor {
 	private void storeValue(Node node, Storage storage) {
 		// Allocate stack
 		currentStackOffset -= STACK_ITEM_SIZE;
-		addOperation(new SubqOperation("Increment stack size", new Constant(STACK_ITEM_SIZE), Register.RSP));
+		addOperation(node.getBlock(), new SubqOperation("Increment stack size", new Constant(STACK_ITEM_SIZE), Register.RSP));
 
 		nodeStackOffsets.put(node, currentStackOffset);
 		StackPointer stackPointer = new StackPointer(currentStackOffset, Register.RBP);
 		if (is64bitNode(node)) {
-			addOperation(new MovqOperation("Store node " + node, storage, stackPointer));
+			addOperation(node.getBlock(), new MovqOperation("Store node " + node, storage, stackPointer));
 		} else {
-			addOperation(new MovlOperation("Store node " + node, storage, stackPointer));
+			addOperation(node.getBlock(), new MovlOperation("Store node " + node, storage, stackPointer));
 		}
 	}
 
@@ -170,7 +186,7 @@ public class X8664AssemblerGenerationVisitor implements NodeVisitor {
 		// TODO: find a nicer way to instantiate T directly instead of passing an instance and then initializing
 		operation.initialize(Register.EAX, Register.EDX);
 		// execute operation on RAX, RBX
-		addOperation(operation);
+		addOperation(parent.getBlock(), operation);
 		// store on stack
 		storeValue(parent, Register.EDX);
 	}
@@ -193,7 +209,6 @@ public class X8664AssemblerGenerationVisitor implements NodeVisitor {
 	@Override
 	public void visit(Align node) {
 		// TODO Auto-generated method stub
-
 	}
 
 	@Override
@@ -228,20 +243,49 @@ public class X8664AssemblerGenerationVisitor implements NodeVisitor {
 
 	@Override
 	public void visit(Block node) {
+		addOperation(node.getBlock(), new Comment(node.toString()));
+
+		String label = "BLOCK_" + node.getNr();
+		blockLabels.put(node, label);
+
+		// we are in start block
+		if (node.getPredCount() == 0) {
+			Graph graph = node.getGraph();
+			String methodName = graph.getEntity().getLdName();
+			addOperation(node, new LabelOperation(methodName));
+
+			addOperation(node, new PushqOperation(Register.RBP)); // Dynamic Link
+			addOperation(node, new MovqOperation(Register.RSP, Register.RBP));
+		}
+
 		Graph graph = node.getGraph();
 		if (node.equals(graph.getEndBlock())) {
 			String methodName = graph.getEntity().getLdName();
 			if (!Utils.isWindows()) {
-				addOperation(new SizeOperation(methodName));
+				addOperation(node.getBlock(), new SizeOperation(methodName));
 			}
 		}
-		// prepend a label to jump to
-		if (node.getPredCount() > 0) {
-			String label = condBranchLabels.get(node.getPred(0));
-			if (label != null) {
-				addOperation(new LabelOperation(label));
+
+		for (int i = 0; i < node.getPredCount(); i++) {
+			Node pred = node.getPred(i);
+
+			// prepend a label to jump to
+			if (pred instanceof Proj) {
+				Proj projNode = (Proj) node.getPred(0);
+				String iflabel = "";
+				if (projNode.getNum() == FirmUtils.TRUE) {
+					iflabel += "TRUE_" + node.getPred(0).getNr();
+				} else {
+					iflabel += "FALSE_" + node.getPred(0).getNr();
+				}
+				addOperation(node, new LabelOperation(iflabel));
+			}
+			// if jump
+			if (pred instanceof Jmp) {
+				addOperation(pred.getBlock(), JumpOperation.createJump(label));
 			}
 		}
+		addOperation(node, new LabelOperation(label));
 	}
 
 	@Override
@@ -259,7 +303,7 @@ public class X8664AssemblerGenerationVisitor implements NodeVisitor {
 			Address callAddress = (Address) node.getPred(1);
 			String methodName = callAddress.getEntity().getLdName();
 
-			addOperation(new Comment("Call " + methodName));
+			addOperation(node.getBlock(), new Comment("Call " + methodName + " " + node.getNr()));
 
 			CallingConvention callingConvention = CallingConvention.SYSTEMV_ABI;
 			if (callingConventions.containsKey(methodName)) {
@@ -267,7 +311,7 @@ public class X8664AssemblerGenerationVisitor implements NodeVisitor {
 			}
 
 			for (AssemblerOperation operation : callingConvention.getPrefixOperations()) {
-				addOperation(operation);
+				addOperation(node.getBlock(), operation);
 			}
 
 			Register[] callingRegisters = callingConvention.getParameterRegisters();
@@ -278,7 +322,7 @@ public class X8664AssemblerGenerationVisitor implements NodeVisitor {
 			Constant parameterSize = new Constant(STACK_ITEM_SIZE * remainingParameters);
 
 			if (remainingParameters > 0) {
-				addOperation(new SubqOperation(parameterSize, Register.RSP));
+				addOperation(node.getBlock(), new SubqOperation(parameterSize, Register.RSP));
 
 				for (int i = 0; i < remainingParameters; i++) {
 					int parameterOffset = getStackOffset(node.getPred(i + firmOffset));
@@ -287,11 +331,11 @@ public class X8664AssemblerGenerationVisitor implements NodeVisitor {
 					Register temporaryRegister = Register.EAX;
 					StackPointer destinationPointer = new StackPointer(i * STACK_ITEM_SIZE, Register.RSP);
 					if (node.getPred(i + firmOffset) instanceof Proj) {
-						addOperation(new MovqOperation(sourcePointer, temporaryRegister));
-						addOperation(new MovqOperation(temporaryRegister, destinationPointer));
+						addOperation(node.getBlock(), new MovqOperation(sourcePointer, temporaryRegister));
+						addOperation(node.getBlock(), new MovqOperation(temporaryRegister, destinationPointer));
 					} else {
-						addOperation(new MovlOperation(sourcePointer, temporaryRegister));
-						addOperation(new MovlOperation(temporaryRegister, destinationPointer));
+						addOperation(node.getBlock(), new MovlOperation(sourcePointer, temporaryRegister));
+						addOperation(node.getBlock(), new MovlOperation(temporaryRegister, destinationPointer));
 					}
 				}
 			}
@@ -303,18 +347,25 @@ public class X8664AssemblerGenerationVisitor implements NodeVisitor {
 				// Copy parameters in registers
 				Node parameterNode = node.getPred(i + firmOffset);
 
-				getValue(parameterNode, callingRegisters[i]);
-
+				// because constNode returns incorrect block, perform "optimization" and load constant
+				// into register directly see issue #202
+				if (parameterNode instanceof Const) {
+					Const constNode = (Const) parameterNode;
+					System.out.println(parameterNode + " is const");
+					addOperation(node.getBlock(), new MovlOperation(new Constant(constNode.getTarval().asInt()), callingRegisters[i]));
+				} else {
+					getValue(parameterNode, callingRegisters[i]);
+				}
 			}
 
-			addOperation(new CallOperation(methodName));
+			addOperation(node.getBlock(), new CallOperation(methodName));
 
 			if (remainingParameters > 0) {
-				addOperation(new AddqOperation(parameterSize, Register.RSP));
+				addOperation(node.getBlock(), new AddqOperation(parameterSize, Register.RSP));
 			}
 
 			for (AssemblerOperation operation : callingConvention.getSuffixOperations()) {
-				addOperation(operation);
+				addOperation(node.getBlock(), operation);
 			}
 
 			// TODO: Check if this also works for pointers
@@ -350,8 +401,9 @@ public class X8664AssemblerGenerationVisitor implements NodeVisitor {
 
 	@Override
 	public void visit(Const node) {
-		addOperation(new Comment("store const"));
+		addOperation(node.getBlock(), new Comment("store const"));
 		storeValue(node, new Constant(node.getTarval().asInt()));
+		System.out.println(node + ":" + node.getBlock());
 	}
 
 	@Override
@@ -377,14 +429,14 @@ public class X8664AssemblerGenerationVisitor implements NodeVisitor {
 
 	@Override
 	public void visit(Div node) {
-		addOperation(new Comment("div operation"));
+		addOperation(node.getBlock(), new Comment("div operation"));
 		// move left node to EAX
 		getValue(node.getLeft(), Register.EAX);
-		addOperation(new CltdOperation());
+		addOperation(node.getBlock(), new CltdOperation());
 		// move right node to RBX
 		getValue(node.getRight(), Register.ESI);
 		// idivl (eax / esi)
-		addOperation(new DivOperation(Register.ESI));
+		addOperation(node.getBlock(), new DivOperation(Register.ESI));
 		// store on stack
 		storeValue(node, Register.EAX);
 	}
@@ -427,15 +479,14 @@ public class X8664AssemblerGenerationVisitor implements NodeVisitor {
 
 	@Override
 	public void visit(Jmp node) {
-		// TODO Auto-generated method stub
-
+		// addOperation(node.getBlock(), new Comment("jump"));
 	}
 
 	@Override
 	public void visit(Load node) {
 		Node referenceNode = node.getPred(1);
 		getValue(referenceNode, Register.EAX);
-		addOperation(new MovqOperation(new StackPointer(0, Register.EAX), Register.EAX));
+		addOperation(node.getBlock(), new MovqOperation(new StackPointer(0, Register.EAX), Register.EAX));
 		for (Edge edge : BackEdges.getOuts(node)) {
 			Node edgeNode = edge.node;
 			if (!edgeNode.getMode().equals(Mode.getM())) {
@@ -514,36 +565,27 @@ public class X8664AssemblerGenerationVisitor implements NodeVisitor {
 
 	}
 
-	private final HashMap<Cond, Boolean> isCondInstructionInserted = new HashMap<>();
-	private static int currentLabelIndex = 0;
+	private Node leftProjNode = null;
 
 	private void visitCondNode(Cond node, Node leftNode, Node rightNode) {
 		getValue(leftNode, Register.EAX);
 		getValue(rightNode, Register.EDX);
-		addOperation(new CmpOperation("cmp operation", Register.EAX, Register.EDX));
+		addOperation(node.getBlock(), new CmpOperation("cmp operation", Register.EAX, Register.EDX));
 	}
 
 	private void visitCondNodeAndJumpTo(Proj projNode, Cond condNode) {
 		// predecessor must have been cmp node, which has generated cmp operation
 		Cmp cmp = (Cmp) condNode.getPred(0);
 		if (cmp.getRelation() == Relation.Equal) {
-			// TODO: generate an operation jz LABELXXX and put two labels (true, false case) into a hashmap<Node, 2xLabels>
-			// TODO: at each block we get the label through it's pred and prepend before the first operation of the block.
-
-			Boolean alreadyInserted = isCondInstructionInserted.get(condNode);
-			if (alreadyInserted != null && alreadyInserted == false) {
-				visitCondNode(condNode, cmp.getLeft(), cmp.getRight());
-			}
-
-			// create new label
-			condBranchLabels.put(projNode, "CNDBRANCH_" + currentLabelIndex);
-			currentLabelIndex++;
-
-			// proj true branch
 			if (projNode.getNum() == FirmUtils.TRUE) {
-				addOperation(JumpOperation.createJumpZero(condBranchLabels.get(projNode)));
+				leftProjNode = projNode;
 			} else {
-				addOperation(JumpOperation.createJumpNoZero(condBranchLabels.get(projNode)));
+				// generate cmp instruction
+				visitCondNode(condNode, cmp.getLeft(), cmp.getRight());
+				// jz true
+				addOperation(projNode.getBlock(), CondJumpOperation.createJumpZero("TRUE_" + leftProjNode.getNr()));
+				// jnz false
+				addOperation(projNode.getBlock(), CondJumpOperation.createJumpNoZero("FALSE_" + projNode.getNr()));
 			}
 		} else if (cmp.getRelation() == Relation.False) {
 			// etc.
@@ -577,15 +619,17 @@ public class X8664AssemblerGenerationVisitor implements NodeVisitor {
 
 	@Override
 	public void visit(Return node) {
-		addOperation(new Comment("restore stack size"));
+		addOperation(node.getBlock(), new Comment("restore stack size"));
 		if (node.getPredCount() > 1) {
 			// Store return value in EAX register
 			getValue(node.getPred(1), Register.EAX);
 		}
 
-		addOperation(new AddqOperation(new Constant(-currentStackOffset), Register.RSP));
-		addOperation(new PopqOperation(Register.RBP));
-		addOperation(new RetOperation());
+		// addOperation(node.getBlock(), new AddqOperation(new Constant(-currentStackOffset), Register.RSP));
+		// better move rbp to rsp
+		addOperation(node.getBlock(), new MovqOperation(Register.RBP, Register.RSP));
+		addOperation(node.getBlock(), new PopqOperation(Register.RBP));
+		addOperation(node.getBlock(), new RetOperation());
 		currentStackOffset = 0;
 
 	}
@@ -622,12 +666,7 @@ public class X8664AssemblerGenerationVisitor implements NodeVisitor {
 
 	@Override
 	public void visit(Start node) {
-		Graph graph = node.getGraph();
-		String methodName = graph.getEntity().getLdName();
-		addOperation(new LabelOperation(methodName));
-
-		addOperation(new PushqOperation(Register.RBP)); // Dynamic Link
-		addOperation(new MovqOperation(Register.RSP, Register.RBP));
+		// TODO Auto-generated method stub
 	}
 
 	@Override
@@ -635,7 +674,7 @@ public class X8664AssemblerGenerationVisitor implements NodeVisitor {
 		Node source = node.getPred(1);
 		getValue(source, Register.EAX);
 		getValue(node.getPred(2), Register.ECX);
-		addOperation(new MovlOperation(Register.ECX, new StackPointer(0, Register.EAX)));
+		addOperation(node.getBlock(), new MovlOperation(Register.ECX, new StackPointer(0, Register.EAX)));
 	}
 
 	@Override

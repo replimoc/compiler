@@ -10,12 +10,8 @@ public class JumpOperation extends AssemblerOperation {
 		this.operation = operation;
 	}
 
-	public static JumpOperation createJumpZero(String label) {
-		return new JumpOperation("jz " + label);
-	}
-
-	public static AssemblerOperation createJumpNoZero(String label) {
-		return new JumpOperation("jnz " + label);
+	public static JumpOperation createJump(String label) {
+		return new JumpOperation("jmp " + label);
 	}
 
 	@Override
