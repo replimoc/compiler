@@ -27,7 +27,7 @@ public final class AssemblerGenerator {
 	}
 
 	public static void createAssemblerX8664(Path outputFile, HashMap<String, CallingConvention> callingConvention) throws IOException {
-		List<AssemblerOperation> assembler = new ArrayList<>();
+		final List<AssemblerOperation> assembler = new ArrayList<>();
 
 		assembler.add(new TextOperation());
 		assembler.add(new P2AlignOperation());
@@ -37,7 +37,7 @@ public final class AssemblerGenerator {
 		}
 
 		for (Graph graph : Program.getGraphs()) {
-			X8664AssemblerGenerationVisitor visitor = new X8664AssemblerGenerationVisitor(callingConvention);
+			final X8664AssemblerGenerationVisitor visitor = new X8664AssemblerGenerationVisitor(callingConvention);
 			BackEdges.enable(graph);
 			graph.walkTopological(visitor);
 			BackEdges.disable(graph);
