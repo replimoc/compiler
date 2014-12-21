@@ -47,11 +47,7 @@ public final class AssemblerGenerator {
 				@Override
 				public void visitBlock(Block block) {
 					List<AssemblerOperation> ap = visitor.getAssembler(block);
-					if (ap == null) {
-						System.out.println(42);
-					} else {
-						assembler.addAll(ap);
-					}
+					assembler.addAll(ap);
 				}
 
 			});
