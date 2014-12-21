@@ -104,7 +104,6 @@ public class X8664AssemblerGenerationVisitor implements NodeVisitor {
 	private final HashMap<Node, Integer> nodeStackOffsets = new HashMap<>();
 	private int currentStackOffset;
 	// instruction list per Block
-	private final HashMap<Node, String> blockLabels = new HashMap<>();
 	private final HashMap<Node, List<AssemblerOperation>> blockOperations = new HashMap<>();
 
 	public X8664AssemblerGenerationVisitor(HashMap<String, CallingConvention> callingConventions) {
@@ -136,6 +135,8 @@ public class X8664AssemblerGenerationVisitor implements NodeVisitor {
 	}
 
 	private void getValue(Node node, Register register) {
+		addOperation(node.getBlock(), new Comment("restore from stack"));
+
 		// if variable was assigned, than simply load if from stack
 		if (variableAssigned(node)) {
 
@@ -186,6 +187,12 @@ public class X8664AssemblerGenerationVisitor implements NodeVisitor {
 		// store on stack
 		storeValue(parent, Register.EDX);
 	}
+
+	private String getBlockLabel(Block node) {
+		return "BLOCK_" + node.getNr();
+	}
+
+	// ----------------------------------------------- NodeVisitor ---------------------------------------------------
 
 	@Override
 	public void visit(Add node) {
@@ -241,10 +248,9 @@ public class X8664AssemblerGenerationVisitor implements NodeVisitor {
 	public void visit(Block node) {
 		addOperation(node.getBlock(), new Comment(node.toString()));
 
-		String label = "BLOCK_" + node.getNr();
-		blockLabels.put(node, label);
+		String label = getBlockLabel(node);
 
-		// we are in start block
+		// we are in start block: initialize stack (RBP)
 		if (node.getPredCount() == 0) {
 			Graph graph = node.getGraph();
 			String methodName = graph.getEntity().getLdName();
@@ -266,21 +272,23 @@ public class X8664AssemblerGenerationVisitor implements NodeVisitor {
 			Node pred = node.getPred(i);
 
 			// prepend a label to jump to
-			if (pred instanceof Proj) {
-				Proj projNode = (Proj) node.getPred(0);
-				String iflabel = "";
-				if (projNode.getNum() == FirmUtils.TRUE) {
-					iflabel += "TRUE_" + node.getPred(0).getNr();
-				} else {
-					iflabel += "FALSE_" + node.getPred(0).getNr();
-				}
-				addOperation(node, new LabelOperation(iflabel));
-			}
+			// if (pred instanceof Proj) {
+			// Proj projNode = (Proj) node.getPred(0);
+			// String iflabel = "";
+			// if (projNode.getNum() == FirmUtils.TRUE) {
+			// iflabel += "TRUE_" + node.getPred(0).getNr();
+			// } else {
+			// iflabel += "FALSE_" + node.getPred(0).getNr();
+			// }
+			// addOperation(node, new LabelOperation(iflabel));
+			// }
 			// if jump
 			if (pred instanceof Jmp) {
 				addOperation(pred.getBlock(), JumpOperation.createJump(label));
 			}
 		}
+
+		// prepend a label before each block
 		addOperation(node, new LabelOperation(label));
 	}
 
@@ -345,7 +353,7 @@ public class X8664AssemblerGenerationVisitor implements NodeVisitor {
 
 				// because constNode returns incorrect block, perform "optimization" and load constant
 				// into register directly see issue #202
-				// TODO: Investigate why this happens and probably remove this "optimiziation"
+				// TODO: Investigate why this happens and probably remove this "optimiziation" -> move it to getValue
 				if (parameterNode instanceof Const) {
 					Const constNode = (Const) parameterNode;
 					addOperation(node.getBlock(), new MovlOperation(new Constant(constNode.getTarval().asInt()), callingRegisters[i]));
@@ -385,8 +393,49 @@ public class X8664AssemblerGenerationVisitor implements NodeVisitor {
 
 	@Override
 	public void visit(Cond node) {
-		// TODO Auto-generated method stub
+		Cmp cmpNode = (Cmp) node.getPred(0);
+		Block blockTrue = null;
+		Block blockFalse = null;
 
+		// get blocks the cond node shows to
+		// TODO: Refactore me!
+		for (Edge edge : BackEdges.getOuts(node)) {
+			Node edgeNode = edge.node;
+			if (edgeNode instanceof Proj) {
+				boolean trueCase = ((Proj) edgeNode).getNum() == FirmUtils.TRUE;
+				for (Edge nextEdge : BackEdges.getOuts(edgeNode)) {
+					Node nextEdgeNode = nextEdge.node;
+					if (nextEdgeNode instanceof Block) {
+						if (trueCase) {
+							blockTrue = (Block) nextEdgeNode;
+						} else {
+							blockFalse = (Block) nextEdgeNode;
+						}
+					}
+				}
+			}
+		}
+
+		// generate cmp instruction
+		visitCmpNode(cmpNode);
+
+		// now add conditional jump
+		if (cmpNode.getRelation() == Relation.Equal) {
+			addOperation(node.getBlock(), CondJumpOperation.createJumpZero(getBlockLabel(blockTrue)));
+			addOperation(node.getBlock(), CondJumpOperation.createJump(getBlockLabel(blockFalse)));
+		} else if (cmpNode.getRelation() == Relation.Less) {
+			addOperation(node.getBlock(), CondJumpOperation.createJumpLess(getBlockLabel(blockTrue)));
+			addOperation(node.getBlock(), CondJumpOperation.createJump(getBlockLabel(blockFalse)));
+		} else if (cmpNode.getRelation() == Relation.LessEqual) {
+			addOperation(node.getBlock(), CondJumpOperation.createJumpLessEqual(getBlockLabel(blockTrue)));
+			addOperation(node.getBlock(), CondJumpOperation.createJump(getBlockLabel(blockFalse)));
+		} else if (cmpNode.getRelation() == Relation.Greater) {
+			addOperation(node.getBlock(), CondJumpOperation.createJumpGreater(getBlockLabel(blockTrue)));
+			addOperation(node.getBlock(), CondJumpOperation.createJump(getBlockLabel(blockFalse)));
+		} else if (cmpNode.getRelation() == Relation.GreaterEqual) {
+			addOperation(node.getBlock(), CondJumpOperation.createJumpGreaterEqual(getBlockLabel(blockTrue)));
+			addOperation(node.getBlock(), CondJumpOperation.createJump(getBlockLabel(blockFalse)));
+		}
 	}
 
 	@Override
@@ -444,8 +493,7 @@ public class X8664AssemblerGenerationVisitor implements NodeVisitor {
 
 	@Override
 	public void visit(End node) {
-		// TODO Auto-generated method stub
-
+		addOperation(node.getBlock(), new Comment("end node"));
 	}
 
 	@Override
@@ -560,32 +608,10 @@ public class X8664AssemblerGenerationVisitor implements NodeVisitor {
 
 	}
 
-	private Node leftProjNode = null;
-
-	private void visitCondNode(Cond node, Node leftNode, Node rightNode) {
-		getValue(leftNode, Register.EAX);
-		getValue(rightNode, Register.EDX);
+	private void visitCmpNode(Cmp node) {
+		getValue(node.getRight(), Register.EAX);
+		getValue(node.getLeft(), Register.EDX);
 		addOperation(node.getBlock(), new CmpOperation("cmp operation", Register.EAX, Register.EDX));
-	}
-
-	private void visitCondNodeAndJumpTo(Proj projNode, Cond condNode) {
-		// predecessor must have been cmp node, which has generated cmp operation
-		Cmp cmp = (Cmp) condNode.getPred(0);
-		if (cmp.getRelation() == Relation.Equal) {
-			if (projNode.getNum() == FirmUtils.TRUE) {
-				leftProjNode = projNode;
-			} else {
-				// generate cmp instruction
-				visitCondNode(condNode, cmp.getLeft(), cmp.getRight());
-				// jz true
-				addOperation(projNode.getBlock(), CondJumpOperation.createJumpZero("TRUE_" + leftProjNode.getNr()));
-				// jnz false
-				addOperation(projNode.getBlock(), CondJumpOperation.createJumpNoZero("FALSE_" + projNode.getNr()));
-			}
-		} else if (cmp.getRelation() == Relation.False) {
-			// etc.
-		}
-		// TODO: find the corresponding jump operations for each releation
 	}
 
 	@Override
@@ -597,8 +623,6 @@ public class X8664AssemblerGenerationVisitor implements NodeVisitor {
 					nodeStackOffsets.put(proj, STACK_ITEM_SIZE * (proj.getNum() + 2)); // + 2 for dynamic link
 				}
 			}
-		} else if (node.getPred() instanceof Cond) { // if parent is cond
-			visitCondNodeAndJumpTo(node, (Cond) node.getPred());
 		} else if (node.getPred() instanceof Div) {
 			// div nodes seems to be projected always, so pass the node offset to Proj node
 			getValue(node.getPred(), Register.EAX);

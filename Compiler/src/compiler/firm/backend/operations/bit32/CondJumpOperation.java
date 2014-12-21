@@ -14,12 +14,24 @@ public class CondJumpOperation extends AssemblerOperation {
 		return new CondJumpOperation("jz " + label);
 	}
 
-	public static CondJumpOperation createJumpNoZero(String label) {
-		return new CondJumpOperation("jnz " + label);
-	}
-
 	public static CondJumpOperation createJump(String label) {
 		return new CondJumpOperation("jmp " + label);
+	}
+
+	public static CondJumpOperation createJumpLess(String label) {
+		return new CondJumpOperation("jl " + label);
+	}
+
+	public static CondJumpOperation createJumpLessEqual(String label) {
+		return new CondJumpOperation("jle " + label);
+	}
+
+	public static CondJumpOperation createJumpGreater(String label) {
+		return new CondJumpOperation("jg " + label);
+	}
+
+	public static CondJumpOperation createJumpGreaterEqual(String label) {
+		return new CondJumpOperation("jge " + label);
 	}
 
 	@Override
