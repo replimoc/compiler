@@ -103,8 +103,6 @@ public class X8664AssemblerGenerationVisitor implements NodeVisitor {
 	// stack management
 	private final HashMap<Node, Integer> nodeStackOffsets = new HashMap<>();
 	private int currentStackOffset;
-	// labels for the functions
-	private final HashMap<Node, String> condBranchLabels = new HashMap<>();
 	// instruction list per Block
 	private final HashMap<Node, String> blockLabels = new HashMap<>();
 	private final HashMap<Node, List<AssemblerOperation>> blockOperations = new HashMap<>();
@@ -127,8 +125,6 @@ public class X8664AssemblerGenerationVisitor implements NodeVisitor {
 	}
 
 	private void addOperation(Node block, AssemblerOperation assemblerOption) {
-		// System.out.println("block " + block);
-		// System.out.println("\t " + assemblerOption.toString());
 		if (blockOperations.containsKey(block) == false) {
 			blockOperations.put(block, new ArrayList<AssemblerOperation>());
 		}
@@ -349,9 +345,9 @@ public class X8664AssemblerGenerationVisitor implements NodeVisitor {
 
 				// because constNode returns incorrect block, perform "optimization" and load constant
 				// into register directly see issue #202
+				// TODO: Investigate why this happens and probably remove this "optimiziation"
 				if (parameterNode instanceof Const) {
 					Const constNode = (Const) parameterNode;
-					System.out.println(parameterNode + " is const");
 					addOperation(node.getBlock(), new MovlOperation(new Constant(constNode.getTarval().asInt()), callingRegisters[i]));
 				} else {
 					getValue(parameterNode, callingRegisters[i]);
@@ -403,7 +399,6 @@ public class X8664AssemblerGenerationVisitor implements NodeVisitor {
 	public void visit(Const node) {
 		addOperation(node.getBlock(), new Comment("store const"));
 		storeValue(node, new Constant(node.getTarval().asInt()));
-		System.out.println(node + ":" + node.getBlock());
 	}
 
 	@Override
