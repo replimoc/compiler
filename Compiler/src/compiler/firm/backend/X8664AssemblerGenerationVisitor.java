@@ -268,26 +268,6 @@ public class X8664AssemblerGenerationVisitor implements NodeVisitor {
 			}
 		}
 
-		for (int i = 0; i < node.getPredCount(); i++) {
-			Node pred = node.getPred(i);
-
-			// prepend a label to jump to
-			// if (pred instanceof Proj) {
-			// Proj projNode = (Proj) node.getPred(0);
-			// String iflabel = "";
-			// if (projNode.getNum() == FirmUtils.TRUE) {
-			// iflabel += "TRUE_" + node.getPred(0).getNr();
-			// } else {
-			// iflabel += "FALSE_" + node.getPred(0).getNr();
-			// }
-			// addOperation(node, new LabelOperation(iflabel));
-			// }
-			// if jump
-			if (pred instanceof Jmp) {
-				addOperation(pred.getBlock(), JumpOperation.createJump(label));
-			}
-		}
-
 		// prepend a label before each block
 		addOperation(node, new LabelOperation(label));
 	}
@@ -522,7 +502,13 @@ public class X8664AssemblerGenerationVisitor implements NodeVisitor {
 
 	@Override
 	public void visit(Jmp node) {
-		// addOperation(node.getBlock(), new Comment("jump"));
+		for (Edge edge : BackEdges.getOuts(node)) {
+			Node edgeNode = edge.node;
+			if (edgeNode instanceof Block) {
+				addOperation(node.getBlock(), JumpOperation.createJump(getBlockLabel((Block) edgeNode)));
+				break;
+			}
+		}
 	}
 
 	@Override
