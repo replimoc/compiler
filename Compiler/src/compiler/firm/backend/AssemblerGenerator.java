@@ -16,11 +16,8 @@ import compiler.firm.backend.operations.general.TextOperation;
 import compiler.firm.backend.operations.templates.AssemblerOperation;
 
 import firm.BackEdges;
-import firm.BlockWalker;
 import firm.Graph;
 import firm.Program;
-import firm.nodes.Block;
-import firm.nodes.Node;
 
 public final class AssemblerGenerator {
 
@@ -39,13 +36,12 @@ public final class AssemblerGenerator {
 
 		for (Graph graph : Program.getGraphs()) {
 			final X8664AssemblerGenerationVisitor visitor = new X8664AssemblerGenerationVisitor(callingConvention);
+
 			BackEdges.enable(graph);
 			graph.walkTopological(visitor);
 			BackEdges.disable(graph);
 
-			for (Node node : visitor.blockOperations.keySet()) {
-				assembler.addAll(visitor.getAssembler((Block)node));
-			}
+			assembler.addAll(visitor.getOperations());
 		}
 
 		generateAssemblerFile(outputFile, assembler);
