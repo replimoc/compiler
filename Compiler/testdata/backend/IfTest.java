@@ -1,9 +1,11 @@
 class CmpTest {
 	public static void main(String[] args) {
-		if (true) {
+		int i = 3+1;
+		int y = 2+4;
+		if (i < 4) {
 			System.out.println(42);
 		} else {
-			System.out.println(43);
+			System.out.println(y);
 		}
 	}
 }

@@ -134,8 +134,8 @@ public class X8664AssemblerGenerationVisitor implements NodeVisitor {
 			} else {
 				addOperation(new MovlOperation("Load node " + node.toString(), stackPointer, register));
 			}
-			// else we must collect all operations and save the result in register
-		} else {
+
+		} else { // else we must collect all operations and save the result in register
 
 		}
 	}
@@ -359,8 +359,6 @@ public class X8664AssemblerGenerationVisitor implements NodeVisitor {
 
 	@Override
 	public void visit(Cond node) {
-		System.out.println("cond node = " + node.getBlock());
-
 		Cmp cmpNode = (Cmp) node.getPred(0);
 		Block blockTrue = null;
 		Block blockFalse = null;
@@ -414,7 +412,6 @@ public class X8664AssemblerGenerationVisitor implements NodeVisitor {
 
 	@Override
 	public void visit(Const node) {
-		System.out.println("const node = " + node);
 		addOperation(new Comment("store const"));
 		storeValue(node, new Constant(node.getTarval().asInt()));
 	}
@@ -654,13 +651,10 @@ public class X8664AssemblerGenerationVisitor implements NodeVisitor {
 
 	@Override
 	public void visit(Size node) {
-		// TODO Auto-generated method stub
-
 	}
 
 	@Override
 	public void visit(Start node) {
-		// TODO Auto-generated method stub
 	}
 
 	@Override

@@ -35,10 +35,18 @@ public final class AssemblerGenerator {
 		}
 
 		for (Graph graph : Program.getGraphs()) {
+			BlockOperationsCollectingVisitor collectorVisitor = new BlockOperationsCollectingVisitor();
+			graph.walkTopological(collectorVisitor);
+
+			final List<BlockNodes> nodesPerBlock = collectorVisitor.getNodesPerBlock();
 			final X8664AssemblerGenerationVisitor visitor = new X8664AssemblerGenerationVisitor(callingConvention);
+			final NodeNumberPrintingVisitor printer = new NodeNumberPrintingVisitor();
 
 			BackEdges.enable(graph);
-			graph.walkTopological(visitor);
+			for (BlockNodes blockNodes : nodesPerBlock) {
+				blockNodes.visitNodes(printer);
+				blockNodes.visitNodes(visitor);
+			}
 			BackEdges.disable(graph);
 
 			assembler.addAll(visitor.getOperations());
