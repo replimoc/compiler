@@ -4,6 +4,8 @@ import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
 import java.net.URISyntaxException;
+import java.nio.file.Files;
+import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Scanner;
@@ -72,5 +74,11 @@ public class Utils {
 				return new Thread(null, r, "runner", stackSizeMB * 1024 * 1024);
 			}
 		};
+	}
+
+	public static String createAutoDeleteTempFile(String prefix, String suffix) throws IOException {
+		Path standardLibOFile = Files.createTempFile(prefix, suffix);
+		standardLibOFile.toFile().deleteOnExit();
+		return standardLibOFile.toString();
 	}
 }

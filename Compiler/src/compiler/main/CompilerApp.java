@@ -27,6 +27,7 @@ import compiler.parser.printer.PrettyPrinter;
 import compiler.semantic.SemanticCheckResults;
 import compiler.semantic.SemanticChecker;
 import compiler.semantic.exceptions.SemanticAnalysisException;
+import compiler.utils.ExecutionFailedException;
 import compiler.utils.Utils;
 
 public final class CompilerApp {
@@ -149,7 +150,6 @@ public final class CompilerApp {
 						FirmUtils.createFirmGraph(suffix);
 					}
 
-					int result = 0;
 					if (cmd.hasOption(COMPILE_FIRM)) {
 						String outputFile;
 						if (cmd.hasOption('o')) {
@@ -158,8 +158,12 @@ public final class CompilerApp {
 							outputFile = Utils.getBinaryFileName("a");
 						}
 
-						result = FirmUtils.createBinary(outputFile, cmd.hasOption(OUTPUT_ASSEMBLER), cmd.getOptionValue(C_INCLUDE),
-								cmd.getOptionValue(C_LIBRARY));
+						try {
+							FirmUtils.createBinary(outputFile, cmd.hasOption(OUTPUT_ASSEMBLER), cmd.getOptionValue(C_INCLUDE),
+									cmd.getOptionValue(C_LIBRARY));
+						} catch (ExecutionFailedException e) {
+							return e.getStatusCode();
+						}
 					}
 
 					if (!cmd.hasOption(COMPILE_FIRM) && cmd.hasOption(OUTPUT_ASSEMBLER)) {
@@ -175,7 +179,7 @@ public final class CompilerApp {
 
 					FirmUtils.finishFirm();
 
-					return result;
+					return 0;
 				} catch (IOException e) {
 					System.err.println("Error accessing file " + file + ": " + e.getMessage());
 				}
