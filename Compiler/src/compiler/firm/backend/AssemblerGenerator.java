@@ -20,6 +20,7 @@ import firm.BlockWalker;
 import firm.Graph;
 import firm.Program;
 import firm.nodes.Block;
+import firm.nodes.Node;
 
 public final class AssemblerGenerator {
 
@@ -41,16 +42,10 @@ public final class AssemblerGenerator {
 			BackEdges.enable(graph);
 			graph.walkTopological(visitor);
 			BackEdges.disable(graph);
-			// walk the blocks and order them
-			graph.walkBlocks(new BlockWalker() {
 
-				@Override
-				public void visitBlock(Block block) {
-					List<AssemblerOperation> ap = visitor.getAssembler(block);
-					assembler.addAll(ap);
-				}
-
-			});
+			for (Node node : visitor.blockOperations.keySet()) {
+				assembler.addAll(visitor.getAssembler((Block)node));
+			}
 		}
 
 		generateAssemblerFile(outputFile, assembler);

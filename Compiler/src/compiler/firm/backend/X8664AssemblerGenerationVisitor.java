@@ -1,8 +1,6 @@
 package compiler.firm.backend;
 
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
+import java.util.*;
 
 import compiler.firm.FirmUtils;
 import compiler.firm.backend.calling.CallingConvention;
@@ -104,20 +102,28 @@ public class X8664AssemblerGenerationVisitor implements NodeVisitor {
 	private final HashMap<Node, Integer> nodeStackOffsets = new HashMap<>();
 	private int currentStackOffset;
 	// instruction list per Block
-	private final HashMap<Node, List<AssemblerOperation>> blockOperations = new HashMap<>();
+
+	List<AssemblerOperation> operations = new LinkedList<>();
+	public final LinkedHashMap<Node, List<AssemblerOperation>> blockOperations = new LinkedHashMap<>();
+
 
 	public X8664AssemblerGenerationVisitor(HashMap<String, CallingConvention> callingConventions) {
 		this.callingConventions = callingConventions;
 	}
 
 	public List<AssemblerOperation> getAssembler(Block block) {
-
 		List<AssemblerOperation> instructions = blockOperations.get(block);
-		for (int j = 0; j < instructions.size(); j++) {
-			if (instructions.get(j) instanceof JumpOperation) {
-				AssemblerOperation ap = instructions.remove(j);
-				instructions.add(ap);
-				break;
+
+		if (block != null) {
+			String label = getBlockLabel(block);
+			instructions.add(0, new LabelOperation(label));
+
+			for (int j = 0; j < instructions.size(); j++) {
+				if (instructions.get(j) instanceof JumpOperation) {
+					AssemblerOperation ap = instructions.remove(j);
+					instructions.add(ap);
+					break;
+				}
 			}
 		}
 		return instructions;
@@ -269,7 +275,7 @@ public class X8664AssemblerGenerationVisitor implements NodeVisitor {
 		}
 
 		// prepend a label before each block
-		addOperation(node, new LabelOperation(label));
+		//		addOperation(node, new LabelOperation(label));
 	}
 
 	@Override
@@ -373,6 +379,8 @@ public class X8664AssemblerGenerationVisitor implements NodeVisitor {
 
 	@Override
 	public void visit(Cond node) {
+		System.out.println("cond node = " + node.getBlock());
+
 		Cmp cmpNode = (Cmp) node.getPred(0);
 		Block blockTrue = null;
 		Block blockFalse = null;
@@ -426,6 +434,7 @@ public class X8664AssemblerGenerationVisitor implements NodeVisitor {
 
 	@Override
 	public void visit(Const node) {
+		System.out.println("const node = " + node);
 		addOperation(node.getBlock(), new Comment("store const"));
 		storeValue(node, new Constant(node.getTarval().asInt()));
 	}
