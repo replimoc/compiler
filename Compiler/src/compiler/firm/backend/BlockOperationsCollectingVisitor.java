@@ -273,8 +273,10 @@ public class BlockOperationsCollectingVisitor implements NodeVisitor {
 	}
 
 	@Override
-	public void visit(Phi arg0) {
-		collectNode(arg0);
+	public void visit(Phi phi) {
+		for (Node pred : phi.getPreds()) {
+			getBlockNodes(pred).addPhi(phi);
+		}
 	}
 
 	@Override

@@ -7,9 +7,11 @@ import firm.nodes.Cond;
 import firm.nodes.Jmp;
 import firm.nodes.Node;
 import firm.nodes.NodeVisitor;
+import firm.nodes.Phi;
 
 public class BlockNodes {
-	private final List<Node> nodes = new ArrayList<Node>();
+	private final List<Node> nodes = new ArrayList<>();
+	private final List<Phi> phis = new ArrayList<>();
 	private Node jumpOrCondNode;
 
 	public void addNode(Node node) {
@@ -30,8 +32,16 @@ public class BlockNodes {
 		for (Node curr : nodes) {
 			curr.accept(visitor);
 		}
+		for (Phi curr : phis) {
+			curr.accept(visitor);
+		}
+
 		if (jumpOrCondNode != null) {
 			jumpOrCondNode.accept(visitor);
 		}
+	}
+
+	public void addPhi(Phi phi) {
+		phis.add(phi);
 	}
 }
