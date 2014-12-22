@@ -105,6 +105,7 @@ public class X8664AssemblerGenerationVisitor implements NodeVisitor {
 	// stack management
 	private final HashMap<Node, Integer> nodeStackOffsets = new HashMap<>();
 	private int currentStackOffset;
+	private Block currentBlock;
 
 	public X8664AssemblerGenerationVisitor(HashMap<String, CallingConvention> callingConventions) {
 		this.callingConventions = callingConventions;
@@ -151,6 +152,10 @@ public class X8664AssemblerGenerationVisitor implements NodeVisitor {
 
 		nodeStackOffsets.put(node, currentStackOffset);
 		StackPointer stackPointer = new StackPointer(currentStackOffset, Register.RBP);
+		storeValue(node, storage, stackPointer);
+	}
+
+	private void storeValue(Node node, Storage storage, StackPointer stackPointer) {
 		if (is64bitNode(node)) {
 			addOperation(new MovqOperation("Store node " + node, storage, stackPointer));
 		} else {
@@ -234,6 +239,7 @@ public class X8664AssemblerGenerationVisitor implements NodeVisitor {
 
 	@Override
 	public void visit(Block node) {
+		currentBlock = node;
 		addOperation(new Comment(node.toString()));
 
 		// we are in start block: initialize stack (RBP)
@@ -569,9 +575,21 @@ public class X8664AssemblerGenerationVisitor implements NodeVisitor {
 	}
 
 	@Override
-	public void visit(Phi node) {
-		// TODO Auto-generated method stub
-
+	public void visit(Phi phi) {
+		for (Node predecessor : phi.getPreds()) {
+			if (predecessor.getBlock().getNr() == currentBlock.getNr()) {
+				getValue(predecessor, Register.EAX);
+				if (variableAssigned(phi)) {
+					// There is already a space on the stack, use it to save it
+					StackPointer stackPointer = new StackPointer(getStackOffset(phi), Register.RBP);
+					storeValue(phi, Register.EAX, stackPointer);
+				} else {
+					// Create new stack place
+					storeValue(phi, Register.EAX);
+				}
+				System.out.println("use => " + predecessor);
+			}
+		}
 	}
 
 	@Override
