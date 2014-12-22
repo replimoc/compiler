@@ -2,7 +2,7 @@
 #include <stdio.h>
 
 void* Pointer$create() {
-	char *test = calloc(12, 0);
+	char *test = calloc(12, 1);
 	sprintf(test, "Hallo");
 	return test;
 }
