@@ -587,7 +587,6 @@ public class X8664AssemblerGenerationVisitor implements NodeVisitor {
 					// Create new stack place
 					storeValue(phi, Register.EAX);
 				}
-				System.out.println("use => " + predecessor);
 			}
 		}
 	}
