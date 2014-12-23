@@ -440,7 +440,7 @@ public class X8664AssemblerGenerationVisitor implements BulkPhiNodeVisitor {
 		throw new RuntimeException(node + " is not implemented yet!");
 	}
 
-	public void visitDivMod(Node node, Node left, Node right, Register storeRegister) {
+	private void visitDivMod(Node node, Node left, Node right, Register storeRegister) {
 		addOperation(new Comment("div operation"));
 		// move left node to EAX
 		getValue(left, Register.EAX);
