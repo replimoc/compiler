@@ -696,18 +696,12 @@ public class X8664AssemblerGenerationVisitor implements BulkPhiNodeVisitor {
 	}
 
 	private Node getRelevantPredecessor(Phi phi) {
-		Block block = currentBlock;
-		while (block != null) {
-			for (Node predecessor : phi.getPreds()) {
-				if (block.getNr() == predecessor.getBlock().getNr()) {
-					return predecessor;
-				}
-			}
+		Node phiBlock = phi.getBlock();
 
-			if (block.getPredCount() != 1) {
-				throw new RuntimeException("Ambigous phi detected.");
-			} else {
-				block = (Block) block.getPred(0).getBlock();
+		for (int i = 0; i < phiBlock.getPredCount(); i++) {
+			Node blockPredecessors = phiBlock.getPred(i);
+			if (blockPredecessors.getBlock().getNr() == currentBlock.getNr()) {
+				return phi.getPred(i);
 			}
 		}
 		return null;
