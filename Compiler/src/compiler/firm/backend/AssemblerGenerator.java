@@ -35,7 +35,7 @@ public final class AssemblerGenerator {
 		}
 
 		for (Graph graph : Program.getGraphs()) {
-			BlockOperationsCollectingVisitor collectorVisitor = new BlockOperationsCollectingVisitor();
+			BlockNodesCollectingVisitor collectorVisitor = new BlockNodesCollectingVisitor();
 			graph.walkTopological(collectorVisitor);
 
 			final List<BlockNodes> nodesPerBlock = collectorVisitor.getNodesPerBlock();

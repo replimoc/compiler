@@ -61,9 +61,9 @@ import firm.nodes.Sync;
 import firm.nodes.Tuple;
 import firm.nodes.Unknown;
 
-public class BlockOperationsCollectingVisitor implements NodeVisitor {
+public class BlockNodesCollectingVisitor implements NodeVisitor {
 	private final HashMap<Block, BlockNodes> nodesPerBlock = new HashMap<>();
-	private final List<BlockNodes> cronologicalBlockNodes = new ArrayList<BlockNodes>();
+	private final List<BlockNodes> cronologicalBlockNodes = new ArrayList<>();
 
 	public List<BlockNodes> getNodesPerBlock() {
 		return cronologicalBlockNodes;
