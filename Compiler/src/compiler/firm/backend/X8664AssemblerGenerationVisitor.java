@@ -440,16 +440,20 @@ public class X8664AssemblerGenerationVisitor implements BulkPhiNodeVisitor {
 		throw new RuntimeException(node + " is not implemented yet!");
 	}
 
-	@Override
-	public void visit(Div node) {
+	public void visitDiv(Node node, Node left, Node right) {
 		addOperation(new Comment("div operation"));
 		// move left node to EAX
-		getValue(node.getLeft(), Register.EAX);
-		addOperation(new CltdOperation());
+		getValue(left, Register.EAX);
 		// move right node to RBX
-		getValue(node.getRight(), Register.ESI);
+		getValue(right, Register.ESI);
+		addOperation(new CltdOperation());
 		// idivl (eax / esi)
 		addOperation(new DivOperation(Register.ESI));
+	}
+
+	@Override
+	public void visit(Div node) {
+		visitDiv(node, node.getLeft(), node.getRight());
 		// store on stack
 		storeValue(node, Register.EAX);
 	}
@@ -520,7 +524,11 @@ public class X8664AssemblerGenerationVisitor implements BulkPhiNodeVisitor {
 
 	@Override
 	public void visit(Mod node) {
-		throw new RuntimeException(node + " is not implemented yet!");
+		visitDiv(node, node.getLeft(), node.getRight());
+		// store on stack
+		for (Edge edge : BackEdges.getOuts(node)) {
+			storeValue(edge.node, Register.EDX);
+		}
 	}
 
 	@Override
