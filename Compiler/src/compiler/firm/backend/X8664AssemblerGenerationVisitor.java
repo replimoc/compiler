@@ -232,7 +232,7 @@ public class X8664AssemblerGenerationVisitor implements BulkPhiNodeVisitor {
 
 	@Override
 	public void visit(Bad node) {
-		throw new RuntimeException(node + " is not implemented yet!");
+		// Ignore Bad nodes.
 	}
 
 	@Override
