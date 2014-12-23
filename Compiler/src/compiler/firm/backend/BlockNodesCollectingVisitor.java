@@ -69,6 +69,10 @@ public class BlockNodesCollectingVisitor implements NodeVisitor {
 		return cronologicalBlockNodes;
 	}
 
+	public HashMap<Block, BlockNodes> getNodesPerBlockMap() {
+		return nodesPerBlock;
+	}
+
 	private void collectNode(Node node) {
 		getBlockNodes(node).addNode(node);
 	}
@@ -274,9 +278,7 @@ public class BlockNodesCollectingVisitor implements NodeVisitor {
 
 	@Override
 	public void visit(Phi phi) {
-		for (Node pred : phi.getPreds()) {
-			getBlockNodes(pred).addPhi(phi);
-		}
+		getBlockNodes(phi).addPhi(phi);
 	}
 
 	@Override

@@ -44,8 +44,8 @@ public final class AssemblerGenerator {
 
 			BackEdges.enable(graph);
 			for (BlockNodes blockNodes : nodesPerBlock) {
-				blockNodes.visitNodes(printer);
-				blockNodes.visitNodes(visitor);
+				blockNodes.visitNodes(printer, collectorVisitor.getNodesPerBlockMap());
+				blockNodes.visitNodes(visitor, collectorVisitor.getNodesPerBlockMap());
 			}
 			BackEdges.disable(graph);
 
