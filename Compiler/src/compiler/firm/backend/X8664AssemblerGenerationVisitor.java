@@ -712,18 +712,33 @@ public class X8664AssemblerGenerationVisitor implements BulkPhiNodeVisitor {
 
 	}
 
-	@Override
-	public void visit(List<Phi> phis) {
-		addOperation(new Comment("Handle phis of block " + currentBlock.getNr()));
-		HashMap<Phi, StackPointer> phiStackMapping = new HashMap<>();
-		for (Phi phi : phis) {
+	private Node getRelevantPredecessor(Phi phi) {
+		Block block = currentBlock;
+		while (block != null) {
 			for (Node predecessor : phi.getPreds()) {
-				if (predecessor.getBlock().getNr() == currentBlock.getNr()) {
-					getValue(predecessor, Register.EAX);
-					StackPointer stackPointer = storeValueAndGetStackPointer(predecessor, Register.EAX);
-					phiStackMapping.put(phi, stackPointer);
+				if (block.getNr() == predecessor.getBlock().getNr()) {
+					return predecessor;
 				}
 			}
+
+			if (block.getPredCount() != 1) {
+				throw new RuntimeException("Ambigous phi detected.");
+			} else {
+				block = (Block) block.getPred(0).getBlock();
+			}
+		}
+		return null;
+	}
+
+	@Override
+	public void visit(List<Phi> phis) {
+		addOperation(new Comment("Handle phis of current block"));
+		HashMap<Phi, StackPointer> phiStackMapping = new HashMap<>();
+		for (Phi phi : phis) {
+			Node predecessor = getRelevantPredecessor(phi);
+			getValue(predecessor, Register.EAX);
+			StackPointer stackPointer = storeValueAndGetStackPointer(predecessor, Register.EAX);
+			phiStackMapping.put(phi, stackPointer);
 		}
 
 		for (Phi phi : phis) {
