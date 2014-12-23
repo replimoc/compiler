@@ -14,6 +14,7 @@ import compiler.firm.backend.operations.bit32.DivOperation;
 import compiler.firm.backend.operations.bit32.ImullOperation;
 import compiler.firm.backend.operations.bit32.JumpOperation;
 import compiler.firm.backend.operations.bit32.MovlOperation;
+import compiler.firm.backend.operations.bit32.ShllOperation;
 import compiler.firm.backend.operations.bit32.SublOperation;
 import compiler.firm.backend.operations.bit64.AddqOperation;
 import compiler.firm.backend.operations.bit64.CallOperation;
@@ -21,6 +22,7 @@ import compiler.firm.backend.operations.bit64.MovqOperation;
 import compiler.firm.backend.operations.bit64.PopqOperation;
 import compiler.firm.backend.operations.bit64.PushqOperation;
 import compiler.firm.backend.operations.bit64.RetOperation;
+import compiler.firm.backend.operations.bit64.ShlqOperation;
 import compiler.firm.backend.operations.bit64.SubqOperation;
 import compiler.firm.backend.operations.general.Comment;
 import compiler.firm.backend.operations.general.LabelOperation;
@@ -327,7 +329,7 @@ public class X8664AssemblerGenerationVisitor implements BulkPhiNodeVisitor {
 				// TODO: Investigate why this happens and probably remove this "optimiziation" -> move it to getValue
 				if (parameterNode instanceof Const) {
 					Const constNode = (Const) parameterNode;
-					addOperation(new MovlOperation(new Constant(constNode.getTarval().asInt()), callingRegisters[i]));
+					addOperation(new MovlOperation(new Constant(constNode), callingRegisters[i]));
 				} else {
 					getValue(parameterNode, callingRegisters[i]);
 				}
@@ -416,7 +418,7 @@ public class X8664AssemblerGenerationVisitor implements BulkPhiNodeVisitor {
 	@Override
 	public void visit(Const node) {
 		addOperation(new Comment("store const"));
-		storeValue(node, new Constant(node.getTarval().asInt()));
+		storeValue(node, new Constant(node));
 	}
 
 	@Override
@@ -617,7 +619,23 @@ public class X8664AssemblerGenerationVisitor implements BulkPhiNodeVisitor {
 
 	@Override
 	public void visit(Shl node) {
-		throw new RuntimeException(node + " is not implemented yet!");
+		System.out.println(node.getLeft());
+
+		// move left node to a register
+		getValue(node.getLeft(), Register.EAX);
+
+		AssemblerOperation operation;
+		Constant constant = new Constant((Const) node.getRight());
+
+		if (node.getMode().equals(FirmUtils.getModeReference())) {
+			operation = new ShlqOperation(Register.EAX, constant);
+		} else {
+			operation = new ShllOperation(Register.EAX, constant);
+		}
+		// execute operation
+		addOperation(operation);
+		// store on stack
+		storeValue(node, Register.EAX);
 	}
 
 	@Override

@@ -1,10 +1,16 @@
 package compiler.firm.backend.storage;
 
+import firm.nodes.Const;
+
 public class Constant extends Storage {
 	private final int constant;
 
 	public Constant(int constant) {
 		this.constant = constant;
+	}
+
+	public Constant(Const constNode) {
+		this.constant = constNode.getTarval().asInt();
 	}
 
 	@Override
