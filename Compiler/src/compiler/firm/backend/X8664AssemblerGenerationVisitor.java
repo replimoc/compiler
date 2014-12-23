@@ -241,19 +241,18 @@ public class X8664AssemblerGenerationVisitor implements BulkPhiNodeVisitor {
 		currentBlock = node;
 		addOperation(new Comment(node.toString()));
 
+		Graph graph = node.getGraph();
+		String methodName = graph.getEntity().getLdName();
+
 		// we are in start block: initialize stack (RBP)
-		if (node.getPredCount() == 0) {
-			Graph graph = node.getGraph();
-			String methodName = graph.getEntity().getLdName();
+		if (node.equals(graph.getStartBlock())) {
 			addOperation(new LabelOperation(methodName));
 
 			addOperation(new PushqOperation(Register.RBP)); // Dynamic Link
 			addOperation(new MovqOperation(Register.RSP, Register.RBP));
 		}
 
-		Graph graph = node.getGraph();
 		if (node.equals(graph.getEndBlock())) {
-			String methodName = graph.getEntity().getLdName();
 			if (!Utils.isWindows()) {
 				addOperation(new SizeOperation(methodName));
 			}
