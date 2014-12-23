@@ -34,4 +34,7 @@ public class StackPointer extends Storage {
 		return toString();
 	}
 
+	public int getOffset() {
+		return offset;
+	}
 }

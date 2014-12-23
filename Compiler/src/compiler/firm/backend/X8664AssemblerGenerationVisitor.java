@@ -129,14 +129,17 @@ public class X8664AssemblerGenerationVisitor implements BulkPhiNodeVisitor {
 		if (variableAssigned(node)) {
 
 			StackPointer stackPointer = new StackPointer(getStackOffset(node), Register.RBP);
-			if (is64bitNode(node)) {
-				addOperation(new MovqOperation("Load address " + node.toString(), stackPointer, register));
-			} else {
-				addOperation(new MovlOperation("Load node " + node.toString(), stackPointer, register));
-			}
-
+			getValue(node, register, stackPointer);
 		} else { // else we must collect all operations and save the result in register
 
+		}
+	}
+
+	private void getValue(Node node, Register register, StackPointer stackPointer) {
+		if (is64bitNode(node)) {
+			addOperation(new MovqOperation("Load address " + node.toString(), stackPointer, register));
+		} else {
+			addOperation(new MovlOperation("Load node " + node.toString(), stackPointer, register));
 		}
 	}
 
@@ -144,14 +147,19 @@ public class X8664AssemblerGenerationVisitor implements BulkPhiNodeVisitor {
 		return nodeStackOffsets.get(node);
 	}
 
-	private void storeValue(Node node, Storage storage) {
+	private StackPointer storeValueAndGetStackPointer(Node node, Storage storage) {
 		// Allocate stack
 		currentStackOffset -= STACK_ITEM_SIZE;
 		addOperation(new SubqOperation("Increment stack size", new Constant(STACK_ITEM_SIZE), Register.RSP));
 
-		nodeStackOffsets.put(node, currentStackOffset);
 		StackPointer stackPointer = new StackPointer(currentStackOffset, Register.RBP);
 		storeValue(node, storage, stackPointer);
+		return stackPointer;
+	}
+
+	private void storeValue(Node node, Storage storage) {
+		StackPointer stackPointer = storeValueAndGetStackPointer(node, storage);
+		nodeStackOffsets.put(node, stackPointer.getOffset());
 	}
 
 	private void storeValue(Node node, Storage storage, StackPointer stackPointer) {
@@ -574,19 +582,7 @@ public class X8664AssemblerGenerationVisitor implements BulkPhiNodeVisitor {
 
 	@Override
 	public void visit(Phi phi) {
-		for (Node predecessor : phi.getPreds()) {
-			if (predecessor.getBlock().getNr() == currentBlock.getNr()) {
-				getValue(predecessor, Register.EAX);
-				if (variableAssigned(phi)) {
-					// There is already a space on the stack, use it to save it
-					StackPointer stackPointer = new StackPointer(getStackOffset(phi), Register.RBP);
-					storeValue(phi, Register.EAX, stackPointer);
-				} else {
-					// Create new stack place
-					storeValue(phi, Register.EAX);
-				}
-			}
-		}
+		throw new RuntimeException("Phis are visited in visit(List<Phi>)");
 	}
 
 	@Override
@@ -718,7 +714,29 @@ public class X8664AssemblerGenerationVisitor implements BulkPhiNodeVisitor {
 
 	@Override
 	public void visit(List<Phi> phis) {
-		// TODO Auto-generated method stub
-	}
+		addOperation(new Comment("Handle phis of block " + currentBlock.getNr()));
+		HashMap<Phi, StackPointer> phiStackMapping = new HashMap<>();
+		for (Phi phi : phis) {
+			for (Node predecessor : phi.getPreds()) {
+				if (predecessor.getBlock().getNr() == currentBlock.getNr()) {
+					getValue(predecessor, Register.EAX);
+					StackPointer stackPointer = storeValueAndGetStackPointer(predecessor, Register.EAX);
+					phiStackMapping.put(phi, stackPointer);
+				}
+			}
+		}
 
+		for (Phi phi : phis) {
+			StackPointer stackPointer = phiStackMapping.get(phi);
+			getValue(phi, Register.EAX, stackPointer);
+
+			if (variableAssigned(phi)) {
+				// There is already a space on the stack, use it to save it
+				storeValue(phi, Register.EAX, new StackPointer(getStackOffset(phi), Register.RBP));
+			} else {
+				// Create new stack place
+				storeValue(phi, Register.EAX);
+			}
+		}
+	}
 }
