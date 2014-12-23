@@ -14,6 +14,7 @@ import compiler.firm.backend.operations.bit32.DivOperation;
 import compiler.firm.backend.operations.bit32.ImullOperation;
 import compiler.firm.backend.operations.bit32.JumpOperation;
 import compiler.firm.backend.operations.bit32.MovlOperation;
+import compiler.firm.backend.operations.bit32.NegatelOperation;
 import compiler.firm.backend.operations.bit32.ShllOperation;
 import compiler.firm.backend.operations.bit32.SublOperation;
 import compiler.firm.backend.operations.bit64.AddqOperation;
@@ -521,7 +522,9 @@ public class X8664AssemblerGenerationVisitor implements BulkPhiNodeVisitor {
 
 	@Override
 	public void visit(Minus node) {
-		throw new RuntimeException(node + " is not implemented yet!");
+		getValue(node.getPred(0), Register.EAX);
+		addOperation(new NegatelOperation(Register.EAX));
+		storeValue(node, Register.EAX);
 	}
 
 	@Override
