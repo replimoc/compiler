@@ -73,7 +73,6 @@ import firm.nodes.Mulh;
 import firm.nodes.Mux;
 import firm.nodes.NoMem;
 import firm.nodes.Node;
-import firm.nodes.NodeVisitor;
 import firm.nodes.Not;
 import firm.nodes.Offset;
 import firm.nodes.Or;
@@ -95,7 +94,7 @@ import firm.nodes.Sync;
 import firm.nodes.Tuple;
 import firm.nodes.Unknown;
 
-public class X8664AssemblerGenerationVisitor implements NodeVisitor {
+public class X8664AssemblerGenerationVisitor implements BulkPhiNodeVisitor {
 
 	private static final int STACK_ITEM_SIZE = 8;
 
@@ -716,6 +715,11 @@ public class X8664AssemblerGenerationVisitor implements NodeVisitor {
 	public void visitUnknown(Node node) {
 		// TODO Auto-generated method stub
 
+	}
+
+	@Override
+	public void visit(List<Phi> phis) {
+		// TODO Auto-generated method stub
 	}
 
 }

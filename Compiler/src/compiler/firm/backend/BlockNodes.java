@@ -6,7 +6,6 @@ import java.util.List;
 import firm.nodes.Cond;
 import firm.nodes.Jmp;
 import firm.nodes.Node;
-import firm.nodes.NodeVisitor;
 import firm.nodes.Phi;
 
 public class BlockNodes {
@@ -28,13 +27,12 @@ public class BlockNodes {
 		jumpOrCondNode = cond;
 	}
 
-	public void visitNodes(NodeVisitor visitor) {
+	public void visitNodes(BulkPhiNodeVisitor visitor) {
 		for (Node curr : nodes) {
 			curr.accept(visitor);
 		}
-		for (Phi curr : phis) {
-			curr.accept(visitor);
-		}
+
+		visitor.visit(phis);
 
 		if (jumpOrCondNode != null) {
 			jumpOrCondNode.accept(visitor);

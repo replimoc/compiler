@@ -1,5 +1,7 @@
 package compiler.firm.backend;
 
+import java.util.List;
+
 import firm.nodes.Add;
 import firm.nodes.Address;
 import firm.nodes.Align;
@@ -35,7 +37,6 @@ import firm.nodes.Mulh;
 import firm.nodes.Mux;
 import firm.nodes.NoMem;
 import firm.nodes.Node;
-import firm.nodes.NodeVisitor;
 import firm.nodes.Not;
 import firm.nodes.Offset;
 import firm.nodes.Or;
@@ -57,7 +58,7 @@ import firm.nodes.Sync;
 import firm.nodes.Tuple;
 import firm.nodes.Unknown;
 
-public class NodeNumberPrintingVisitor implements NodeVisitor {
+public class NodeNumberPrintingVisitor implements BulkPhiNodeVisitor {
 
 	@Override
 	public void visit(Add arg0) {
@@ -332,6 +333,13 @@ public class NodeNumberPrintingVisitor implements NodeVisitor {
 	@Override
 	public void visitUnknown(Node arg0) {
 		System.out.println(arg0.getNr());
+	}
+
+	@Override
+	public void visit(List<Phi> phis) {
+		for (Phi phi : phis) {
+			visit(phi);
+		}
 	}
 
 }
