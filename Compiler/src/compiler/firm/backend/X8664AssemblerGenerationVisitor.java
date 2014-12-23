@@ -205,43 +205,37 @@ public class X8664AssemblerGenerationVisitor implements BulkPhiNodeVisitor {
 
 	@Override
 	public void visit(Address node) {
-		// TODO Auto-generated method stub
-
+		// This is handled in a call.
 	}
 
 	@Override
 	public void visit(Align node) {
-		// TODO Auto-generated method stub
+		throw new RuntimeException(node + " is not implemented yet!");
 	}
 
 	@Override
 	public void visit(Alloc node) {
-		// TODO Auto-generated method stub
-
+		throw new RuntimeException(node + " is not implemented yet!");
 	}
 
 	@Override
 	public void visit(Anchor node) {
-		// TODO Auto-generated method stub
-
+		throw new RuntimeException(node + " is not implemented yet!");
 	}
 
 	@Override
 	public void visit(And node) {
-		// TODO Auto-generated method stub
-
+		throw new RuntimeException(node + " is not implemented yet!");
 	}
 
 	@Override
 	public void visit(Bad node) {
-		// TODO Auto-generated method stub
-
+		throw new RuntimeException(node + " is not implemented yet!");
 	}
 
 	@Override
 	public void visit(Bitcast node) {
-		// TODO Auto-generated method stub
-
+		throw new RuntimeException(node + " is not implemented yet!");
 	}
 
 	@Override
@@ -272,8 +266,7 @@ public class X8664AssemblerGenerationVisitor implements BulkPhiNodeVisitor {
 
 	@Override
 	public void visit(Builtin node) {
-		// TODO Auto-generated method stub
-
+		throw new RuntimeException(node + " is not implemented yet!");
 	}
 
 	@Override
@@ -365,8 +358,7 @@ public class X8664AssemblerGenerationVisitor implements BulkPhiNodeVisitor {
 
 	@Override
 	public void visit(Cmp node) {
-		// TODO Auto-generated method stub
-
+		// Nothing to do here, its handled in Cond.
 	}
 
 	@Override
@@ -418,8 +410,7 @@ public class X8664AssemblerGenerationVisitor implements BulkPhiNodeVisitor {
 
 	@Override
 	public void visit(Confirm node) {
-		// TODO Auto-generated method stub
-
+		throw new RuntimeException(node + " is not implemented yet!");
 	}
 
 	@Override
@@ -439,14 +430,12 @@ public class X8664AssemblerGenerationVisitor implements BulkPhiNodeVisitor {
 
 	@Override
 	public void visit(CopyB node) {
-		// TODO Auto-generated method stub
-
+		throw new RuntimeException(node + " is not implemented yet!");
 	}
 
 	@Override
 	public void visit(Deleted node) {
-		// TODO Auto-generated method stub
-
+		throw new RuntimeException(node + " is not implemented yet!");
 	}
 
 	@Override
@@ -465,8 +454,7 @@ public class X8664AssemblerGenerationVisitor implements BulkPhiNodeVisitor {
 
 	@Override
 	public void visit(Dummy node) {
-		// TODO Auto-generated method stub
-
+		throw new RuntimeException(node + " is not implemented yet!");
 	}
 
 	@Override
@@ -476,26 +464,22 @@ public class X8664AssemblerGenerationVisitor implements BulkPhiNodeVisitor {
 
 	@Override
 	public void visit(Eor node) {
-		// TODO Auto-generated method stub
-
+		throw new RuntimeException(node + " is not implemented yet!");
 	}
 
 	@Override
 	public void visit(Free node) {
-		// TODO Auto-generated method stub
-
+		throw new RuntimeException(node + " is not implemented yet!");
 	}
 
 	@Override
 	public void visit(IJmp node) {
-		// TODO Auto-generated method stub
-
+		throw new RuntimeException(node + " is not implemented yet!");
 	}
 
 	@Override
 	public void visit(Id node) {
-		// TODO Auto-generated method stub
-
+		throw new RuntimeException(node + " is not implemented yet!");
 	}
 
 	@Override
@@ -524,20 +508,17 @@ public class X8664AssemblerGenerationVisitor implements BulkPhiNodeVisitor {
 
 	@Override
 	public void visit(Member node) {
-		// TODO Auto-generated method stub
-
+		throw new RuntimeException(node + " is not implemented yet!");
 	}
 
 	@Override
 	public void visit(Minus node) {
-		// TODO Auto-generated method stub
-
+		throw new RuntimeException(node + " is not implemented yet!");
 	}
 
 	@Override
 	public void visit(Mod node) {
-		// TODO Auto-generated method stub
-
+		throw new RuntimeException(node + " is not implemented yet!");
 	}
 
 	@Override
@@ -547,37 +528,32 @@ public class X8664AssemblerGenerationVisitor implements BulkPhiNodeVisitor {
 
 	@Override
 	public void visit(Mulh node) {
-		// TODO Auto-generated method stub
-
+		throw new RuntimeException(node + " is not implemented yet!");
 	}
 
 	@Override
 	public void visit(Mux node) {
-		// TODO Auto-generated method stub
-
+		throw new RuntimeException(node + " is not implemented yet!");
 	}
 
 	@Override
 	public void visit(NoMem node) {
-		// TODO Auto-generated method stub
-
+		throw new RuntimeException(node + " is not implemented yet!");
 	}
 
 	@Override
 	public void visit(Not node) {
-		// TODO Auto-generated method stub
-
+		throw new RuntimeException(node + " is not implemented yet!");
 	}
 
 	@Override
 	public void visit(Offset node) {
-		// TODO Auto-generated method stub
-
+		throw new RuntimeException(node + " is not implemented yet!");
 	}
 
 	@Override
 	public void visit(Or node) {
-		// TODO Auto-generated method stub
+		throw new RuntimeException(node + " is not implemented yet!");
 	}
 
 	@Override
@@ -587,8 +563,7 @@ public class X8664AssemblerGenerationVisitor implements BulkPhiNodeVisitor {
 
 	@Override
 	public void visit(Pin node) {
-		// TODO Auto-generated method stub
-
+		throw new RuntimeException(node + " is not implemented yet!");
 	}
 
 	private void visitCmpNode(Cmp node) {
@@ -615,8 +590,7 @@ public class X8664AssemblerGenerationVisitor implements BulkPhiNodeVisitor {
 
 	@Override
 	public void visit(Raise node) {
-		// TODO Auto-generated method stub
-
+		throw new RuntimeException(node + " is not implemented yet!");
 	}
 
 	@Override
@@ -638,26 +612,22 @@ public class X8664AssemblerGenerationVisitor implements BulkPhiNodeVisitor {
 
 	@Override
 	public void visit(Sel node) {
-		// TODO Auto-generated method stub
-
+		throw new RuntimeException(node + " is not implemented yet!");
 	}
 
 	@Override
 	public void visit(Shl node) {
-		// TODO Auto-generated method stub
-
+		throw new RuntimeException(node + " is not implemented yet!");
 	}
 
 	@Override
 	public void visit(Shr node) {
-		// TODO Auto-generated method stub
-
+		throw new RuntimeException(node + " is not implemented yet!");
 	}
 
 	@Override
 	public void visit(Shrs node) {
-		// TODO Auto-generated method stub
-
+		throw new RuntimeException(node + " is not implemented yet!");
 	}
 
 	@Override
@@ -684,32 +654,27 @@ public class X8664AssemblerGenerationVisitor implements BulkPhiNodeVisitor {
 
 	@Override
 	public void visit(Switch node) {
-		// TODO Auto-generated method stub
-
+		throw new RuntimeException(node + " is not implemented yet!");
 	}
 
 	@Override
 	public void visit(Sync node) {
-		// TODO Auto-generated method stub
-
+		throw new RuntimeException(node + " is not implemented yet!");
 	}
 
 	@Override
 	public void visit(Tuple node) {
-		// TODO Auto-generated method stub
-
+		throw new RuntimeException(node + " is not implemented yet!");
 	}
 
 	@Override
 	public void visit(Unknown node) {
-		// TODO Auto-generated method stub
-
+		throw new RuntimeException(node + " is not implemented yet!");
 	}
 
 	@Override
 	public void visitUnknown(Node node) {
-		// TODO Auto-generated method stub
-
+		throw new RuntimeException(node + " is not implemented yet!");
 	}
 
 	private Node getRelevantPredecessor(Phi phi) {
