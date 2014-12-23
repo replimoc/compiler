@@ -440,7 +440,7 @@ public class X8664AssemblerGenerationVisitor implements BulkPhiNodeVisitor {
 		throw new RuntimeException(node + " is not implemented yet!");
 	}
 
-	public void visitDiv(Node node, Node left, Node right) {
+	public void visitDivMod(Node node, Node left, Node right, Register storeRegister) {
 		addOperation(new Comment("div operation"));
 		// move left node to EAX
 		getValue(left, Register.EAX);
@@ -449,13 +449,15 @@ public class X8664AssemblerGenerationVisitor implements BulkPhiNodeVisitor {
 		addOperation(new CltdOperation());
 		// idivl (eax / esi)
 		addOperation(new DivOperation(Register.ESI));
+		// store on stack
+		for (Edge edge : BackEdges.getOuts(node)) {
+			storeValue(edge.node, storeRegister);
+		}
 	}
 
 	@Override
 	public void visit(Div node) {
-		visitDiv(node, node.getLeft(), node.getRight());
-		// store on stack
-		storeValue(node, Register.EAX);
+		visitDivMod(node, node.getLeft(), node.getRight(), Register.EAX);
 	}
 
 	@Override
@@ -524,11 +526,7 @@ public class X8664AssemblerGenerationVisitor implements BulkPhiNodeVisitor {
 
 	@Override
 	public void visit(Mod node) {
-		visitDiv(node, node.getLeft(), node.getRight());
-		// store on stack
-		for (Edge edge : BackEdges.getOuts(node)) {
-			storeValue(edge.node, Register.EDX);
-		}
+		visitDivMod(node, node.getLeft(), node.getRight(), Register.EDX);
 	}
 
 	@Override
@@ -591,10 +589,6 @@ public class X8664AssemblerGenerationVisitor implements BulkPhiNodeVisitor {
 					nodeStackOffsets.put(proj, STACK_ITEM_SIZE * (proj.getNum() + 2)); // + 2 for dynamic link
 				}
 			}
-		} else if (node.getPred() instanceof Div) {
-			// div nodes seems to be projected always, so pass the node offset to Proj node
-			getValue(node.getPred(), Register.EAX);
-			storeValue(node, Register.EAX);
 		}
 	}
 
