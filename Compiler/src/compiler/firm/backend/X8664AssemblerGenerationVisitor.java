@@ -150,7 +150,7 @@ public class X8664AssemblerGenerationVisitor implements BulkPhiNodeVisitor {
 		return nodeStackOffsets.get(node);
 	}
 
-	private StackPointer storeValueAndGetStackPointer(Node node, Storage storage) {
+	private StackPointer storeValueOnNewStackPointer(Node node, Storage storage) {
 		// Allocate stack
 		currentStackOffset -= STACK_ITEM_SIZE;
 		addOperation(new SubqOperation("Increment stack size", new Constant(STACK_ITEM_SIZE), Register.RSP));
@@ -161,8 +161,13 @@ public class X8664AssemblerGenerationVisitor implements BulkPhiNodeVisitor {
 	}
 
 	private void storeValue(Node node, Storage storage) {
-		StackPointer stackPointer = storeValueAndGetStackPointer(node, storage);
-		nodeStackOffsets.put(node, stackPointer.getOffset());
+		Integer stackOffset = nodeStackOffsets.get(node);
+		if (stackOffset == null) {
+			StackPointer stackPointer = storeValueOnNewStackPointer(node, storage);
+			nodeStackOffsets.put(node, stackPointer.getOffset());
+		} else {
+			storeValue(node, storage, new StackPointer(stackOffset, Register.RBP));
+		}
 	}
 
 	private void storeValue(Node node, Storage storage, StackPointer stackPointer) {
@@ -715,25 +720,17 @@ public class X8664AssemblerGenerationVisitor implements BulkPhiNodeVisitor {
 	@Override
 	public void visit(List<Phi> phis) {
 		addOperation(new Comment("Handle phis of current block"));
-		HashMap<Phi, StackPointer> phiStackMapping = new HashMap<>();
+		HashMap<Phi, StackPointer> phiTempStackMapping = new HashMap<>();
 		for (Phi phi : phis) {
 			Node predecessor = getRelevantPredecessor(phi);
 			getValue(predecessor, Register.EAX);
-			StackPointer stackPointer = storeValueAndGetStackPointer(predecessor, Register.EAX);
-			phiStackMapping.put(phi, stackPointer);
+			StackPointer stackPointer = storeValueOnNewStackPointer(predecessor, Register.EAX);
+			phiTempStackMapping.put(phi, stackPointer);
 		}
 
 		for (Phi phi : phis) {
-			StackPointer stackPointer = phiStackMapping.get(phi);
-			getValue(phi, Register.EAX, stackPointer);
-
-			if (variableAssigned(phi)) {
-				// There is already a space on the stack, use it to save it
-				storeValue(phi, Register.EAX, new StackPointer(getStackOffset(phi), Register.RBP));
-			} else {
-				// Create new stack place
-				storeValue(phi, Register.EAX);
-			}
+			getValue(phi, Register.EAX, phiTempStackMapping.get(phi));
+			storeValue(phi, Register.EAX);
 		}
 	}
 }
