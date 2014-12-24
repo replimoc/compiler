@@ -4,25 +4,28 @@ import compiler.firm.backend.Bit;
 
 // Map for registers: https://upload.wikimedia.org/wikipedia/commons/4/41/Table_of_x86_Registers.png
 public class Register extends Storage {
-	public static final Register RBX = new Register("%ebx", "%rbx");
-	public static final Register RSP = new Register("%esp", "%rsp"); // stack pointer
-	public static final Register RBP = new Register("%ebp", "%rbp"); // frame pointer
+	// reserved for special usage
+	public static final Register _SP = new Register(null, "%esp", "%rsp"); // stack pointer
+	public static final Register _BP = new Register(null, "%ebp", "%rbp"); // frame pointer
 
-	// 32-bit registers
-	public static final Register EDI = new Register("%edi", "%rdi");
-	public static final Register ESI = new Register("%esi", "%rsi");
-	public static final Register EAX = new Register("%eax", "%rax"); // accumulator
-	public static final Register RAX = EAX; // accumulator
-	public static final Register EDX = new Register("%edx", "%rdx");
-	public static final Register ECX = new Register("%ecx", "%rcx"); // counter (for loop counters);
+	// free registers
+	public static final Register _DI = new Register(null, "%edi", "%rdi");
+	public static final Register _SI = new Register(null, "%esi", "%rsi");
 
-	public static final Register R8D = new Register("%r8d", "%r8");
-	public static final Register R9D = new Register("%r9d", "%r9");
+	// registers with 8bit regs
+	public static final Register _AX = new Register("%ah", "%eax", "%rax"); // accumulator
+	public static final Register _BX = new Register("%bl", "%ebx", "%rbx");
+	public static final Register _CX = new Register("%ch", "%ecx", "%rcx"); // counter (for loop counters);
+	public static final Register _DX = new Register("%dh", "%edx", "%rdx");
+	public static final Register _8D = new Register("%r8b", "%r8d", "%r8");
+	public static final Register _9D = new Register("%r9b", "%r9d", "%r9");
 
+	private final String registerName8;
 	private final String registerName32;
 	private final String registerName64;
 
-	Register(String registerName32, String registerName64) {
+	Register(String registerName8, String registerName32, String registerName64) {
+		this.registerName8 = registerName8;
 		this.registerName32 = registerName32;
 		this.registerName64 = registerName64;
 	}
@@ -36,10 +39,11 @@ public class Register extends Storage {
 		switch (bit) {
 		case BIT64:
 			return registerName64;
+		case BIT8:
+			return registerName8;
 		case BIT32:
 		default:
 			return registerName32;
-
 		}
 	}
 

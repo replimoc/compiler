@@ -1,6 +1,7 @@
 package compiler.firm.backend;
 
 public enum Bit {
+	BIT8("b"),
 	BIT32("l"),
 	BIT64("q");
 
