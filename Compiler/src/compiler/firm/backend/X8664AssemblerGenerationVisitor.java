@@ -130,7 +130,7 @@ public class X8664AssemblerGenerationVisitor implements BulkPhiNodeVisitor {
 		// if variable was assigned, than simply load it from stack
 
 		if (node instanceof Const) {
-			addOperation(new MovlOperation(new Constant((Const) node), register));
+			getValue(node, register, new Constant((Const) node));
 
 		} else if (nodeStackOffsets.containsKey(node)) {
 			StackPointer stackPointer = new StackPointer(getStackOffset(node), Register.RBP);
@@ -143,7 +143,7 @@ public class X8664AssemblerGenerationVisitor implements BulkPhiNodeVisitor {
 		}
 	}
 
-	private void getValue(Node node, Register register, StackPointer stackPointer) {
+	private void getValue(Node node, Register register, Storage stackPointer) {
 		if (is64bitNode(node)) {
 			addOperation(new MovqOperation("Load address " + node.toString(), stackPointer, register));
 		} else {
