@@ -24,7 +24,7 @@ public class CommonSubexpressionEliminationVisitor extends OptimizationVisitor<N
 		}
 	};
 
-	private HashMap<NodeValue, Node> nodeValues = new HashMap<>();
+	private final HashMap<NodeValue, Node> nodeValues = new HashMap<>();
 
 	@Override
 	public HashMap<Node, Node> getLatticeValues() {
@@ -62,8 +62,9 @@ public class CommonSubexpressionEliminationVisitor extends OptimizationVisitor<N
 		if (originNode.getPredCount() != targetNode.getPredCount())
 			return false;
 		L1: for (Node n1 : originNode.getPreds()) {
-			for (Node n2 : targetNode.getPreds()) {
-				if (n1.getClass().equals(n2.getClass())) {
+			for (int i = 0; i < targetNode.getPredCount(); i++) {
+				if (n1.getClass().equals(targetNode.getPred(i).getClass())) {
+					// match for n1 found
 					continue L1;
 				}
 			}
@@ -124,8 +125,10 @@ public class CommonSubexpressionEliminationVisitor extends OptimizationVisitor<N
 
 	@Override
 	public void visit(Sub sub) {
-		Node leftNode = nodeReplacements.get(sub.getLeft()) == null ? sub.getLeft() : nodeReplacements.get(sub.getLeft());
-		Node rightNode = nodeReplacements.get(sub.getRight()) == null ? sub.getRight() : nodeReplacements.get(sub.getRight());
+		Node leftReplacement = nodeReplacements.get(sub.getLeft());
+		Node leftNode = leftReplacement == null ? sub.getLeft() : leftReplacement;
+		Node rightReplacement = nodeReplacements.get(sub.getRight());
+		Node rightNode = rightReplacement == null ? sub.getRight() : rightReplacement;
 		int left = getValue(leftNode);
 		int right = getValue(rightNode);
 
@@ -134,8 +137,10 @@ public class CommonSubexpressionEliminationVisitor extends OptimizationVisitor<N
 
 	@Override
 	public void visit(Div div) {
-		Node leftNode = nodeReplacements.get(div.getLeft()) == null ? div.getLeft() : nodeReplacements.get(div.getLeft());
-		Node rightNode = nodeReplacements.get(div.getRight()) == null ? div.getRight() : nodeReplacements.get(div.getRight());
+		Node leftReplacement = nodeReplacements.get(div.getLeft());
+		Node leftNode = leftReplacement == null ? div.getLeft() : leftReplacement;
+		Node rightReplacement = nodeReplacements.get(div.getRight());
+		Node rightNode = rightReplacement == null ? div.getRight() : rightReplacement;
 		int left = getValue(leftNode);
 		int right = getValue(rightNode);
 
@@ -144,8 +149,10 @@ public class CommonSubexpressionEliminationVisitor extends OptimizationVisitor<N
 
 	@Override
 	public void visit(Mod mod) {
-		Node leftNode = nodeReplacements.get(mod.getLeft()) == null ? mod.getLeft() : nodeReplacements.get(mod.getLeft());
-		Node rightNode = nodeReplacements.get(mod.getRight()) == null ? mod.getRight() : nodeReplacements.get(mod.getRight());
+		Node leftReplacement = nodeReplacements.get(mod.getLeft());
+		Node leftNode = leftReplacement == null ? mod.getLeft() : leftReplacement;
+		Node rightReplacement = nodeReplacements.get(mod.getRight());
+		Node rightNode = rightReplacement == null ? mod.getRight() : rightReplacement;
 		int left = getValue(leftNode);
 		int right = getValue(rightNode);
 
@@ -154,8 +161,10 @@ public class CommonSubexpressionEliminationVisitor extends OptimizationVisitor<N
 
 	@Override
 	public void visit(Shl shl) {
-		Node leftNode = nodeReplacements.get(shl.getLeft()) == null ? shl.getLeft() : nodeReplacements.get(shl.getLeft());
-		Node rightNode = nodeReplacements.get(shl.getRight()) == null ? shl.getRight() : nodeReplacements.get(shl.getRight());
+		Node leftReplacement = nodeReplacements.get(shl.getLeft());
+		Node leftNode = leftReplacement == null ? shl.getLeft() : leftReplacement;
+		Node rightReplacement = nodeReplacements.get(shl.getRight());
+		Node rightNode = rightReplacement == null ? shl.getRight() : rightReplacement;
 		int left = getValue(leftNode);
 		int right = getValue(rightNode);
 
@@ -164,8 +173,10 @@ public class CommonSubexpressionEliminationVisitor extends OptimizationVisitor<N
 
 	@Override
 	public void visit(Shr shr) {
-		Node leftNode = nodeReplacements.get(shr.getLeft()) == null ? shr.getLeft() : nodeReplacements.get(shr.getLeft());
-		Node rightNode = nodeReplacements.get(shr.getRight()) == null ? shr.getRight() : nodeReplacements.get(shr.getRight());
+		Node leftReplacement = nodeReplacements.get(shr.getLeft());
+		Node leftNode = leftReplacement == null ? shr.getLeft() : leftReplacement;
+		Node rightReplacement = nodeReplacements.get(shr.getRight());
+		Node rightNode = rightReplacement == null ? shr.getRight() : rightReplacement;
 		int left = getValue(leftNode);
 		int right = getValue(rightNode);
 
@@ -174,8 +185,10 @@ public class CommonSubexpressionEliminationVisitor extends OptimizationVisitor<N
 
 	@Override
 	public void visit(Mul mul) {
-		Node leftNode = nodeReplacements.get(mul.getLeft()) == null ? mul.getLeft() : nodeReplacements.get(mul.getLeft());
-		Node rightNode = nodeReplacements.get(mul.getRight()) == null ? mul.getRight() : nodeReplacements.get(mul.getRight());
+		Node leftReplacement = nodeReplacements.get(mul.getLeft());
+		Node leftNode = leftReplacement == null ? mul.getLeft() : leftReplacement;
+		Node rightReplacement = nodeReplacements.get(mul.getRight());
+		Node rightNode = rightReplacement == null ? mul.getRight() : rightReplacement;
 		int left = getValue(leftNode);
 		int right = getValue(rightNode);
 
@@ -185,8 +198,10 @@ public class CommonSubexpressionEliminationVisitor extends OptimizationVisitor<N
 	@Override
 	public void visit(Phi phi) {
 		if (phi.getPredCount() == 2) {
-			Node leftNode = nodeReplacements.get(phi.getPred(0)) == null ? phi.getPred(0) : nodeReplacements.get(phi.getPred(0));
-			Node rightNode = nodeReplacements.get(phi.getPred(1)) == null ? phi.getPred(1) : nodeReplacements.get(phi.getPred(1));
+			Node leftReplacement = nodeReplacements.get(phi.getPred(0));
+			Node leftNode = leftReplacement == null ? phi.getPred(0) : leftReplacement;
+			Node rightReplacement = nodeReplacements.get(phi.getPred(1));
+			Node rightNode = rightReplacement == null ? phi.getPred(1) : rightReplacement;
 			int left = getValue(leftNode);
 			int right = getValue(rightNode);
 
