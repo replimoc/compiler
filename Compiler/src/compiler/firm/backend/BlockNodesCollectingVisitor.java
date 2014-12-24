@@ -64,6 +64,7 @@ import firm.nodes.Unknown;
 public class BlockNodesCollectingVisitor implements NodeVisitor {
 	private final HashMap<Block, BlockNodes> nodesPerBlock = new HashMap<>();
 	private final List<BlockNodes> cronologicalBlockNodes = new ArrayList<>();
+	private final List<Phi> phiList = new ArrayList<>();
 
 	public List<BlockNodes> getNodesPerBlock() {
 		return cronologicalBlockNodes;
@@ -71,6 +72,10 @@ public class BlockNodesCollectingVisitor implements NodeVisitor {
 
 	public HashMap<Block, BlockNodes> getNodesPerBlockMap() {
 		return nodesPerBlock;
+	}
+
+	public List<Phi> getAllPhis() {
+		return phiList;
 	}
 
 	private void collectNode(Node node) {
@@ -279,6 +284,7 @@ public class BlockNodesCollectingVisitor implements NodeVisitor {
 	@Override
 	public void visit(Phi phi) {
 		getBlockNodes(phi).addPhi(phi);
+		phiList.add(phi);
 	}
 
 	@Override

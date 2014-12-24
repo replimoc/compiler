@@ -181,8 +181,7 @@ public class X8664AssemblerGenerationVisitor implements BulkPhiNodeVisitor {
 		return nodeStackOffsets.containsKey(node);
 	}
 
-	private <T extends StorageRegisterOperation> void visitTwoOperandsNode(T operation, Node parent, Node left,
-			Node right) {
+	private <T extends StorageRegisterOperation> void visitTwoOperandsNode(T operation, Node parent, Node left, Node right) {
 		// move left node to RAX
 		getValue(left, Register.EAX);
 		// move right node to RBX
@@ -197,6 +196,13 @@ public class X8664AssemblerGenerationVisitor implements BulkPhiNodeVisitor {
 
 	private String getBlockLabel(Block node) {
 		return "BLOCK_" + node.getNr();
+	}
+
+	public void reserveMemoryForPhis(List<Phi> phis) {
+		for (Phi phi : phis) {
+			currentStackOffset -= STACK_ITEM_SIZE;
+			nodeStackOffsets.put(phi, currentStackOffset);
+		}
 	}
 
 	// ----------------------------------------------- NodeVisitor ---------------------------------------------------
@@ -747,6 +753,8 @@ public class X8664AssemblerGenerationVisitor implements BulkPhiNodeVisitor {
 
 	@Override
 	public void visit(List<Phi> phis) {
+		int oldStackOffset = currentStackOffset;
+
 		addOperation(new Comment("Handle phis of current block"));
 		HashMap<Phi, StackPointer> phiTempStackMapping = new HashMap<>();
 		for (Phi phi : phis) {
@@ -760,5 +768,8 @@ public class X8664AssemblerGenerationVisitor implements BulkPhiNodeVisitor {
 			getValue(phi, Register.EAX, phiTempStackMapping.get(phi));
 			storeValue(phi, Register.EAX);
 		}
+
+		currentStackOffset = oldStackOffset; // reset stack pointer to remove the temp values
 	}
+
 }

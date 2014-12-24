@@ -42,6 +42,8 @@ public final class AssemblerGenerator {
 			final X8664AssemblerGenerationVisitor visitor = new X8664AssemblerGenerationVisitor(callingConvention);
 			final NodeNumberPrintingVisitor printer = new NodeNumberPrintingVisitor();
 
+			visitor.reserveMemoryForPhis(collectorVisitor.getAllPhis());
+
 			BackEdges.enable(graph);
 			for (BlockNodes blockNodes : nodesPerBlock) {
 				blockNodes.visitNodes(printer, collectorVisitor.getNodesPerBlockMap());
