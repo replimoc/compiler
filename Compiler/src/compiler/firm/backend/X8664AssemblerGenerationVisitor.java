@@ -127,12 +127,18 @@ public class X8664AssemblerGenerationVisitor implements BulkPhiNodeVisitor {
 	private void getValue(Node node, Register register) {
 		addOperation(new Comment("restore from stack"));
 
-		// if variable was assigned, than simply load if from stack
-		if (variableAssigned(node)) {
+		// if variable was assigned, than simply load it from stack
 
+		if (node instanceof Const) {
+			addOperation(new MovlOperation(new Constant((Const) node), register));
+
+		} else if (nodeStackOffsets.containsKey(node)) {
 			StackPointer stackPointer = new StackPointer(getStackOffset(node), Register.RBP);
 			getValue(node, register, stackPointer);
-		} else { // else we must collect all operations and save the result in register
+
+		} else { // The value has not been set yet. Reserve memory for it. TODO: check if this is a valid case
+			int stackOffset = reserveStackItem();
+			nodeStackOffsets.put(node, stackOffset);
 
 		}
 	}
@@ -151,12 +157,17 @@ public class X8664AssemblerGenerationVisitor implements BulkPhiNodeVisitor {
 
 	private StackPointer storeValueOnNewStackPointer(Node node, Storage storage) {
 		// Allocate stack
-		currentStackOffset -= STACK_ITEM_SIZE;
-		addOperation(new SubqOperation("Increment stack size", new Constant(STACK_ITEM_SIZE), Register.RSP));
+		int stackOffset = reserveStackItem();
 
-		StackPointer stackPointer = new StackPointer(currentStackOffset, Register.RBP);
+		StackPointer stackPointer = new StackPointer(stackOffset, Register.RBP);
 		storeValue(node, storage, stackPointer);
 		return stackPointer;
+	}
+
+	private int reserveStackItem() {
+		currentStackOffset -= STACK_ITEM_SIZE;
+		addOperation(new SubqOperation("Increment stack size", new Constant(STACK_ITEM_SIZE), Register.RSP));
+		return currentStackOffset;
 	}
 
 	private void storeValue(Node node, Storage storage) {
@@ -175,10 +186,6 @@ public class X8664AssemblerGenerationVisitor implements BulkPhiNodeVisitor {
 		} else {
 			addOperation(new MovlOperation("Store node " + node, storage, stackPointer));
 		}
-	}
-
-	private boolean variableAssigned(Node node) {
-		return nodeStackOffsets.containsKey(node);
 	}
 
 	private <T extends StorageRegisterOperation> void visitTwoOperandsNode(T operation, Node parent, Node left, Node right) {
@@ -334,16 +341,7 @@ public class X8664AssemblerGenerationVisitor implements BulkPhiNodeVisitor {
 			for (int i = 0; i < parametersCount && i < callingRegisters.length; i++) {
 				// Copy parameters in registers
 				Node parameterNode = node.getPred(i + firmOffset);
-
-				// because constNode returns incorrect block, perform "optimization" and load constant
-				// into register directly see issue #202
-				// TODO: Investigate why this happens and probably remove this "optimiziation" -> move it to getValue
-				if (parameterNode instanceof Const) {
-					Const constNode = (Const) parameterNode;
-					addOperation(new MovlOperation(new Constant(constNode), callingRegisters[i]));
-				} else {
-					getValue(parameterNode, callingRegisters[i]);
-				}
+				getValue(parameterNode, callingRegisters[i]);
 			}
 
 			addOperation(new CallOperation(methodName));
@@ -457,8 +455,7 @@ public class X8664AssemblerGenerationVisitor implements BulkPhiNodeVisitor {
 
 	@Override
 	public void visit(Const node) {
-		addOperation(new Comment("store const"));
-		storeValue(node, new Constant(node));
+		// nothing to do
 	}
 
 	@Override
@@ -753,8 +750,6 @@ public class X8664AssemblerGenerationVisitor implements BulkPhiNodeVisitor {
 
 	@Override
 	public void visit(List<Phi> phis) {
-		int oldStackOffset = currentStackOffset;
-
 		addOperation(new Comment("Handle phis of current block"));
 		HashMap<Phi, StackPointer> phiTempStackMapping = new HashMap<>();
 		for (Phi phi : phis) {
@@ -768,8 +763,5 @@ public class X8664AssemblerGenerationVisitor implements BulkPhiNodeVisitor {
 			getValue(phi, Register.EAX, phiTempStackMapping.get(phi));
 			storeValue(phi, Register.EAX);
 		}
-
-		currentStackOffset = oldStackOffset; // reset stack pointer to remove the temp values
 	}
-
 }
