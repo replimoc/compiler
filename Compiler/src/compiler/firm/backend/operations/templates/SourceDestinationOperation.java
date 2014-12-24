@@ -3,17 +3,15 @@ package compiler.firm.backend.operations.templates;
 import compiler.firm.backend.Bit;
 import compiler.firm.backend.storage.Storage;
 
-public abstract class SourceDestinationOperation extends AssemblerOperation {
+public abstract class SourceDestinationOperation extends AssemblerBitOperation {
 
-	private final Bit mode;
 	private final Storage source;
 	private final Storage destination;
 
 	public SourceDestinationOperation(String comment, Bit mode, Storage source, Storage destination) {
-		super(comment);
+		super(comment, mode);
 		this.source = source;
 		this.destination = destination;
-		this.mode = mode;
 	}
 
 	public Storage getSource() {
@@ -22,9 +20,5 @@ public abstract class SourceDestinationOperation extends AssemblerOperation {
 
 	public Storage getDestination() {
 		return destination;
-	}
-
-	public Bit getMode() {
-		return mode;
 	}
 }

@@ -1,4 +1,4 @@
-package compiler.firm.backend.operations.general;
+package compiler.firm.backend.operations;
 
 import compiler.firm.backend.operations.templates.AssemblerOperation;
 import compiler.utils.Utils;

@@ -1,4 +1,4 @@
-package compiler.firm.backend.operations.bit64;
+package compiler.firm.backend.operations;
 
 import compiler.firm.backend.operations.templates.AssemblerOperation;
 

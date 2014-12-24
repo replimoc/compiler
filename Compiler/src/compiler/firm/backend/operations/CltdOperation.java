@@ -1,11 +1,11 @@
-package compiler.firm.backend.operations.general;
+package compiler.firm.backend.operations;
 
 import compiler.firm.backend.operations.templates.AssemblerOperation;
 
 public class CltdOperation extends AssemblerOperation {
 
 	public CltdOperation() {
-		super(null);
+		this(null);
 	}
 
 	public CltdOperation(String comment) {

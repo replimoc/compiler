@@ -4,21 +4,19 @@ import compiler.firm.backend.Bit;
 import compiler.firm.backend.storage.Constant;
 import compiler.firm.backend.storage.Register;
 
-public abstract class RegisterConstantOperation extends AssemblerOperation {
+public abstract class RegisterConstantOperation extends AssemblerBitOperation {
 
 	private final Register register;
 	private final Constant constant;
-	private final Bit mode;
 
 	public RegisterConstantOperation(Bit mode, Register register, Constant constant) {
 		this(null, mode, register, constant);
 	}
 
 	public RegisterConstantOperation(String comment, Bit mode, Register register, Constant constant) {
-		super(comment);
+		super(comment, mode);
 		this.register = register;
 		this.constant = constant;
-		this.mode = mode;
 	}
 
 	public Register getRegister() {
@@ -27,9 +25,5 @@ public abstract class RegisterConstantOperation extends AssemblerOperation {
 
 	public Constant getConstant() {
 		return constant;
-	}
-
-	public Bit getMode() {
-		return mode;
 	}
 }

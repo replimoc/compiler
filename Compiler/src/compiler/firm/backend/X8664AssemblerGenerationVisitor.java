@@ -6,24 +6,24 @@ import java.util.List;
 
 import compiler.firm.FirmUtils;
 import compiler.firm.backend.calling.CallingConvention;
-import compiler.firm.backend.operations.bit32.NegatelOperation;
-import compiler.firm.backend.operations.bit64.CallOperation;
-import compiler.firm.backend.operations.bit64.PopqOperation;
-import compiler.firm.backend.operations.bit64.PushqOperation;
-import compiler.firm.backend.operations.bit64.RetOperation;
-import compiler.firm.backend.operations.general.AddOperation;
-import compiler.firm.backend.operations.general.CltdOperation;
-import compiler.firm.backend.operations.general.CmpOperation;
-import compiler.firm.backend.operations.general.Comment;
-import compiler.firm.backend.operations.general.CondJumpOperation;
-import compiler.firm.backend.operations.general.DivOperation;
-import compiler.firm.backend.operations.general.ImulOperation;
-import compiler.firm.backend.operations.general.JumpOperation;
-import compiler.firm.backend.operations.general.LabelOperation;
-import compiler.firm.backend.operations.general.MovOperation;
-import compiler.firm.backend.operations.general.ShlOperation;
-import compiler.firm.backend.operations.general.SizeOperation;
-import compiler.firm.backend.operations.general.SubOperation;
+import compiler.firm.backend.operations.AddOperation;
+import compiler.firm.backend.operations.CallOperation;
+import compiler.firm.backend.operations.CltdOperation;
+import compiler.firm.backend.operations.CmpOperation;
+import compiler.firm.backend.operations.Comment;
+import compiler.firm.backend.operations.CondJumpOperation;
+import compiler.firm.backend.operations.DivOperation;
+import compiler.firm.backend.operations.ImulOperation;
+import compiler.firm.backend.operations.JumpOperation;
+import compiler.firm.backend.operations.LabelOperation;
+import compiler.firm.backend.operations.MovOperation;
+import compiler.firm.backend.operations.NegOperation;
+import compiler.firm.backend.operations.PopOperation;
+import compiler.firm.backend.operations.PushOperation;
+import compiler.firm.backend.operations.RetOperation;
+import compiler.firm.backend.operations.ShlOperation;
+import compiler.firm.backend.operations.SizeOperation;
+import compiler.firm.backend.operations.SubOperation;
 import compiler.firm.backend.operations.templates.AssemblerOperation;
 import compiler.firm.backend.operations.templates.StorageRegisterOperation;
 import compiler.firm.backend.storage.Constant;
@@ -115,10 +115,6 @@ public class X8664AssemblerGenerationVisitor implements BulkPhiNodeVisitor {
 
 	private void addOperation(AssemblerOperation assemblerOption) {
 		operations.add(assemblerOption);
-	}
-
-	private boolean is64bitNode(Node node) {
-		return node.getMode().equals(FirmUtils.getModeReference());
 	}
 
 	private void getValue(Node node, Register register) {
@@ -262,7 +258,7 @@ public class X8664AssemblerGenerationVisitor implements BulkPhiNodeVisitor {
 		if (node.equals(graph.getStartBlock())) {
 			addOperation(new LabelOperation(methodName));
 
-			addOperation(new PushqOperation(Register.RBP)); // Dynamic Link
+			addOperation(new PushOperation(Bit.BIT64, Register.RBP)); // Dynamic Link
 			addOperation(new MovOperation(Bit.BIT64, Register.RSP, Register.RBP));
 
 			reserveMemoryForPhis();
@@ -549,7 +545,7 @@ public class X8664AssemblerGenerationVisitor implements BulkPhiNodeVisitor {
 	@Override
 	public void visit(Minus node) {
 		getValue(node.getPred(0), Register.EAX);
-		addOperation(new NegatelOperation(Register.EAX));
+		addOperation(new NegOperation(getMode(node), Register.EAX));
 		storeValue(node, Register.EAX);
 	}
 
@@ -637,7 +633,7 @@ public class X8664AssemblerGenerationVisitor implements BulkPhiNodeVisitor {
 		// addOperation(node.getBlock(), new AddqOperation(new Constant(-currentStackOffset), Register.RSP));
 		// better move rbp to rsp
 		addOperation(new MovOperation(Bit.BIT64, Register.RBP, Register.RSP));
-		addOperation(new PopqOperation(Register.RBP));
+		addOperation(new PopOperation(Bit.BIT64, Register.RBP));
 		addOperation(new RetOperation());
 		currentStackOffset = 0;
 
