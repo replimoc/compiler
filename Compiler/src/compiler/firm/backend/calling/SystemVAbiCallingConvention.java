@@ -1,8 +1,9 @@
 package compiler.firm.backend.calling;
 
-import compiler.firm.backend.operations.bit64.AndqOperation;
+import compiler.firm.backend.Bit;
 import compiler.firm.backend.operations.bit64.MovqOperation;
 import compiler.firm.backend.operations.bit64.PushqOperation;
+import compiler.firm.backend.operations.general.AndOperation;
 import compiler.firm.backend.operations.templates.AssemblerOperation;
 import compiler.firm.backend.storage.Constant;
 import compiler.firm.backend.storage.Register;
@@ -15,7 +16,7 @@ public class SystemVAbiCallingConvention extends CallingConvention {
 		return new AssemblerOperation[] {
 				new PushqOperation(Register.RSP),
 				new PushqOperation(new StackPointer(0, Register.RSP)),
-				new AndqOperation(new Constant(-0x10), Register.RSP)
+				new AndOperation(Bit.BIT64, new Constant(-0x10), Register.RSP)
 		};
 	}
 

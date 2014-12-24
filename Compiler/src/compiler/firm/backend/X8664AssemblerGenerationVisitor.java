@@ -6,28 +6,26 @@ import java.util.List;
 
 import compiler.firm.FirmUtils;
 import compiler.firm.backend.calling.CallingConvention;
-import compiler.firm.backend.operations.bit32.AddlOperation;
-import compiler.firm.backend.operations.bit32.CltdOperation;
-import compiler.firm.backend.operations.bit32.CmpOperation;
-import compiler.firm.backend.operations.bit32.CondJumpOperation;
-import compiler.firm.backend.operations.bit32.DivOperation;
-import compiler.firm.backend.operations.bit32.ImullOperation;
-import compiler.firm.backend.operations.bit32.JumpOperation;
 import compiler.firm.backend.operations.bit32.MovlOperation;
 import compiler.firm.backend.operations.bit32.NegatelOperation;
 import compiler.firm.backend.operations.bit32.ShllOperation;
-import compiler.firm.backend.operations.bit32.SublOperation;
-import compiler.firm.backend.operations.bit64.AddqOperation;
 import compiler.firm.backend.operations.bit64.CallOperation;
 import compiler.firm.backend.operations.bit64.MovqOperation;
 import compiler.firm.backend.operations.bit64.PopqOperation;
 import compiler.firm.backend.operations.bit64.PushqOperation;
 import compiler.firm.backend.operations.bit64.RetOperation;
 import compiler.firm.backend.operations.bit64.ShlqOperation;
-import compiler.firm.backend.operations.bit64.SubqOperation;
+import compiler.firm.backend.operations.general.AddOperation;
+import compiler.firm.backend.operations.general.CltdOperation;
+import compiler.firm.backend.operations.general.CmpOperation;
 import compiler.firm.backend.operations.general.Comment;
+import compiler.firm.backend.operations.general.CondJumpOperation;
+import compiler.firm.backend.operations.general.DivOperation;
+import compiler.firm.backend.operations.general.ImulOperation;
+import compiler.firm.backend.operations.general.JumpOperation;
 import compiler.firm.backend.operations.general.LabelOperation;
 import compiler.firm.backend.operations.general.SizeOperation;
+import compiler.firm.backend.operations.general.SubOperation;
 import compiler.firm.backend.operations.templates.AssemblerOperation;
 import compiler.firm.backend.operations.templates.StorageRegisterOperation;
 import compiler.firm.backend.storage.Constant;
@@ -35,7 +33,6 @@ import compiler.firm.backend.storage.Register;
 import compiler.firm.backend.storage.StackPointer;
 import compiler.firm.backend.storage.Storage;
 import compiler.utils.Utils;
-
 import firm.BackEdges;
 import firm.BackEdges.Edge;
 import firm.Graph;
@@ -163,7 +160,7 @@ public class X8664AssemblerGenerationVisitor implements BulkPhiNodeVisitor {
 
 	private StackPointer reserveStackItem() {
 		currentStackOffset -= STACK_ITEM_SIZE;
-		addOperation(new SubqOperation("Increment stack size", new Constant(STACK_ITEM_SIZE), Register.RSP));
+		addOperation(new SubOperation("Increment stack size", Bit.BIT64, new Constant(STACK_ITEM_SIZE), Register.RSP));
 		return new StackPointer(currentStackOffset, Register.RBP);
 	}
 
@@ -213,15 +210,19 @@ public class X8664AssemblerGenerationVisitor implements BulkPhiNodeVisitor {
 		}
 	}
 
+	private Bit getMode(Node node) {
+		if (node.getMode().equals(FirmUtils.getModeReference())) {
+			return Bit.BIT64;
+		} else {
+			return Bit.BIT32;
+		}
+	}
+
 	// ----------------------------------------------- NodeVisitor ---------------------------------------------------
 
 	@Override
 	public void visit(Add node) {
-		if (node.getMode().equals(FirmUtils.getModeReference())) {
-			visitTwoOperandsNode(new AddqOperation("add operation"), node, node.getLeft(), node.getRight());
-		} else {
-			visitTwoOperandsNode(new AddlOperation("add operation"), node, node.getLeft(), node.getRight());
-		}
+		visitTwoOperandsNode(new AddOperation("add operation", getMode(node)), node, node.getLeft(), node.getRight());
 	}
 
 	@Override
@@ -320,7 +321,7 @@ public class X8664AssemblerGenerationVisitor implements BulkPhiNodeVisitor {
 			Constant parameterSize = new Constant(STACK_ITEM_SIZE * remainingParameters);
 
 			if (remainingParameters > 0) {
-				addOperation(new SubqOperation(parameterSize, Register.RSP));
+				addOperation(new SubOperation(Bit.BIT64, parameterSize, Register.RSP));
 
 				for (int i = 0; i < remainingParameters; i++) {
 					Storage sourcePointer = getStorage(node.getPred(i + firmOffset));
@@ -349,7 +350,7 @@ public class X8664AssemblerGenerationVisitor implements BulkPhiNodeVisitor {
 			addOperation(new CallOperation(methodName));
 
 			if (remainingParameters > 0) {
-				addOperation(new AddqOperation(parameterSize, Register.RSP));
+				addOperation(new AddOperation(Bit.BIT64, parameterSize, Register.RSP));
 			}
 
 			for (AssemblerOperation operation : callingConvention.getSuffixOperations()) {
@@ -488,7 +489,7 @@ public class X8664AssemblerGenerationVisitor implements BulkPhiNodeVisitor {
 		getValue(right, Register.ESI);
 		addOperation(new CltdOperation());
 		// idivl (eax / esi)
-		addOperation(new DivOperation(Register.ESI));
+		addOperation(new DivOperation(getMode(right), Register.ESI));
 		// store on stack
 		for (Edge edge : BackEdges.getOuts(node)) {
 			storeValue(edge.node, storeRegister);
@@ -573,7 +574,7 @@ public class X8664AssemblerGenerationVisitor implements BulkPhiNodeVisitor {
 
 	@Override
 	public void visit(Mul node) {
-		visitTwoOperandsNode(new ImullOperation("mul operation"), node, node.getRight(), node.getLeft());
+		visitTwoOperandsNode(new ImulOperation("mul operation", getMode(node)), node, node.getRight(), node.getLeft());
 	}
 
 	@Override
@@ -619,7 +620,7 @@ public class X8664AssemblerGenerationVisitor implements BulkPhiNodeVisitor {
 	private void visitCmpNode(Cmp node) {
 		getValue(node.getRight(), Register.EAX);
 		getValue(node.getLeft(), Register.EDX);
-		addOperation(new CmpOperation("cmp operation", Register.EAX, Register.EDX));
+		addOperation(new CmpOperation("cmp operation", getMode(node), Register.EAX, Register.EDX));
 	}
 
 	@Override
@@ -710,7 +711,7 @@ public class X8664AssemblerGenerationVisitor implements BulkPhiNodeVisitor {
 	@Override
 	public void visit(Sub node) {
 		// we subtract the right node from the left, not the otherway around
-		visitTwoOperandsNode(new SublOperation("sub operation"), node, node.getRight(), node.getLeft());
+		visitTwoOperandsNode(new SubOperation("sub operation", getMode(node)), node, node.getRight(), node.getLeft());
 	}
 
 	@Override
