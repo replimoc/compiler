@@ -104,7 +104,7 @@ public class X8664AssemblerGenerationVisitor implements BulkPhiNodeVisitor {
 	private final HashMap<String, CallingConvention> callingConventions;
 
 	// stack management
-	private final HashMap<Node, Integer> nodeStackOffsets = new HashMap<>();
+	private final HashMap<Node, Storage> nodeStorages = new HashMap<>();
 	private int currentStackOffset;
 	private Block currentBlock;
 
@@ -129,18 +129,18 @@ public class X8664AssemblerGenerationVisitor implements BulkPhiNodeVisitor {
 
 		// if variable was assigned, than simply load it from stack
 
-		if (node instanceof Const) {
-			getValue(node, register, new Constant((Const) node));
-
-		} else if (nodeStackOffsets.containsKey(node)) {
-			StackPointer stackPointer = new StackPointer(getStackOffset(node), Register.RBP);
-			getValue(node, register, stackPointer);
+		if (nodeStorages.containsKey(node)) {
+			getValue(node, register, getStorage(node));
 
 		} else { // The value has not been set yet. Reserve memory for it. TODO: check if this is a valid case
-			int stackOffset = reserveStackItem();
-			nodeStackOffsets.put(node, stackOffset);
+			StackPointer stackOffset = reserveStackItem();
+			nodeStorages.put(node, stackOffset);
 
 		}
+	}
+
+	private Storage getStorage(Node node) {
+		return nodeStorages.get(node);
 	}
 
 	private void getValue(Node node, Register register, Storage stackPointer) {
@@ -151,36 +151,31 @@ public class X8664AssemblerGenerationVisitor implements BulkPhiNodeVisitor {
 		}
 	}
 
-	private int getStackOffset(Node node) {
-		return nodeStackOffsets.get(node);
-	}
-
 	private StackPointer storeValueOnNewStackPointer(Node node, Storage storage) {
 		// Allocate stack
-		int stackOffset = reserveStackItem();
+		StackPointer stackPointer = reserveStackItem();
 
-		StackPointer stackPointer = new StackPointer(stackOffset, Register.RBP);
 		storeValue(node, storage, stackPointer);
 		return stackPointer;
 	}
 
-	private int reserveStackItem() {
+	private StackPointer reserveStackItem() {
 		currentStackOffset -= STACK_ITEM_SIZE;
 		addOperation(new SubqOperation("Increment stack size", new Constant(STACK_ITEM_SIZE), Register.RSP));
-		return currentStackOffset;
+		return new StackPointer(currentStackOffset, Register.RBP);
 	}
 
 	private void storeValue(Node node, Storage storage) {
-		Integer stackOffset = nodeStackOffsets.get(node);
-		if (stackOffset == null) {
-			StackPointer stackPointer = storeValueOnNewStackPointer(node, storage);
-			nodeStackOffsets.put(node, stackPointer.getOffset());
+		Storage stackPointer = nodeStorages.get(node);
+		if (stackPointer == null) {
+			stackPointer = storeValueOnNewStackPointer(node, storage);
+			nodeStorages.put(node, stackPointer);
 		} else {
-			storeValue(node, storage, new StackPointer(stackOffset, Register.RBP));
+			storeValue(node, storage, stackPointer);
 		}
 	}
 
-	private void storeValue(Node node, Storage storage, StackPointer stackPointer) {
+	private void storeValue(Node node, Storage storage, Storage stackPointer) {
 		if (is64bitNode(node)) {
 			addOperation(new MovqOperation("Store node " + node, storage, stackPointer));
 		} else {
@@ -208,7 +203,7 @@ public class X8664AssemblerGenerationVisitor implements BulkPhiNodeVisitor {
 	public void reserveMemoryForPhis(List<Phi> phis) {
 		for (Phi phi : phis) {
 			currentStackOffset -= STACK_ITEM_SIZE;
-			nodeStackOffsets.put(phi, currentStackOffset);
+			nodeStorages.put(phi, new StackPointer(currentStackOffset, Register.RBP));
 		}
 	}
 
@@ -320,9 +315,8 @@ public class X8664AssemblerGenerationVisitor implements BulkPhiNodeVisitor {
 				addOperation(new SubqOperation(parameterSize, Register.RSP));
 
 				for (int i = 0; i < remainingParameters; i++) {
-					int parameterOffset = getStackOffset(node.getPred(i + firmOffset));
+					Storage sourcePointer = getStorage(node.getPred(i + firmOffset));
 					// Copy parameter
-					StackPointer sourcePointer = new StackPointer(parameterOffset, Register.RBP);
 					Register temporaryRegister = Register.EAX;
 					StackPointer destinationPointer = new StackPointer(i * STACK_ITEM_SIZE, Register.RSP);
 					if (node.getPred(i + firmOffset) instanceof Proj) {
@@ -456,6 +450,7 @@ public class X8664AssemblerGenerationVisitor implements BulkPhiNodeVisitor {
 	@Override
 	public void visit(Const node) {
 		// nothing to do
+		nodeStorages.put(node, new Constant(node));
 	}
 
 	@Override
@@ -625,7 +620,7 @@ public class X8664AssemblerGenerationVisitor implements BulkPhiNodeVisitor {
 			for (Edge edge : BackEdges.getOuts(node)) {
 				if (edge.node instanceof Proj) {
 					Proj proj = (Proj) edge.node;
-					nodeStackOffsets.put(proj, STACK_ITEM_SIZE * (proj.getNum() + 2)); // + 2 for dynamic link
+					nodeStorages.put(proj, new StackPointer(STACK_ITEM_SIZE * (proj.getNum() + 2), Register.RBP)); // + 2 for dynamic link
 				}
 			}
 		}
