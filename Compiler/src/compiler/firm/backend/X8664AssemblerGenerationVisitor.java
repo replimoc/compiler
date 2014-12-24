@@ -6,15 +6,11 @@ import java.util.List;
 
 import compiler.firm.FirmUtils;
 import compiler.firm.backend.calling.CallingConvention;
-import compiler.firm.backend.operations.bit32.MovlOperation;
 import compiler.firm.backend.operations.bit32.NegatelOperation;
-import compiler.firm.backend.operations.bit32.ShllOperation;
 import compiler.firm.backend.operations.bit64.CallOperation;
-import compiler.firm.backend.operations.bit64.MovqOperation;
 import compiler.firm.backend.operations.bit64.PopqOperation;
 import compiler.firm.backend.operations.bit64.PushqOperation;
 import compiler.firm.backend.operations.bit64.RetOperation;
-import compiler.firm.backend.operations.bit64.ShlqOperation;
 import compiler.firm.backend.operations.general.AddOperation;
 import compiler.firm.backend.operations.general.CltdOperation;
 import compiler.firm.backend.operations.general.CmpOperation;
@@ -24,6 +20,8 @@ import compiler.firm.backend.operations.general.DivOperation;
 import compiler.firm.backend.operations.general.ImulOperation;
 import compiler.firm.backend.operations.general.JumpOperation;
 import compiler.firm.backend.operations.general.LabelOperation;
+import compiler.firm.backend.operations.general.MovOperation;
+import compiler.firm.backend.operations.general.ShlOperation;
 import compiler.firm.backend.operations.general.SizeOperation;
 import compiler.firm.backend.operations.general.SubOperation;
 import compiler.firm.backend.operations.templates.AssemblerOperation;
@@ -143,11 +141,7 @@ public class X8664AssemblerGenerationVisitor implements BulkPhiNodeVisitor {
 	}
 
 	private void getValue(Node node, Register register, Storage stackPointer) {
-		if (is64bitNode(node)) {
-			addOperation(new MovqOperation("Load address " + node.toString(), stackPointer, register));
-		} else {
-			addOperation(new MovlOperation("Load node " + node.toString(), stackPointer, register));
-		}
+		addOperation(new MovOperation("Load address " + node.toString(), getMode(node), stackPointer, register));
 	}
 
 	private StackPointer storeValueOnNewStackPointer(Node node, Storage storage) {
@@ -175,11 +169,7 @@ public class X8664AssemblerGenerationVisitor implements BulkPhiNodeVisitor {
 	}
 
 	private void storeValue(Node node, Storage storage, Storage stackPointer) {
-		if (is64bitNode(node)) {
-			addOperation(new MovqOperation("Store node " + node, storage, stackPointer));
-		} else {
-			addOperation(new MovlOperation("Store node " + node, storage, stackPointer));
-		}
+		addOperation(new MovOperation("Store node " + node, getMode(node), storage, stackPointer));
 	}
 
 	private <T extends StorageRegisterOperation> void visitTwoOperandsNode(T operation, Node parent, Node left, Node right) {
@@ -273,7 +263,7 @@ public class X8664AssemblerGenerationVisitor implements BulkPhiNodeVisitor {
 			addOperation(new LabelOperation(methodName));
 
 			addOperation(new PushqOperation(Register.RBP)); // Dynamic Link
-			addOperation(new MovqOperation(Register.RSP, Register.RBP));
+			addOperation(new MovOperation(Bit.BIT64, Register.RSP, Register.RBP));
 
 			reserveMemoryForPhis();
 		}
@@ -328,13 +318,9 @@ public class X8664AssemblerGenerationVisitor implements BulkPhiNodeVisitor {
 					// Copy parameter
 					Register temporaryRegister = Register.EAX;
 					StackPointer destinationPointer = new StackPointer(i * STACK_ITEM_SIZE, Register.RSP);
-					if (node.getPred(i + firmOffset) instanceof Proj) {
-						addOperation(new MovqOperation(sourcePointer, temporaryRegister));
-						addOperation(new MovqOperation(temporaryRegister, destinationPointer));
-					} else {
-						addOperation(new MovlOperation(sourcePointer, temporaryRegister));
-						addOperation(new MovlOperation(temporaryRegister, destinationPointer));
-					}
+					Bit mode = getMode(node.getPred(i + firmOffset));
+					addOperation(new MovOperation(mode, sourcePointer, temporaryRegister));
+					addOperation(new MovOperation(mode, temporaryRegister, destinationPointer));
 				}
 			}
 			firmOffset -= callingRegisters.length;
@@ -546,7 +532,7 @@ public class X8664AssemblerGenerationVisitor implements BulkPhiNodeVisitor {
 	public void visit(Load node) {
 		Node referenceNode = node.getPred(1);
 		getValue(referenceNode, Register.EAX);
-		addOperation(new MovqOperation(new StackPointer(0, Register.EAX), Register.EAX));
+		addOperation(new MovOperation(Bit.BIT64, new StackPointer(0, Register.EAX), Register.EAX));
 		for (Edge edge : BackEdges.getOuts(node)) {
 			Node edgeNode = edge.node;
 			if (!edgeNode.getMode().equals(Mode.getM())) {
@@ -650,7 +636,7 @@ public class X8664AssemblerGenerationVisitor implements BulkPhiNodeVisitor {
 
 		// addOperation(node.getBlock(), new AddqOperation(new Constant(-currentStackOffset), Register.RSP));
 		// better move rbp to rsp
-		addOperation(new MovqOperation(Register.RBP, Register.RSP));
+		addOperation(new MovOperation(Bit.BIT64, Register.RBP, Register.RSP));
 		addOperation(new PopqOperation(Register.RBP));
 		addOperation(new RetOperation());
 		currentStackOffset = 0;
@@ -667,16 +653,10 @@ public class X8664AssemblerGenerationVisitor implements BulkPhiNodeVisitor {
 		// move left node to a register
 		getValue(node.getLeft(), Register.EAX);
 
-		AssemblerOperation operation;
 		Constant constant = new Constant((Const) node.getRight());
 
-		if (node.getMode().equals(FirmUtils.getModeReference())) {
-			operation = new ShlqOperation(Register.EAX, constant);
-		} else {
-			operation = new ShllOperation(Register.EAX, constant);
-		}
 		// execute operation
-		addOperation(operation);
+		addOperation(new ShlOperation(getMode(node), Register.EAX, constant));
 		// store on stack
 		storeValue(node, Register.EAX);
 	}
@@ -705,7 +685,7 @@ public class X8664AssemblerGenerationVisitor implements BulkPhiNodeVisitor {
 		Node source = node.getPred(1);
 		getValue(source, Register.EAX);
 		getValue(node.getPred(2), Register.ECX);
-		addOperation(new MovlOperation(Register.ECX, new StackPointer(0, Register.EAX)));
+		addOperation(new MovOperation(getMode(node), Register.ECX, new StackPointer(0, Register.EAX)));
 	}
 
 	@Override

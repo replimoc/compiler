@@ -1,9 +1,9 @@
 package compiler.firm.backend.calling;
 
 import compiler.firm.backend.Bit;
-import compiler.firm.backend.operations.bit64.MovqOperation;
 import compiler.firm.backend.operations.bit64.PushqOperation;
 import compiler.firm.backend.operations.general.AndOperation;
+import compiler.firm.backend.operations.general.MovOperation;
 import compiler.firm.backend.operations.templates.AssemblerOperation;
 import compiler.firm.backend.storage.Constant;
 import compiler.firm.backend.storage.Register;
@@ -23,7 +23,7 @@ public class SystemVAbiCallingConvention extends CallingConvention {
 	@Override
 	public AssemblerOperation[] getSuffixOperations() {
 		return new AssemblerOperation[] {
-				new MovqOperation(new StackPointer(8, Register.RSP), Register.RSP)
+				new MovOperation(Bit.BIT64, new StackPointer(8, Register.RSP), Register.RSP)
 		};
 	}
 
