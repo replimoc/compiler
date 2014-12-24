@@ -396,38 +396,41 @@ public class X8664AssemblerGenerationVisitor implements BulkPhiNodeVisitor {
 		// generate cmp instruction
 		visitCmpNode(cmpNode);
 
+		String labelTrue = getBlockLabel(blockTrue);
+		String labelFalse = getBlockLabel(blockFalse);
+
 		// now add conditional jump
 		switch (cmpNode.getRelation()) {
 		case Equal:
-			addOperation(CondJumpOperation.createJumpZero(getBlockLabel(blockTrue)));
-			addOperation(CondJumpOperation.createJump(getBlockLabel(blockFalse)));
+			addOperation(CondJumpOperation.createJumpZero(labelTrue));
+			addOperation(CondJumpOperation.createJump(labelFalse));
 			break;
 		case False:
-			addOperation(CondJumpOperation.createJump(getBlockLabel(blockFalse)));
+			addOperation(CondJumpOperation.createJump(labelFalse));
 			break;
 		case Greater:
-			addOperation(CondJumpOperation.createJumpGreater(getBlockLabel(blockTrue)));
-			addOperation(CondJumpOperation.createJump(getBlockLabel(blockFalse)));
+			addOperation(CondJumpOperation.createJumpGreater(labelTrue));
+			addOperation(CondJumpOperation.createJump(labelFalse));
 			break;
 		case GreaterEqual:
-			addOperation(CondJumpOperation.createJumpGreaterEqual(getBlockLabel(blockTrue)));
-			addOperation(CondJumpOperation.createJump(getBlockLabel(blockFalse)));
+			addOperation(CondJumpOperation.createJumpGreaterEqual(labelTrue));
+			addOperation(CondJumpOperation.createJump(labelFalse));
 			break;
 		case Less:
-			addOperation(CondJumpOperation.createJumpLess(getBlockLabel(blockTrue)));
-			addOperation(CondJumpOperation.createJump(getBlockLabel(blockFalse)));
+			addOperation(CondJumpOperation.createJumpLess(labelTrue));
+			addOperation(CondJumpOperation.createJump(labelFalse));
 			break;
 		case LessEqual:
-			addOperation(CondJumpOperation.createJumpLessEqual(getBlockLabel(blockTrue)));
-			addOperation(CondJumpOperation.createJump(getBlockLabel(blockFalse)));
+			addOperation(CondJumpOperation.createJumpLessEqual(labelTrue));
+			addOperation(CondJumpOperation.createJump(labelFalse));
 			break;
 		case LessEqualGreater:
 		case LessGreater:
-			addOperation(CondJumpOperation.createJumpZero(getBlockLabel(blockFalse)));
-			addOperation(CondJumpOperation.createJump(getBlockLabel(blockTrue)));
+			addOperation(CondJumpOperation.createJumpZero(labelFalse));
+			addOperation(CondJumpOperation.createJump(labelTrue));
 			break;
 		case True:
-			addOperation(CondJumpOperation.createJump(getBlockLabel(blockTrue)));
+			addOperation(CondJumpOperation.createJump(labelTrue));
 			break;
 		case Unordered:
 		case UnorderedEqual:
