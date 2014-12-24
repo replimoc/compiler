@@ -1,5 +1,6 @@
 package compiler.firm.backend.operations.bit64;
 
+import compiler.firm.backend.Bit;
 import compiler.firm.backend.operations.templates.StorageRegisterOperation;
 import compiler.firm.backend.storage.Register;
 import compiler.firm.backend.storage.Storage;
@@ -24,6 +25,6 @@ public class AddqOperation extends StorageRegisterOperation {
 
 	@Override
 	public String getOperationString() {
-		return String.format("\taddq %s, %s", getStorage().toString64(), getDestination().toString64());
+		return String.format("\taddq %s, %s", getStorage().toString(Bit.BIT64), getDestination().toString(Bit.BIT64));
 	}
 }

@@ -1,5 +1,6 @@
 package compiler.firm.backend.operations.bit32;
 
+import compiler.firm.backend.Bit;
 import compiler.firm.backend.operations.templates.StorageRegisterOperation;
 import compiler.firm.backend.storage.Register;
 
@@ -23,6 +24,6 @@ public class CmpOperation extends StorageRegisterOperation {
 
 	@Override
 	public String getOperationString() {
-		return String.format("\tcmp %s, %s", getStorage().toString32(), getDestination().toString32());
+		return String.format("\tcmp %s, %s", getStorage().toString(Bit.BIT32), getDestination().toString(Bit.BIT32));
 	}
 }

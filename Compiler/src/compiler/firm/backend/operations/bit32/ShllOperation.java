@@ -1,5 +1,6 @@
 package compiler.firm.backend.operations.bit32;
 
+import compiler.firm.backend.Bit;
 import compiler.firm.backend.operations.templates.RegisterConstantOperation;
 import compiler.firm.backend.storage.Constant;
 import compiler.firm.backend.storage.Register;
@@ -16,6 +17,6 @@ public class ShllOperation extends RegisterConstantOperation {
 
 	@Override
 	public String getOperationString() {
-		return String.format("\tshll %s, %s", getConstant().toString32(), getRegister().toString32());
+		return String.format("\tshll %s, %s", getConstant().toString(Bit.BIT32), getRegister().toString(Bit.BIT32));
 	}
 }

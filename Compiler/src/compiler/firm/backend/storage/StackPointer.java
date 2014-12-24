@@ -1,5 +1,7 @@
 package compiler.firm.backend.storage;
 
+import compiler.firm.backend.Bit;
+
 public class StackPointer extends Storage {
 
 	private final int offset;
@@ -12,26 +14,21 @@ public class StackPointer extends Storage {
 
 	@Override
 	public String toString() {
+		return toString(null);
+	}
+
+	@Override
+	public String toString(Bit bit) {
 		// Always use 64 bit register, this are stack addresses.
 		String result;
 		if (offset == 0) {
-			result = String.format("(%s)", register.toString64());
+			result = String.format("(%s)", register.toString(Bit.BIT64));
 		} else if (offset < 0) {
-			result = String.format("-0x%x(%s)", -offset, register.toString64());
+			result = String.format("-0x%x(%s)", -offset, register.toString(Bit.BIT64));
 		} else {
-			result = String.format("0x%x(%s)", offset, register.toString64());
+			result = String.format("0x%x(%s)", offset, register.toString(Bit.BIT64));
 		}
 		return result;
-	}
-
-	@Override
-	public String toString32() {
-		return toString();
-	}
-
-	@Override
-	public String toString64() {
-		return toString();
 	}
 
 	public int getOffset() {

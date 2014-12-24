@@ -1,5 +1,6 @@
 package compiler.firm.backend.operations.bit32;
 
+import compiler.firm.backend.Bit;
 import compiler.firm.backend.operations.templates.AssemblerOperation;
 import compiler.firm.backend.storage.Register;
 
@@ -14,6 +15,6 @@ public class NegatelOperation extends AssemblerOperation {
 
 	@Override
 	public String getOperationString() {
-		return String.format("\tnegl %s", register.toString32());
+		return String.format("\tnegl %s", register.toString(Bit.BIT32));
 	}
 }

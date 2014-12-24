@@ -1,7 +1,7 @@
 package compiler.firm.backend.storage;
 
-public abstract class Storage {
-	public abstract String toString32();
+import compiler.firm.backend.Bit;
 
-	public abstract String toString64();
+public abstract class Storage {
+	public abstract String toString(Bit bit);
 }

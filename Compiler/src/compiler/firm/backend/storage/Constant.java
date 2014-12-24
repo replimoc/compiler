@@ -1,5 +1,7 @@
 package compiler.firm.backend.storage;
 
+import compiler.firm.backend.Bit;
+
 import firm.nodes.Const;
 
 public class Constant extends Storage {
@@ -15,6 +17,11 @@ public class Constant extends Storage {
 
 	@Override
 	public String toString() {
+		return toString(null);
+	}
+
+	@Override
+	public String toString(Bit bit) {
 		String result;
 		if (constant < 0) {
 			result = String.format("$-0x%x", -constant);
@@ -22,15 +29,5 @@ public class Constant extends Storage {
 			result = String.format("$0x%x", constant);
 		}
 		return result;
-	}
-
-	@Override
-	public String toString32() {
-		return toString();
-	}
-
-	@Override
-	public String toString64() {
-		return toString();
 	}
 }

@@ -1,5 +1,6 @@
 package compiler.firm.backend.operations.bit64;
 
+import compiler.firm.backend.Bit;
 import compiler.firm.backend.operations.templates.AssemblerOperation;
 import compiler.firm.backend.storage.Storage;
 
@@ -19,7 +20,7 @@ public class PushqOperation extends AssemblerOperation {
 
 	@Override
 	public String getOperationString() {
-		return String.format("\tpushq %s", storage.toString64());
+		return String.format("\tpushq %s", storage.toString(Bit.BIT64));
 	}
 
 }

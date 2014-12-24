@@ -1,5 +1,6 @@
 package compiler.firm.backend.operations.bit32;
 
+import compiler.firm.backend.Bit;
 import compiler.firm.backend.operations.templates.SourceDestinationOperation;
 import compiler.firm.backend.storage.Storage;
 
@@ -15,7 +16,7 @@ public class MovlOperation extends SourceDestinationOperation {
 
 	@Override
 	public String getOperationString() {
-		return String.format("\tmovl %s, %s", getSource().toString32(), getDestination().toString32());
+		return String.format("\tmovl %s, %s", getSource().toString(Bit.BIT32), getDestination().toString(Bit.BIT32));
 	}
 
 }

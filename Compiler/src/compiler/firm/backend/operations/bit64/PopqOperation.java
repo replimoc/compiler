@@ -1,5 +1,6 @@
 package compiler.firm.backend.operations.bit64;
 
+import compiler.firm.backend.Bit;
 import compiler.firm.backend.operations.templates.AssemblerOperation;
 import compiler.firm.backend.storage.Register;
 
@@ -18,6 +19,6 @@ public class PopqOperation extends AssemblerOperation {
 
 	@Override
 	public String getOperationString() {
-		return String.format("\tpopq %s", register.toString64());
+		return String.format("\tpopq %s", register.toString(Bit.BIT64));
 	}
 }

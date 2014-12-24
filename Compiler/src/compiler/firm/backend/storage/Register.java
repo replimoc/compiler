@@ -1,5 +1,7 @@
 package compiler.firm.backend.storage;
 
+import compiler.firm.backend.Bit;
+
 // Map for registers: https://upload.wikimedia.org/wikipedia/commons/4/41/Table_of_x86_Registers.png
 public class Register extends Storage {
 	public static final Register RBX = new Register("%ebx", "%rbx");
@@ -30,17 +32,19 @@ public class Register extends Storage {
 	}
 
 	@Override
-	public String toString32() {
-		return registerName32;
-	}
+	public String toString(Bit bit) {
+		switch (bit) {
+		case BIT64:
+			return registerName64;
+		case BIT32:
+		default:
+			return registerName32;
 
-	@Override
-	public String toString64() {
-		return registerName64;
+		}
 	}
 
 	@Override
 	public String toString() {
-		return getRegisterName();
+		return toString(Bit.BIT32);
 	}
 }

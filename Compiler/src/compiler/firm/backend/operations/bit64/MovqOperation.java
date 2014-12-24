@@ -1,5 +1,6 @@
 package compiler.firm.backend.operations.bit64;
 
+import compiler.firm.backend.Bit;
 import compiler.firm.backend.operations.templates.SourceDestinationOperation;
 import compiler.firm.backend.storage.Storage;
 
@@ -15,7 +16,7 @@ public class MovqOperation extends SourceDestinationOperation {
 
 	@Override
 	public String getOperationString() {
-		return String.format("\tmovq %s, %s", getSource().toString64(), getDestination().toString64());
+		return String.format("\tmovq %s, %s", getSource().toString(Bit.BIT64), getDestination().toString(Bit.BIT64));
 	}
 
 }

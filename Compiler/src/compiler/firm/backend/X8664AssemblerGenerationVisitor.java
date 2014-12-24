@@ -700,6 +700,7 @@ public class X8664AssemblerGenerationVisitor implements BulkPhiNodeVisitor {
 
 	@Override
 	public void visit(Store node) {
+		addOperation(new Comment("Store " + node));
 		Node source = node.getPred(1);
 		getValue(source, Register.EAX);
 		getValue(node.getPred(2), Register.ECX);
