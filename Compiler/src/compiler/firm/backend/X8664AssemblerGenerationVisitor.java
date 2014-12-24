@@ -40,7 +40,6 @@ import firm.BackEdges;
 import firm.BackEdges.Edge;
 import firm.Graph;
 import firm.Mode;
-import firm.Relation;
 import firm.nodes.Add;
 import firm.nodes.Address;
 import firm.nodes.Align;
@@ -398,21 +397,47 @@ public class X8664AssemblerGenerationVisitor implements BulkPhiNodeVisitor {
 		visitCmpNode(cmpNode);
 
 		// now add conditional jump
-		if (cmpNode.getRelation() == Relation.Equal) {
+		switch (cmpNode.getRelation()) {
+		case Equal:
 			addOperation(CondJumpOperation.createJumpZero(getBlockLabel(blockTrue)));
 			addOperation(CondJumpOperation.createJump(getBlockLabel(blockFalse)));
-		} else if (cmpNode.getRelation() == Relation.Less) {
-			addOperation(CondJumpOperation.createJumpLess(getBlockLabel(blockTrue)));
+			break;
+		case False:
 			addOperation(CondJumpOperation.createJump(getBlockLabel(blockFalse)));
-		} else if (cmpNode.getRelation() == Relation.LessEqual) {
-			addOperation(CondJumpOperation.createJumpLessEqual(getBlockLabel(blockTrue)));
-			addOperation(CondJumpOperation.createJump(getBlockLabel(blockFalse)));
-		} else if (cmpNode.getRelation() == Relation.Greater) {
+			break;
+		case Greater:
 			addOperation(CondJumpOperation.createJumpGreater(getBlockLabel(blockTrue)));
 			addOperation(CondJumpOperation.createJump(getBlockLabel(blockFalse)));
-		} else if (cmpNode.getRelation() == Relation.GreaterEqual) {
+			break;
+		case GreaterEqual:
 			addOperation(CondJumpOperation.createJumpGreaterEqual(getBlockLabel(blockTrue)));
 			addOperation(CondJumpOperation.createJump(getBlockLabel(blockFalse)));
+			break;
+		case Less:
+			addOperation(CondJumpOperation.createJumpLess(getBlockLabel(blockTrue)));
+			addOperation(CondJumpOperation.createJump(getBlockLabel(blockFalse)));
+			break;
+		case LessEqual:
+			addOperation(CondJumpOperation.createJumpLessEqual(getBlockLabel(blockTrue)));
+			addOperation(CondJumpOperation.createJump(getBlockLabel(blockFalse)));
+			break;
+		case LessEqualGreater:
+		case LessGreater:
+			addOperation(CondJumpOperation.createJumpZero(getBlockLabel(blockFalse)));
+			addOperation(CondJumpOperation.createJump(getBlockLabel(blockTrue)));
+			break;
+		case True:
+			addOperation(CondJumpOperation.createJump(getBlockLabel(blockTrue)));
+			break;
+		case Unordered:
+		case UnorderedEqual:
+		case UnorderedGreater:
+		case UnorderedGreaterEqual:
+		case UnorderedLess:
+		case UnorderedLessEqual:
+		case UnorderedLessGreater:
+		default:
+			throw new RuntimeException("No unordered relations available, tried " + cmpNode.getRelation());
 		}
 	}
 
