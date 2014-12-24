@@ -108,6 +108,8 @@ public class X8664AssemblerGenerationVisitor implements BulkPhiNodeVisitor {
 	private int currentStackOffset;
 	private Block currentBlock;
 
+	private List<Phi> phis;
+
 	public X8664AssemblerGenerationVisitor(HashMap<String, CallingConvention> callingConventions) {
 		this.callingConventions = callingConventions;
 	}
@@ -200,10 +202,14 @@ public class X8664AssemblerGenerationVisitor implements BulkPhiNodeVisitor {
 		return "BLOCK_" + node.getNr();
 	}
 
-	public void reserveMemoryForPhis(List<Phi> phis) {
+	public void addListOfAllPhis(List<Phi> phis) {
+		this.phis = phis;
+	}
+
+	public void reserveMemoryForPhis() {
+		addOperation(new Comment("Reserve space for phis"));
 		for (Phi phi : phis) {
-			currentStackOffset -= STACK_ITEM_SIZE;
-			nodeStorages.put(phi, new StackPointer(currentStackOffset, Register.RBP));
+			nodeStorages.put(phi, reserveStackItem());
 		}
 	}
 
@@ -267,6 +273,8 @@ public class X8664AssemblerGenerationVisitor implements BulkPhiNodeVisitor {
 
 			addOperation(new PushqOperation(Register.RBP)); // Dynamic Link
 			addOperation(new MovqOperation(Register.RSP, Register.RBP));
+
+			reserveMemoryForPhis();
 		}
 
 		if (node.equals(graph.getEndBlock())) {
@@ -655,8 +663,6 @@ public class X8664AssemblerGenerationVisitor implements BulkPhiNodeVisitor {
 
 	@Override
 	public void visit(Shl node) {
-		System.out.println(node.getLeft());
-
 		// move left node to a register
 		getValue(node.getLeft(), Register.EAX);
 
