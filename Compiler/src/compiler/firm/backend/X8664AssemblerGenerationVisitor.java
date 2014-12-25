@@ -123,14 +123,14 @@ public class X8664AssemblerGenerationVisitor implements BulkPhiNodeVisitor {
 
 		// if variable was assigned, than simply load it from stack
 
-		if (nodeStorages.containsKey(node)) {
-			getValue(node, register, getStorage(node));
-
-		} else { // The value has not been set yet. Reserve memory for it. TODO: check if this is a valid case
+		if (!nodeStorages.containsKey(node)) {
+			// The value has not been set yet. Reserve memory for it. TODO: check if this is a valid case
 			StackPointer stackOffset = reserveStackItem();
 			nodeStorages.put(node, stackOffset);
+			addOperation(new Comment("expected " + node + " to be on stack"));
 
 		}
+		getValue(node, register, getStorage(node));
 	}
 
 	private Storage getStorage(Node node) {
