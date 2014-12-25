@@ -17,8 +17,7 @@ public class Utils {
 	}
 
 	public static boolean isWindows() {
-		return false;
-		// return System.getProperty("os.name").startsWith("Windows");
+		return System.getProperty("os.name").startsWith("Windows");
 	}
 
 	public static Pair<Integer, List<String>> systemExec(String... strings) throws IOException {
