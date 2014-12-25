@@ -138,6 +138,9 @@ public class X8664AssemblerGenerationVisitor implements BulkPhiNodeVisitor {
 	}
 
 	private void getValue(Node node, Register register, Storage stackPointer) {
+		if (getMode(node) == Bit.BIT8) {
+			addOperation(new MovOperation("movb does not clear the register before write", Bit.BIT64, new Constant(0), register));
+		}
 		addOperation(new MovOperation("Load address " + node.toString(), getMode(node), stackPointer, register));
 	}
 

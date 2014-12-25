@@ -13,10 +13,10 @@ public class Register extends Storage {
 	public static final Register _SI = new Register(null, "%esi", "%rsi");
 
 	// registers with 8bit regs
-	public static final Register _AX = new Register("%ah", "%eax", "%rax"); // accumulator
+	public static final Register _AX = new Register("%al", "%eax", "%rax"); // accumulator
 	public static final Register _BX = new Register("%bl", "%ebx", "%rbx");
-	public static final Register _CX = new Register("%ch", "%ecx", "%rcx"); // counter (for loop counters);
-	public static final Register _DX = new Register("%dh", "%edx", "%rdx");
+	public static final Register _CX = new Register("%cl", "%ecx", "%rcx"); // counter (for loop counters);
+	public static final Register _DX = new Register("%dl", "%edx", "%rdx");
 	public static final Register _8D = new Register("%r8b", "%r8d", "%r8");
 	public static final Register _9D = new Register("%r9b", "%r9d", "%r9");
 
