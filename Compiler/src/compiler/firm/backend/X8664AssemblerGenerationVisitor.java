@@ -154,7 +154,6 @@ public class X8664AssemblerGenerationVisitor implements BulkPhiNodeVisitor {
 
 	private StackPointer reserveStackItem() {
 		currentStackOffset -= STACK_ITEM_SIZE;
-		addOperation(new SubOperation("Increment stack size", Bit.BIT64, new Constant(STACK_ITEM_SIZE), Register._SP));
 		return new StackPointer(currentStackOffset, Register._BP);
 	}
 
@@ -267,10 +266,14 @@ public class X8664AssemblerGenerationVisitor implements BulkPhiNodeVisitor {
 			addOperation(new PushOperation(Bit.BIT64, Register._BP)); // Dynamic Link
 			addOperation(new MovOperation(Bit.BIT64, Register._SP, Register._BP));
 
+			// FIXME: static stack reservation is no solution
+			addOperation(new SubOperation("static stack reservation", Bit.BIT64, new Constant(STACK_ITEM_SIZE * 64), Register._SP));
+
 			reserveMemoryForPhis();
 		}
 
 		if (node.equals(graph.getEndBlock())) {
+			addOperation(new AddOperation("free stack", Bit.BIT64, new Constant(STACK_ITEM_SIZE * 64), Register._SP));
 			if (!Utils.isWindows()) {
 				addOperation(new SizeOperation(methodName));
 			}
