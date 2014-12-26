@@ -274,6 +274,7 @@ public class X8664AssemblerGenerationVisitor implements BulkPhiNodeVisitor {
 
 		if (node.equals(graph.getEndBlock())) {
 			addOperation(new AddOperation("free stack", Bit.BIT64, new Constant(STACK_ITEM_SIZE * 64), Register._SP));
+			currentStackOffset = 0;
 			if (!Utils.isWindows()) {
 				addOperation(new SizeOperation(methodName));
 			}
@@ -631,8 +632,6 @@ public class X8664AssemblerGenerationVisitor implements BulkPhiNodeVisitor {
 		addOperation(new MovOperation(Bit.BIT64, Register._BP, Register._SP));
 		addOperation(new PopOperation(Bit.BIT64, Register._BP));
 		addOperation(new RetOperation());
-		currentStackOffset = 0;
-
 	}
 
 	@Override
