@@ -33,7 +33,7 @@ public class RegisterAllocation {
 		operations.add(assemblerOption);
 	}
 
-	public void getValue(Node node, Register register) {
+	public Register getValue(Node node, Register register) {
 		addOperation(new Comment("restore from stack"));
 
 		// if variable was assigned, than simply load it from stack
@@ -45,18 +45,19 @@ public class RegisterAllocation {
 			addOperation(new Comment("expected " + node + " to be on stack"));
 
 		}
-		getValue(node, register, getStorage(node));
+		return getValue(node, register, getStorage(node));
 	}
 
 	public Storage getStorage(Node node) {
 		return nodeStorages.get(node);
 	}
 
-	public void getValue(Node node, Register register, Storage stackPointer) {
+	public Register getValue(Node node, Register register, Storage stackPointer) {
 		if (getMode(node) == Bit.BIT8) {
 			addOperation(new MovOperation("movb does not clear the register before write", Bit.BIT64, new Constant(0), register));
 		}
 		addOperation(new MovOperation("Load address " + node.toString(), getMode(node), stackPointer, register));
+		return register;
 	}
 
 	public StackPointer storeValueOnNewStackPointer(Node node, Storage storage) {

@@ -122,15 +122,15 @@ public class X8664AssemblerGenerationVisitor implements BulkPhiNodeVisitor {
 
 	private <T extends StorageRegisterOperation> void visitTwoOperandsNode(T operation, Node parent, Node left, Node right) {
 		// move left node to RAX
-		registerAllocation.getValue(left, Register._AX);
+		Register registerLeft = registerAllocation.getValue(left, Register._AX);
 		// move right node to RBX
-		registerAllocation.getValue(right, Register._DX);
+		Register registerRight = registerAllocation.getValue(right, Register._DX);
 		// TODO: find a nicer way to instantiate T directly instead of passing an instance and then initializing
-		operation.initialize(Register._AX, Register._DX);
+		operation.initialize(registerLeft, registerRight);
 		// execute operation on RAX, RBX
 		addOperation(operation);
 		// store on stack
-		registerAllocation.storeValue(parent, Register._DX);
+		registerAllocation.storeValue(parent, registerRight);
 	}
 
 	private LabelOperation getBlockLabel(Block node) {
@@ -396,8 +396,8 @@ public class X8664AssemblerGenerationVisitor implements BulkPhiNodeVisitor {
 	public void visit(Conv node) {
 		if (node.getPredCount() >= 1) {
 			// TODO: This should maybe optimized with register allocation.
-			registerAllocation.getValue(node.getPred(0), Register._AX);
-			registerAllocation.storeValue(node, Register._AX);
+			Register register = registerAllocation.getValue(node.getPred(0), Register._AX);
+			registerAllocation.storeValue(node, register);
 		}
 	}
 
@@ -416,10 +416,10 @@ public class X8664AssemblerGenerationVisitor implements BulkPhiNodeVisitor {
 		// move left node to EAX
 		registerAllocation.getValue(left, Register._AX);
 		// move right node to RSI
-		registerAllocation.getValue(right, Register._SI);
+		Register registerRight = registerAllocation.getValue(right, Register._SI);
 		addOperation(new CltdOperation());
 		// idivl (eax / esi)
-		addOperation(new DivOperation(registerAllocation.getMode(right), Register._SI));
+		addOperation(new DivOperation(registerAllocation.getMode(right), registerRight));
 		// store on stack
 		for (Edge edge : BackEdges.getOuts(node)) {
 			registerAllocation.storeValue(edge.node, storeRegister);
@@ -479,9 +479,9 @@ public class X8664AssemblerGenerationVisitor implements BulkPhiNodeVisitor {
 
 	@Override
 	public void visit(Minus node) {
-		registerAllocation.getValue(node.getPred(0), Register._AX);
-		addOperation(new NegOperation(registerAllocation.getMode(node), Register._AX));
-		registerAllocation.storeValue(node, Register._AX);
+		Register register = registerAllocation.getValue(node.getPred(0), Register._AX);
+		addOperation(new NegOperation(registerAllocation.getMode(node), register));
+		registerAllocation.storeValue(node, register);
 	}
 
 	@Override
@@ -535,9 +535,9 @@ public class X8664AssemblerGenerationVisitor implements BulkPhiNodeVisitor {
 	}
 
 	private void visitCmpNode(Cmp node) {
-		registerAllocation.getValue(node.getRight(), Register._AX);
-		registerAllocation.getValue(node.getLeft(), Register._DX);
-		addOperation(new CmpOperation("cmp operation", registerAllocation.getMode(node), Register._AX, Register._DX));
+		Register register1 = registerAllocation.getValue(node.getRight(), Register._AX);
+		Register register2 = registerAllocation.getValue(node.getLeft(), Register._DX);
+		addOperation(new CmpOperation("cmp operation", registerAllocation.getMode(node), register1, register2));
 	}
 
 	@Override
@@ -580,14 +580,14 @@ public class X8664AssemblerGenerationVisitor implements BulkPhiNodeVisitor {
 	@Override
 	public void visit(Shl node) {
 		// move left node to a register
-		registerAllocation.getValue(node.getLeft(), Register._AX);
+		Register register = registerAllocation.getValue(node.getLeft(), Register._AX);
 
 		Constant constant = new Constant((Const) node.getRight());
 
 		// execute operation
-		addOperation(new ShlOperation(registerAllocation.getMode(node), Register._AX, constant));
+		addOperation(new ShlOperation(registerAllocation.getMode(node), register, constant));
 		// store on stack
-		registerAllocation.storeValue(node, Register._AX);
+		registerAllocation.storeValue(node, register);
 	}
 
 	@Override
@@ -612,12 +612,12 @@ public class X8664AssemblerGenerationVisitor implements BulkPhiNodeVisitor {
 	public void visit(Load node) {
 		addOperation(new Comment("load operation " + node));
 		Node referenceNode = node.getPred(1);
-		registerAllocation.getValue(referenceNode, Register._AX);
-		addOperation(new MovOperation(Bit.BIT64, new StackPointer(0, Register._AX), Register._AX));
+		Register register = registerAllocation.getValue(referenceNode, Register._AX);
+		addOperation(new MovOperation(Bit.BIT64, new StackPointer(0, register), register));
 		for (Edge edge : BackEdges.getOuts(node)) {
 			Node edgeNode = edge.node;
 			if (!edgeNode.getMode().equals(Mode.getM())) {
-				registerAllocation.storeValue(edgeNode, Register._AX);
+				registerAllocation.storeValue(edgeNode, register);
 			}
 		}
 	}
@@ -626,10 +626,10 @@ public class X8664AssemblerGenerationVisitor implements BulkPhiNodeVisitor {
 	public void visit(Store node) {
 		addOperation(new Comment("Store operation " + node));
 		Node addressNode = node.getPred(1);
-		registerAllocation.getValue(addressNode, Register._AX);
+		Register registerAddress = registerAllocation.getValue(addressNode, Register._AX);
 		Node valueNode = node.getPred(2);
-		registerAllocation.getValue(valueNode, Register._CX);
-		addOperation(new MovOperation(registerAllocation.getMode(valueNode), Register._CX, new StackPointer(0, Register._AX)));
+		Register registerOffset = registerAllocation.getValue(valueNode, Register._CX);
+		addOperation(new MovOperation(registerAllocation.getMode(valueNode), registerOffset, new StackPointer(0, registerAddress)));
 	}
 
 	@Override
@@ -681,14 +681,14 @@ public class X8664AssemblerGenerationVisitor implements BulkPhiNodeVisitor {
 		HashMap<Phi, StackPointer> phiTempStackMapping = new HashMap<>();
 		for (Phi phi : phis) {
 			Node predecessor = getRelevantPredecessor(phi);
-			registerAllocation.getValue(predecessor, Register._AX);
-			StackPointer stackPointer = registerAllocation.storeValueOnNewStackPointer(predecessor, Register._AX);
+			Register register = registerAllocation.getValue(predecessor, Register._AX);
+			StackPointer stackPointer = registerAllocation.storeValueOnNewStackPointer(predecessor, register);
 			phiTempStackMapping.put(phi, stackPointer);
 		}
 
 		for (Phi phi : phis) {
-			registerAllocation.getValue(phi, Register._AX, phiTempStackMapping.get(phi));
-			registerAllocation.storeValue(phi, Register._AX);
+			Register register = registerAllocation.getValue(phi, Register._AX, phiTempStackMapping.get(phi));
+			registerAllocation.storeValue(phi, register);
 		}
 	}
 }
