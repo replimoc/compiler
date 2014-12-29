@@ -2,6 +2,7 @@ package compiler.firm.backend.operations;
 
 import compiler.firm.backend.Bit;
 import compiler.firm.backend.operations.templates.AssemblerBitOperation;
+import compiler.firm.backend.storage.RegisterBased;
 import compiler.firm.backend.storage.Storage;
 
 public class PushOperation extends AssemblerBitOperation {
@@ -22,4 +23,12 @@ public class PushOperation extends AssemblerBitOperation {
 		return String.format("\tpush%s %s", getMode(), storage.toString(getMode()));
 	}
 
+	@Override
+	public RegisterBased[] getUsedRegisters() {
+		if (storage instanceof RegisterBased) {
+			return new RegisterBased[] { (RegisterBased) storage };
+		} else {
+			return new RegisterBased[] {};
+		}
+	}
 }

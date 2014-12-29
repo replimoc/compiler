@@ -17,4 +17,9 @@ public class NegOperation extends AssemblerBitOperation {
 	public String getOperationString() {
 		return String.format("\tneg%s %s", getMode(), register.toString(getMode()));
 	}
+
+	@Override
+	public RegisterBased[] getUsedRegisters() {
+		return new RegisterBased[] { register };
+	}
 }

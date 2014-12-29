@@ -1,5 +1,7 @@
 package compiler.firm.backend.operations.templates;
 
+import compiler.firm.backend.storage.RegisterBased;
+
 public abstract class AssemblerOperation {
 
 	private final String comment;
@@ -19,4 +21,6 @@ public abstract class AssemblerOperation {
 	}
 
 	protected abstract String getOperationString();
+
+	public abstract RegisterBased[] getUsedRegisters();
 }

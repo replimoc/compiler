@@ -3,6 +3,7 @@ package compiler.firm.backend.operations;
 import compiler.firm.backend.Bit;
 import compiler.firm.backend.operations.templates.AssemblerBitOperation;
 import compiler.firm.backend.storage.Register;
+import compiler.firm.backend.storage.RegisterBased;
 
 public class PopOperation extends AssemblerBitOperation {
 	private final Register register;
@@ -19,5 +20,10 @@ public class PopOperation extends AssemblerBitOperation {
 	@Override
 	public String getOperationString() {
 		return String.format("\tpop%s %s", getMode(), register.toString(getMode()));
+	}
+
+	@Override
+	public RegisterBased[] getUsedRegisters() {
+		return new RegisterBased[] { register };
 	}
 }
