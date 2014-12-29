@@ -11,6 +11,7 @@ import compiler.firm.backend.operations.MovOperation;
 import compiler.firm.backend.operations.templates.AssemblerOperation;
 import compiler.firm.backend.storage.Constant;
 import compiler.firm.backend.storage.Register;
+import compiler.firm.backend.storage.RegisterBased;
 import compiler.firm.backend.storage.StackPointer;
 import compiler.firm.backend.storage.Storage;
 
@@ -26,7 +27,7 @@ public class RegisterAllocation {
 	private final HashMap<Node, Storage> nodeStorages = new HashMap<>();
 	private int currentStackOffset;
 
-	private LinkedList<Register> freeRegisters = new LinkedList<>(
+	private LinkedList<RegisterBased> freeRegisters = new LinkedList<RegisterBased>(
 			Arrays.asList(Register._AX, Register._BX, Register._CX, Register._DX, Register._DI));
 
 	public RegisterAllocation(List<AssemblerOperation> operations) {
@@ -37,11 +38,11 @@ public class RegisterAllocation {
 		operations.add(assemblerOption);
 	}
 
-	public Register getValue(Node node, boolean registerOverwrite) {
+	public RegisterBased getValue(Node node, boolean registerOverwrite) {
 		return getValue(node, registerOverwrite, null);
 	}
 
-	public Register getValue(Node node, boolean registerOverwrite, Register register) {
+	public RegisterBased getValue(Node node, boolean registerOverwrite, Register register) {
 		addOperation(new Comment("restore from stack"));
 
 		// if variable was assigned, than simply load it from stack
@@ -60,11 +61,11 @@ public class RegisterAllocation {
 		return nodeStorages.get(node);
 	}
 
-	public Register getValue(Node node, boolean registerOverwrite, Storage stackPointer) {
+	public RegisterBased getValue(Node node, boolean registerOverwrite, Storage stackPointer) {
 		return getValue(node, registerOverwrite, null, stackPointer);
 	}
 
-	public Register getValue(Node node, boolean registerOverwrite, Register register, Storage stackPointer) {
+	public RegisterBased getValue(Node node, boolean registerOverwrite, RegisterBased register, Storage stackPointer) {
 		register = getNewRegister(register);
 
 		if (getMode(node) == Bit.BIT8) {
@@ -132,7 +133,7 @@ public class RegisterAllocation {
 		nodeStorages.put(node, storage);
 	}
 
-	public Register getNewRegister(Register register) {
+	public RegisterBased getNewRegister(RegisterBased register) {
 		if (register == null) {
 			return getNewRegister();
 		}
@@ -145,14 +146,14 @@ public class RegisterAllocation {
 		return register;
 	}
 
-	public Register getNewRegister() {
+	public RegisterBased getNewRegister() {
 		if (this.freeRegisters.isEmpty()) {
 			throw new RuntimeException("Run out of registers!");
 		}
 		return this.freeRegisters.pop();
 	}
 
-	public void freeRegister(Register register) {
+	public void freeRegister(RegisterBased register) {
 		if (!this.freeRegisters.contains(register) && register != Register._SI && register != Register._DI) {
 			this.freeRegisters.push(register);
 		}

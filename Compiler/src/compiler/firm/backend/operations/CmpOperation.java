@@ -2,7 +2,7 @@ package compiler.firm.backend.operations;
 
 import compiler.firm.backend.Bit;
 import compiler.firm.backend.operations.templates.StorageRegisterOperation;
-import compiler.firm.backend.storage.Register;
+import compiler.firm.backend.storage.RegisterBased;
 
 public class CmpOperation extends StorageRegisterOperation {
 
@@ -14,11 +14,11 @@ public class CmpOperation extends StorageRegisterOperation {
 		super(comment, mode);
 	}
 
-	public CmpOperation(Bit mode, Register input, Register destinationRegister) {
+	public CmpOperation(Bit mode, RegisterBased input, RegisterBased destinationRegister) {
 		super(null, mode, input, destinationRegister);
 	}
 
-	public CmpOperation(String comment, Bit mode, Register input, Register destinationRegister) {
+	public CmpOperation(String comment, Bit mode, RegisterBased input, RegisterBased destinationRegister) {
 		super(comment, mode, input, destinationRegister);
 	}
 

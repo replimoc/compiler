@@ -3,7 +3,7 @@ package compiler.firm.backend.storage;
 import compiler.firm.backend.Bit;
 
 // Map for registers: https://upload.wikimedia.org/wikipedia/commons/4/41/Table_of_x86_Registers.png
-public class Register extends Storage {
+public class Register extends RegisterBased {
 	// reserved for special usage
 	public static final Register _SP = new Register(null, "%esp", "%rsp"); // stack pointer
 	public static final Register _BP = new Register(null, "%ebp", "%rbp"); // frame pointer

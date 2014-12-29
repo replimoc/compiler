@@ -2,13 +2,13 @@ package compiler.firm.backend.operations;
 
 import compiler.firm.backend.Bit;
 import compiler.firm.backend.operations.templates.AssemblerBitOperation;
-import compiler.firm.backend.storage.Register;
+import compiler.firm.backend.storage.RegisterBased;
 
 public class NegOperation extends AssemblerBitOperation {
 
-	private Register register;
+	private RegisterBased register;
 
-	public NegOperation(Bit mode, Register register) {
+	public NegOperation(Bit mode, RegisterBased register) {
 		super(null, mode);
 		this.register = register;
 	}

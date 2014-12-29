@@ -5,9 +5,9 @@ import compiler.firm.backend.Bit;
 public class StackPointer extends Storage {
 
 	private final int offset;
-	private final Register register;
+	private final RegisterBased register;
 
-	public StackPointer(int offset, Register register) {
+	public StackPointer(int offset, RegisterBased register) {
 		this.offset = offset;
 		this.register = register;
 	}

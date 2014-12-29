@@ -3,15 +3,15 @@ package compiler.firm.backend.operations;
 import compiler.firm.backend.Bit;
 import compiler.firm.backend.operations.templates.RegisterConstantOperation;
 import compiler.firm.backend.storage.Constant;
-import compiler.firm.backend.storage.Register;
+import compiler.firm.backend.storage.RegisterBased;
 
 public class ShlOperation extends RegisterConstantOperation {
 
-	public ShlOperation(Bit mode, Register register, Constant constant) {
+	public ShlOperation(Bit mode, RegisterBased register, Constant constant) {
 		super(mode, register, constant);
 	}
 
-	public ShlOperation(String comment, Bit mode, Register register, Constant constant) {
+	public ShlOperation(String comment, Bit mode, RegisterBased register, Constant constant) {
 		super(comment, mode, register, constant);
 	}
 

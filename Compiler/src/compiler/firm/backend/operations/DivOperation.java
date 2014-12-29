@@ -2,7 +2,7 @@ package compiler.firm.backend.operations;
 
 import compiler.firm.backend.Bit;
 import compiler.firm.backend.operations.templates.StorageRegisterOperation;
-import compiler.firm.backend.storage.Register;
+import compiler.firm.backend.storage.RegisterBased;
 
 // TODO: This is only a register class, why StorageRegister is used?!
 public class DivOperation extends StorageRegisterOperation {
@@ -15,11 +15,11 @@ public class DivOperation extends StorageRegisterOperation {
 		super(comment, mode);
 	}
 
-	public DivOperation(Bit mode, Register input) {
+	public DivOperation(Bit mode, RegisterBased input) {
 		super(null, mode, input, null);
 	}
 
-	public DivOperation(String comment, Bit mode, Register input) {
+	public DivOperation(String comment, Bit mode, RegisterBased input) {
 		super(comment, mode, input, null);
 	}
 
