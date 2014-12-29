@@ -34,4 +34,9 @@ public class StackPointer extends Storage {
 	public int getOffset() {
 		return offset;
 	}
+
+	@Override
+	public RegisterBased getUsedRegister() {
+		return register;
+	}
 }

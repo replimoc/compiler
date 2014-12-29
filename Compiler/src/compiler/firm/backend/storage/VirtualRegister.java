@@ -18,5 +18,4 @@ public class VirtualRegister extends RegisterBased {
 	public String toString(Bit bit) {
 		return this.register.toString(bit);
 	}
-
 }

@@ -30,4 +30,9 @@ public class Constant extends Storage {
 		}
 		return result;
 	}
+
+	@Override
+	public RegisterBased getUsedRegister() {
+		return null;
+	}
 }

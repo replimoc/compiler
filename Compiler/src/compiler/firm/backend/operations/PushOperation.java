@@ -25,8 +25,9 @@ public class PushOperation extends AssemblerBitOperation {
 
 	@Override
 	public RegisterBased[] getUsedRegisters() {
-		if (storage instanceof RegisterBased) {
-			return new RegisterBased[] { (RegisterBased) storage };
+		RegisterBased storageRegister = storage.getUsedRegister();
+		if (storageRegister != null) {
+			return new RegisterBased[] { storageRegister };
 		} else {
 			return new RegisterBased[] {};
 		}

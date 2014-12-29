@@ -34,8 +34,9 @@ public abstract class StorageRegisterOperation extends AssemblerBitOperation {
 
 	@Override
 	public RegisterBased[] getUsedRegisters() {
-		if (this.storage instanceof RegisterBased) {
-			return new RegisterBased[] { (RegisterBased) this.storage, this.destination };
+		RegisterBased storageRegister = storage.getUsedRegister();
+		if (storageRegister != null) {
+			return new RegisterBased[] { storageRegister, this.destination };
 		} else {
 			return new RegisterBased[] { this.destination };
 		}
