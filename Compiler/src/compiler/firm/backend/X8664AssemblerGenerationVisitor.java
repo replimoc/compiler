@@ -132,8 +132,6 @@ public class X8664AssemblerGenerationVisitor implements BulkPhiNodeVisitor {
 		addOperation(operation);
 		// store on stack
 		registerAllocation.storeValue(parent, registerRight);
-		registerAllocation.freeRegister(registerLeft);
-		registerAllocation.freeRegister(registerRight);
 	}
 
 	private LabelOperation getBlockLabel(Block node) {
@@ -268,7 +266,6 @@ public class X8664AssemblerGenerationVisitor implements BulkPhiNodeVisitor {
 					Bit mode = registerAllocation.getMode(node.getPred(i + firmOffset));
 					addOperation(new MovOperation(mode, sourcePointer, temporaryRegister));
 					addOperation(new MovOperation(mode, temporaryRegister, destinationPointer));
-					registerAllocation.freeRegister(temporaryRegister);
 				}
 			}
 			firmOffset -= callingRegisters.length;
@@ -282,10 +279,6 @@ public class X8664AssemblerGenerationVisitor implements BulkPhiNodeVisitor {
 			}
 
 			addOperation(new CallOperation(methodName));
-
-			for (int i = 0; i < parametersCount && i < callingRegisters.length; i++) {
-				registerAllocation.freeRegister(callingRegisters[i]);
-			}
 
 			if (remainingParameters > 0) {
 				addOperation(new AddOperation(Bit.BIT64, parameterSize, Register._SP));
@@ -405,7 +398,6 @@ public class X8664AssemblerGenerationVisitor implements BulkPhiNodeVisitor {
 			// TODO: This should maybe optimized with register allocation.
 			RegisterBased register = registerAllocation.getValue(node.getPred(0), true);
 			registerAllocation.storeValue(node, register);
-			registerAllocation.freeRegister(register);
 		}
 	}
 
@@ -420,10 +412,9 @@ public class X8664AssemblerGenerationVisitor implements BulkPhiNodeVisitor {
 	}
 
 	private void visitDivMod(Node node, Node left, Node right, Register storeRegister) {
-		RegisterBased reservedRegister = registerAllocation.getNewRegister(Register._DX); // Reserve modulo result register
 		addOperation(new Comment("div operation"));
 		// move left node to EAX
-		RegisterBased registerLeft = registerAllocation.getValue(left, true, Register._AX);
+		registerAllocation.getValue(left, true, Register._AX);
 		// move right node to RSI
 		RegisterBased registerRight = registerAllocation.getValue(right, true, Register._SI); // TODO: Is this overwritten?
 		addOperation(new CltdOperation());
@@ -433,9 +424,6 @@ public class X8664AssemblerGenerationVisitor implements BulkPhiNodeVisitor {
 		for (Edge edge : BackEdges.getOuts(node)) {
 			registerAllocation.storeValue(edge.node, storeRegister);
 		}
-		registerAllocation.freeRegister(registerLeft);
-		registerAllocation.freeRegister(registerRight);
-		registerAllocation.freeRegister(reservedRegister);
 	}
 
 	@Override
@@ -494,7 +482,6 @@ public class X8664AssemblerGenerationVisitor implements BulkPhiNodeVisitor {
 		RegisterBased register = registerAllocation.getValue(node.getPred(0), true);
 		addOperation(new NegOperation(registerAllocation.getMode(node), register));
 		registerAllocation.storeValue(node, register);
-		registerAllocation.freeRegister(register);
 	}
 
 	@Override
@@ -551,8 +538,6 @@ public class X8664AssemblerGenerationVisitor implements BulkPhiNodeVisitor {
 		RegisterBased register1 = registerAllocation.getValue(node.getRight(), false);
 		RegisterBased register2 = registerAllocation.getValue(node.getLeft(), false);
 		addOperation(new CmpOperation("cmp operation", registerAllocation.getMode(node), register1, register2));
-		registerAllocation.freeRegister(register1);
-		registerAllocation.freeRegister(register2);
 	}
 
 	@Override
@@ -579,8 +564,7 @@ public class X8664AssemblerGenerationVisitor implements BulkPhiNodeVisitor {
 		addOperation(new Comment("restore stack size"));
 		if (node.getPredCount() > 1) {
 			// Store return value in EAX register
-			RegisterBased register = registerAllocation.getValue(node.getPred(1), true, Register._AX);
-			registerAllocation.freeRegister(register);
+			registerAllocation.getValue(node.getPred(1), true, Register._AX);
 		}
 
 		// addOperation(node.getBlock(), new AddqOperation(new Constant(-currentStackOffset), Register.RSP));
@@ -606,7 +590,6 @@ public class X8664AssemblerGenerationVisitor implements BulkPhiNodeVisitor {
 		addOperation(new ShlOperation(registerAllocation.getMode(node), register, constant));
 		// store on stack
 		registerAllocation.storeValue(node, register);
-		registerAllocation.freeRegister(register);
 	}
 
 	@Override
@@ -640,8 +623,6 @@ public class X8664AssemblerGenerationVisitor implements BulkPhiNodeVisitor {
 				registerAllocation.storeValue(edgeNode, registerStore);
 			}
 		}
-		registerAllocation.freeRegister(register);
-		registerAllocation.freeRegister(registerStore);
 	}
 
 	@Override
@@ -652,8 +633,6 @@ public class X8664AssemblerGenerationVisitor implements BulkPhiNodeVisitor {
 		Node valueNode = node.getPred(2);
 		RegisterBased registerOffset = registerAllocation.getValue(valueNode, false);
 		addOperation(new MovOperation(registerAllocation.getMode(valueNode), registerOffset, new StackPointer(0, registerAddress)));
-		registerAllocation.freeRegister(registerAddress);
-		registerAllocation.freeRegister(registerOffset);
 	}
 
 	@Override
@@ -707,14 +686,12 @@ public class X8664AssemblerGenerationVisitor implements BulkPhiNodeVisitor {
 			Node predecessor = getRelevantPredecessor(phi);
 			RegisterBased register = registerAllocation.getValue(predecessor, false);
 			StackPointer stackPointer = registerAllocation.storeValueOnNewStackPointer(predecessor, register);
-			registerAllocation.freeRegister(register);
 			phiTempStackMapping.put(phi, stackPointer);
 		}
 
 		for (Phi phi : phis) {
 			RegisterBased register = registerAllocation.getValue(phi, false, phiTempStackMapping.get(phi));
 			registerAllocation.storeValue(phi, register);
-			registerAllocation.freeRegister(register);
 		}
 	}
 }

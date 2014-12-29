@@ -136,7 +136,4 @@ public class RegisterAllocation {
 	public RegisterBased getNewRegister() {
 		return new VirtualRegister();
 	}
-
-	public void freeRegister(RegisterBased register) {
-	}
 }
