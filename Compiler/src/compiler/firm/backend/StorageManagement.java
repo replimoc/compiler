@@ -18,7 +18,7 @@ import firm.nodes.Const;
 import firm.nodes.Node;
 import firm.nodes.Phi;
 
-public class RegisterAllocation {
+public class StorageManagement {
 
 	public static final int STACK_ITEM_SIZE = 8;
 
@@ -26,7 +26,7 @@ public class RegisterAllocation {
 	private final HashMap<Node, Storage> nodeStorages = new HashMap<>();
 	private int currentStackOffset;
 
-	public RegisterAllocation(List<AssemblerOperation> operations) {
+	public StorageManagement(List<AssemblerOperation> operations) {
 		this.operations = operations;
 	}
 
@@ -62,7 +62,7 @@ public class RegisterAllocation {
 	}
 
 	public RegisterBased getValue(Node node, boolean registerOverwrite, RegisterBased register, Storage stackPointer) {
-		register = getNewRegister(register);
+		register = new VirtualRegister(register);
 
 		if (getMode(node) == Bit.BIT8) {
 			addOperation(new MovOperation("movb does not clear the register before write", Bit.BIT64, new Constant(0), register));
@@ -127,13 +127,5 @@ public class RegisterAllocation {
 
 	public void addToNodeStorage(Node node, Storage storage) {
 		nodeStorages.put(node, storage);
-	}
-
-	public RegisterBased getNewRegister(RegisterBased register) {
-		return new VirtualRegister(register);
-	}
-
-	public RegisterBased getNewRegister() {
-		return new VirtualRegister();
 	}
 }

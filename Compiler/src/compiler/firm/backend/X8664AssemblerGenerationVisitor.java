@@ -35,6 +35,7 @@ import compiler.firm.backend.storage.Register;
 import compiler.firm.backend.storage.RegisterBased;
 import compiler.firm.backend.storage.StackPointer;
 import compiler.firm.backend.storage.Storage;
+import compiler.firm.backend.storage.VirtualRegister;
 import compiler.utils.Utils;
 
 import firm.BackEdges;
@@ -106,11 +107,11 @@ public class X8664AssemblerGenerationVisitor implements BulkPhiNodeVisitor {
 	private Block currentBlock;
 	private List<Phi> phis;
 
-	private final RegisterAllocation registerAllocation;
+	private final StorageManagement registerAllocation;
 
 	public X8664AssemblerGenerationVisitor(HashMap<String, CallingConvention> callingConventions) {
 		this.callingConventions = callingConventions;
-		this.registerAllocation = new RegisterAllocation(operations);
+		this.registerAllocation = new StorageManagement(operations);
 	}
 
 	public List<AssemblerOperation> getOperations() {
@@ -206,13 +207,13 @@ public class X8664AssemblerGenerationVisitor implements BulkPhiNodeVisitor {
 			addOperation(new MovOperation(Bit.BIT64, Register._SP, Register._BP));
 
 			// FIXME: static stack reservation is no solution
-			addOperation(new SubOperation("static stack reservation", Bit.BIT64, new Constant(RegisterAllocation.STACK_ITEM_SIZE * 64), Register._SP));
+			addOperation(new SubOperation("static stack reservation", Bit.BIT64, new Constant(StorageManagement.STACK_ITEM_SIZE * 64), Register._SP));
 
 			registerAllocation.reserveMemoryForPhis(phis);
 		}
 
 		if (node.equals(graph.getEndBlock())) {
-			addOperation(new AddOperation("free stack", Bit.BIT64, new Constant(RegisterAllocation.STACK_ITEM_SIZE * 64), Register._SP));
+			addOperation(new AddOperation("free stack", Bit.BIT64, new Constant(StorageManagement.STACK_ITEM_SIZE * 64), Register._SP));
 			registerAllocation.resetStackOffset();
 			if (!Utils.isWindows()) {
 				addOperation(new SizeOperation(methodName));
@@ -253,7 +254,7 @@ public class X8664AssemblerGenerationVisitor implements BulkPhiNodeVisitor {
 			// The following is before filling registers to have no problem with register allocation.
 			int remainingParameters = parametersCount - callingRegisters.length;
 			firmOffset += callingRegisters.length;
-			Constant parameterSize = new Constant(RegisterAllocation.STACK_ITEM_SIZE * remainingParameters);
+			Constant parameterSize = new Constant(StorageManagement.STACK_ITEM_SIZE * remainingParameters);
 
 			if (remainingParameters > 0) {
 				addOperation(new SubOperation(Bit.BIT64, parameterSize, Register._SP));
@@ -261,8 +262,8 @@ public class X8664AssemblerGenerationVisitor implements BulkPhiNodeVisitor {
 				for (int i = 0; i < remainingParameters; i++) {
 					Storage sourcePointer = registerAllocation.getStorage(node.getPred(i + firmOffset));
 					// Copy parameter
-					RegisterBased temporaryRegister = registerAllocation.getNewRegister();
-					StackPointer destinationPointer = new StackPointer(i * RegisterAllocation.STACK_ITEM_SIZE, Register._SP);
+					VirtualRegister temporaryRegister = new VirtualRegister();
+					StackPointer destinationPointer = new StackPointer(i * StorageManagement.STACK_ITEM_SIZE, Register._SP);
 					Bit mode = registerAllocation.getMode(node.getPred(i + firmOffset));
 					addOperation(new MovOperation(mode, sourcePointer, temporaryRegister));
 					addOperation(new MovOperation(mode, temporaryRegister, destinationPointer));
@@ -547,7 +548,7 @@ public class X8664AssemblerGenerationVisitor implements BulkPhiNodeVisitor {
 				if (edge.node instanceof Proj) {
 					Proj proj = (Proj) edge.node;
 					registerAllocation.addToNodeStorage(proj,
-							new StackPointer(RegisterAllocation.STACK_ITEM_SIZE * (proj.getNum() + 2), Register._BP));
+							new StackPointer(StorageManagement.STACK_ITEM_SIZE * (proj.getNum() + 2), Register._BP));
 					// + 2 for dynamic link
 				}
 			}
@@ -615,7 +616,7 @@ public class X8664AssemblerGenerationVisitor implements BulkPhiNodeVisitor {
 		addOperation(new Comment("load operation " + node));
 		Node referenceNode = node.getPred(1);
 		RegisterBased register = registerAllocation.getValue(referenceNode, false);
-		RegisterBased registerStore = registerAllocation.getNewRegister();
+		VirtualRegister registerStore = new VirtualRegister();
 		addOperation(new MovOperation(Bit.BIT64, new StackPointer(0, register), registerStore));
 		for (Edge edge : BackEdges.getOuts(node)) {
 			Node edgeNode = edge.node;
