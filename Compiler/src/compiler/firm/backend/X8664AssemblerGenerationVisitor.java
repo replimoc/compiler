@@ -547,7 +547,7 @@ public class X8664AssemblerGenerationVisitor implements BulkPhiNodeVisitor {
 			for (Edge edge : BackEdges.getOuts(node)) {
 				if (edge.node instanceof Proj) {
 					Proj proj = (Proj) edge.node;
-					registerAllocation.addToNodeStorage(proj,
+					registerAllocation.addStorage(proj,
 							new StackPointer(StorageManagement.STACK_ITEM_SIZE * (proj.getNum() + 2), Register._BP));
 					// + 2 for dynamic link
 				}
@@ -682,12 +682,12 @@ public class X8664AssemblerGenerationVisitor implements BulkPhiNodeVisitor {
 	@Override
 	public void visit(List<Phi> phis) {
 		addOperation(new Comment("Handle phis of current block"));
-		HashMap<Phi, StackPointer> phiTempStackMapping = new HashMap<>();
+		HashMap<Phi, Storage> phiTempStackMapping = new HashMap<>();
 		for (Phi phi : phis) {
 			Node predecessor = getRelevantPredecessor(phi);
 			RegisterBased register = registerAllocation.getValue(predecessor, false);
-			StackPointer stackPointer = registerAllocation.storeValueOnNewStackPointer(predecessor, register);
-			phiTempStackMapping.put(phi, stackPointer);
+			Storage temporaryStorage = registerAllocation.storeValueOnNewItem(predecessor, register);
+			phiTempStackMapping.put(phi, temporaryStorage);
 		}
 
 		for (Phi phi : phis) {

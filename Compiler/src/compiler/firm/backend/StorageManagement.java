@@ -34,6 +34,18 @@ public class StorageManagement {
 		operations.add(assemblerOption);
 	}
 
+	public void addStorage(Node node, Storage storage) {
+		nodeStorages.put(node, storage);
+	}
+
+	public Storage getStorage(Node node) {
+		return nodeStorages.get(node);
+	}
+
+	public void addConstant(Const node) {
+		addStorage(node, new Constant(node));
+	}
+
 	public RegisterBased getValue(Node node, boolean registerOverwrite) {
 		return getValue(node, registerOverwrite, null);
 	}
@@ -44,66 +56,52 @@ public class StorageManagement {
 		// if variable was assigned, than simply load it from stack
 
 		if (!nodeStorages.containsKey(node)) {
-			// The value has not been set yet. Reserve memory for it. TODO: check if this is a valid case
-			StackPointer stackOffset = reserveStackItem();
-			addToNodeStorage(node, stackOffset);
+			addStorage(node, reserveItem());
 			addOperation(new Comment("expected " + node + " to be on stack"));
 
 		}
 		return getValue(node, registerOverwrite, register, getStorage(node));
 	}
 
-	public Storage getStorage(Node node) {
-		return nodeStorages.get(node);
+	public RegisterBased getValue(Node node, boolean registerOverwrite, Storage originalStorage) {
+		return getValue(node, registerOverwrite, null, originalStorage);
 	}
 
-	public RegisterBased getValue(Node node, boolean registerOverwrite, Storage stackPointer) {
-		return getValue(node, registerOverwrite, null, stackPointer);
-	}
-
-	public RegisterBased getValue(Node node, boolean registerOverwrite, RegisterBased register, Storage stackPointer) {
+	public RegisterBased getValue(Node node, boolean registerOverwrite, RegisterBased register, Storage originalStorage) {
 		register = new VirtualRegister(register);
 
 		if (getMode(node) == Bit.BIT8) {
 			addOperation(new MovOperation("movb does not clear the register before write", Bit.BIT64, new Constant(0), register));
 		}
 
-		addOperation(new MovOperation("Load address " + node.toString(), getMode(node), stackPointer, register));
+		addOperation(new MovOperation("Load address " + node.toString(), getMode(node), originalStorage, register));
 		return register;
 	}
 
-	public StackPointer storeValueOnNewStackPointer(Node node, Storage storage) {
-		// Allocate stack
-		StackPointer stackPointer = reserveStackItem();
-
-		storeValue(node, storage, stackPointer);
-		return stackPointer;
+	public void storeValue(Node node, Storage storage) {
+		Storage destination = nodeStorages.get(node);
+		if (destination == null) {
+			destination = storeValueOnNewItem(node, storage);
+			addStorage(node, destination);
+		} else {
+			storeValue(node, storage, destination);
+		}
 	}
 
-	private StackPointer reserveStackItem() {
+	private void storeValue(Node node, Storage storage, Storage destination) {
+		addOperation(new MovOperation("Store node " + node, getMode(node), storage, destination));
+	}
+
+	public Storage storeValueOnNewItem(Node node, Storage storage) {
+		Storage newStorage = reserveItem();
+		storeValue(node, storage, newStorage);
+		return newStorage;
+	}
+
+	private Storage reserveItem() {
+		// TODO: Return new VirtualRegister for use RegisterAllocation
 		currentStackOffset -= STACK_ITEM_SIZE;
 		return new StackPointer(currentStackOffset, Register._BP);
-	}
-
-	public void storeValue(Node node, Storage storage) {
-		Storage stackPointer = nodeStorages.get(node);
-		if (stackPointer == null) {
-			stackPointer = storeValueOnNewStackPointer(node, storage);
-			addToNodeStorage(node, stackPointer);
-		} else {
-			storeValue(node, storage, stackPointer);
-		}
-	}
-
-	private void storeValue(Node node, Storage storage, Storage stackPointer) {
-		addOperation(new MovOperation("Store node " + node, getMode(node), storage, stackPointer));
-	}
-
-	public void reserveMemoryForPhis(List<Phi> phis) {
-		addOperation(new Comment("Reserve space for phis"));
-		for (Phi phi : phis) {
-			addToNodeStorage(phi, reserveStackItem());
-		}
 	}
 
 	public Bit getMode(Node node) {
@@ -118,14 +116,12 @@ public class StorageManagement {
 
 	public void resetStackOffset() {
 		currentStackOffset = 0;
-
 	}
 
-	public void addConstant(Const node) {
-		addToNodeStorage(node, new Constant(node));
-	}
-
-	public void addToNodeStorage(Node node, Storage storage) {
-		nodeStorages.put(node, storage);
+	public void reserveMemoryForPhis(List<Phi> phis) {
+		addOperation(new Comment("Reserve space for phis"));
+		for (Phi phi : phis) {
+			addStorage(phi, reserveItem());
+		}
 	}
 }
