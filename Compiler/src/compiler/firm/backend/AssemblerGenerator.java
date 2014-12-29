@@ -14,6 +14,7 @@ import compiler.firm.backend.operations.FunctionSpecificationOperation;
 import compiler.firm.backend.operations.P2AlignOperation;
 import compiler.firm.backend.operations.TextOperation;
 import compiler.firm.backend.operations.templates.AssemblerOperation;
+
 import firm.BackEdges;
 import firm.Graph;
 import firm.Program;
@@ -53,7 +54,14 @@ public final class AssemblerGenerator {
 			assembler.addAll(visitor.getOperations());
 		}
 
+		allocateRegisters(assembler);
+
 		generateAssemblerFile(outputFile, assembler);
+	}
+
+	private static void allocateRegisters(List<AssemblerOperation> assembler) {
+		LinearScanRegisterAllocation registerAllocation = new LinearScanRegisterAllocation(assembler);
+		registerAllocation.allocateRegisters();
 	}
 
 	private static void generateAssemblerFile(Path outputFile, List<AssemblerOperation> assembler) throws IOException {

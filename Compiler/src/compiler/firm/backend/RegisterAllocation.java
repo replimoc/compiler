@@ -1,8 +1,6 @@
 package compiler.firm.backend;
 
-import java.util.Arrays;
 import java.util.HashMap;
-import java.util.LinkedList;
 import java.util.List;
 
 import compiler.firm.FirmUtils;
@@ -14,6 +12,7 @@ import compiler.firm.backend.storage.Register;
 import compiler.firm.backend.storage.RegisterBased;
 import compiler.firm.backend.storage.StackPointer;
 import compiler.firm.backend.storage.Storage;
+import compiler.firm.backend.storage.VirtualRegister;
 
 import firm.nodes.Const;
 import firm.nodes.Node;
@@ -26,9 +25,6 @@ public class RegisterAllocation {
 	private final List<AssemblerOperation> operations;
 	private final HashMap<Node, Storage> nodeStorages = new HashMap<>();
 	private int currentStackOffset;
-
-	private LinkedList<RegisterBased> freeRegisters = new LinkedList<RegisterBased>(
-			Arrays.asList(Register._AX, Register._BX, Register._CX, Register._DX, Register._DI));
 
 	public RegisterAllocation(List<AssemblerOperation> operations) {
 		this.operations = operations;
@@ -134,29 +130,13 @@ public class RegisterAllocation {
 	}
 
 	public RegisterBased getNewRegister(RegisterBased register) {
-		if (register == null) {
-			return getNewRegister();
-		}
-
-		if (this.freeRegisters.contains(register)) {
-			this.freeRegisters.remove(register);
-		} else if (register != Register._SI && register != Register._DI) {
-			throw new RuntimeException("Registers double usage");
-		}
-		return register;
+		return new VirtualRegister(register);
 	}
 
 	public RegisterBased getNewRegister() {
-		if (this.freeRegisters.isEmpty()) {
-			throw new RuntimeException("Run out of registers!");
-		}
-		return this.freeRegisters.pop();
+		return new VirtualRegister();
 	}
 
 	public void freeRegister(RegisterBased register) {
-		if (!this.freeRegisters.contains(register) && register != Register._SI && register != Register._DI) {
-			this.freeRegisters.push(register);
-		}
-
 	}
 }
