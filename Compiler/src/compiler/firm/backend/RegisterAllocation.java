@@ -17,7 +17,6 @@ import compiler.firm.backend.storage.Storage;
 import firm.nodes.Const;
 import firm.nodes.Node;
 import firm.nodes.Phi;
-import firm.nodes.Proj;
 
 public class RegisterAllocation {
 
@@ -50,7 +49,7 @@ public class RegisterAllocation {
 		if (!nodeStorages.containsKey(node)) {
 			// The value has not been set yet. Reserve memory for it. TODO: check if this is a valid case
 			StackPointer stackOffset = reserveStackItem();
-			nodeStorages.put(node, stackOffset);
+			addToNodeStorage(node, stackOffset);
 			addOperation(new Comment("expected " + node + " to be on stack"));
 
 		}
@@ -93,7 +92,7 @@ public class RegisterAllocation {
 		Storage stackPointer = nodeStorages.get(node);
 		if (stackPointer == null) {
 			stackPointer = storeValueOnNewStackPointer(node, storage);
-			nodeStorages.put(node, stackPointer);
+			addToNodeStorage(node, stackPointer);
 		} else {
 			storeValue(node, storage, stackPointer);
 		}
@@ -106,7 +105,7 @@ public class RegisterAllocation {
 	public void reserveMemoryForPhis(List<Phi> phis) {
 		addOperation(new Comment("Reserve space for phis"));
 		for (Phi phi : phis) {
-			nodeStorages.put(phi, reserveStackItem());
+			addToNodeStorage(phi, reserveStackItem());
 		}
 	}
 
@@ -126,11 +125,11 @@ public class RegisterAllocation {
 	}
 
 	public void addConstant(Const node) {
-		nodeStorages.put(node, new Constant(node));
+		addToNodeStorage(node, new Constant(node));
 	}
 
-	public void addParamterToNodeStorage(Proj proj) {
-		nodeStorages.put(proj, new StackPointer(STACK_ITEM_SIZE * (proj.getNum() + 2), Register._BP)); // + 2 for dynamic link
+	public void addToNodeStorage(Node node, Storage storage) {
+		nodeStorages.put(node, storage);
 	}
 
 	public Register getNewRegister(Register register) {

@@ -560,7 +560,9 @@ public class X8664AssemblerGenerationVisitor implements BulkPhiNodeVisitor {
 			for (Edge edge : BackEdges.getOuts(node)) {
 				if (edge.node instanceof Proj) {
 					Proj proj = (Proj) edge.node;
-					registerAllocation.addParamterToNodeStorage(proj);
+					registerAllocation.addToNodeStorage(proj,
+							new StackPointer(RegisterAllocation.STACK_ITEM_SIZE * (proj.getNum() + 2), Register._BP));
+					// + 2 for dynamic link
 				}
 			}
 		}
