@@ -11,10 +11,8 @@ import compiler.firm.backend.operations.CallOperation;
 import compiler.firm.backend.operations.CltdOperation;
 import compiler.firm.backend.operations.CmpOperation;
 import compiler.firm.backend.operations.Comment;
-import compiler.firm.backend.operations.CondJumpOperation;
 import compiler.firm.backend.operations.DivOperation;
 import compiler.firm.backend.operations.ImulOperation;
-import compiler.firm.backend.operations.JumpOperation;
 import compiler.firm.backend.operations.LabelOperation;
 import compiler.firm.backend.operations.MovOperation;
 import compiler.firm.backend.operations.NegOperation;
@@ -24,6 +22,12 @@ import compiler.firm.backend.operations.RetOperation;
 import compiler.firm.backend.operations.ShlOperation;
 import compiler.firm.backend.operations.SizeOperation;
 import compiler.firm.backend.operations.SubOperation;
+import compiler.firm.backend.operations.jump.JgOperation;
+import compiler.firm.backend.operations.jump.JgeOperation;
+import compiler.firm.backend.operations.jump.JlOperation;
+import compiler.firm.backend.operations.jump.JleOperation;
+import compiler.firm.backend.operations.jump.JmpOperation;
+import compiler.firm.backend.operations.jump.JzOperation;
 import compiler.firm.backend.operations.templates.AssemblerOperation;
 import compiler.firm.backend.operations.templates.StorageRegisterOperation;
 import compiler.firm.backend.storage.Constant;
@@ -98,6 +102,7 @@ public class X8664AssemblerGenerationVisitor implements BulkPhiNodeVisitor {
 
 	private final List<AssemblerOperation> operations = new ArrayList<>();
 	private final HashMap<String, CallingConvention> callingConventions;
+	private final HashMap<Block, LabelOperation> blockLabels = new HashMap<>();
 
 	// stack management
 	private final HashMap<Node, Storage> nodeStorages = new HashMap<>();
@@ -184,8 +189,14 @@ public class X8664AssemblerGenerationVisitor implements BulkPhiNodeVisitor {
 		storeValue(parent, Register._DX);
 	}
 
-	private String getBlockLabel(Block node) {
-		return "BLOCK_" + node.getNr();
+	private LabelOperation getBlockLabel(Block node) {
+		LabelOperation blockLabel = null;
+		if (blockLabels.containsKey(node)) {
+			blockLabel = blockLabels.get(node);
+		} else {
+			blockLabel = new LabelOperation("BLOCK_" + node.getNr());
+		}
+		return blockLabel;
 	}
 
 	public void addListOfAllPhis(List<Phi> phis) {
@@ -281,7 +292,7 @@ public class X8664AssemblerGenerationVisitor implements BulkPhiNodeVisitor {
 		}
 
 		// prepend a label before each block
-		addOperation(new LabelOperation(getBlockLabel(node)));
+		addOperation(getBlockLabel(node));
 	}
 
 	@Override
@@ -395,41 +406,41 @@ public class X8664AssemblerGenerationVisitor implements BulkPhiNodeVisitor {
 		// generate cmp instruction
 		visitCmpNode(cmpNode);
 
-		String labelTrue = getBlockLabel(blockTrue);
-		String labelFalse = getBlockLabel(blockFalse);
+		LabelOperation labelTrue = getBlockLabel(blockTrue);
+		LabelOperation labelFalse = getBlockLabel(blockFalse);
 
 		// now add conditional jump
 		switch (cmpNode.getRelation()) {
 		case Equal:
-			addOperation(CondJumpOperation.createJumpZero(labelTrue));
-			addOperation(CondJumpOperation.createJump(labelFalse));
+			addOperation(new JzOperation(labelTrue));
+			addOperation(new JmpOperation(labelFalse));
 			break;
 		case False:
-			addOperation(CondJumpOperation.createJump(labelFalse));
+			addOperation(new JmpOperation(labelFalse));
 			break;
 		case Greater:
-			addOperation(CondJumpOperation.createJumpGreater(labelTrue));
-			addOperation(CondJumpOperation.createJump(labelFalse));
+			addOperation(new JgOperation(labelTrue));
+			addOperation(new JmpOperation(labelFalse));
 			break;
 		case GreaterEqual:
-			addOperation(CondJumpOperation.createJumpGreaterEqual(labelTrue));
-			addOperation(CondJumpOperation.createJump(labelFalse));
+			addOperation(new JgeOperation(labelTrue));
+			addOperation(new JmpOperation(labelFalse));
 			break;
 		case Less:
-			addOperation(CondJumpOperation.createJumpLess(labelTrue));
-			addOperation(CondJumpOperation.createJump(labelFalse));
+			addOperation(new JlOperation(labelTrue));
+			addOperation(new JmpOperation(labelFalse));
 			break;
 		case LessEqual:
-			addOperation(CondJumpOperation.createJumpLessEqual(labelTrue));
-			addOperation(CondJumpOperation.createJump(labelFalse));
+			addOperation(new JleOperation(labelTrue));
+			addOperation(new JmpOperation(labelFalse));
 			break;
 		case LessEqualGreater:
 		case LessGreater:
-			addOperation(CondJumpOperation.createJumpZero(labelFalse));
-			addOperation(CondJumpOperation.createJump(labelTrue));
+			addOperation(new JzOperation(labelFalse));
+			addOperation(new JmpOperation(labelTrue));
 			break;
 		case True:
-			addOperation(CondJumpOperation.createJump(labelTrue));
+			addOperation(new JmpOperation(labelTrue));
 			break;
 		case Unordered:
 		case UnorderedEqual:
@@ -528,7 +539,7 @@ public class X8664AssemblerGenerationVisitor implements BulkPhiNodeVisitor {
 		for (Edge edge : BackEdges.getOuts(node)) {
 			Node edgeNode = edge.node;
 			if (edgeNode instanceof Block) {
-				addOperation(JumpOperation.createJump(getBlockLabel((Block) edgeNode)));
+				addOperation(new JmpOperation(getBlockLabel((Block) edgeNode)));
 				break;
 			}
 		}

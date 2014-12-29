@@ -15,4 +15,8 @@ public class LabelOperation extends AssemblerOperation {
 		return String.format("%s:", name);
 	}
 
+	public String getName() {
+		return name;
+	}
+
 }
