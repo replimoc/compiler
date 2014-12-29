@@ -1,6 +1,8 @@
 package compiler.firm.backend;
 
+import java.util.Arrays;
 import java.util.HashMap;
+import java.util.LinkedList;
 import java.util.List;
 
 import compiler.firm.FirmUtils;
@@ -25,6 +27,9 @@ public class RegisterAllocation {
 	private final HashMap<Node, Storage> nodeStorages = new HashMap<>();
 	private int currentStackOffset;
 
+	private LinkedList<Register> freeRegisters = new LinkedList<>(
+			Arrays.asList(Register._AX, Register._BX, Register._CX, Register._DX, Register._DI));
+
 	public RegisterAllocation(List<AssemblerOperation> operations) {
 		this.operations = operations;
 	}
@@ -33,7 +38,11 @@ public class RegisterAllocation {
 		operations.add(assemblerOption);
 	}
 
-	public Register getValue(Node node, Register register) {
+	public Register getValue(Node node, boolean registerOverwrite) {
+		return getValue(node, registerOverwrite, null);
+	}
+
+	public Register getValue(Node node, boolean registerOverwrite, Register register) {
 		addOperation(new Comment("restore from stack"));
 
 		// if variable was assigned, than simply load it from stack
@@ -45,17 +54,24 @@ public class RegisterAllocation {
 			addOperation(new Comment("expected " + node + " to be on stack"));
 
 		}
-		return getValue(node, register, getStorage(node));
+		return getValue(node, registerOverwrite, register, getStorage(node));
 	}
 
 	public Storage getStorage(Node node) {
 		return nodeStorages.get(node);
 	}
 
-	public Register getValue(Node node, Register register, Storage stackPointer) {
+	public Register getValue(Node node, boolean registerOverwrite, Storage stackPointer) {
+		return getValue(node, registerOverwrite, null, stackPointer);
+	}
+
+	public Register getValue(Node node, boolean registerOverwrite, Register register, Storage stackPointer) {
+		register = getNewRegister(register);
+
 		if (getMode(node) == Bit.BIT8) {
 			addOperation(new MovOperation("movb does not clear the register before write", Bit.BIT64, new Constant(0), register));
 		}
+
 		addOperation(new MovOperation("Load address " + node.toString(), getMode(node), stackPointer, register));
 		return register;
 	}
@@ -115,5 +131,32 @@ public class RegisterAllocation {
 
 	public void addParamterToNodeStorage(Proj proj) {
 		nodeStorages.put(proj, new StackPointer(STACK_ITEM_SIZE * (proj.getNum() + 2), Register._BP)); // + 2 for dynamic link
+	}
+
+	public Register getNewRegister(Register register) {
+		if (register == null) {
+			return getNewRegister();
+		}
+
+		if (this.freeRegisters.contains(register)) {
+			this.freeRegisters.remove(register);
+		} else if (register != Register._SI && register != Register._DI) {
+			throw new RuntimeException("Registers double usage");
+		}
+		return register;
+	}
+
+	public Register getNewRegister() {
+		if (this.freeRegisters.isEmpty()) {
+			throw new RuntimeException("Run out of registers!");
+		}
+		return this.freeRegisters.pop();
+	}
+
+	public void freeRegister(Register register) {
+		if (!this.freeRegisters.contains(register) && register != Register._SI && register != Register._DI) {
+			this.freeRegisters.push(register);
+		}
+
 	}
 }
