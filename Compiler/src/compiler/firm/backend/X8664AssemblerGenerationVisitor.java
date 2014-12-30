@@ -1,7 +1,7 @@
 package compiler.firm.backend;
 
-import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.LinkedList;
 import java.util.List;
 
 import compiler.firm.FirmUtils;
@@ -100,7 +100,7 @@ import firm.nodes.Unknown;
 
 public class X8664AssemblerGenerationVisitor implements BulkPhiNodeVisitor {
 
-	private final List<AssemblerOperation> operations = new ArrayList<>();
+	private final List<AssemblerOperation> operations = new LinkedList<>();
 	private final HashMap<String, CallingConvention> callingConventions;
 	private final HashMap<Block, LabelOperation> blockLabels = new HashMap<>();
 
