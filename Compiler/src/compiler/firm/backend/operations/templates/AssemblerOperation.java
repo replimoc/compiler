@@ -22,6 +22,10 @@ public abstract class AssemblerOperation {
 
 	protected abstract String getOperationString();
 
+	public RegisterBased[] getReadRegisters() {
+		return new RegisterBased[] {};
+	}
+
 	public RegisterBased[] getUsedRegisters() {
 		return new RegisterBased[] {};
 	}

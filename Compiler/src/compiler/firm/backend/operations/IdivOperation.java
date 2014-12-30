@@ -21,6 +21,11 @@ public class IdivOperation extends RegisterOperation {
 	}
 
 	@Override
+	public RegisterBased[] getReadRegisters() {
+		return getUsedRegisters();
+	}
+
+	@Override
 	public RegisterBased[] getUsedRegisters() {
 		return new RegisterBased[] { Register._DX, Register._AX, getRegister().getUsedRegister() };
 	}

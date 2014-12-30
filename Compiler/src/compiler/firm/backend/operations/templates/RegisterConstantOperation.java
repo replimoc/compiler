@@ -28,6 +28,11 @@ public abstract class RegisterConstantOperation extends AssemblerBitOperation {
 	}
 
 	@Override
+	public RegisterBased[] getReadRegisters() {
+		return getUsedRegisters();
+	}
+
+	@Override
 	public RegisterBased[] getUsedRegisters() {
 		return new RegisterBased[] { register };
 	}
