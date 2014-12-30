@@ -60,7 +60,7 @@ public class AutomatedOutputComparisonTest implements TestFileVisitor.FileTester
 
 		Pair<Integer, List<String>> compilingState;
 		if (Files.exists(cIncludeFilePath)) {
-			compilingState = TestUtils.startCompilerApp("-o", binarFile.toString(), "--c-include", cIncludeFilePath.toString(), "--compile-firm",
+			compilingState = TestUtils.startCompilerApp("-o", binarFile.toString(), "--c-include", cIncludeFilePath.toString(),
 					sourceFile.toAbsolutePath().toString());
 		} else {
 			compilingState = TestUtils.startCompilerApp("-o", binarFile.toString(), "--compile-firm", sourceFile.toAbsolutePath().toString());

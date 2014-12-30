@@ -16,6 +16,8 @@ import org.apache.commons.cli.PosixParser;
 import compiler.StringTable;
 import compiler.ast.AstNode;
 import compiler.firm.FirmUtils;
+import compiler.firm.FirmUtils.AssemblerCreator;
+import compiler.firm.backend.AssemblerGenerator;
 import compiler.firm.generation.FirmGraphGenerator;
 import compiler.firm.optimization.FirmOptimizer;
 import compiler.lexer.Lexer;
@@ -72,8 +74,7 @@ public final class CompilerApp {
 		options.addOption(null, GRAPH_FIRM, false, "dump a firm graph to the current directory.");
 		options.addOption("s", null, true, "Used to define the suffix of the dumped firm graph. (Only to be used with --"
 				+ GRAPH_FIRM + ")");
-		options.addOption(null, OUTPUT_ASSEMBLER, false, "outputs the generated assembler into file assembler.s. (Only to be used with --"
-				+ COMPILE_FIRM + ")");
+		options.addOption(null, OUTPUT_ASSEMBLER, true, "outputs the generated assembler into a specified file.");
 		options.addOption(null, COMPILE_FIRM, false, "use the firm backend to produce amd64 code.");
 		options.addOption("o", true, "Used to define the filename/path of the generated executable. (Only to be used with --"
 				+ COMPILE_FIRM + ")");
@@ -121,7 +122,7 @@ public final class CompilerApp {
 						return 0;
 					}
 
-					SemanticCheckResults semanticResult = SemanticChecker.checkSemantic(ast, stringTable);
+					final SemanticCheckResults semanticResult = SemanticChecker.checkSemantic(ast, stringTable);
 					if (semanticResult.hasErrors()) {
 						for (SemanticAnalysisException curr : semanticResult.getExceptions()) {
 							System.err.println(curr.getMessage());
@@ -150,31 +151,42 @@ public final class CompilerApp {
 						FirmUtils.createFirmGraph(suffix);
 					}
 
-					if (cmd.hasOption(COMPILE_FIRM)) {
-						String outputFile;
-						if (cmd.hasOption('o')) {
-							outputFile = cmd.getOptionValue('o');
-						} else {
-							outputFile = Utils.getBinaryFileName("a");
-						}
-
-						try {
-							FirmUtils.createBinary(outputFile, cmd.hasOption(OUTPUT_ASSEMBLER), cmd.getOptionValue(C_INCLUDE),
-									cmd.getOptionValue(C_LIBRARY));
-						} catch (ExecutionFailedException e) {
-							return e.getStatusCode();
-						}
+					String outputFile;
+					if (cmd.hasOption('o')) {
+						outputFile = cmd.getOptionValue('o');
+					} else {
+						outputFile = Utils.getBinaryFileName("a");
 					}
 
-					if (!cmd.hasOption(COMPILE_FIRM) && cmd.hasOption(OUTPUT_ASSEMBLER)) {
-						String outputFile;
-						if (cmd.hasOption('o')) {
-							outputFile = cmd.getOptionValue('o');
-						} else {
-							outputFile = Utils.getBinaryFileName("assembler");
-						}
+					String assemblerName = null;
+					if (cmd.hasOption(OUTPUT_ASSEMBLER)) {
+						assemblerName = cmd.getOptionValue(OUTPUT_ASSEMBLER);
+					}
 
-						FirmUtils.createAssembler(outputFile);
+					FirmUtils.AssemblerCreator assemblerCreator = null;
+					if (cmd.hasOption(COMPILE_FIRM)) {
+						assemblerCreator = new AssemblerCreator() {
+
+							@Override
+							public void create(String fileName) throws IOException {
+								FirmUtils.createAssembler(fileName);
+							}
+						};
+					} else { // Default case: use our own assembler
+						assemblerCreator = new AssemblerCreator() {
+
+							@Override
+							public void create(String fileName) throws IOException {
+								AssemblerGenerator.createAssemblerX8664(Paths.get(fileName), semanticResult.getCallingConventions());
+							}
+						};
+					}
+
+					try {
+						FirmUtils.createBinary(outputFile, assemblerName, assemblerCreator, cmd.getOptionValue(C_INCLUDE),
+								cmd.getOptionValue(C_LIBRARY));
+					} catch (ExecutionFailedException ex) {
+						return ex.getStatusCode();
 					}
 
 					FirmUtils.finishFirm();

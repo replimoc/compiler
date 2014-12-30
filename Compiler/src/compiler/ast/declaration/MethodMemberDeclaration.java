@@ -4,6 +4,7 @@ import java.util.List;
 
 import compiler.Symbol;
 import compiler.ast.type.Type;
+import compiler.firm.backend.calling.CallingConvention;
 import compiler.lexer.Position;
 
 public abstract class MethodMemberDeclaration extends MemberDeclaration {
@@ -34,6 +35,8 @@ public abstract class MethodMemberDeclaration extends MemberDeclaration {
 	protected int getSortPriority() {
 		return 0;
 	}
+
+	public abstract CallingConvention getCallingConvention();
 
 	@Override
 	public int hashCode() {

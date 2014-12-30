@@ -5,9 +5,12 @@ import java.util.List;
 import compiler.Symbol;
 import compiler.ast.type.Type;
 import compiler.ast.visitor.AstVisitor;
+import compiler.firm.backend.calling.CallingConvention;
 import compiler.lexer.Position;
 
 public class NativeMethodDeclaration extends MethodMemberDeclaration {
+
+	private static final CallingConvention CALLING_CONVENTION = CallingConvention.SYSTEMV_ABI;
 
 	public NativeMethodDeclaration(Position position, Symbol identifier, List<ParameterDeclaration> parameters, Type returnType) {
 		super(position, identifier, parameters, returnType);
@@ -16,6 +19,11 @@ public class NativeMethodDeclaration extends MethodMemberDeclaration {
 	@Override
 	protected String getAssemblerNamePrefix() {
 		return "";
+	}
+
+	@Override
+	public CallingConvention getCallingConvention() {
+		return CALLING_CONVENTION;
 	}
 
 	@Override

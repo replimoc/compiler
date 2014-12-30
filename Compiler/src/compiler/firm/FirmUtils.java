@@ -80,6 +80,10 @@ public final class FirmUtils {
 		Backend.createAssembler(outputFileName, "<builtin>");
 	}
 
+	public interface AssemblerCreator {
+		public void create(String file) throws IOException;
+	}
+
 	/**
 	 * Expect escaped outputFileName.
 	 * 
@@ -88,15 +92,15 @@ public final class FirmUtils {
 	 * @throws IOException
 	 * @throws ExecutionFailedException
 	 */
-	public static void createBinary(String outputFileName, boolean keepAssembler, String cInclude, String cLibrary) throws IOException,
+	public static void createBinary(String outputFileName, String assemblerFile, AssemblerCreator assemblerCreator, String cInclude, String cLibrary)
+			throws IOException,
 			ExecutionFailedException {
 		String base = Utils.getJarLocation() + File.separator;
-		String assemblerFile = "assembler.s";
-		if (!keepAssembler) {
+		if (assemblerFile == null) {
 			assemblerFile = Utils.createAutoDeleteTempFile("assembler", ".s");
 		}
 
-		createAssembler(assemblerFile);
+		assemblerCreator.create(assemblerFile);
 
 		List<String> execOptions = new LinkedList<String>();
 		execOptions.addAll(Arrays.asList("gcc", "-o", outputFileName));
