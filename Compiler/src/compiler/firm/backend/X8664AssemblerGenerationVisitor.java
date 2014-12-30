@@ -11,7 +11,7 @@ import compiler.firm.backend.operations.CallOperation;
 import compiler.firm.backend.operations.CltdOperation;
 import compiler.firm.backend.operations.CmpOperation;
 import compiler.firm.backend.operations.Comment;
-import compiler.firm.backend.operations.DivOperation;
+import compiler.firm.backend.operations.IdivOperation;
 import compiler.firm.backend.operations.ImulOperation;
 import compiler.firm.backend.operations.LabelOperation;
 import compiler.firm.backend.operations.MovOperation;
@@ -420,7 +420,7 @@ public class X8664AssemblerGenerationVisitor implements BulkPhiNodeVisitor {
 		RegisterBased registerRight = registerAllocation.getValue(right, true, Register._SI); // TODO: Is this overwritten?
 		addOperation(new CltdOperation());
 		// idivl (eax / esi)
-		addOperation(new DivOperation(registerAllocation.getMode(right), registerRight));
+		addOperation(new IdivOperation(registerAllocation.getMode(right), registerRight));
 		// store on stack
 		for (Edge edge : BackEdges.getOuts(node)) {
 			registerAllocation.storeValue(edge.node, storeRegister);

@@ -1,7 +1,6 @@
 package compiler.firm.backend.operations.templates;
 
 import compiler.firm.backend.operations.LabelOperation;
-import compiler.firm.backend.storage.RegisterBased;
 
 public abstract class JumpOperation extends AssemblerOperation {
 
@@ -13,10 +12,5 @@ public abstract class JumpOperation extends AssemblerOperation {
 
 	public String getLabel() {
 		return label.getName();
-	}
-
-	@Override
-	public RegisterBased[] getUsedRegisters() {
-		return new RegisterBased[] {};
 	}
 }

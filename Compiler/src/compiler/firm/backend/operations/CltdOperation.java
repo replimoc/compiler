@@ -1,6 +1,7 @@
 package compiler.firm.backend.operations;
 
 import compiler.firm.backend.operations.templates.AssemblerOperation;
+import compiler.firm.backend.storage.Register;
 import compiler.firm.backend.storage.RegisterBased;
 
 public class CltdOperation extends AssemblerOperation {
@@ -20,6 +21,7 @@ public class CltdOperation extends AssemblerOperation {
 
 	@Override
 	public RegisterBased[] getUsedRegisters() {
-		return new RegisterBased[] {};
+		return new RegisterBased[] { Register._AX, Register._DX };
 	}
+
 }

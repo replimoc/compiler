@@ -1,7 +1,6 @@
 package compiler.firm.backend.operations;
 
 import compiler.firm.backend.operations.templates.AssemblerOperation;
-import compiler.firm.backend.storage.RegisterBased;
 import compiler.utils.Utils;
 
 public class FunctionSpecificationOperation extends AssemblerOperation {
@@ -19,10 +18,5 @@ public class FunctionSpecificationOperation extends AssemblerOperation {
 		} else {
 			return String.format("\t.globl %s\n\t.type\t%s, @function", name, name);
 		}
-	}
-
-	@Override
-	public RegisterBased[] getUsedRegisters() {
-		return new RegisterBased[] {};
 	}
 }

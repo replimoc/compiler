@@ -1,7 +1,6 @@
 package compiler.firm.backend.operations;
 
 import compiler.firm.backend.operations.templates.AssemblerOperation;
-import compiler.firm.backend.storage.RegisterBased;
 
 public class LabelOperation extends AssemblerOperation {
 
@@ -18,10 +17,5 @@ public class LabelOperation extends AssemblerOperation {
 
 	public String getName() {
 		return name;
-	}
-
-	@Override
-	public RegisterBased[] getUsedRegisters() {
-		return new RegisterBased[] {};
 	}
 }
