@@ -51,10 +51,10 @@ public final class AssemblerGenerator {
 			}
 			BackEdges.disable(graph);
 
-			assembler.addAll(visitor.getOperations());
+			List<AssemblerOperation> operations = visitor.getOperations();
+			allocateRegisters(operations);
+			assembler.addAll(operations);
 		}
-
-		allocateRegisters(assembler);
 
 		generateAssemblerFile(outputFile, assembler);
 	}
