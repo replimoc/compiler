@@ -11,7 +11,7 @@ public class JlOperation extends JumpOperation {
 
 	@Override
 	protected String getOperationString() {
-		return "\tjl " + getLabel();
+		return "\tjl " + getLabelName();
 	}
 
 }

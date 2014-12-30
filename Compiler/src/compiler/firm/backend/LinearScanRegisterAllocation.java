@@ -2,12 +2,16 @@ package compiler.firm.backend;
 
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collections;
+import java.util.Comparator;
 import java.util.HashMap;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map.Entry;
 
+import compiler.firm.backend.operations.LabelOperation;
 import compiler.firm.backend.operations.templates.AssemblerOperation;
+import compiler.firm.backend.operations.templates.JumpOperation;
 import compiler.firm.backend.storage.Register;
 import compiler.firm.backend.storage.RegisterBased;
 import compiler.firm.backend.storage.VirtualRegister;
@@ -27,8 +31,19 @@ public class LinearScanRegisterAllocation {
 
 	public void allocateRegisters() {
 		fillRegisterList();
-		// TODO: Is sorting of registers necessary?
+		sortRegisterList();
+		getMaximumNumberOfRegisters();
 		assignRegisters();
+	}
+
+	private void sortRegisterList() {
+		Collections.sort(virtualRegisters, new Comparator<VirtualRegister>() {
+			@Override
+			public int compare(VirtualRegister o1, VirtualRegister o2) {
+				return o1.getFirstOccurrence() > o2.getFirstOccurrence() ? 1 : -1;
+			}
+
+		});
 	}
 
 	private Register allocateRegister() {
@@ -48,18 +63,57 @@ public class LinearScanRegisterAllocation {
 
 	private void fillRegisterList() {
 		int line = 0;
+		List<LabelOperation> passedLabels = new LinkedList<>();
 		for (AssemblerOperation operation : operations) {
-			for (RegisterBased register : operation.getUsedRegisters()) {
-				if (register != null && register.getClass() == VirtualRegister.class) {
-					VirtualRegister virtualRegister = (VirtualRegister) register;
-					// TODO In loops this must be the end of the loop, not the last line in the loop
-					virtualRegister.setOccurrence(line);
-					if (!virtualRegisters.contains(virtualRegister)) {
-						virtualRegisters.add(virtualRegister);
-					}
+			if (operation instanceof LabelOperation) {
+				passedLabels.add((LabelOperation) operation);
+				System.out.println(operation);
+			}
+			if (operation instanceof JumpOperation) {
+				System.out.println(operation);
+				LabelOperation labelOperation = ((JumpOperation) operation).getLabel();
+				if (passedLabels.contains(labelOperation)) {
+					int startOperation = operations.indexOf(labelOperation);
+					System.out.println("Loop detected: " + startOperation + " -> " + line);
+					expandRegisterUsage(startOperation, line);
 				}
 			}
+
+			for (RegisterBased register : operation.getUsedRegisters()) {
+				setOccurrence(register, line);
+			}
 			line++;
+		}
+	}
+
+	private void expandRegisterUsage(int startOperation, int endOperation) {
+		List<RegisterBased> writeRegisters = new ArrayList<RegisterBased>();
+		for (int i = startOperation; i < endOperation; i++) {
+			AssemblerOperation operation = operations.get(i);
+			for (RegisterBased register : operation.getReadRegisters()) {
+				if (!writeRegisters.contains(register)) {
+					setOccurrence(register, startOperation);
+					setOccurrence(register, endOperation);
+				}
+			}
+			writeRegisters.addAll(Arrays.asList(operation.getUsedRegisters()));
+		}
+	}
+
+	private void setOccurrence(RegisterBased register, int occurrence) {
+		if (register != null && register.getClass() == VirtualRegister.class) {
+			VirtualRegister virtualRegister = (VirtualRegister) register;
+			virtualRegister.setOccurrence(occurrence);
+
+			if (!virtualRegisters.contains(virtualRegister)) {
+				virtualRegisters.add(virtualRegister);
+			}
+		}
+	}
+
+	private void getMaximumNumberOfRegisters() {
+		for (VirtualRegister register : virtualRegisters) {
+			System.out.println(register + " between " + register.getFirstOccurrence() + " and " + register.getLastOccurrence());
 		}
 	}
 

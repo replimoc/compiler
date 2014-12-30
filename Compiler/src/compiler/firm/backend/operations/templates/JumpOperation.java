@@ -10,7 +10,11 @@ public abstract class JumpOperation extends AssemblerOperation {
 		this.label = label;
 	}
 
-	public String getLabel() {
+	public LabelOperation getLabel() {
+		return label;
+	}
+
+	public String getLabelName() {
 		return label.getName();
 	}
 }

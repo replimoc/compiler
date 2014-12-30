@@ -99,6 +99,7 @@ public class StorageManagement {
 	}
 
 	private Storage reserveItem() {
+		// return new VirtualRegister();
 		// TODO: Return new VirtualRegister for use RegisterAllocation
 		currentStackOffset -= STACK_ITEM_SIZE;
 		return new StackPointer(currentStackOffset, Register._BP);

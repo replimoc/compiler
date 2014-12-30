@@ -141,6 +141,7 @@ public class X8664AssemblerGenerationVisitor implements BulkPhiNodeVisitor {
 			blockLabel = blockLabels.get(node);
 		} else {
 			blockLabel = new LabelOperation("BLOCK_" + node.getNr());
+			blockLabels.put(node, blockLabel);
 		}
 		return blockLabel;
 	}

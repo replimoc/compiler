@@ -11,7 +11,7 @@ public class JleOperation extends JumpOperation {
 
 	@Override
 	protected String getOperationString() {
-		return "\tjle " + getLabel();
+		return "\tjle " + getLabelName();
 	}
 
 }

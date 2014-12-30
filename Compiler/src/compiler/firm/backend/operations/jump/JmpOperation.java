@@ -11,7 +11,7 @@ public class JmpOperation extends JumpOperation {
 
 	@Override
 	protected String getOperationString() {
-		return "\tjmp " + getLabel();
+		return "\tjmp " + getLabelName();
 	}
 
 }
