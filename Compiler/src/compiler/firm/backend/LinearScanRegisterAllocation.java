@@ -32,18 +32,27 @@ public class LinearScanRegisterAllocation {
 	public void allocateRegisters() {
 		fillRegisterList();
 		List<VirtualRegister> registerSortedByEnd = new ArrayList<>(virtualRegisters);
-		sortRegisterList(virtualRegisters, 1);
-		sortRegisterList(registerSortedByEnd, -1);
+		sortRegisterListByStart(virtualRegisters);
+		sortRegisterListByEnd(registerSortedByEnd);
 		int maximumRegisters = getMaximumNumberOfRegisters(virtualRegisters, registerSortedByEnd);
 		System.out.println("maximum registers: " + maximumRegisters);
 		assignRegisters();
 	}
 
-	private void sortRegisterList(List<VirtualRegister> registers, final int multiplicator) {
+	private void sortRegisterListByStart(List<VirtualRegister> registers) {
 		Collections.sort(registers, new Comparator<VirtualRegister>() {
 			@Override
 			public int compare(VirtualRegister o1, VirtualRegister o2) {
-				return multiplicator * (o1.getFirstOccurrence() > o2.getFirstOccurrence() ? 1 : -1);
+				return o1.getFirstOccurrence() > o2.getFirstOccurrence() ? 1 : -1;
+			}
+		});
+	}
+
+	private void sortRegisterListByEnd(List<VirtualRegister> registers) {
+		Collections.sort(registers, new Comparator<VirtualRegister>() {
+			@Override
+			public int compare(VirtualRegister o1, VirtualRegister o2) {
+				return o1.getLastOccurrence() > o2.getLastOccurrence() ? 1 : -1;
 			}
 		});
 	}
