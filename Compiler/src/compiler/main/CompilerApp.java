@@ -42,6 +42,7 @@ public final class CompilerApp {
 	private static final String OUTPUT_ASSEMBLER = "assembler";
 	private static final String COMPILE_FIRM = "compile-firm";
 	private static final String NO_OPT = "no-opt";
+	private static final String OUTPUT_FILE = "o";
 	private static final String C_INCLUDE = "c-include";
 	private static final String C_LIBRARY = "l";
 
@@ -76,7 +77,7 @@ public final class CompilerApp {
 				+ GRAPH_FIRM + ")");
 		options.addOption(null, OUTPUT_ASSEMBLER, true, "outputs the generated assembler into a specified file.");
 		options.addOption(null, COMPILE_FIRM, false, "use the firm backend to produce amd64 code.");
-		options.addOption("o", true, "Used to define the filename/path of the generated executable. (Only to be used with --"
+		options.addOption(OUTPUT_FILE, true, "Used to define the filename/path of the generated executable. (Only to be used with --"
 				+ COMPILE_FIRM + ")");
 		options.addOption(null, NO_OPT, false, "deactivate optimizations");
 		options.addOption(null, C_INCLUDE, true, "Compile the given file and use it for the mapping of native methods.");
@@ -152,8 +153,8 @@ public final class CompilerApp {
 					}
 
 					String outputFile;
-					if (cmd.hasOption('o')) {
-						outputFile = cmd.getOptionValue('o');
+					if (cmd.hasOption(OUTPUT_FILE)) {
+						outputFile = cmd.getOptionValue(OUTPUT_FILE);
 					} else {
 						outputFile = Utils.getBinaryFileName("a");
 					}
@@ -166,7 +167,6 @@ public final class CompilerApp {
 					FirmUtils.AssemblerCreator assemblerCreator = null;
 					if (cmd.hasOption(COMPILE_FIRM)) {
 						assemblerCreator = new AssemblerCreator() {
-
 							@Override
 							public void create(String fileName) throws IOException {
 								FirmUtils.createAssembler(fileName);
@@ -174,7 +174,6 @@ public final class CompilerApp {
 						};
 					} else { // Default case: use our own assembler
 						assemblerCreator = new AssemblerCreator() {
-
 							@Override
 							public void create(String fileName) throws IOException {
 								AssemblerGenerator.createAssemblerX8664(Paths.get(fileName), semanticResult.getCallingConventions());
