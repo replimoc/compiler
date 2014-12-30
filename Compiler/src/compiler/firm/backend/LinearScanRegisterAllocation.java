@@ -31,18 +31,20 @@ public class LinearScanRegisterAllocation {
 
 	public void allocateRegisters() {
 		fillRegisterList();
-		sortRegisterList();
-		getMaximumNumberOfRegisters();
+		List<VirtualRegister> registerSortedByEnd = new ArrayList<>(virtualRegisters);
+		sortRegisterList(virtualRegisters, 1);
+		sortRegisterList(registerSortedByEnd, -1);
+		int maximumRegisters = getMaximumNumberOfRegisters(virtualRegisters, registerSortedByEnd);
+		System.out.println("maximum registers: " + maximumRegisters);
 		assignRegisters();
 	}
 
-	private void sortRegisterList() {
-		Collections.sort(virtualRegisters, new Comparator<VirtualRegister>() {
+	private void sortRegisterList(List<VirtualRegister> registers, final int multiplicator) {
+		Collections.sort(registers, new Comparator<VirtualRegister>() {
 			@Override
 			public int compare(VirtualRegister o1, VirtualRegister o2) {
-				return o1.getFirstOccurrence() > o2.getFirstOccurrence() ? 1 : -1;
+				return multiplicator * (o1.getFirstOccurrence() > o2.getFirstOccurrence() ? 1 : -1);
 			}
-
 		});
 	}
 
@@ -67,10 +69,8 @@ public class LinearScanRegisterAllocation {
 		for (AssemblerOperation operation : operations) {
 			if (operation instanceof LabelOperation) {
 				passedLabels.add((LabelOperation) operation);
-				System.out.println(operation);
 			}
 			if (operation instanceof JumpOperation) {
-				System.out.println(operation);
 				LabelOperation labelOperation = ((JumpOperation) operation).getLabel();
 				if (passedLabels.contains(labelOperation)) {
 					int startOperation = operations.indexOf(labelOperation);
@@ -111,10 +111,34 @@ public class LinearScanRegisterAllocation {
 		}
 	}
 
-	private void getMaximumNumberOfRegisters() {
+	private int getMaximumNumberOfRegisters(List<VirtualRegister> sortByStart, List<VirtualRegister> sortByEnd) {
+		if (sortByStart.size() == 0) {
+			return 0;
+		}
+
+		int maximumRegisters = 0;
+		int currentRegisters = 0;
+
+		int startRegisterIndex = 0;
+		int endRegisterIndex = 0;
+
+		while (startRegisterIndex < sortByStart.size()) {
+			int startRegisterOccurrence = sortByStart.get(startRegisterIndex).getFirstOccurrence();
+			int endRegisterOccurrence = sortByEnd.get(endRegisterIndex).getLastOccurrence();
+
+			if (startRegisterOccurrence <= endRegisterOccurrence) {
+				currentRegisters++;
+				maximumRegisters = Math.max(maximumRegisters, currentRegisters);
+				startRegisterIndex++;
+			} else {
+				currentRegisters--;
+				endRegisterIndex++;
+			}
+		}
 		for (VirtualRegister register : virtualRegisters) {
 			System.out.println(register + " between " + register.getFirstOccurrence() + " and " + register.getLastOccurrence());
 		}
+		return maximumRegisters;
 	}
 
 	private void assignRegisters() {
