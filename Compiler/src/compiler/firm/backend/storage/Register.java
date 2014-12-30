@@ -19,6 +19,12 @@ public class Register extends RegisterBased {
 	public static final Register _DX = new Register("%dl", "%edx", "%rdx");
 	public static final Register _8D = new Register("%r8b", "%r8d", "%r8");
 	public static final Register _9D = new Register("%r9b", "%r9d", "%r9");
+	public static final Register _10D = new Register("%r10b", "%r10d", "%r10");
+	public static final Register _11D = new Register("%r11b", "%r11d", "%r11");
+	public static final Register _12D = new Register("%r12b", "%r12d", "%r12");
+	public static final Register _13D = new Register("%r13b", "%r13d", "%r13");
+	public static final Register _14D = new Register("%r14b", "%r14d", "%r14");
+	public static final Register _15D = new Register("%r15b", "%r15d", "%r15");
 
 	private final String registerName8;
 	private final String registerName32;
