@@ -20,7 +20,6 @@ import compiler.firm.backend.storage.Constant;
 import compiler.firm.backend.storage.Register;
 import compiler.firm.backend.storage.RegisterBased;
 import compiler.firm.backend.storage.StackPointer;
-import compiler.firm.backend.storage.Storage;
 import compiler.firm.backend.storage.VirtualRegister;
 
 public class LinearScanRegisterAllocation {
@@ -34,7 +33,7 @@ public class LinearScanRegisterAllocation {
 			Arrays.asList(Register._13D, Register._14D, Register._15D)
 			);
 
-	private HashMap<VirtualRegister, Storage> usedRegister = new HashMap<>();
+	private HashMap<VirtualRegister, Register> usedRegister = new HashMap<>();
 
 	public LinearScanRegisterAllocation(List<AssemblerOperation> operations) {
 		this.operations = operations;
@@ -46,7 +45,7 @@ public class LinearScanRegisterAllocation {
 		assignRegisters();
 		setStackSize(currentStackOffset);
 		for (VirtualRegister register : virtualRegisters) {
-			System.out.println(register + " -> " + register.getRegister());
+			System.out.println(register);
 		}
 	}
 
@@ -59,15 +58,19 @@ public class LinearScanRegisterAllocation {
 		});
 	}
 
-	private Storage allocateRegister(VirtualRegister virtualRegister) {
-		if (!this.freeRegisters.isEmpty()) {
-			return this.freeRegisters.pop();
-		} else {
-			// TODO: Spill register with longest lifetime
-			virtualRegister.setSpilled(true);
-			currentStackOffset += STACK_ITEM_SIZE;
-			return new StackPointer(-currentStackOffset, Register._BP);
+	private Register allocateRegister(VirtualRegister virtualRegister) {
+		if (this.freeRegisters.isEmpty()) {
+			VirtualRegister register = getRegisterWithLongestLifetime();
+			if (register == null) {
+				spillRegister(virtualRegister);
+				return null;
+			}
+
+			spillRegister(register);
 		}
+		Register register = this.freeRegisters.pop();
+		virtualRegister.setStorage(register);
+		return register;
 	}
 
 	private void freeRegister(Register register) {
@@ -76,12 +79,23 @@ public class LinearScanRegisterAllocation {
 		}
 	}
 
+	private void spillRegister(VirtualRegister virtualRegister) {
+		Register freeRegister = usedRegister.get(virtualRegister);
+		if (freeRegister != null) {
+			usedRegister.remove(virtualRegister);
+			this.freeRegisters.push(freeRegister);
+		}
+		virtualRegister.setSpilled(true);
+		currentStackOffset += STACK_ITEM_SIZE;
+		virtualRegister.setStorage(new StackPointer(-currentStackOffset, Register._BP));
+	}
+
 	private VirtualRegister getRegisterWithLongestLifetime() {
 		int lifetime = 0;
 		VirtualRegister register = null;
-		for (Entry<VirtualRegister, Storage> testRegister : usedRegister.entrySet()) {
+		for (Entry<VirtualRegister, Register> testRegister : usedRegister.entrySet()) {
 			VirtualRegister virtualRegister = testRegister.getKey();
-			if (virtualRegister.getLastOccurrence() >= lifetime) {
+			if (virtualRegister.getLastOccurrence() >= lifetime && !virtualRegister.isForceRegister()) {
 				lifetime = virtualRegister.getLastOccurrence();
 				register = virtualRegister;
 			}
@@ -143,9 +157,10 @@ public class LinearScanRegisterAllocation {
 			freeRegistersForLine(register.getFirstOccurrence());
 
 			if (register.getRegister() == null) {
-				Storage systemRegister = allocateRegister(register);
-				register.setStorage(systemRegister);
-				usedRegister.put(register, systemRegister);
+				Register systemRegister = allocateRegister(register);
+				if (systemRegister != null) {
+					usedRegister.put(register, systemRegister);
+				}
 			} else {
 				// TODO: Reserve this register
 			}
@@ -154,9 +169,9 @@ public class LinearScanRegisterAllocation {
 
 	private void freeRegistersForLine(int line) {
 		List<VirtualRegister> removeRegisters = new ArrayList<>();
-		for (Entry<VirtualRegister, Storage> register : usedRegister.entrySet()) {
-			if (register.getKey().getLastOccurrence() < line && register.getValue().getClass() == Register.class) {
-				freeRegister((Register) register.getValue());
+		for (Entry<VirtualRegister, Register> register : usedRegister.entrySet()) {
+			if (register.getKey().getLastOccurrence() < line) {
+				freeRegister(register.getValue());
 				removeRegisters.add(register.getKey());
 			}
 		}
