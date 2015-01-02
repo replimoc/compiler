@@ -28,14 +28,13 @@ public class LinearScanRegisterAllocation {
 	private final ArrayList<VirtualRegister> virtualRegisters = new ArrayList<VirtualRegister>();
 
 	private static final int STACK_ITEM_SIZE = 8;
-	private int currentStackOffset;
+	private int currentStackOffset = 0;
 
 	private LinkedList<Register> freeRegisters = new LinkedList<Register>(
 			Arrays.asList(Register._13D, Register._14D, Register._15D)
 			);
 
 	private HashMap<VirtualRegister, Storage> usedRegister = new HashMap<>();
-	private HashMap<VirtualRegister, StackPointer> usedStack = new HashMap<>();
 
 	public LinearScanRegisterAllocation(List<AssemblerOperation> operations) {
 		this.operations = operations;
@@ -43,10 +42,9 @@ public class LinearScanRegisterAllocation {
 
 	public void allocateRegisters() {
 		fillRegisterList();
-		createStackPointerForRegisters();
 		List<VirtualRegister> registerSortedByEnd = new ArrayList<>(virtualRegisters);
 		sortRegisterListByStart(virtualRegisters);
-		setStackSize(virtualRegisters.size());
+		setStackSize(virtualRegisters.size() - freeRegisters.size());
 		sortRegisterListByEnd(registerSortedByEnd);
 		int maximumRegisters = getMaximumNumberOfRegisters(virtualRegisters, registerSortedByEnd);
 
@@ -81,7 +79,8 @@ public class LinearScanRegisterAllocation {
 		} else {
 			// TODO: Spill register with longest lifetime
 			virtualRegister.setSpilled(true);
-			return usedStack.get(virtualRegister);
+			currentStackOffset -= STACK_ITEM_SIZE;
+			return new StackPointer(currentStackOffset, Register._BP);
 		}
 	}
 
@@ -124,13 +123,6 @@ public class LinearScanRegisterAllocation {
 				setOccurrence(register, line);
 			}
 			line++;
-		}
-	}
-
-	private void createStackPointerForRegisters() {
-		for (VirtualRegister virtualRegister : virtualRegisters) {
-			currentStackOffset -= STACK_ITEM_SIZE;
-			usedStack.put(virtualRegister, new StackPointer(currentStackOffset, Register._BP));
 		}
 	}
 
@@ -214,6 +206,7 @@ public class LinearScanRegisterAllocation {
 	}
 
 	private void setStackSize(int size) {
+		size = Math.max(size, 0); // TODO: Empty operations if no stack is necessary.
 		for (AssemblerOperation operation : operations) {
 			if (operation.getClass() == ReserveStackOperation.class) {
 				ReserveStackOperation reserveStackOperation = (ReserveStackOperation) operation;
