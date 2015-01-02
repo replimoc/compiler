@@ -10,7 +10,7 @@ public class JzOperation extends JumpOperation {
 	}
 
 	@Override
-	protected String getOperationString() {
+	public String getOperationString() {
 		return "\tjz " + getLabelName() + "\n";
 	}
 

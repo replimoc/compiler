@@ -12,7 +12,7 @@ public class ReserveStackOperation extends AssemblerOperation {
 	}
 
 	@Override
-	protected String getOperationString() {
+	public String getOperationString() {
 		return operation.getOperationString();
 	}
 

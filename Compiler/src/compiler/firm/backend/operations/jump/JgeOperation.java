@@ -10,7 +10,7 @@ public class JgeOperation extends JumpOperation {
 	}
 
 	@Override
-	protected String getOperationString() {
+	public String getOperationString() {
 		return "\tjge " + getLabelName();
 	}
 

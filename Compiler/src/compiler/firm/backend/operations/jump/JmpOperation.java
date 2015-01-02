@@ -10,7 +10,7 @@ public class JmpOperation extends JumpOperation {
 	}
 
 	@Override
-	protected String getOperationString() {
+	public String getOperationString() {
 		return "\tjmp " + getLabelName();
 	}
 

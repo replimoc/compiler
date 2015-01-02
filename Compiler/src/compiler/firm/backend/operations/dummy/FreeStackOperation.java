@@ -12,7 +12,7 @@ public class FreeStackOperation extends AssemblerOperation {
 	}
 
 	@Override
-	protected String getOperationString() {
+	public String getOperationString() {
 		return operation.getOperationString();
 	}
 

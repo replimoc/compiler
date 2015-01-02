@@ -77,7 +77,7 @@ public abstract class AssemblerOperation {
 		}
 	}
 
-	protected abstract String getOperationString();
+	public abstract String getOperationString();
 
 	public RegisterBased[] getReadRegisters() {
 		return new RegisterBased[] {};

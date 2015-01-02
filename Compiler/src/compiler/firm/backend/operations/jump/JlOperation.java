@@ -10,7 +10,7 @@ public class JlOperation extends JumpOperation {
 	}
 
 	@Override
-	protected String getOperationString() {
+	public String getOperationString() {
 		return "\tjl " + getLabelName();
 	}
 

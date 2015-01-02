@@ -10,7 +10,7 @@ public class JleOperation extends JumpOperation {
 	}
 
 	@Override
-	protected String getOperationString() {
+	public String getOperationString() {
 		return "\tjle " + getLabelName();
 	}
 
