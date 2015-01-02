@@ -1,4 +1,4 @@
-#include <SDL.h>
+#include <SDL/SDL.h>
 #include <stdlib.h>
 #include <signal.h>
 #include <stdio.h>
