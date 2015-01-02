@@ -218,7 +218,6 @@ public class X8664AssemblerGenerationVisitor implements BulkPhiNodeVisitor {
 
 		if (node.equals(graph.getEndBlock())) {
 			addOperation(new FreeStackOperation());
-			registerAllocation.resetStackOffset();
 
 			if (!Utils.isWindows()) {
 				addOperation(new SizeOperation(methodName));
@@ -691,7 +690,8 @@ public class X8664AssemblerGenerationVisitor implements BulkPhiNodeVisitor {
 		for (Phi phi : phis) {
 			Node predecessor = getRelevantPredecessor(phi);
 			RegisterBased register = registerAllocation.getValue(predecessor, false);
-			Storage temporaryStorage = registerAllocation.storeValueOnNewItem(predecessor, register);
+			Storage temporaryStorage = new VirtualRegister();
+			registerAllocation.storeValue(predecessor, register, temporaryStorage);
 			phiTempStackMapping.put(phi, temporaryStorage);
 		}
 

@@ -54,7 +54,7 @@ public class StorageManagement {
 		// if variable was assigned, than simply load it from stack
 
 		if (!nodeStorages.containsKey(node)) {
-			addStorage(node, reserveItem());
+			addStorage(node, new VirtualRegister());
 			addOperation(new Comment("expected " + node + " to be on stack"));
 
 		}
@@ -65,7 +65,19 @@ public class StorageManagement {
 		return getValue(node, registerOverwrite, null, originalStorage);
 	}
 
+	public RegisterBased getValue(Node node, boolean registerOverwrite, RegisterBased register, RegisterBased originalStorage) {
+		if (register == null && !registerOverwrite) {
+			return originalStorage;
+		} else {
+			return getValueFromStorage(node, registerOverwrite, register, originalStorage);
+		}
+	}
+
 	public RegisterBased getValue(Node node, boolean registerOverwrite, RegisterBased register, Storage originalStorage) {
+		return getValueFromStorage(node, registerOverwrite, register, originalStorage);
+	}
+
+	public RegisterBased getValueFromStorage(Node node, boolean registerOverwrite, RegisterBased register, Storage originalStorage) {
 		register = new VirtualRegister(register);
 
 		if (getMode(node) == Bit.BIT8) {
@@ -76,28 +88,32 @@ public class StorageManagement {
 		return register;
 	}
 
-	public void storeValue(Node node, Storage storage) {
+	public void storeValue(Node node, VirtualRegister storage) {
 		Storage destination = nodeStorages.get(node);
-		if (destination == null) {
-			destination = storeValueOnNewItem(node, storage);
-			addStorage(node, destination);
+		if (destination == null && storage.getRegister() == null) {
+			addStorage(node, storage);
 		} else {
-			storeValue(node, storage, destination);
+			storeValueAndCreateNewStorage(node, storage);
 		}
 	}
 
-	private void storeValue(Node node, Storage storage, Storage destination) {
-		addOperation(new MovOperation("Store node " + node, getMode(node), storage, destination));
+	public void storeValue(Node node, Storage storage) {
+		storeValueAndCreateNewStorage(node, storage);
 	}
 
-	public Storage storeValueOnNewItem(Node node, Storage storage) {
-		Storage newStorage = reserveItem();
-		storeValue(node, storage, newStorage);
-		return newStorage;
+	public void storeValueAndCreateNewStorage(Node node, Storage storage) {
+		Storage destination = nodeStorages.get(node);
+		if (destination == null) {
+			destination = new VirtualRegister();
+			addStorage(node, destination);
+		}
+		storeValue(node, storage, destination);
 	}
 
-	private Storage reserveItem() {
-		return new VirtualRegister();
+	public void storeValue(Node node, Storage storage, Storage destination) {
+		if (storage != destination) {
+			addOperation(new MovOperation("Store node " + node, getMode(node), storage, destination));
+		}
 	}
 
 	public Bit getMode(Node node) {
@@ -110,13 +126,10 @@ public class StorageManagement {
 		}
 	}
 
-	public void resetStackOffset() {
-	}
-
 	public void reserveMemoryForPhis(List<Phi> phis) {
 		addOperation(new Comment("Reserve space for phis"));
 		for (Phi phi : phis) {
-			addStorage(phi, reserveItem());
+			addStorage(phi, new VirtualRegister());
 		}
 	}
 }
