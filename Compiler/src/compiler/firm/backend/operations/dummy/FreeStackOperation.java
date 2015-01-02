@@ -1,19 +1,23 @@
 package compiler.firm.backend.operations.dummy;
 
-import compiler.firm.backend.operations.AddOperation;
 import compiler.firm.backend.operations.templates.AssemblerOperation;
 
 public class FreeStackOperation extends AssemblerOperation {
 
-	private AddOperation operation;
+	private AssemblerOperation operation;
 
-	public void setOperation(AddOperation operation) {
+	public void setOperation(AssemblerOperation operation) {
 		this.operation = operation;
 	}
 
 	@Override
 	public String getOperationString() {
 		return operation.getOperationString();
+	}
+
+	@Override
+	public String getComment() {
+		return operation.getComment();
 	}
 
 }

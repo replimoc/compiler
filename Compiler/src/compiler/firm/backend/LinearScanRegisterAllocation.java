@@ -10,6 +10,7 @@ import java.util.List;
 import java.util.Map.Entry;
 
 import compiler.firm.backend.operations.AddOperation;
+import compiler.firm.backend.operations.Comment;
 import compiler.firm.backend.operations.LabelOperation;
 import compiler.firm.backend.operations.SubOperation;
 import compiler.firm.backend.operations.dummy.FreeStackOperation;
@@ -181,16 +182,19 @@ public class LinearScanRegisterAllocation {
 	}
 
 	private void setStackSize(int size) {
-		size = Math.max(size, 0); // TODO: Empty operations if no stack is necessary.
+		AssemblerOperation reserveOperation = new SubOperation("stack reservation", Bit.BIT64, new Constant(size), Register._SP);
+		AssemblerOperation freeOperation = new AddOperation("stack free", Bit.BIT64, new Constant(size), Register._SP);
+		if (size <= 0) {
+			reserveOperation = new Comment("no items on stack, skip reservation");
+			freeOperation = new Comment("no items on stack, skip free");
+		}
 		for (AssemblerOperation operation : operations) {
 			if (operation.getClass() == ReserveStackOperation.class) {
 				ReserveStackOperation reserveStackOperation = (ReserveStackOperation) operation;
-				reserveStackOperation.setOperation(new SubOperation("stack reservation", Bit.BIT64,
-						new Constant(StorageManagement.STACK_ITEM_SIZE * size), Register._SP));
+				reserveStackOperation.setOperation(reserveOperation);
 			} else if (operation.getClass() == FreeStackOperation.class) {
 				FreeStackOperation freeStackOperation = (FreeStackOperation) operation;
-				freeStackOperation.setOperation(new AddOperation("stack free", Bit.BIT64,
-						new Constant(StorageManagement.STACK_ITEM_SIZE * size), Register._SP));
+				freeStackOperation.setOperation(freeOperation);
 			}
 		}
 	}

@@ -27,10 +27,14 @@ public abstract class AssemblerOperation {
 		this.comment = comment;
 	}
 
+	public String getComment() {
+		return comment;
+	}
+
 	@Override
 	public final String toString() {
 		String operationString = getOperationString();
-		return comment == null ? operationString : operationString + "\t# " + comment;
+		return getComment() == null ? operationString : operationString + "\t# " + getComment();
 	}
 
 	public final String[] toStringWithSpillcode() {
