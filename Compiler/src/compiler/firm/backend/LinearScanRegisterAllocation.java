@@ -43,9 +43,8 @@ public class LinearScanRegisterAllocation {
 	public void allocateRegisters() {
 		fillRegisterList();
 		sortRegisterListByStart(virtualRegisters);
-		setStackSize(virtualRegisters.size() - freeRegisters.size());
-
 		assignRegisters();
+		setStackSize(currentStackOffset);
 		for (VirtualRegister register : virtualRegisters) {
 			System.out.println(register + " -> " + register.getRegister());
 		}
@@ -66,8 +65,8 @@ public class LinearScanRegisterAllocation {
 		} else {
 			// TODO: Spill register with longest lifetime
 			virtualRegister.setSpilled(true);
-			currentStackOffset -= STACK_ITEM_SIZE;
-			return new StackPointer(currentStackOffset, Register._BP);
+			currentStackOffset += STACK_ITEM_SIZE;
+			return new StackPointer(-currentStackOffset, Register._BP);
 		}
 	}
 
