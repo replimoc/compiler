@@ -2,7 +2,6 @@ package compiler.parser;
 
 import java.io.IOException;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.LinkedList;
 import java.util.List;
 
@@ -12,11 +11,11 @@ import compiler.ast.Program;
 import compiler.ast.declaration.ClassDeclaration;
 import compiler.ast.declaration.FieldDeclaration;
 import compiler.ast.declaration.LocalVariableDeclaration;
+import compiler.ast.declaration.MainMethodDeclaration;
 import compiler.ast.declaration.MemberDeclaration;
 import compiler.ast.declaration.MethodDeclaration;
 import compiler.ast.declaration.NativeMethodDeclaration;
 import compiler.ast.declaration.ParameterDeclaration;
-import compiler.ast.declaration.StaticMethodDeclaration;
 import compiler.ast.statement.ArrayAccessExpression;
 import compiler.ast.statement.BooleanConstantExpression;
 import compiler.ast.statement.Expression;
@@ -161,90 +160,80 @@ public class Parser {
 		switch (token.getType()) {
 		case PUBLIC:
 			consumeToken();
-			boolean nativeMethod = false;
+
+			Token staticToken = null;
+			if (isTokenType(TokenType.STATIC)) {
+				staticToken = token;
+				consumeToken();
+			}
+
+			Token nativeToken = null;
 			if (isTokenType(TokenType.NATIVE)) {
-				nativeMethod = true;
+				nativeToken = token;
 				consumeToken();
 			}
 
-			// Type
-			if (isTokenType(TokenType.INT, TokenType.BOOLEAN, TokenType.VOID, TokenType.IDENTIFIER)) {
-				Type type = parseType();
-
-				Token firstToken = token;
-				if (isTokenType(TokenType.IDENTIFIER)) {
-					consumeToken();
-					// public Type IDENT ;
-					if (isTokenType(TokenType.SEMICOLON)) {
-						consumeToken();
-						// accept
-						return new FieldDeclaration(firstToken.getPosition(), type, firstToken.getSymbol());
-						// public Type IDENT ( Parameters? ) Block
-					} else if (isTokenType(TokenType.LP)) {
-						consumeToken();
-
-						List<ParameterDeclaration> parameters = new LinkedList<ParameterDeclaration>();
-
-						if (isTokenType(TokenType.RP)) {
-							consumeToken();
-						} else {
-							parseParameters(parameters);
-							expectAndConsume(TokenType.RP);
-						}
-
-						Symbol identifier = firstToken.getSymbol();
-						if (nativeMethod) {
-							isTokenType(TokenType.SEMICOLON);
-							consumeToken();
-							return new NativeMethodDeclaration(firstToken.getPosition(), identifier, parameters, type);
-						} else {
-							return new MethodDeclaration(firstToken.getPosition(), firstToken.getSymbol(), parameters, type, parseBlock());
-						}
-					} else {
-						throw new ParserException(token);
-					}
-				} else {
-					throw new ParserException(token, TokenType.IDENTIFIER);
-				}
-				// MainMethod' -> static void IDENT ( String [ ] IDENT ) Block
-			} else if (isTokenType(TokenType.STATIC)) {
-				consumeToken();
-
-				// save void return type
-				Token returnType = token;
-				expectAndConsume(TokenType.VOID);
-
-				// save identifier
-				Token firstToken = token;
-				expectAndConsume(TokenType.IDENTIFIER);
-				expectAndConsume(TokenType.LP);
-
-				expect(TokenType.IDENTIFIER);
-				// identifier must be "String"
-				if (!token.getSymbol().getValue().equals("String")) {
-					throw new ParserException(token, TokenType.IDENTIFIER);
-				}
-				Position pos = token.getPosition();
-				Symbol type = token.getSymbol();
-				consumeToken();
-
-				expectAndConsume(TokenType.LSQUAREBRACKET);
-				expectAndConsume(TokenType.RSQUAREBRACKET);
-
-				// save identifier symbol
-				expect(TokenType.IDENTIFIER);
-				Symbol ident = token.getSymbol();
-				consumeToken();
-				expectAndConsume(TokenType.RP);
-
-				// new main method ast node
-				ParameterDeclaration parameter = new ParameterDeclaration(pos, new ArrayType(pos, new ClassType(pos, type)), ident);
-				MethodDeclaration declaration = new StaticMethodDeclaration(firstToken.getPosition(), firstToken.getSymbol(),
-						Arrays.asList(parameter), new Type(returnType.getPosition(), BasicType.VOID), parseBlock());
-				return declaration;
+			switch (token.getType()) {
+			case INT:
+			case BOOLEAN:
+			case VOID:
+			case IDENTIFIER:
+				return parseMemberDeclaration(staticToken, nativeToken);
+			default:
+				throw new ParserException(token);
 			}
+
 		default:
 			throw new ParserException(token, TokenType.PUBLIC);
+		}
+	}
+
+	private MemberDeclaration parseMemberDeclaration(Token staticToken, Token nativeToken) throws IOException, ParserException {
+		final boolean isStatic = staticToken != null;
+		final boolean isNative = nativeToken != null;
+
+		Type type = parseType();
+
+		if (isTokenType(TokenType.IDENTIFIER)) {
+			Token identifierToken = token;
+			consumeToken();
+
+			if (isTokenType(TokenType.SEMICOLON)) { // public (static)? (native)? Type IDENT ; => parse field
+				if (isStatic) { // no static fields allowed.
+					throw new ParserException(staticToken);
+				}
+				if (isNative) { // no native fields possible
+					throw new ParserException(nativeToken);
+				}
+
+				consumeToken();
+				return new FieldDeclaration(identifierToken.getPosition(), type, identifierToken.getSymbol());
+
+			} else if (isTokenType(TokenType.LP)) { // public (static)? (native)? Type IDENT ( Parameters? ) Block
+				consumeToken();
+
+				Symbol identifier = identifierToken.getSymbol();
+
+				List<ParameterDeclaration> parameters = parseParameters();
+
+				if (isStatic && "main".equals(identifier.getValue())) {
+					if (isNative) {
+						throw new ParserException(nativeToken);
+					}
+
+					return new MainMethodDeclaration(identifierToken.getPosition(), identifier, parameters, type, parseBlock());
+				} else if (isNative) {
+					isTokenType(TokenType.SEMICOLON);
+					consumeToken();
+					return new NativeMethodDeclaration(identifierToken.getPosition(), isStatic, identifier, parameters, type);
+				} else {
+					return new MethodDeclaration(identifierToken.getPosition(), isStatic, identifier, parameters, type, parseBlock());
+				}
+			} else {
+				throw new ParserException(token);
+			}
+		} else {
+			throw new ParserException(token, TokenType.IDENTIFIER);
 		}
 	}
 
@@ -254,12 +243,21 @@ public class Parser {
 	 * @throws IOException
 	 * @throws ParserException
 	 */
-	private void parseParameters(List<ParameterDeclaration> parameterList) throws IOException, ParserException {
-		parameterList.add(parseParameter());
-		if (isTokenType(TokenType.COMMA)) {
+	private List<ParameterDeclaration> parseParameters() throws IOException, ParserException {
+		List<ParameterDeclaration> parameters = new LinkedList<ParameterDeclaration>();
+
+		if (isTokenType(TokenType.RP)) {
 			consumeToken();
-			parseParameters(parameterList);
+		} else {
+			parameters.add(parseParameter());
+			while (isTokenType(TokenType.COMMA)) {
+				consumeToken();
+				parameters.add(parseParameter());
+			}
+			expectAndConsume(TokenType.RP);
 		}
+
+		return parameters;
 	}
 
 	/**

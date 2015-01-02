@@ -2,7 +2,7 @@
 #include <stdlib.h>
 
 
-void  __attribute__((sysv_abi))  print_int(int *streamdummy, int i) {
+void  __attribute__((sysv_abi))  print_int(int i) {
 	printf("%d\n", i);
 }
 

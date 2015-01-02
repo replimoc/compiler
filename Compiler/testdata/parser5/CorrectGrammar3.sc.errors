@@ -1,9 +1,9 @@
-error: Illegal access to non static member at line  28, character 26
-error: Illegal access to non static member at line  30, character 24
+error: Member read at position line  28, character 26 is not available in object Loops defined at line   5, character 12
+error: Member abs at position line  30, character 24 is not available in object Loops defined at line   5, character 12
 error: Identifier x at position line  33, character 36 has not been defined
 error: Identifier y at position line  33, character 40 has not been defined
 error: type error in token at position line  35, character 19: Expected return statement without type.
-error: Illegal access to non static member at line  38, character 66
+error: Member true_or_false at position line  38, character 66 is not available in object Loops defined at line   5, character 12
 error: type error in token at position line  41, character 59
 error: type error in token at position line  44, character 16
 error: type error in token at position line  44, character 25

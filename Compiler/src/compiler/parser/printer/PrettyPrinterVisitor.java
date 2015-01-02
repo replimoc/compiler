@@ -8,12 +8,12 @@ import compiler.ast.Program;
 import compiler.ast.declaration.ClassDeclaration;
 import compiler.ast.declaration.FieldDeclaration;
 import compiler.ast.declaration.LocalVariableDeclaration;
+import compiler.ast.declaration.MainMethodDeclaration;
 import compiler.ast.declaration.MemberDeclaration;
 import compiler.ast.declaration.MethodDeclaration;
 import compiler.ast.declaration.MethodMemberDeclaration;
 import compiler.ast.declaration.NativeMethodDeclaration;
 import compiler.ast.declaration.ParameterDeclaration;
-import compiler.ast.declaration.StaticMethodDeclaration;
 import compiler.ast.statement.ArrayAccessExpression;
 import compiler.ast.statement.BlockBasedStatement;
 import compiler.ast.statement.BooleanConstantExpression;
@@ -587,24 +587,24 @@ public class PrettyPrinterVisitor implements AstVisitor {
 
 	@Override
 	public void visit(MethodDeclaration methodDeclaration) {
-		printMethodDeclaration(methodDeclaration, false, methodDeclaration.getBlock());
+		printMethodDeclaration(methodDeclaration, methodDeclaration.getBlock());
 	}
 
 	@Override
-	public void visit(StaticMethodDeclaration staticMethodDeclaration) {
-		printMethodDeclaration(staticMethodDeclaration, true, staticMethodDeclaration.getBlock());
+	public void visit(MainMethodDeclaration staticMethodDeclaration) {
+		printMethodDeclaration(staticMethodDeclaration, staticMethodDeclaration.getBlock());
 	}
 
 	@Override
 	public void visit(NativeMethodDeclaration nativeMethodDeclaration) {
-		printMethodDeclaration(nativeMethodDeclaration, false, null);
+		printMethodDeclaration(nativeMethodDeclaration, null);
 	}
 
-	private void printMethodDeclaration(MethodMemberDeclaration methodDeclaration, boolean isStatic, Block block) {
+	private void printMethodDeclaration(MethodMemberDeclaration methodDeclaration, Block block) {
 		stringBuilder.append("public ");
-		if (isStatic)
+		if (methodDeclaration.isStatic())
 			stringBuilder.append("static ");
-		if (block == null)
+		if (methodDeclaration.isNative())
 			stringBuilder.append("native ");
 
 		methodDeclaration.getType().accept(this);

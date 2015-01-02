@@ -8,7 +8,7 @@ import compiler.ast.declaration.LocalVariableDeclaration;
 import compiler.ast.declaration.MethodDeclaration;
 import compiler.ast.declaration.NativeMethodDeclaration;
 import compiler.ast.declaration.ParameterDeclaration;
-import compiler.ast.declaration.StaticMethodDeclaration;
+import compiler.ast.declaration.MainMethodDeclaration;
 import compiler.ast.statement.ArrayAccessExpression;
 import compiler.ast.statement.BooleanConstantExpression;
 import compiler.ast.statement.IfStatement;
@@ -112,7 +112,7 @@ public interface AstVisitor {
 
 	public void visit(MethodDeclaration methodDeclaration);
 
-	public void visit(StaticMethodDeclaration staticMethodDeclaration);
+	public void visit(MainMethodDeclaration staticMethodDeclaration);
 
 	public void visit(NativeMethodDeclaration nativeMethodDeclaration);
 

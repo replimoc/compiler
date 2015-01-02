@@ -11,12 +11,12 @@ import compiler.ast.declaration.ClassDeclaration;
 import compiler.ast.declaration.Declaration;
 import compiler.ast.declaration.FieldDeclaration;
 import compiler.ast.declaration.LocalVariableDeclaration;
+import compiler.ast.declaration.MainMethodDeclaration;
 import compiler.ast.declaration.MemberDeclaration;
 import compiler.ast.declaration.MethodDeclaration;
 import compiler.ast.declaration.MethodMemberDeclaration;
 import compiler.ast.declaration.NativeMethodDeclaration;
 import compiler.ast.declaration.ParameterDeclaration;
-import compiler.ast.declaration.StaticMethodDeclaration;
 import compiler.ast.statement.ArrayAccessExpression;
 import compiler.ast.statement.BooleanConstantExpression;
 import compiler.ast.statement.Expression;
@@ -55,6 +55,7 @@ import compiler.ast.type.Type;
 import compiler.ast.visitor.AstVisitor;
 import compiler.firm.FirmUtils;
 import compiler.semantic.ClassScope;
+
 import firm.Construction;
 import firm.Entity;
 import firm.Graph;
@@ -120,17 +121,19 @@ public class FirmGenerationVisitor implements AstVisitor {
 
 				// types of parameters
 				// first parameter is "this" with type referenceToClass
-				firm.Type[] parameterTypes = new firm.Type[parameterDeclarations.size() + 1];
-				parameterTypes[0] = classDeclaration.getType().getFirmType();
+				int thisOffset = currentMethod.isStatic() ? 0 : 1;
+				firm.Type[] parameterTypes = new firm.Type[parameterDeclarations.size() + thisOffset];
+				if (!currentMethod.isStatic())
+					parameterTypes[0] = classDeclaration.getType().getFirmType();
+
 				for (int paramIdx = 0; paramIdx < parameterDeclarations.size(); paramIdx++) {
-					parameterTypes[paramIdx + 1] = parameterDeclarations.get(paramIdx).getType().getFirmType();
+					parameterTypes[paramIdx + thisOffset] = parameterDeclarations.get(paramIdx).getType().getFirmType();
 				}
 
 				// return type
 				firm.Type[] returnType = {};
 				if (!currentMethod.getType().is(BasicType.VOID)) {
-					returnType = new firm.Type[1];
-					returnType[0] = currentMethod.getType().getFirmType();
+					returnType = new firm.Type[] { currentMethod.getType().getFirmType() };
 				}
 
 				// create methodType and methodEntity
@@ -372,25 +375,33 @@ public class FirmGenerationVisitor implements AstVisitor {
 		Node[] parameterNodes;
 		Entity method;
 
-		Node methodObject;
+		Node methodObject = null;
+		int thisOffset = 1;
 
-		// Generate method name
+		// Get base object
+		MethodMemberDeclaration methodDeclaration = methodInvocationExpression.getMethodDeclaration();
 		Expression methodExpression = methodInvocationExpression.getMethodExpression();
-		if (methodExpression != null && !(methodInvocationExpression.getMethodDeclaration() instanceof NativeMethodDeclaration)) {
+
+		if (methodDeclaration.isStatic()) {
+			thisOffset = 0;
+		} else if (methodExpression != null) {
 			methodExpression.accept(FirmGenerationVisitor.this);
 			methodObject = methodExpression.getFirmNode();
 		} else {
 			methodObject = getThisPointer();
 		}
-		method = getEntity(methodInvocationExpression.getMethodDeclaration());
+		method = getEntity(methodDeclaration);
 
 		// Generate parameter list
 		Expression[] parameters = methodInvocationExpression.getParameters();
-		parameterNodes = new Node[parameters.length + 1];
-		parameterNodes[0] = methodObject;
+		parameterNodes = new Node[parameters.length + thisOffset];
+
+		if (thisOffset == 1) {
+			parameterNodes[0] = methodObject;
+		}
 
 		for (int j = 0; j < parameters.length; j++) {
-			parameterNodes[j + 1] = getNodeForExpression(parameters[j]);
+			parameterNodes[j + thisOffset] = getNodeForExpression(parameters[j]);
 		}
 
 		Node addressOfMethod = methodConstruction.newAddress(method);
@@ -788,7 +799,7 @@ public class FirmGenerationVisitor implements AstVisitor {
 	}
 
 	@Override
-	public void visit(StaticMethodDeclaration staticMethodDeclaration) {
+	public void visit(MainMethodDeclaration staticMethodDeclaration) {
 		visitMethodDeclaration(staticMethodDeclaration);
 	}
 
@@ -801,8 +812,10 @@ public class FirmGenerationVisitor implements AstVisitor {
 		methodConstruction = new Construction(graph);
 
 		Node args = graph.getArgs();
-		// set this parameter
-		createThisParameter(args);
+		if (!methodDeclaration.isStatic()) {
+			// set this parameter
+			createThisParameter(args);
+		}
 		// create parameters variables
 		for (ParameterDeclaration param : methodDeclaration.getValidParameters()) {
 			param.accept(this);

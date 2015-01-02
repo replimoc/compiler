@@ -4,10 +4,10 @@ error: Identifier y at position line  37, character 17 has already been defined.
 error: Identifier m1 at position line  46, character 20 has already been defined.
 error: Identifier m2 at position line  50, character 22 has already been defined.
 error: Identifier m3 at position line  54, character 19 has already been defined.
-error: Illegal access to non static member at line  20, character 14
-error: type error in token at position line  20, character 14: Access on main method parameter forbidden.
+error: Access to parameter String[] vargs of main method at line  20, character 14
+error: type error in token at position line  20, character 14: Array access on a non array.
 error: Insert assignment operator to complete expression at line  20, character 14
-error: Illegal access to non static member at line  23, character 14
+error: Access to parameter String[] vargs of main method at line  23, character 14
 error: Insert assignment operator to complete expression at line  23, character 14
 error: type error in token at position line  27, character 13: 'this' is not allowed in static methods.
 error: type error in token at position line  39, character 18

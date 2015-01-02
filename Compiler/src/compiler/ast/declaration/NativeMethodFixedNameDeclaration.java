@@ -11,9 +11,18 @@ public class NativeMethodFixedNameDeclaration extends NativeMethodDeclaration {
 
 	private final String assemblerName;
 
+	/**
+	 * NOTE: Methods of this type are always static.
+	 * 
+	 * @param position
+	 * @param assemblerName
+	 * @param identifier
+	 * @param parameters
+	 * @param returnType
+	 */
 	public NativeMethodFixedNameDeclaration(Position position, String assemblerName, Symbol identifier, List<ParameterDeclaration> parameters,
 			Type returnType) {
-		super(position, identifier, parameters, returnType);
+		super(position, true, identifier, parameters, returnType);
 		this.assemblerName = assemblerName;
 	}
 

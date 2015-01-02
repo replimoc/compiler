@@ -13,6 +13,7 @@ import compiler.ast.declaration.ClassDeclaration;
 import compiler.ast.declaration.FieldDeclaration;
 import compiler.ast.declaration.LocalVariableDeclaration;
 import compiler.ast.declaration.MethodDeclaration;
+import compiler.ast.declaration.NativeMethodDeclaration;
 import compiler.ast.declaration.ParameterDeclaration;
 import compiler.ast.statement.ArrayAccessExpression;
 import compiler.ast.statement.BooleanConstantExpression;
@@ -305,7 +306,8 @@ public class PrettyPrinterVisitorTest {
 
 	@Test
 	public void testVisitMethodDeclaration1() {
-		MethodDeclaration methodDeclaration = new MethodDeclaration(position, new Symbol("_"), Collections.<ParameterDeclaration> emptyList(), type,
+		MethodDeclaration methodDeclaration = new MethodDeclaration(position, false, new Symbol("_"), Collections.<ParameterDeclaration> emptyList(),
+				type,
 				new Block((Position) null));
 
 		visitor.visit(methodDeclaration);
@@ -314,7 +316,7 @@ public class PrettyPrinterVisitorTest {
 
 	@Test
 	public void testVisitMethodDeclaration2() {
-		MethodDeclaration methodDeclaration = new MethodDeclaration(position, new Symbol("_"), Collections.<ParameterDeclaration> emptyList(),
+		MethodDeclaration methodDeclaration = new MethodDeclaration(position, false, new Symbol("_"), Collections.<ParameterDeclaration> emptyList(),
 				type, new Block(position));
 		visitor.visit(methodDeclaration);
 		assertEquals("public int _() { }\n", visitor.getOutputString());
@@ -324,10 +326,36 @@ public class PrettyPrinterVisitorTest {
 	public void testVisitMethodDeclaration3() {
 		Block block = new Block(position);
 		block.addStatement(variable);
-		MethodDeclaration methodDeclaration = new MethodDeclaration(position, new Symbol("_"),
+		MethodDeclaration methodDeclaration = new MethodDeclaration(position, false, new Symbol("_"),
 				Collections.<ParameterDeclaration> emptyList(), type, block);
 		visitor.visit(methodDeclaration);
 		assertEquals("public int _() {\n\t_;\n}\n", visitor.getOutputString());
+	}
+
+	@Test
+	public void testVisitStaticMethodDeclaration() {
+		Block block = new Block(position);
+		block.addStatement(variable);
+		MethodDeclaration methodDeclaration = new MethodDeclaration(position, true, new Symbol("_"),
+				Collections.<ParameterDeclaration> emptyList(), type, block);
+		visitor.visit(methodDeclaration);
+		assertEquals("public static int _() {\n\t_;\n}\n", visitor.getOutputString());
+	}
+
+	@Test
+	public void testVisitNativeMethodDeclaration() {
+		NativeMethodDeclaration methodDeclaration = new NativeMethodDeclaration(position, false, new Symbol("_"),
+				Collections.<ParameterDeclaration> emptyList(), type);
+		visitor.visit(methodDeclaration);
+		assertEquals("public native int _();\n", visitor.getOutputString());
+	}
+
+	@Test
+	public void testVisitStaticNativeMethodDeclaration() {
+		NativeMethodDeclaration methodDeclaration = new NativeMethodDeclaration(position, true, new Symbol("_"),
+				Collections.<ParameterDeclaration> emptyList(), type);
+		visitor.visit(methodDeclaration);
+		assertEquals("public static native int _();\n", visitor.getOutputString());
 	}
 
 	@Test

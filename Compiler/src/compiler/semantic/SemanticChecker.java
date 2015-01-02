@@ -8,9 +8,9 @@ import compiler.StringTable;
 import compiler.Symbol;
 import compiler.ast.AstNode;
 import compiler.ast.declaration.ClassDeclaration;
+import compiler.ast.declaration.FieldDeclaration;
 import compiler.ast.declaration.NativeMethodFixedNameDeclaration;
 import compiler.ast.declaration.ParameterDeclaration;
-import compiler.ast.declaration.StaticFieldDeclaration;
 import compiler.ast.type.BasicType;
 import compiler.ast.type.Type;
 import compiler.lexer.TokenType;
@@ -41,7 +41,7 @@ public final class SemanticChecker {
 
 			// Create System class
 			ClassDeclaration system = new ClassDeclaration(systemSymbol,
-					new StaticFieldDeclaration(printStream.getType(), getSymbol(stringTable, "out")));
+					new FieldDeclaration(true, printStream.getType(), getSymbol(stringTable, "out")));
 
 			system.accept(preAnalysisVisitor);
 		}

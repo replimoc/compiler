@@ -10,10 +10,8 @@ import compiler.lexer.Position;
 
 public class NativeMethodDeclaration extends MethodMemberDeclaration {
 
-	private static final CallingConvention CALLING_CONVENTION = CallingConvention.SYSTEMV_ABI;
-
-	public NativeMethodDeclaration(Position position, Symbol identifier, List<ParameterDeclaration> parameters, Type returnType) {
-		super(position, identifier, parameters, returnType);
+	public NativeMethodDeclaration(Position position, boolean isStatic, Symbol identifier, List<ParameterDeclaration> parameters, Type returnType) {
+		super(position, isStatic, identifier, parameters, returnType);
 	}
 
 	@Override
@@ -23,11 +21,16 @@ public class NativeMethodDeclaration extends MethodMemberDeclaration {
 
 	@Override
 	public CallingConvention getCallingConvention() {
-		return CALLING_CONVENTION;
+		return CallingConvention.SYSTEMV_ABI;
 	}
 
 	@Override
 	public void accept(AstVisitor visitor) {
 		visitor.visit(this);
+	}
+
+	@Override
+	public boolean isNative() {
+		return true;
 	}
 }

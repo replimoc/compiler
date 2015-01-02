@@ -1,12 +1,16 @@
 #include <stdlib.h>
 #include <stdio.h>
 
-void* Pointer$create() {
+void*  __attribute__((sysv_abi))  StringUtils$create() {
 	char *test = calloc(12, 1);
-	sprintf(test, "Hallo");
+	sprintf(test, "Hallo\n");
 	return test;
 }
 
-void Pointer$print(void *pointer) {
-	printf("%s", pointer);
+void  __attribute__((sysv_abi))  StringUtils$printStatic(void *pointer) {
+	printf("static: %s", pointer);
+}
+
+void  __attribute__((sysv_abi))  String$print(void* this) {
+	printf("nonStatic: %s", this);
 }

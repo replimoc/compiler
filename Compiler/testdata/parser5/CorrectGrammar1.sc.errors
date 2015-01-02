@@ -1,4 +1,3 @@
-error: type error in token at position line 104, character 34: 'public static void' method must be called 'main'.
 error: No 'public static void main(String[] args)' method has been found.
 error: type error in token at position line   7, character 17
 error: type error in token at position line   8, character 21
@@ -17,3 +16,7 @@ error: type error in token at position line  81, character 10
 error: type error in token at position line  81, character 16
 error: Identifier d at position line  81, character 23 has not been defined
 error: Insert assignment operator to complete expression at line  81, character 26
+error: type error in token at position line 104, character 45
+error: type error in token at position line 120, character 15: Expected return statement without type.
+error: type error in token at position line 121, character 15: Expected return statement without type.
+error: type error in token at position line 122, character 15: Expected return statement without type.

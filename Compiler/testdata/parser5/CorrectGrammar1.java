@@ -101,7 +101,7 @@ class MainClass {
      * This is not a main, really not MAIN :)
      * @param cmlds
      */
-    public static void not_a_main ( String[] forbidden_fruit)  /*semantic error must be called main, all other semantic errors in this method ignored */
+    public static void not_a_main ( String[] forbidden_fruit)
     {
         /* hello world! (in ascii) */
         System.out.println(104);
@@ -117,7 +117,6 @@ class MainClass {
         System.out.println(100);
         System.out.println(33);
 
-        /* errors not detected due to not_a_main is not main */
         return 0;
         return 1;
         return 2+4+129;

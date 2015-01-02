@@ -12,12 +12,12 @@ import compiler.ast.declaration.ClassDeclaration;
 import compiler.ast.declaration.Declaration;
 import compiler.ast.declaration.FieldDeclaration;
 import compiler.ast.declaration.LocalVariableDeclaration;
+import compiler.ast.declaration.MainMethodDeclaration;
 import compiler.ast.declaration.MemberDeclaration;
 import compiler.ast.declaration.MethodDeclaration;
 import compiler.ast.declaration.MethodMemberDeclaration;
 import compiler.ast.declaration.NativeMethodDeclaration;
 import compiler.ast.declaration.ParameterDeclaration;
-import compiler.ast.declaration.StaticMethodDeclaration;
 import compiler.ast.statement.ArrayAccessExpression;
 import compiler.ast.statement.BooleanConstantExpression;
 import compiler.ast.statement.Expression;
@@ -59,6 +59,7 @@ import compiler.lexer.Position;
 import compiler.semantic.exceptions.IllegalAccessToNonStaticMemberException;
 import compiler.semantic.exceptions.InvalidMethodCallException;
 import compiler.semantic.exceptions.MainNotCallableException;
+import compiler.semantic.exceptions.MainParameterNotAccessibleException;
 import compiler.semantic.exceptions.MissingReturnStatementOnAPathException;
 import compiler.semantic.exceptions.NoSuchMemberException;
 import compiler.semantic.exceptions.NotAnExpressionStatementException;
@@ -79,6 +80,7 @@ public class DeepCheckingVisitor implements AstVisitor {
 	private MethodMemberDeclaration currentMethodDeclaration = null;
 
 	private boolean isStaticMethod;
+	private boolean isMainMethod;
 	private boolean returnOnAllPaths;
 	private boolean isExpressionStatement;
 
@@ -116,6 +118,10 @@ public class DeepCheckingVisitor implements AstVisitor {
 
 	private void throwMainNotCallableError(MethodInvocationExpression methodInvocation) {
 		exceptions.add(new MainNotCallableException(methodInvocation));
+	}
+
+	private void throwMainParameterNotAccessibleError(VariableAccessExpression variableAccessExpression) {
+		exceptions.add(new MainParameterNotAccessibleException(variableAccessExpression));
 	}
 
 	private boolean expectType(Type type, AstNode astNode, boolean negate) {
@@ -284,18 +290,13 @@ public class DeepCheckingVisitor implements AstVisitor {
 	@Override
 	public void visit(MethodInvocationExpression methodInvocationExpression) {
 		// is inner expression
-		if (methodInvocationExpression.getMethodExpression() == null) {
-			if (isStaticMethod) { // there are no static methods
-				throwIllegalAccessToNonStaticMemberError(methodInvocationExpression.getPosition());
-				return;
-			}
-			checkCallMethod(methodInvocationExpression, currentClassScope);
+		Expression leftExpression = methodInvocationExpression.getMethodExpression();
+		if (leftExpression == null) {
+			checkCallMethod(methodInvocationExpression, currentClassScope, isStaticMethod);
 
 		} else {
 			// first step in outer left expression
-			methodInvocationExpression.getMethodExpression().accept(this);
-
-			Expression leftExpression = methodInvocationExpression.getMethodExpression();
+			leftExpression.accept(this);
 			Type leftExpressionType = leftExpression.getType();
 
 			if (leftExpressionType == null) {
@@ -314,56 +315,67 @@ public class DeepCheckingVisitor implements AstVisitor {
 			if (classScope == null) {
 				throwUndefinedSymbolError(leftExpressionType.getIdentifier(), leftExpression.getPosition());
 			} else {
-				checkCallMethod(methodInvocationExpression, classScope);
+				boolean staticCall = isStaticBaseExpression(leftExpression);
+				checkCallMethod(methodInvocationExpression, classScope, staticCall);
 			}
 		}
 	}
 
-	private void checkCallMethod(MethodInvocationExpression methodInvocation, ClassScope classScope) {
+	private boolean isStaticBaseExpression(Expression leftExpression) {
+		if (leftExpression instanceof VariableAccessExpression) {
+			Declaration declaration = ((VariableAccessExpression) leftExpression).getDeclaration();
+			return declaration instanceof ClassDeclaration;
+		}
+		return false;
+	}
+
+	private void checkCallMethod(MethodInvocationExpression methodInvocation, ClassScope classScope, boolean staticCall) {
 		Symbol methodIdentifier = methodInvocation.getMethodIdentifier();
 		MethodMemberDeclaration methodDeclaration = classScope.getMethodDeclaration(methodIdentifier);
 		if (methodDeclaration == null) {
 			throwNoSuchMemberError(currentClassDeclaration.getIdentifier(), currentClassDeclaration.getPosition(),
 					methodIdentifier, methodInvocation.getPosition());
-		} else if (methodDeclaration instanceof StaticMethodDeclaration) {
+		} else if (methodDeclaration instanceof MainMethodDeclaration) {
 			throwMainNotCallableError(methodInvocation);
+		} else if (staticCall && !methodDeclaration.isStatic()) {
+			throwIllegalAccessToNonStaticMemberError(methodInvocation.getPosition());
 		} else {
 			checkParameterDeclarationAndSetReturnType(methodInvocation, methodDeclaration);
 		}
 	}
 
-	private void checkParameterDeclarationAndSetReturnType(MethodInvocationExpression methodInvocationExpression,
+	private void checkParameterDeclarationAndSetReturnType(MethodInvocationExpression methodInvocation,
 			MethodMemberDeclaration methodDeclaration) {
 		// now check params
-		if (methodDeclaration.getParameters().size() != methodInvocationExpression.getParameters().length) {
-			exceptions
-					.add(new InvalidMethodCallException(methodInvocationExpression.getMethodIdentifier(), methodInvocationExpression.getPosition()));
+		if (methodDeclaration.getParameters().size() != methodInvocation.getParameters().length) {
+			exceptions.add(new InvalidMethodCallException(methodInvocation.getMethodIdentifier(), methodInvocation.getPosition()));
 			return;
 		}
 
 		int i = 0;
 		for (ParameterDeclaration parameterDeclaration : methodDeclaration.getParameters()) {
-			Expression expression = methodInvocationExpression.getParameters()[i];
+			Expression expression = methodInvocation.getParameters()[i];
 			expression.accept(this);
 
 			expectType(parameterDeclaration.getType(), expression);
 			i++;
 		}
 
-		methodInvocationExpression.setType(methodDeclaration.getType());
-		methodInvocationExpression.setMethodDeclaration(methodDeclaration);
+		methodInvocation.setType(methodDeclaration.getType());
+		methodInvocation.setMethodDeclaration(methodDeclaration);
 	}
 
 	@Override
 	public void visit(VariableAccessExpression variableAccessExpression) {
 		// first step in outer left expression
-		Expression expression = variableAccessExpression.getExpression();
+		Expression leftExpression = variableAccessExpression.getExpression();
 
 		// is inner expression (no left expression)
-		if (expression == null) {
+		if (leftExpression == null) {
 			Symbol fieldIdentifier = variableAccessExpression.getFieldIdentifier();
 			Position position = variableAccessExpression.getPosition();
 			Declaration declaration = null;
+
 			if (fieldIdentifier.isDefined()) {
 				if (isStaticMethod) {
 					if (fieldIdentifier.getDeclarationScope().getParentScope() == null) {
@@ -371,6 +383,9 @@ public class DeepCheckingVisitor implements AstVisitor {
 						// there are no static fields
 						throwIllegalAccessToNonStaticMemberError(position);
 						// continue
+					}
+					if (fieldIdentifier.getDeclaration().getType().getBasicType() == BasicType.STRING_ARGS) {
+						throwMainParameterNotAccessibleError(variableAccessExpression);
 					}
 				}
 				declaration = fieldIdentifier.getDeclaration();
@@ -386,11 +401,6 @@ public class DeepCheckingVisitor implements AstVisitor {
 				// Static access
 				ClassScope staticScope = classScopes.get(fieldIdentifier);
 				declaration = staticScope.getClassDeclaration();
-
-				if (!staticScope.hasStaticField()) {
-					throwUndefinedSymbolError(fieldIdentifier, position);
-					return;
-				}
 			} else {
 				throwUndefinedSymbolError(fieldIdentifier, position);
 				return;
@@ -398,13 +408,13 @@ public class DeepCheckingVisitor implements AstVisitor {
 			variableAccessExpression.setType(declaration.getType());
 			variableAccessExpression.setDeclaration(declaration);
 		} else {
-			expression.accept(this);
+			leftExpression.accept(this);
 
-			if (expression instanceof ThisExpression && isStaticMethod) {
+			if (leftExpression instanceof ThisExpression && isStaticMethod) { // this error is already handled.
 				return;
 			}
 
-			Type leftExpressionType = expression.getType();
+			Type leftExpressionType = leftExpression.getType();
 
 			if (leftExpressionType == null) {
 				return; // left expressions failed...
@@ -424,7 +434,13 @@ public class DeepCheckingVisitor implements AstVisitor {
 				return;
 			}
 			// check if member exists in this class
-			Declaration fieldDef = classScope.getFieldDeclaration(variableAccessExpression.getFieldIdentifier());
+			FieldDeclaration fieldDef = classScope.getFieldDeclaration(variableAccessExpression.getFieldIdentifier());
+
+			boolean requiresStaticField = isStaticBaseExpression(leftExpression);
+			if (requiresStaticField && !fieldDef.isStatic()) {
+				throwIllegalAccessToNonStaticMemberError(variableAccessExpression.getPosition());
+			}
+
 			if (fieldDef == null) {
 				throwNoSuchMemberError(leftExpressionType.getIdentifier(), leftExpressionType.getPosition(),
 						variableAccessExpression.getFieldIdentifier(),
@@ -611,6 +627,13 @@ public class DeepCheckingVisitor implements AstVisitor {
 	}
 
 	@Override
+	public void visit(Program program) {
+		for (ClassDeclaration classDeclaration : program.getClasses()) {
+			classDeclaration.accept(this);
+		}
+	}
+
+	@Override
 	public void visit(LocalVariableDeclaration localVariableDeclaration) {
 		localVariableDeclaration.setClassDeclaration(currentClassDeclaration);
 		localVariableDeclaration.getType().accept(this);
@@ -637,7 +660,7 @@ public class DeepCheckingVisitor implements AstVisitor {
 		parameterDeclaration.setClassDeclaration(currentClassDeclaration);
 		Type type = parameterDeclaration.getType();
 
-		if (isStaticMethod) { // special case for String[] args
+		if (isMainMethod) { // special case for String[] args
 			type.setType(type);
 		} else {
 			type.accept(this);
@@ -655,29 +678,21 @@ public class DeepCheckingVisitor implements AstVisitor {
 	}
 
 	@Override
-	public void visit(Program program) {
-		for (ClassDeclaration classDeclaration : program.getClasses()) {
-			classDeclaration.accept(this);
-		}
-	}
-
-	@Override
-	public void visit(MethodDeclaration methodDeclaration) {
-		isStaticMethod = false;
-		visitMethodDeclaration(methodDeclaration);
-	}
-
-	@Override
 	public void visit(FieldDeclaration fieldDeclaration) {
 		fieldDeclaration.getType().accept(this);
 		expectTypeNot(BasicType.VOID, fieldDeclaration);
 	}
 
 	@Override
-	public void visit(StaticMethodDeclaration staticMethodDeclaration) {
-		isStaticMethod = true;
-		visitMethodDeclaration(staticMethodDeclaration);
-		isStaticMethod = false;
+	public void visit(MethodDeclaration methodDeclaration) {
+		visitMethodDeclaration(methodDeclaration);
+	}
+
+	@Override
+	public void visit(MainMethodDeclaration mainMethodDeclaration) {
+		isMainMethod = true;
+		visitMethodDeclaration(mainMethodDeclaration);
+		isMainMethod = false;
 	}
 
 	@Override
@@ -686,9 +701,12 @@ public class DeepCheckingVisitor implements AstVisitor {
 	}
 
 	private void visitMethodDeclaration(MethodDeclaration methodDeclaration) {
+		isStaticMethod = methodDeclaration.isStatic();
+
 		methodDeclaration.getType().accept(this);
 
 		symbolTable = new SymbolTable();
+		symbolTable.enterScope();
 		symbolTable.enterScope();
 
 		for (ParameterDeclaration parameterDeclaration : methodDeclaration.getParameters()) {

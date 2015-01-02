@@ -12,8 +12,8 @@ public abstract class MethodMemberDeclaration extends MemberDeclaration {
 	private final List<ParameterDeclaration> parameters;
 	private final Type returnType;
 
-	public MethodMemberDeclaration(Position position, Symbol identifier, List<ParameterDeclaration> parameters, Type returnType) {
-		super(position, identifier);
+	public MethodMemberDeclaration(Position position, boolean isStatic, Symbol identifier, List<ParameterDeclaration> parameters, Type returnType) {
+		super(position, isStatic, identifier);
 		this.parameters = parameters;
 		this.returnType = returnType;
 	}
@@ -35,6 +35,8 @@ public abstract class MethodMemberDeclaration extends MemberDeclaration {
 	protected int getSortPriority() {
 		return 0;
 	}
+
+	public abstract boolean isNative();
 
 	public abstract CallingConvention getCallingConvention();
 
