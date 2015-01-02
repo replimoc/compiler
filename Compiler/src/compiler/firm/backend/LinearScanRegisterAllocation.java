@@ -42,13 +42,9 @@ public class LinearScanRegisterAllocation {
 
 	public void allocateRegisters() {
 		fillRegisterList();
-		List<VirtualRegister> registerSortedByEnd = new ArrayList<>(virtualRegisters);
 		sortRegisterListByStart(virtualRegisters);
 		setStackSize(virtualRegisters.size() - freeRegisters.size());
-		sortRegisterListByEnd(registerSortedByEnd);
-		int maximumRegisters = getMaximumNumberOfRegisters(virtualRegisters, registerSortedByEnd);
 
-		System.out.println("maximum registers: " + maximumRegisters);
 		assignRegisters();
 		for (VirtualRegister register : virtualRegisters) {
 			System.out.println(register + " -> " + register.getRegister());
@@ -60,15 +56,6 @@ public class LinearScanRegisterAllocation {
 			@Override
 			public int compare(VirtualRegister o1, VirtualRegister o2) {
 				return o1.getFirstOccurrence() - o2.getFirstOccurrence();
-			}
-		});
-	}
-
-	private void sortRegisterListByEnd(List<VirtualRegister> registers) {
-		Collections.sort(registers, new Comparator<VirtualRegister>() {
-			@Override
-			public int compare(VirtualRegister o1, VirtualRegister o2) {
-				return o1.getLastOccurrence() - o2.getLastOccurrence();
 			}
 		});
 	}
@@ -131,6 +118,7 @@ public class LinearScanRegisterAllocation {
 		for (int i = startOperation; i < endOperation; i++) {
 			AssemblerOperation operation = operations.get(i);
 			for (RegisterBased register : operation.getUsedRegisters()) {
+				// TODO: Look after read + write and do it more precise.
 				if (!writeRegisters.contains(register)) {
 					setOccurrence(register, startOperation);
 					setOccurrence(register, endOperation);
@@ -149,33 +137,6 @@ public class LinearScanRegisterAllocation {
 				virtualRegisters.add(virtualRegister);
 			}
 		}
-	}
-
-	private int getMaximumNumberOfRegisters(List<VirtualRegister> sortByStart, List<VirtualRegister> sortByEnd) {
-		if (sortByStart.size() == 0) {
-			return 0;
-		}
-
-		int maximumRegisters = 0;
-		int currentRegisters = 0;
-
-		int startRegisterIndex = 0;
-		int endRegisterIndex = 0;
-
-		while (startRegisterIndex < sortByStart.size()) {
-			int startRegisterOccurrence = sortByStart.get(startRegisterIndex).getFirstOccurrence();
-			int endRegisterOccurrence = sortByEnd.get(endRegisterIndex).getLastOccurrence();
-
-			if (startRegisterOccurrence <= endRegisterOccurrence) {
-				currentRegisters++;
-				maximumRegisters = Math.max(maximumRegisters, currentRegisters);
-				startRegisterIndex++;
-			} else {
-				currentRegisters--;
-				endRegisterIndex++;
-			}
-		}
-		return maximumRegisters;
 	}
 
 	private void assignRegisters() {
