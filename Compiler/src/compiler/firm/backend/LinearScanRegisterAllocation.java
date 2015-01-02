@@ -182,6 +182,8 @@ public class LinearScanRegisterAllocation {
 	}
 
 	private void setStackSize(int size) {
+		size += 0x10;
+		size &= -0x10; // Align to 8-byte.
 		AssemblerOperation reserveOperation = new SubOperation("stack reservation", Bit.BIT64, new Constant(size), Register._SP);
 		AssemblerOperation freeOperation = new AddOperation("stack free", Bit.BIT64, new Constant(size), Register._SP);
 		if (size <= 0) {
