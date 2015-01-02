@@ -14,4 +14,8 @@ public abstract class CallingConvention {
 	public abstract Register[] getParameterRegisters();
 
 	public abstract Register getReturnRegister();
+
+	public abstract Register[] callerSavedRegisters();
+
+	public abstract Register[] calleeSavedRegisters();
 }

@@ -30,8 +30,9 @@ public class LinearScanRegisterAllocation {
 	private static final int STACK_ITEM_SIZE = 8;
 	private int currentStackOffset;
 
-	private LinkedList<Register> freeRegisters = new LinkedList<Register>();
-	// Arrays.asList(Register._8D, Register._9D, Register._12D, Register._13D, Register._14D, Register._15D)
+	private LinkedList<Register> freeRegisters = new LinkedList<Register>(
+			Arrays.asList(Register._13D, Register._14D, Register._15D)
+			);
 
 	private HashMap<VirtualRegister, Storage> usedRegister = new HashMap<>();
 	private HashMap<VirtualRegister, StackPointer> usedStack = new HashMap<>();
