@@ -10,7 +10,6 @@ import compiler.firm.backend.operations.templates.AssemblerOperation;
 import compiler.firm.backend.storage.Constant;
 import compiler.firm.backend.storage.Register;
 import compiler.firm.backend.storage.RegisterBased;
-import compiler.firm.backend.storage.StackPointer;
 import compiler.firm.backend.storage.Storage;
 import compiler.firm.backend.storage.VirtualRegister;
 
@@ -24,7 +23,6 @@ public class StorageManagement {
 
 	private final List<AssemblerOperation> operations;
 	private final HashMap<Node, Storage> nodeStorages = new HashMap<>();
-	private int currentStackOffset;
 
 	public StorageManagement(List<AssemblerOperation> operations) {
 		this.operations = operations;
@@ -99,10 +97,7 @@ public class StorageManagement {
 	}
 
 	private Storage reserveItem() {
-		// return new VirtualRegister();
-		// TODO: Return new VirtualRegister for use RegisterAllocation
-		currentStackOffset -= STACK_ITEM_SIZE;
-		return new StackPointer(currentStackOffset, Register._BP);
+		return new VirtualRegister();
 	}
 
 	public Bit getMode(Node node) {
@@ -116,7 +111,6 @@ public class StorageManagement {
 	}
 
 	public void resetStackOffset() {
-		currentStackOffset = 0;
 	}
 
 	public void reserveMemoryForPhis(List<Phi> phis) {

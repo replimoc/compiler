@@ -9,21 +9,32 @@ import java.util.LinkedList;
 import java.util.List;
 import java.util.Map.Entry;
 
+import compiler.firm.backend.operations.AddOperation;
 import compiler.firm.backend.operations.LabelOperation;
+import compiler.firm.backend.operations.SubOperation;
+import compiler.firm.backend.operations.dummy.FreeStackOperation;
+import compiler.firm.backend.operations.dummy.ReserveStackOperation;
 import compiler.firm.backend.operations.templates.AssemblerOperation;
 import compiler.firm.backend.operations.templates.JumpOperation;
+import compiler.firm.backend.storage.Constant;
 import compiler.firm.backend.storage.Register;
 import compiler.firm.backend.storage.RegisterBased;
+import compiler.firm.backend.storage.StackPointer;
+import compiler.firm.backend.storage.Storage;
 import compiler.firm.backend.storage.VirtualRegister;
 
 public class LinearScanRegisterAllocation {
 	private final List<AssemblerOperation> operations;
 	private final ArrayList<VirtualRegister> virtualRegisters = new ArrayList<VirtualRegister>();
 
-	private LinkedList<Register> freeRegisters = new LinkedList<Register>(
-			Arrays.asList(Register._AX, Register._BX, Register._CX, Register._DX));
+	private static final int STACK_ITEM_SIZE = 8;
+	private int currentStackOffset;
 
-	private HashMap<Register, VirtualRegister> usedRegister = new HashMap<>();
+	private LinkedList<Register> freeRegisters = new LinkedList<Register>();
+	// Arrays.asList(Register._8D, Register._9D, Register._12D, Register._13D, Register._14D, Register._15D)
+
+	private HashMap<VirtualRegister, Storage> usedRegister = new HashMap<>();
+	private HashMap<VirtualRegister, StackPointer> usedStack = new HashMap<>();
 
 	public LinearScanRegisterAllocation(List<AssemblerOperation> operations) {
 		this.operations = operations;
@@ -31,19 +42,25 @@ public class LinearScanRegisterAllocation {
 
 	public void allocateRegisters() {
 		fillRegisterList();
+		createStackPointerForRegisters();
 		List<VirtualRegister> registerSortedByEnd = new ArrayList<>(virtualRegisters);
 		sortRegisterListByStart(virtualRegisters);
+		setStackSize(virtualRegisters.size());
 		sortRegisterListByEnd(registerSortedByEnd);
 		int maximumRegisters = getMaximumNumberOfRegisters(virtualRegisters, registerSortedByEnd);
+
 		System.out.println("maximum registers: " + maximumRegisters);
 		assignRegisters();
+		for (VirtualRegister register : virtualRegisters) {
+			System.out.println(register + " -> " + register.getRegister());
+		}
 	}
 
 	private void sortRegisterListByStart(List<VirtualRegister> registers) {
 		Collections.sort(registers, new Comparator<VirtualRegister>() {
 			@Override
 			public int compare(VirtualRegister o1, VirtualRegister o2) {
-				return o1.getFirstOccurrence() > o2.getFirstOccurrence() ? 1 : -1;
+				return o1.getFirstOccurrence() - o2.getFirstOccurrence();
 			}
 		});
 	}
@@ -52,17 +69,18 @@ public class LinearScanRegisterAllocation {
 		Collections.sort(registers, new Comparator<VirtualRegister>() {
 			@Override
 			public int compare(VirtualRegister o1, VirtualRegister o2) {
-				return o1.getLastOccurrence() > o2.getLastOccurrence() ? 1 : -1;
+				return o1.getLastOccurrence() - o2.getLastOccurrence();
 			}
 		});
 	}
 
-	private Register allocateRegister() {
+	private Storage allocateRegister(VirtualRegister virtualRegister) {
 		if (!this.freeRegisters.isEmpty()) {
 			return this.freeRegisters.pop();
 		} else {
-			// TODO Create spill code
-			throw new RuntimeException("Spillcode implementation not implemented yet");
+			// TODO: Spill register with longest lifetime
+			virtualRegister.setSpilled(true);
+			return usedStack.get(virtualRegister);
 		}
 	}
 
@@ -70,6 +88,19 @@ public class LinearScanRegisterAllocation {
 		if (!this.freeRegisters.contains(register)) {
 			this.freeRegisters.push(register);
 		}
+	}
+
+	private VirtualRegister getRegisterWithLongestLifetime() {
+		int lifetime = 0;
+		VirtualRegister register = null;
+		for (Entry<VirtualRegister, Storage> testRegister : usedRegister.entrySet()) {
+			VirtualRegister virtualRegister = testRegister.getKey();
+			if (virtualRegister.getLastOccurrence() >= lifetime) {
+				lifetime = virtualRegister.getLastOccurrence();
+				register = virtualRegister;
+			}
+		}
+		return register;
 	}
 
 	private void fillRegisterList() {
@@ -95,11 +126,18 @@ public class LinearScanRegisterAllocation {
 		}
 	}
 
+	private void createStackPointerForRegisters() {
+		for (VirtualRegister virtualRegister : virtualRegisters) {
+			currentStackOffset -= STACK_ITEM_SIZE;
+			usedStack.put(virtualRegister, new StackPointer(currentStackOffset, Register._BP));
+		}
+	}
+
 	private void expandRegisterUsage(int startOperation, int endOperation) {
 		List<RegisterBased> writeRegisters = new ArrayList<RegisterBased>();
 		for (int i = startOperation; i < endOperation; i++) {
 			AssemblerOperation operation = operations.get(i);
-			for (RegisterBased register : operation.getReadRegisters()) {
+			for (RegisterBased register : operation.getUsedRegisters()) {
 				if (!writeRegisters.contains(register)) {
 					setOccurrence(register, startOperation);
 					setOccurrence(register, endOperation);
@@ -144,9 +182,6 @@ public class LinearScanRegisterAllocation {
 				endRegisterIndex++;
 			}
 		}
-		for (VirtualRegister register : virtualRegisters) {
-			System.out.println(register + " between " + register.getFirstOccurrence() + " and " + register.getLastOccurrence());
-		}
 		return maximumRegisters;
 	}
 
@@ -155,9 +190,9 @@ public class LinearScanRegisterAllocation {
 			freeRegistersForLine(register.getFirstOccurrence());
 
 			if (register.getRegister() == null) {
-				Register systemRegister = allocateRegister();
-				register.setRegister(systemRegister);
-				usedRegister.put(systemRegister, register);
+				Storage systemRegister = allocateRegister(register);
+				register.setStorage(systemRegister);
+				usedRegister.put(register, systemRegister);
 			} else {
 				// TODO: Reserve this register
 			}
@@ -165,15 +200,29 @@ public class LinearScanRegisterAllocation {
 	}
 
 	private void freeRegistersForLine(int line) {
-		List<Register> removeRegisters = new ArrayList<>();
-		for (Entry<Register, VirtualRegister> register : usedRegister.entrySet()) {
-			if (register.getValue().getLastOccurrence() < line) {
-				freeRegister(register.getKey());
+		List<VirtualRegister> removeRegisters = new ArrayList<>();
+		for (Entry<VirtualRegister, Storage> register : usedRegister.entrySet()) {
+			if (register.getKey().getLastOccurrence() < line && register.getValue().getClass() == Register.class) {
+				freeRegister((Register) register.getValue());
 				removeRegisters.add(register.getKey());
 			}
 		}
-		for (Register register : removeRegisters) {
+		for (VirtualRegister register : removeRegisters) {
 			usedRegister.remove(register);
+		}
+	}
+
+	private void setStackSize(int size) {
+		for (AssemblerOperation operation : operations) {
+			if (operation.getClass() == ReserveStackOperation.class) {
+				ReserveStackOperation reserveStackOperation = (ReserveStackOperation) operation;
+				reserveStackOperation.setOperation(new SubOperation("stack reservation", Bit.BIT64,
+						new Constant(StorageManagement.STACK_ITEM_SIZE * size), Register._SP));
+			} else if (operation.getClass() == FreeStackOperation.class) {
+				FreeStackOperation freeStackOperation = (FreeStackOperation) operation;
+				freeStackOperation.setOperation(new AddOperation("stack free", Bit.BIT64,
+						new Constant(StorageManagement.STACK_ITEM_SIZE * size), Register._SP));
+			}
 		}
 	}
 }

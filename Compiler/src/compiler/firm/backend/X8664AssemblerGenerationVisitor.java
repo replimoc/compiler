@@ -22,6 +22,8 @@ import compiler.firm.backend.operations.RetOperation;
 import compiler.firm.backend.operations.ShlOperation;
 import compiler.firm.backend.operations.SizeOperation;
 import compiler.firm.backend.operations.SubOperation;
+import compiler.firm.backend.operations.dummy.FreeStackOperation;
+import compiler.firm.backend.operations.dummy.ReserveStackOperation;
 import compiler.firm.backend.operations.jump.JgOperation;
 import compiler.firm.backend.operations.jump.JgeOperation;
 import compiler.firm.backend.operations.jump.JlOperation;
@@ -99,6 +101,8 @@ import firm.nodes.Tuple;
 import firm.nodes.Unknown;
 
 public class X8664AssemblerGenerationVisitor implements BulkPhiNodeVisitor {
+
+	private static final int STACK_ITEM_SIZE = 8;
 
 	private final List<AssemblerOperation> operations = new LinkedList<>();
 	private final HashMap<String, CallingConvention> callingConventions;
@@ -207,15 +211,15 @@ public class X8664AssemblerGenerationVisitor implements BulkPhiNodeVisitor {
 			addOperation(new PushOperation(Bit.BIT64, Register._BP)); // Dynamic Link
 			addOperation(new MovOperation(Bit.BIT64, Register._SP, Register._BP));
 
-			// FIXME: static stack reservation is no solution
-			addOperation(new SubOperation("static stack reservation", Bit.BIT64, new Constant(StorageManagement.STACK_ITEM_SIZE * 64), Register._SP));
+			addOperation(new ReserveStackOperation());
 
 			registerAllocation.reserveMemoryForPhis(phis);
 		}
 
 		if (node.equals(graph.getEndBlock())) {
-			addOperation(new AddOperation("free stack", Bit.BIT64, new Constant(StorageManagement.STACK_ITEM_SIZE * 64), Register._SP));
+			addOperation(new FreeStackOperation());
 			registerAllocation.resetStackOffset();
+
 			if (!Utils.isWindows()) {
 				addOperation(new SizeOperation(methodName));
 			}
@@ -255,7 +259,7 @@ public class X8664AssemblerGenerationVisitor implements BulkPhiNodeVisitor {
 			// The following is before filling registers to have no problem with register allocation.
 			int remainingParameters = parametersCount - callingRegisters.length;
 			firmOffset += callingRegisters.length;
-			Constant parameterSize = new Constant(StorageManagement.STACK_ITEM_SIZE * remainingParameters);
+			Constant parameterSize = new Constant(STACK_ITEM_SIZE * remainingParameters);
 
 			if (remainingParameters > 0) {
 				addOperation(new SubOperation(Bit.BIT64, parameterSize, Register._SP));
@@ -264,7 +268,7 @@ public class X8664AssemblerGenerationVisitor implements BulkPhiNodeVisitor {
 					Storage sourcePointer = registerAllocation.getStorage(node.getPred(i + firmOffset));
 					// Copy parameter
 					VirtualRegister temporaryRegister = new VirtualRegister();
-					StackPointer destinationPointer = new StackPointer(i * StorageManagement.STACK_ITEM_SIZE, Register._SP);
+					StackPointer destinationPointer = new StackPointer(i * STACK_ITEM_SIZE, Register._SP);
 					Bit mode = registerAllocation.getMode(node.getPred(i + firmOffset));
 					addOperation(new MovOperation(mode, sourcePointer, temporaryRegister));
 					addOperation(new MovOperation(mode, temporaryRegister, destinationPointer));
@@ -549,7 +553,7 @@ public class X8664AssemblerGenerationVisitor implements BulkPhiNodeVisitor {
 				if (edge.node instanceof Proj) {
 					Proj proj = (Proj) edge.node;
 					registerAllocation.addStorage(proj,
-							new StackPointer(StorageManagement.STACK_ITEM_SIZE * (proj.getNum() + 2), Register._BP));
+							new StackPointer(STACK_ITEM_SIZE * (proj.getNum() + 2), Register._BP));
 					// + 2 for dynamic link
 				}
 			}

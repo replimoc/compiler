@@ -68,8 +68,10 @@ public final class AssemblerGenerator {
 		BufferedWriter writer = Files.newBufferedWriter(outputFile, StandardCharsets.US_ASCII);
 
 		for (AssemblerOperation operation : assembler) {
-			writer.write(operation.toString());
-			writer.newLine();
+			for (String operationString : operation.toStringWithSpillcode()) {
+				writer.write(operationString);
+				writer.newLine();
+			}
 		}
 		writer.close();
 	}
