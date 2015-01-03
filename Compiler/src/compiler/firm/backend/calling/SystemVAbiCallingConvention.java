@@ -35,7 +35,10 @@ public class SystemVAbiCallingConvention extends CallingConvention {
 
 	@Override
 	public Register[] callerSavedRegisters() {
-		return new Register[] {};
+		return new Register[] { // Not RAX - because restore is not possible - conflict with return type!
+		Register._DI, Register._SI, Register._DX, Register._CX,
+				Register._8D, Register._9D, Register._10D, Register._11D
+		};
 	}
 
 	@Override

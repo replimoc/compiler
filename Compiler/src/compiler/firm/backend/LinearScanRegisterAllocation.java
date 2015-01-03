@@ -31,7 +31,9 @@ public class LinearScanRegisterAllocation {
 	private int currentStackOffset = 0;
 
 	private LinkedList<Register> freeRegisters = new LinkedList<Register>(
-			Arrays.asList(Register._DX, Register._CX, Register._13D, Register._14D, Register._15D)
+			Arrays.asList(Register._BX, Register._CX, Register._DX,
+					Register._8D, Register._9D, Register._12D, Register._13D,
+					Register._14D, Register._15D)
 			);
 	private HashMap<Register, LinkedList<VirtualRegister>> partialAllocatedRegisters = new HashMap<>();
 

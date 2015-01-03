@@ -294,7 +294,7 @@ public class X8664AssemblerGenerationVisitor implements BulkPhiNodeVisitor {
 				registerAllocation.getValue(parameterNode, true, callingRegisters[i]);
 			}
 
-			addOperation(new CallOperation(methodName));
+			addOperation(new CallOperation(methodName, callingConvention));
 
 			stackOffset = remainingParameters * STACK_ITEM_SIZE;
 			for (Register saveRegister : callerSavedRegisters) {
