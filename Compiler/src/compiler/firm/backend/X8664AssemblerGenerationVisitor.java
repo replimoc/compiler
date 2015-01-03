@@ -102,7 +102,6 @@ public class X8664AssemblerGenerationVisitor implements BulkPhiNodeVisitor {
 
 	private final List<AssemblerOperation> operations = new ArrayList<>();
 	private final HashMap<String, CallingConvention> callingConventions;
-	private final HashMap<Block, LabelOperation> blockLabels = new HashMap<>();
 
 	// stack management
 	private final HashMap<Node, Storage> nodeStorages = new HashMap<>();
@@ -190,13 +189,7 @@ public class X8664AssemblerGenerationVisitor implements BulkPhiNodeVisitor {
 	}
 
 	private LabelOperation getBlockLabel(Block node) {
-		LabelOperation blockLabel = null;
-		if (blockLabels.containsKey(node)) {
-			blockLabel = blockLabels.get(node);
-		} else {
-			blockLabel = new LabelOperation("BLOCK_" + node.getNr());
-		}
-		return blockLabel;
+		return new LabelOperation("BLOCK_" + node.getNr());
 	}
 
 	public void addListOfAllPhis(List<Phi> phis) {
@@ -303,72 +296,71 @@ public class X8664AssemblerGenerationVisitor implements BulkPhiNodeVisitor {
 	@Override
 	public void visit(Call node) {
 		int predCount = node.getPredCount();
-		if (predCount >= 2 && node.getPred(1) instanceof Address) { // Minimum for all calls
-			int firmOffset = 2;
-			int parametersCount = (predCount - firmOffset);
-			Address callAddress = (Address) node.getPred(1);
-			String methodName = callAddress.getEntity().getLdName();
+		assert predCount >= 2 && node.getPred(1) instanceof Address : "Minimum for all calls";
 
-			addOperation(new Comment("Call " + methodName + " " + node.getNr()));
+		int firmOffset = 2;
+		int parametersCount = (predCount - firmOffset);
+		Address callAddress = (Address) node.getPred(1);
+		String methodName = callAddress.getEntity().getLdName();
 
-			CallingConvention callingConvention = CallingConvention.SYSTEMV_ABI;
-			if (callingConventions.containsKey(methodName)) {
-				callingConvention = callingConventions.get(methodName);
+		addOperation(new Comment("Call " + methodName + " " + node.getNr()));
+
+		CallingConvention callingConvention = CallingConvention.SYSTEMV_ABI;
+		if (callingConventions.containsKey(methodName)) {
+			callingConvention = callingConventions.get(methodName);
+		}
+
+		for (AssemblerOperation operation : callingConvention.getPrefixOperations()) {
+			addOperation(operation);
+		}
+
+		Register[] callingRegisters = callingConvention.getParameterRegisters();
+
+		// The following is before filling registers to have no problem with register allocation.
+		int remainingParameters = parametersCount - callingRegisters.length;
+		firmOffset += callingRegisters.length;
+		Constant parameterSize = new Constant(STACK_ITEM_SIZE * remainingParameters);
+
+		if (remainingParameters > 0) {
+			addOperation(new SubOperation(Bit.BIT64, parameterSize, Register._SP));
+
+			for (int i = 0; i < remainingParameters; i++) {
+				Storage sourcePointer = getStorage(node.getPred(i + firmOffset));
+				// Copy parameter
+				Register temporaryRegister = Register._AX;
+				StackPointer destinationPointer = new StackPointer(i * STACK_ITEM_SIZE, Register._SP);
+				Bit mode = getMode(node.getPred(i + firmOffset));
+				addOperation(new MovOperation(mode, sourcePointer, temporaryRegister));
+				addOperation(new MovOperation(mode, temporaryRegister, destinationPointer));
 			}
+		}
+		firmOffset -= callingRegisters.length;
 
-			for (AssemblerOperation operation : callingConvention.getPrefixOperations()) {
-				addOperation(operation);
-			}
+		// TODO: Register Allocation: Possible save all conflict registers.
 
-			Register[] callingRegisters = callingConvention.getParameterRegisters();
+		for (int i = 0; i < parametersCount && i < callingRegisters.length; i++) {
+			// Copy parameters in registers
+			Node parameterNode = node.getPred(i + firmOffset);
+			getValue(parameterNode, callingRegisters[i]);
+		}
 
-			// The following is before filling registers to have no problem with register allocation.
-			int remainingParameters = parametersCount - callingRegisters.length;
-			firmOffset += callingRegisters.length;
-			Constant parameterSize = new Constant(STACK_ITEM_SIZE * remainingParameters);
+		addOperation(new CallOperation(methodName));
 
-			if (remainingParameters > 0) {
-				addOperation(new SubOperation(Bit.BIT64, parameterSize, Register._SP));
+		if (remainingParameters > 0) {
+			addOperation(new AddOperation(Bit.BIT64, parameterSize, Register._SP));
+		}
 
-				for (int i = 0; i < remainingParameters; i++) {
-					Storage sourcePointer = getStorage(node.getPred(i + firmOffset));
-					// Copy parameter
-					Register temporaryRegister = Register._AX;
-					StackPointer destinationPointer = new StackPointer(i * STACK_ITEM_SIZE, Register._SP);
-					Bit mode = getMode(node.getPred(i + firmOffset));
-					addOperation(new MovOperation(mode, sourcePointer, temporaryRegister));
-					addOperation(new MovOperation(mode, temporaryRegister, destinationPointer));
+		for (AssemblerOperation operation : callingConvention.getSuffixOperations()) {
+			addOperation(operation);
+		}
+
+		// TODO: Check if this also works for pointers
+		for (Edge edge : BackEdges.getOuts(node)) {
+			if (edge.node.getMode().equals(Mode.getT())) {
+				for (Edge innerEdge : BackEdges.getOuts(edge.node)) {
+					storeValue(innerEdge.node, callingConvention.getReturnRegister());
 				}
 			}
-			firmOffset -= callingRegisters.length;
-
-			// TODO: Register Allocation: Possible save all conflict registers.
-
-			for (int i = 0; i < parametersCount && i < callingRegisters.length; i++) {
-				// Copy parameters in registers
-				Node parameterNode = node.getPred(i + firmOffset);
-				getValue(parameterNode, callingRegisters[i]);
-			}
-
-			addOperation(new CallOperation(methodName));
-
-			if (remainingParameters > 0) {
-				addOperation(new AddOperation(Bit.BIT64, parameterSize, Register._SP));
-			}
-
-			for (AssemblerOperation operation : callingConvention.getSuffixOperations()) {
-				addOperation(operation);
-			}
-
-			// TODO: Check if this also works for pointers
-			for (Edge edge : BackEdges.getOuts(node)) {
-				if (edge.node.getMode().equals(Mode.getT())) {
-					for (Edge innerEdge : BackEdges.getOuts(edge.node)) {
-						storeValue(innerEdge.node, callingConvention.getReturnRegister());
-					}
-				}
-			}
-
 		}
 
 	}
