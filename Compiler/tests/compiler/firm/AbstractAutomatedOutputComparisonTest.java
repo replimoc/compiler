@@ -10,6 +10,7 @@ import java.nio.file.Path;
 import java.util.LinkedList;
 import java.util.List;
 
+import org.junit.Ignore;
 import org.junit.Test;
 
 import compiler.main.CompilerApp;
@@ -23,6 +24,7 @@ import compiler.utils.Utils;
  * <p/>
  * this test should be started from Compiler directory
  */
+@Ignore
 public abstract class AbstractAutomatedOutputComparisonTest implements TestFileVisitor.FileTester {
 
 	private static final String OUTPUT_FILE_EXTENSION = ".result";
