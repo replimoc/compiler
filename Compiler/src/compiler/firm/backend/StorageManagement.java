@@ -44,6 +44,14 @@ public class StorageManagement {
 		addStorage(node, new Constant(node));
 	}
 
+	public Storage getValueAvoidNewRegister(Node node, boolean registerOverwrite) {
+		if (!registerOverwrite && nodeStorages.containsKey(node)) {
+			return nodeStorages.get(node);
+		} else {
+			return getValue(node, registerOverwrite);
+		}
+	}
+
 	public RegisterBased getValue(Node node, boolean registerOverwrite) {
 		return getValue(node, registerOverwrite, null);
 	}

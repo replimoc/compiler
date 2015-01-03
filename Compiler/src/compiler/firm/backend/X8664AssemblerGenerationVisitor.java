@@ -128,7 +128,7 @@ public class X8664AssemblerGenerationVisitor implements BulkPhiNodeVisitor {
 
 	private <T extends StorageRegisterOperation> void visitTwoOperandsNode(T operation, Node parent, Node left, Node right) {
 		// get left node
-		RegisterBased registerLeft = registerAllocation.getValue(left, false);
+		Storage registerLeft = registerAllocation.getValueAvoidNewRegister(left, false);
 		// get right node
 		RegisterBased registerRight = registerAllocation.getValue(right, true);
 		// TODO: find a nicer way to instantiate T directly instead of passing an instance and then initializing
@@ -704,7 +704,7 @@ public class X8664AssemblerGenerationVisitor implements BulkPhiNodeVisitor {
 		HashMap<Phi, Storage> phiTempStackMapping = new HashMap<>();
 		for (Phi phi : phis) {
 			Node predecessor = getRelevantPredecessor(phi);
-			RegisterBased register = registerAllocation.getValue(predecessor, false);
+			Storage register = registerAllocation.getValueAvoidNewRegister(predecessor, false);
 			Storage temporaryStorage = new VirtualRegister();
 			registerAllocation.storeValue(predecessor, register, temporaryStorage);
 			phiTempStackMapping.put(phi, temporaryStorage);
