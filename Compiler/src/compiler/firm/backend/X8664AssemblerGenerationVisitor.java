@@ -2,6 +2,7 @@ package compiler.firm.backend;
 
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.Iterator;
 import java.util.List;
 
 import compiler.firm.FirmUtils;
@@ -377,22 +378,18 @@ public class X8664AssemblerGenerationVisitor implements BulkPhiNodeVisitor {
 		Block blockFalse = null;
 
 		// get blocks the cond node shows to
-		// TODO: Refactore me!
-		for (Edge edge : BackEdges.getOuts(node)) {
-			Node edgeNode = edge.node;
-			if (edgeNode instanceof Proj) {
-				boolean trueCase = ((Proj) edgeNode).getNum() == FirmUtils.TRUE;
-				for (Edge nextEdge : BackEdges.getOuts(edgeNode)) {
-					Node nextEdgeNode = nextEdge.node;
-					if (nextEdgeNode instanceof Block) {
-						if (trueCase) {
-							blockTrue = (Block) nextEdgeNode;
-						} else {
-							blockFalse = (Block) nextEdgeNode;
-						}
-					}
-				}
-			}
+		Iterator<Edge> outs = BackEdges.getOuts(node).iterator();
+		Proj out1 = (Proj) outs.next().node;
+		Proj out2 = (Proj) outs.next().node;
+		Block block1 = ((Block) (BackEdges.getOuts(out1).iterator().next().node));
+		Block block2 = ((Block) (BackEdges.getOuts(out2).iterator().next().node));
+
+		if (out1.getNum() == FirmUtils.TRUE) {
+			blockTrue = block1;
+			blockFalse = block2;
+		} else {
+			blockTrue = block2;
+			blockFalse = block1;
 		}
 
 		// generate cmp instruction
