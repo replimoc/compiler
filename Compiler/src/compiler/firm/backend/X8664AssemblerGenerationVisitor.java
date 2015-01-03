@@ -415,9 +415,8 @@ public class X8664AssemblerGenerationVisitor implements BulkPhiNodeVisitor {
 	@Override
 	public void visit(Conv node) {
 		if (node.getPredCount() >= 1) {
-			// TODO: This should maybe optimized with register allocation.
-			RegisterBased register = registerAllocation.getValue(node.getPred(0), true);
-			registerAllocation.storeValue(node, register);
+			Storage register = registerAllocation.getValueAvoidNewRegister(node.getPred(0), false);
+			registerAllocation.addStorage(node, register);
 		}
 	}
 

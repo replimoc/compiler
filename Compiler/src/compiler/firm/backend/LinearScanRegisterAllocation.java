@@ -88,8 +88,7 @@ public class LinearScanRegisterAllocation {
 			boolean isValid = true;
 			for (VirtualRegister register : registerInfo.getValue()) {
 				isValid &= (register.getFirstOccurrence() > end ||
-						register.getLastOccurrence() < start);// TODO: is < or > possible?
-
+						register.getLastOccurrence() < start);
 			}
 			if (isValid) {
 				virtualRegister.setForceRegister(true);
@@ -199,8 +198,6 @@ public class LinearScanRegisterAllocation {
 				if (systemRegister != null) {
 					usedRegister.put(register, systemRegister);
 				}
-			} else {
-				// TODO: Reserve this register
 			}
 		}
 	}
