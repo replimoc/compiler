@@ -8,7 +8,7 @@ public class VirtualRegister extends RegisterBased {
 	private final int num;
 
 	private Storage register;
-	private final boolean forceRegister;
+	private boolean forceRegister;
 	private boolean isSpilled;
 
 	private int firstOccurrence = Integer.MAX_VALUE;
@@ -44,6 +44,10 @@ public class VirtualRegister extends RegisterBased {
 		this.register = register;
 	}
 
+	public void setForceRegister(boolean forceRegister) {
+		this.forceRegister = forceRegister;
+	}
+
 	public boolean isForceRegister() {
 		return forceRegister;
 	}
@@ -52,6 +56,7 @@ public class VirtualRegister extends RegisterBased {
 		this.isSpilled = isSpilled;
 	}
 
+	@Override
 	public boolean isSpilled() {
 		return isSpilled;
 	}

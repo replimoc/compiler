@@ -3,6 +3,7 @@ package compiler.firm.backend.operations;
 import compiler.firm.backend.operations.templates.AssemblerOperation;
 import compiler.firm.backend.storage.Register;
 import compiler.firm.backend.storage.RegisterBased;
+import compiler.firm.backend.storage.VirtualRegister;
 
 public class CallOperation extends AssemblerOperation {
 
@@ -18,8 +19,18 @@ public class CallOperation extends AssemblerOperation {
 	}
 
 	@Override
+	public RegisterBased[] getReadRegisters() {
+		return getWriteRegisters();
+	}
+
+	@Override
 	public RegisterBased[] getWriteRegisters() {
-		return new RegisterBased[] { Register._AX }; // Return register
+		// TODO: Ask calling convention
+		return new RegisterBased[] {
+				new VirtualRegister(Register._AX),
+				new VirtualRegister(Register._DX),
+				new VirtualRegister(Register._CX)
+		}; // Return register
 	}
 
 }

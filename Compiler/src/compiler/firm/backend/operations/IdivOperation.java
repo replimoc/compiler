@@ -4,6 +4,7 @@ import compiler.firm.backend.Bit;
 import compiler.firm.backend.operations.templates.RegisterOperation;
 import compiler.firm.backend.storage.Register;
 import compiler.firm.backend.storage.RegisterBased;
+import compiler.firm.backend.storage.VirtualRegister;
 
 public class IdivOperation extends RegisterOperation {
 
@@ -22,11 +23,17 @@ public class IdivOperation extends RegisterOperation {
 
 	@Override
 	public RegisterBased[] getReadRegisters() {
-		return new RegisterBased[] { Register._DX, Register._AX, getRegister().getUsedRegister() };
+		return new RegisterBased[] {
+				new VirtualRegister(Register._DX),
+				new VirtualRegister(Register._AX),
+				getRegister().getUsedRegister() };
 	}
 
 	@Override
 	public RegisterBased[] getWriteRegisters() {
-		return new RegisterBased[] { Register._DX, Register._AX };
+		return new RegisterBased[] {
+				new VirtualRegister(Register._DX),
+				new VirtualRegister(Register._AX)
+		};
 	}
 }

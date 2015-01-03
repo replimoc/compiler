@@ -31,8 +31,9 @@ public class LinearScanRegisterAllocation {
 	private int currentStackOffset = 0;
 
 	private LinkedList<Register> freeRegisters = new LinkedList<Register>(
-			Arrays.asList(Register._13D, Register._14D, Register._15D)
+			Arrays.asList(Register._DX, Register._CX, Register._13D, Register._14D, Register._15D)
 			);
+	private HashMap<Register, LinkedList<VirtualRegister>> partialAllocatedRegisters = new HashMap<>();
 
 	private HashMap<VirtualRegister, Register> usedRegister = new HashMap<>();
 
@@ -43,6 +44,7 @@ public class LinearScanRegisterAllocation {
 	public void allocateRegisters() {
 		fillRegisterList();
 		sortRegisterListByStart(virtualRegisters);
+		readPartialAllocatedRegisters();
 		assignRegisters();
 		setStackSize(currentStackOffset);
 		for (VirtualRegister register : virtualRegisters) {
@@ -60,22 +62,45 @@ public class LinearScanRegisterAllocation {
 	}
 
 	private Register allocateRegister(VirtualRegister virtualRegister) {
-		if (this.freeRegisters.isEmpty()) {
-			VirtualRegister register = getRegisterWithLongestLifetime();
-			if (register == null) {
-				spillRegister(virtualRegister);
-				return null;
-			}
+		Register freeRegister = getFreeRegisterForLifetime(virtualRegister);
+		if (freeRegister == null) {
+			if (this.freeRegisters.isEmpty()) {
+				VirtualRegister register = getRegisterWithLongestLifetime();
+				if (register == null) {
+					spillRegister(virtualRegister);
+					return null;
+				}
 
-			spillRegister(register);
+				spillRegister(register);
+			}
+			freeRegister = this.freeRegisters.pop();
 		}
-		Register register = this.freeRegisters.pop();
-		virtualRegister.setStorage(register);
-		return register;
+		virtualRegister.setStorage(freeRegister);
+		return freeRegister;
+	}
+
+	private Register getFreeRegisterForLifetime(VirtualRegister virtualRegister) {
+		int start = virtualRegister.getFirstOccurrence();
+		int end = virtualRegister.getLastOccurrence();
+		for (Entry<Register, LinkedList<VirtualRegister>> registerInfo : partialAllocatedRegisters.entrySet()) {
+			boolean isValid = true;
+			for (VirtualRegister register : registerInfo.getValue()) {
+				isValid &= (register.getFirstOccurrence() > end ||
+						register.getLastOccurrence() < start);// TODO: is < or > possible?
+
+			}
+			if (isValid) {
+				virtualRegister.setForceRegister(true);
+				registerInfo.getValue().add(virtualRegister);
+				return registerInfo.getKey();
+			}
+		}
+		return null;
 	}
 
 	private void freeRegister(Register register) {
-		if (!this.freeRegisters.contains(register)) {
+		if (!this.freeRegisters.contains(register)
+				&& !this.partialAllocatedRegisters.containsKey(register)) {
 			this.freeRegisters.push(register);
 		}
 	}
@@ -174,6 +199,27 @@ public class LinearScanRegisterAllocation {
 				}
 			} else {
 				// TODO: Reserve this register
+			}
+		}
+	}
+
+	private void readPartialAllocatedRegisters() {
+		for (VirtualRegister virtualRegister : virtualRegisters) {
+			if (virtualRegister.getRegister() != null && virtualRegister.getRegister().getClass() == Register.class) {
+				Register register = (Register) virtualRegister.getRegister();
+				if (!partialAllocatedRegisters.containsKey(register)) {
+					if (freeRegisters.contains(register)) {
+						freeRegisters.remove(register);
+					} else {
+						// Do not use this register. It is not marked as register allocation register.
+						continue;
+					}
+					partialAllocatedRegisters.put(register, new LinkedList<VirtualRegister>());
+
+				}
+				partialAllocatedRegisters.get(virtualRegister.getRegister())
+						.add(virtualRegister);
+				System.out.println("partial allocated register " + virtualRegister);
 			}
 		}
 	}

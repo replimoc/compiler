@@ -436,7 +436,7 @@ public class X8664AssemblerGenerationVisitor implements BulkPhiNodeVisitor {
 		// move left node to EAX
 		registerAllocation.getValue(left, true, Register._AX);
 		// move right node to RSI
-		RegisterBased registerRight = registerAllocation.getValue(right, true, Register._SI); // TODO: Is this overwritten?
+		RegisterBased registerRight = registerAllocation.getValue(right, false);
 		addOperation(new CltdOperation());
 		// idivl (eax / esi)
 		addOperation(new IdivOperation(registerAllocation.getMode(right), registerRight));

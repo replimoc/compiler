@@ -27,7 +27,7 @@ public class StackCallingConvention extends CallingConvention {
 
 	@Override
 	public Register[] callerSavedRegisters() {
-		return new Register[] { Register._13D, Register._14D, Register._15D };
+		return new Register[] { Register._DX, Register._CX, Register._13D, Register._14D, Register._15D };
 	}
 
 	@Override
