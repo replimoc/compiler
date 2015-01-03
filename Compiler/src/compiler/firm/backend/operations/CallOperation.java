@@ -18,7 +18,7 @@ public class CallOperation extends AssemblerOperation {
 	}
 
 	@Override
-	public RegisterBased[] getUsedRegisters() {
+	public RegisterBased[] getWriteRegisters() {
 		return new RegisterBased[] { Register._AX }; // Return register
 	}
 

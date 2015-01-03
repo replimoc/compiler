@@ -26,4 +26,9 @@ public class CmpOperation extends StorageRegisterOperation {
 	public String getOperationString() {
 		return String.format("\tcmp %s, %s", getStorage().toString(getMode()), getDestination().toString(getMode()));
 	}
+
+	@Override
+	public RegisterBased[] getWriteRegisters() {
+		return new RegisterBased[] {};
+	}
 }

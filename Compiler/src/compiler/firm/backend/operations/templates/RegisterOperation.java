@@ -21,7 +21,12 @@ public abstract class RegisterOperation extends AssemblerBitOperation {
 	}
 
 	@Override
-	public RegisterBased[] getUsedRegisters() {
+	public RegisterBased[] getReadRegisters() {
+		return new RegisterBased[] { this.register };
+	}
+
+	@Override
+	public RegisterBased[] getWriteRegisters() {
 		return new RegisterBased[] { this.register };
 	}
 }

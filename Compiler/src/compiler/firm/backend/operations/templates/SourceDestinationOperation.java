@@ -31,10 +31,9 @@ public abstract class SourceDestinationOperation extends AssemblerBitOperation {
 	}
 
 	@Override
-	public RegisterBased[] getUsedRegisters() {
-		RegisterBased sourceRegister = source.getUsedRegister();
+	public RegisterBased[] getWriteRegisters() {
 		RegisterBased destinationRegister = destination.getUsedRegister();
-		return calculateRegisters(sourceRegister, destinationRegister);
+		return calculateRegisters(null, destinationRegister);
 	}
 
 	private RegisterBased[] calculateRegisters(RegisterBased sourceRegister, RegisterBased destinationRegister) {

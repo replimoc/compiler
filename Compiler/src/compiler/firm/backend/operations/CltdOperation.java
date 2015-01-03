@@ -25,8 +25,8 @@ public class CltdOperation extends AssemblerOperation {
 	}
 
 	@Override
-	public RegisterBased[] getUsedRegisters() {
-		return new RegisterBased[] { Register._AX, Register._DX };
+	public RegisterBased[] getWriteRegisters() {
+		return new RegisterBased[] { Register._DX };
 	}
 
 }

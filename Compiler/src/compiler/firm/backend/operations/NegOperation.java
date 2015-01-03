@@ -14,9 +14,4 @@ public class NegOperation extends RegisterOperation {
 	public String getOperationString() {
 		return String.format("\tneg%s %s", getMode(), getRegister().toString(getMode()));
 	}
-
-	@Override
-	public RegisterBased[] getUsedRegisters() {
-		return new RegisterBased[] { getRegister() };
-	}
 }

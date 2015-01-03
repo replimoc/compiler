@@ -48,7 +48,7 @@ public abstract class AssemblerBitOperation extends AssemblerOperation {
 					storageMapping.put(virtualRegister, storage);
 				}
 			}
-			for (RegisterBased register : getUsedRegisters()) {
+			for (RegisterBased register : getWriteRegisters()) {
 				if (register.isSpilled() && !storageMapping.containsKey(register)) {
 					VirtualRegister virtualRegister = (VirtualRegister) register;
 					Storage storage = insertSpillcode(virtualRegister, result, false);

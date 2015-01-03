@@ -34,7 +34,7 @@ public abstract class AssemblerOperation {
 		return new RegisterBased[] {};
 	}
 
-	public RegisterBased[] getUsedRegisters() {
+	public RegisterBased[] getWriteRegisters() {
 		return new RegisterBased[] {};
 	}
 
@@ -44,7 +44,7 @@ public abstract class AssemblerOperation {
 				return true;
 			}
 		}
-		for (RegisterBased register : getUsedRegisters()) {
+		for (RegisterBased register : getWriteRegisters()) {
 			if (register.isSpilled()) {
 				return true;
 			}

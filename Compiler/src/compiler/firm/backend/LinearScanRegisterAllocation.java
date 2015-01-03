@@ -120,7 +120,10 @@ public class LinearScanRegisterAllocation {
 				}
 			}
 
-			for (RegisterBased register : operation.getUsedRegisters()) {
+			for (RegisterBased register : operation.getReadRegisters()) {
+				setOccurrence(register, line);
+			}
+			for (RegisterBased register : operation.getWriteRegisters()) {
 				setOccurrence(register, line);
 			}
 			line++;
@@ -131,14 +134,21 @@ public class LinearScanRegisterAllocation {
 		List<RegisterBased> writeRegisters = new ArrayList<RegisterBased>();
 		for (int i = startOperation; i < endOperation; i++) {
 			AssemblerOperation operation = operations.get(i);
-			for (RegisterBased register : operation.getUsedRegisters()) {
-				// TODO: Look after read + write and do it more precise.
+			// TODO: The next loop should not be necessary. But without this loop it fails for fannkuch.mj.
+			// Maybe there is somewhere a missing read register.
+			for (RegisterBased register : operation.getWriteRegisters()) {
 				if (!writeRegisters.contains(register)) {
 					setOccurrence(register, startOperation);
 					setOccurrence(register, endOperation);
 				}
 			}
-			writeRegisters.addAll(Arrays.asList(operation.getUsedRegisters()));
+			for (RegisterBased register : operation.getReadRegisters()) {
+				if (!writeRegisters.contains(register)) {
+					setOccurrence(register, startOperation);
+					setOccurrence(register, endOperation);
+				}
+			}
+			writeRegisters.addAll(Arrays.asList(operation.getWriteRegisters()));
 		}
 	}
 
