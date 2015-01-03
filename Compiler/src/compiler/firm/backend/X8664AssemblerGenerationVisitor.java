@@ -222,41 +222,6 @@ public class X8664AssemblerGenerationVisitor implements BulkPhiNodeVisitor {
 	}
 
 	@Override
-	public void visit(Address node) {
-		// This is handled in a call.
-	}
-
-	@Override
-	public void visit(Align node) {
-		throw new RuntimeException(node + " is not implemented yet!");
-	}
-
-	@Override
-	public void visit(Alloc node) {
-		throw new RuntimeException(node + " is not implemented yet!");
-	}
-
-	@Override
-	public void visit(Anchor node) {
-		throw new RuntimeException(node + " is not implemented yet!");
-	}
-
-	@Override
-	public void visit(And node) {
-		throw new RuntimeException(node + " is not implemented yet!");
-	}
-
-	@Override
-	public void visit(Bad node) {
-		// Ignore Bad nodes.
-	}
-
-	@Override
-	public void visit(Bitcast node) {
-		throw new RuntimeException(node + " is not implemented yet!");
-	}
-
-	@Override
 	public void visit(Block node) {
 		currentBlock = node;
 		addOperation(new Comment(node.toString()));
@@ -287,11 +252,6 @@ public class X8664AssemblerGenerationVisitor implements BulkPhiNodeVisitor {
 
 		// prepend a label before each block
 		addOperation(getBlockLabel(node));
-	}
-
-	@Override
-	public void visit(Builtin node) {
-		throw new RuntimeException(node + " is not implemented yet!");
 	}
 
 	@Override
@@ -444,11 +404,6 @@ public class X8664AssemblerGenerationVisitor implements BulkPhiNodeVisitor {
 	}
 
 	@Override
-	public void visit(Confirm node) {
-		throw new RuntimeException(node + " is not implemented yet!");
-	}
-
-	@Override
 	public void visit(Const node) {
 		// nothing to do
 		nodeStorages.put(node, new Constant(node));
@@ -461,16 +416,6 @@ public class X8664AssemblerGenerationVisitor implements BulkPhiNodeVisitor {
 		// TODO: This should maybe optimized with register allocation.
 		getValue(node.getPred(0), Register._AX);
 		storeValue(node, Register._AX);
-	}
-
-	@Override
-	public void visit(CopyB node) {
-		throw new RuntimeException(node + " is not implemented yet!");
-	}
-
-	@Override
-	public void visit(Deleted node) {
-		throw new RuntimeException(node + " is not implemented yet!");
 	}
 
 	private void visitDivMod(Node node, Node left, Node right, Register storeRegister) {
@@ -494,13 +439,200 @@ public class X8664AssemblerGenerationVisitor implements BulkPhiNodeVisitor {
 	}
 
 	@Override
-	public void visit(Dummy node) {
+	public void visit(End node) {
+		addOperation(new Comment("end node"));
+	}
+
+	@Override
+	public void visit(Jmp node) {
+		for (Edge edge : BackEdges.getOuts(node)) {
+			Node edgeNode = edge.node;
+			if (edgeNode instanceof Block) {
+				addOperation(new JmpOperation(getBlockLabel((Block) edgeNode)));
+				break;
+			}
+		}
+	}
+
+	@Override
+	public void visit(Minus node) {
+		getValue(node.getPred(0), Register._AX);
+		addOperation(new NegOperation(getMode(node), Register._AX));
+		storeValue(node, Register._AX);
+	}
+
+	@Override
+	public void visit(Mod node) {
+		visitDivMod(node, node.getLeft(), node.getRight(), Register._DX);
+	}
+
+	@Override
+	public void visit(Mul node) {
+		visitTwoOperandsNode(new ImulOperation("mul operation", getMode(node)), node, node.getRight(), node.getLeft());
+	}
+
+	private void visitCmpNode(Cmp node) {
+		getValue(node.getRight(), Register._AX);
+		getValue(node.getLeft(), Register._DX);
+		addOperation(new CmpOperation("cmp operation", getMode(node), Register._AX, Register._DX));
+	}
+
+	@Override
+	public void visit(Proj node) {
+		if (node.getPredCount() == 1 && node.getPred(0) instanceof Start && node.getMode().equals(Mode.getT())) {
+			for (Edge edge : BackEdges.getOuts(node)) {
+				if (edge.node instanceof Proj) {
+					Proj proj = (Proj) edge.node;
+					nodeStorages.put(proj, new StackPointer(STACK_ITEM_SIZE * (proj.getNum() + 2), Register._BP)); // + 2 for dynamic link
+				}
+			}
+		}
+	}
+
+	@Override
+	public void visit(Return node) {
+		addOperation(new Comment("restore stack size"));
+		if (node.getPredCount() > 1) {
+			// Store return value in EAX register
+			getValue(node.getPred(1), Register._AX);
+		}
+
+		// addOperation(node.getBlock(), new AddqOperation(new Constant(-currentStackOffset), Register.RSP));
+		// better move rbp to rsp
+		addOperation(new MovOperation(Bit.BIT64, Register._BP, Register._SP));
+		addOperation(new PopOperation(Bit.BIT64, Register._BP));
+		addOperation(new RetOperation());
+	}
+
+	@Override
+	public void visit(Shl node) {
+		// move left node to a register
+		getValue(node.getLeft(), Register._AX);
+
+		Constant constant = new Constant((Const) node.getRight());
+
+		// execute operation
+		addOperation(new ShlOperation(getMode(node), Register._AX, constant));
+		// store on stack
+		storeValue(node, Register._AX);
+	}
+
+	@Override
+	public void visit(Load node) {
+		addOperation(new Comment("load operation " + node));
+		Node referenceNode = node.getPred(1);
+		getValue(referenceNode, Register._AX);
+		addOperation(new MovOperation(Bit.BIT64, new StackPointer(0, Register._AX), Register._AX));
+		for (Edge edge : BackEdges.getOuts(node)) {
+			Node edgeNode = edge.node;
+			if (!edgeNode.getMode().equals(Mode.getM())) {
+				storeValue(edgeNode, Register._AX);
+			}
+		}
+	}
+
+	@Override
+	public void visit(Store node) {
+		addOperation(new Comment("Store operation " + node));
+		Node addressNode = node.getPred(1);
+		getValue(addressNode, Register._AX);
+		Node valueNode = node.getPred(2);
+		getValue(valueNode, Register._CX);
+		addOperation(new MovOperation(getMode(valueNode), Register._CX, new StackPointer(0, Register._AX)));
+	}
+
+	@Override
+	public void visit(Sub node) { // we subtract the right node from the left, not the otherway around
+		visitTwoOperandsNode(new SubOperation("sub operation", getMode(node)), node, node.getRight(), node.getLeft());
+	}
+
+	private Node getRelevantPredecessor(Phi phi) {
+		Node phiBlock = phi.getBlock();
+
+		for (int i = 0; i < phiBlock.getPredCount(); i++) {
+			Node blockPredecessors = phiBlock.getPred(i);
+			if (blockPredecessors.getBlock().getNr() == currentBlock.getNr()) {
+				return phi.getPred(i);
+			}
+		}
+		return null;
+	}
+
+	@Override
+	public void visit(List<Phi> phis) {
+		addOperation(new Comment("Handle phis of current block"));
+		HashMap<Phi, StackPointer> phiTempStackMapping = new HashMap<>();
+		for (Phi phi : phis) {
+			Node predecessor = getRelevantPredecessor(phi);
+			getValue(predecessor, Register._AX);
+			StackPointer stackPointer = storeValueOnNewStackPointer(predecessor, Register._AX);
+			phiTempStackMapping.put(phi, stackPointer);
+		}
+
+		for (Phi phi : phis) {
+			getValue(phi, Register._AX, phiTempStackMapping.get(phi));
+			storeValue(phi, Register._AX);
+		}
+	}
+
+	@Override
+	public void visit(Align node) {
 		throw new RuntimeException(node + " is not implemented yet!");
 	}
 
 	@Override
-	public void visit(End node) {
-		addOperation(new Comment("end node"));
+	public void visit(Alloc node) {
+		throw new RuntimeException(node + " is not implemented yet!");
+	}
+
+	@Override
+	public void visit(Anchor node) {
+		throw new RuntimeException(node + " is not implemented yet!");
+	}
+
+	@Override
+	public void visit(And node) {
+		throw new RuntimeException(node + " is not implemented yet!");
+	}
+
+	@Override
+	public void visit(Bitcast node) {
+		throw new RuntimeException(node + " is not implemented yet!");
+	}
+
+	@Override
+	public void visit(Builtin node) {
+		throw new RuntimeException(node + " is not implemented yet!");
+	}
+
+	@Override
+	public void visit(Confirm node) {
+		throw new RuntimeException(node + " is not implemented yet!");
+	}
+
+	@Override
+	public void visit(Raise node) {
+		throw new RuntimeException(node + " is not implemented yet!");
+	}
+
+	@Override
+	public void visit(Sel node) {
+		throw new RuntimeException(node + " is not implemented yet!");
+	}
+
+	@Override
+	public void visit(Shr node) {
+		throw new RuntimeException(node + " is not implemented yet!");
+	}
+
+	@Override
+	public void visit(Shrs node) {
+		throw new RuntimeException(node + " is not implemented yet!");
+	}
+
+	@Override
+	public void visit(Dummy node) {
+		throw new RuntimeException(node + " is not implemented yet!");
 	}
 
 	@Override
@@ -524,36 +656,8 @@ public class X8664AssemblerGenerationVisitor implements BulkPhiNodeVisitor {
 	}
 
 	@Override
-	public void visit(Jmp node) {
-		for (Edge edge : BackEdges.getOuts(node)) {
-			Node edgeNode = edge.node;
-			if (edgeNode instanceof Block) {
-				addOperation(new JmpOperation(getBlockLabel((Block) edgeNode)));
-				break;
-			}
-		}
-	}
-
-	@Override
 	public void visit(Member node) {
 		throw new RuntimeException(node + " is not implemented yet!");
-	}
-
-	@Override
-	public void visit(Minus node) {
-		getValue(node.getPred(0), Register._AX);
-		addOperation(new NegOperation(getMode(node), Register._AX));
-		storeValue(node, Register._AX);
-	}
-
-	@Override
-	public void visit(Mod node) {
-		visitDivMod(node, node.getLeft(), node.getRight(), Register._DX);
-	}
-
-	@Override
-	public void visit(Mul node) {
-		visitTwoOperandsNode(new ImulOperation("mul operation", getMode(node)), node, node.getRight(), node.getLeft());
 	}
 
 	@Override
@@ -596,110 +700,6 @@ public class X8664AssemblerGenerationVisitor implements BulkPhiNodeVisitor {
 		throw new RuntimeException(node + " is not implemented yet!");
 	}
 
-	private void visitCmpNode(Cmp node) {
-		getValue(node.getRight(), Register._AX);
-		getValue(node.getLeft(), Register._DX);
-		addOperation(new CmpOperation("cmp operation", getMode(node), Register._AX, Register._DX));
-	}
-
-	@Override
-	public void visit(Proj node) {
-		if (node.getPredCount() == 1 && node.getPred(0) instanceof Start && node.getMode().equals(Mode.getT())) {
-			for (Edge edge : BackEdges.getOuts(node)) {
-				if (edge.node instanceof Proj) {
-					Proj proj = (Proj) edge.node;
-					nodeStorages.put(proj, new StackPointer(STACK_ITEM_SIZE * (proj.getNum() + 2), Register._BP)); // + 2 for dynamic link
-				}
-			}
-		}
-	}
-
-	@Override
-	public void visit(Raise node) {
-		throw new RuntimeException(node + " is not implemented yet!");
-	}
-
-	@Override
-	public void visit(Return node) {
-		addOperation(new Comment("restore stack size"));
-		if (node.getPredCount() > 1) {
-			// Store return value in EAX register
-			getValue(node.getPred(1), Register._AX);
-		}
-
-		// addOperation(node.getBlock(), new AddqOperation(new Constant(-currentStackOffset), Register.RSP));
-		// better move rbp to rsp
-		addOperation(new MovOperation(Bit.BIT64, Register._BP, Register._SP));
-		addOperation(new PopOperation(Bit.BIT64, Register._BP));
-		addOperation(new RetOperation());
-	}
-
-	@Override
-	public void visit(Sel node) {
-		throw new RuntimeException(node + " is not implemented yet!");
-	}
-
-	@Override
-	public void visit(Shl node) {
-		// move left node to a register
-		getValue(node.getLeft(), Register._AX);
-
-		Constant constant = new Constant((Const) node.getRight());
-
-		// execute operation
-		addOperation(new ShlOperation(getMode(node), Register._AX, constant));
-		// store on stack
-		storeValue(node, Register._AX);
-	}
-
-	@Override
-	public void visit(Shr node) {
-		throw new RuntimeException(node + " is not implemented yet!");
-	}
-
-	@Override
-	public void visit(Shrs node) {
-		throw new RuntimeException(node + " is not implemented yet!");
-	}
-
-	@Override
-	public void visit(Size node) {
-	}
-
-	@Override
-	public void visit(Start node) {
-	}
-
-	@Override
-	public void visit(Load node) {
-		addOperation(new Comment("load operation " + node));
-		Node referenceNode = node.getPred(1);
-		getValue(referenceNode, Register._AX);
-		addOperation(new MovOperation(Bit.BIT64, new StackPointer(0, Register._AX), Register._AX));
-		for (Edge edge : BackEdges.getOuts(node)) {
-			Node edgeNode = edge.node;
-			if (!edgeNode.getMode().equals(Mode.getM())) {
-				storeValue(edgeNode, Register._AX);
-			}
-		}
-	}
-
-	@Override
-	public void visit(Store node) {
-		addOperation(new Comment("Store operation " + node));
-		Node addressNode = node.getPred(1);
-		getValue(addressNode, Register._AX);
-		Node valueNode = node.getPred(2);
-		getValue(valueNode, Register._CX);
-		addOperation(new MovOperation(getMode(valueNode), Register._CX, new StackPointer(0, Register._AX)));
-	}
-
-	@Override
-	public void visit(Sub node) {
-		// we subtract the right node from the left, not the otherway around
-		visitTwoOperandsNode(new SubOperation("sub operation", getMode(node)), node, node.getRight(), node.getLeft());
-	}
-
 	@Override
 	public void visit(Switch node) {
 		throw new RuntimeException(node + " is not implemented yet!");
@@ -725,32 +725,34 @@ public class X8664AssemblerGenerationVisitor implements BulkPhiNodeVisitor {
 		throw new RuntimeException(node + " is not implemented yet!");
 	}
 
-	private Node getRelevantPredecessor(Phi phi) {
-		Node phiBlock = phi.getBlock();
-
-		for (int i = 0; i < phiBlock.getPredCount(); i++) {
-			Node blockPredecessors = phiBlock.getPred(i);
-			if (blockPredecessors.getBlock().getNr() == currentBlock.getNr()) {
-				return phi.getPred(i);
-			}
-		}
-		return null;
+	@Override
+	public void visit(CopyB node) {
+		throw new RuntimeException(node + " is not implemented yet!");
 	}
 
 	@Override
-	public void visit(List<Phi> phis) {
-		addOperation(new Comment("Handle phis of current block"));
-		HashMap<Phi, StackPointer> phiTempStackMapping = new HashMap<>();
-		for (Phi phi : phis) {
-			Node predecessor = getRelevantPredecessor(phi);
-			getValue(predecessor, Register._AX);
-			StackPointer stackPointer = storeValueOnNewStackPointer(predecessor, Register._AX);
-			phiTempStackMapping.put(phi, stackPointer);
-		}
-
-		for (Phi phi : phis) {
-			getValue(phi, Register._AX, phiTempStackMapping.get(phi));
-			storeValue(phi, Register._AX);
-		}
+	public void visit(Deleted node) {
+		throw new RuntimeException(node + " is not implemented yet!");
 	}
+
+	// The following methods don't have to handle something.
+
+	@Override
+	public void visit(Start node) {
+	}
+
+	@Override
+	public void visit(Size node) {
+	}
+
+	@Override
+	public void visit(Address node) {
+		// This is handled in a call.
+	}
+
+	@Override
+	public void visit(Bad node) {
+		// Ignore Bad nodes.
+	}
+
 }
