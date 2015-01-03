@@ -6,18 +6,6 @@ import compiler.firm.backend.storage.Register;
 
 public class CmpOperation extends StorageRegisterOperation {
 
-	public CmpOperation(Bit mode) {
-		this(null, mode);
-	}
-
-	public CmpOperation(String comment, Bit mode) {
-		super(comment, mode);
-	}
-
-	public CmpOperation(Bit mode, Register input, Register destinationRegister) {
-		super(null, mode, input, destinationRegister);
-	}
-
 	public CmpOperation(String comment, Bit mode, Register input, Register destinationRegister) {
 		super(comment, mode, input, destinationRegister);
 	}

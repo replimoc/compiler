@@ -6,7 +6,7 @@ import compiler.Symbol;
 import compiler.ast.AstNode;
 import compiler.semantic.ClassScope;
 
-public class FirmGraphGenerator {
+public final class FirmGraphGenerator {
 
 	private FirmGraphGenerator() {
 	}

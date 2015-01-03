@@ -7,10 +7,6 @@ import compiler.firm.backend.storage.Storage;
 
 public class SubOperation extends StorageRegisterOperation {
 
-	public SubOperation(Bit mode) {
-		super(null, mode);
-	}
-
 	public SubOperation(String comment, Bit mode) {
 		super(comment, mode);
 	}
