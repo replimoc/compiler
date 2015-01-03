@@ -36,6 +36,11 @@ public class StackPointer extends Storage {
 	}
 
 	@Override
+	public RegisterBased getReadOnRightSideRegister() {
+		return register;
+	}
+
+	@Override
 	public RegisterBased getUsedRegister() {
 		return register;
 	}

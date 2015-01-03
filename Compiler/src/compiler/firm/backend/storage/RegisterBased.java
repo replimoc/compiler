@@ -5,4 +5,13 @@ public abstract class RegisterBased extends Storage {
 	public RegisterBased getUsedRegister() {
 		return this;
 	}
+
+	@Override
+	public RegisterBased getReadOnRightSideRegister() {
+		return null;
+	}
+
+	public boolean isSpilled() {
+		return false;
+	}
 }

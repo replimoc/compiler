@@ -9,6 +9,7 @@ import compiler.firm.backend.Bit;
 import compiler.firm.backend.operations.CmpOperation;
 import compiler.firm.backend.operations.Comment;
 import compiler.firm.backend.operations.MovOperation;
+import compiler.firm.backend.storage.Constant;
 import compiler.firm.backend.storage.Register;
 import compiler.firm.backend.storage.RegisterBased;
 import compiler.firm.backend.storage.Storage;
@@ -17,6 +18,7 @@ import compiler.firm.backend.storage.VirtualRegister;
 public abstract class AssemblerOperation {
 
 	private final String comment;
+	private int accumulatorRegister = 0;
 	private final Register[] accumulatorRegisters = { Register._10D, Register._11D };
 
 	public AssemblerOperation() {
@@ -42,22 +44,19 @@ public abstract class AssemblerOperation {
 			List<String> result = new ArrayList<>();
 			result.add(new Comment("Operation with spill code").toString());
 			HashMap<VirtualRegister, Storage> storageMapping = new HashMap<>();
-			int accumulatorRegister = 0;
 
-			// TODO: Optimize: Use only used variables.
-			for (RegisterBased register : getUsedRegisters()) {
-				if (register.getClass() == VirtualRegister.class &&
-						((VirtualRegister) register).isSpilled()) {
+			for (RegisterBased register : getReadRegisters()) {
+				if (register.isSpilled()) {
 					VirtualRegister virtualRegister = (VirtualRegister) register;
-					if (accumulatorRegister >= accumulatorRegisters.length) {
-						throw new RuntimeException("Running out of accumulator registers");
-					}
-					Register temporaryRegister = accumulatorRegisters[accumulatorRegister++];
-					Storage stackPointer = virtualRegister.getRegister();
-					MovOperation spillOperation = new MovOperation(Bit.BIT64, stackPointer, temporaryRegister); // TODO, correct mode
-					storageMapping.put(virtualRegister, stackPointer);
-					virtualRegister.setStorage(temporaryRegister);
-					result.add(spillOperation.toString());
+					Storage storage = insertSpillcode(virtualRegister, result, true);
+					storageMapping.put(virtualRegister, storage);
+				}
+			}
+			for (RegisterBased register : getUsedRegisters()) {
+				if (register.isSpilled() && !storageMapping.containsKey(register)) {
+					VirtualRegister virtualRegister = (VirtualRegister) register;
+					Storage storage = insertSpillcode(virtualRegister, result, false);
+					storageMapping.put(virtualRegister, storage);
 				}
 			}
 
@@ -81,6 +80,27 @@ public abstract class AssemblerOperation {
 		}
 	}
 
+	private Storage insertSpillcode(VirtualRegister virtualRegister, List<String> result, boolean restore) {
+		Register temporaryRegister = getTemporaryRegister();
+		Storage stackPointer = virtualRegister.getRegister();
+		MovOperation spillOperation = new MovOperation(Bit.BIT64, stackPointer, temporaryRegister); // TODO, correct mode
+		if (!restore) {
+			spillOperation = new MovOperation(Bit.BIT64, new Constant(0), temporaryRegister); // Clear should be only on mode 64
+		}
+		virtualRegister.setStorage(temporaryRegister);
+		// if (restore) {
+		result.add(spillOperation.toString());
+		// }
+		return stackPointer;
+	}
+
+	private Register getTemporaryRegister() {
+		if (accumulatorRegister >= accumulatorRegisters.length) {
+			throw new RuntimeException("Running out of accumulator registers");
+		}
+		return accumulatorRegisters[accumulatorRegister++];
+	}
+
 	public abstract String getOperationString();
 
 	public RegisterBased[] getReadRegisters() {
@@ -92,8 +112,13 @@ public abstract class AssemblerOperation {
 	}
 
 	public boolean hasSpilledRegisters() {
+		for (RegisterBased register : getReadRegisters()) {
+			if (register.isSpilled()) {
+				return true;
+			}
+		}
 		for (RegisterBased register : getUsedRegisters()) {
-			if (register.getClass() == VirtualRegister.class && ((VirtualRegister) register).isSpilled()) {
+			if (register.isSpilled()) {
 				return true;
 			}
 		}

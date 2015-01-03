@@ -6,4 +6,6 @@ public abstract class Storage {
 	public abstract String toString(Bit bit);
 
 	public abstract RegisterBased getUsedRegister();
+
+	public abstract RegisterBased getReadOnRightSideRegister();
 }
