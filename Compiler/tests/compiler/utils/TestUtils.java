@@ -132,6 +132,10 @@ public class TestUtils {
 	}
 
 	public static Pair<Integer, List<String>> startCompilerApp(String... args) throws IOException {
+		return startCompilerApp(new String[] {}, args);
+	}
+
+	public static Pair<Integer, List<String>> startCompilerApp(String[] args0, String... args) throws IOException {
 		String classpath = System.getProperty("java.class.path");
 		List<String> arguments = new ArrayList<String>();
 		arguments.add("java");
@@ -139,6 +143,9 @@ public class TestUtils {
 		arguments.add(classpath);
 		arguments.add("-Xmx700m");
 		arguments.add(CompilerApp.class.getName());
+		for (String arg : args0) {
+			arguments.add(arg);
+		}
 		for (String arg : args) {
 			arguments.add(arg);
 		}

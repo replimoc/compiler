@@ -60,10 +60,13 @@ public class AutomatedOutputComparisonTest implements TestFileVisitor.FileTester
 
 		Pair<Integer, List<String>> compilingState;
 		if (Files.exists(cIncludeFilePath)) {
-			compilingState = TestUtils.startCompilerApp("-o", binarFile.toString(), "--c-include", cIncludeFilePath.toString(),
+			compilingState = TestUtils.startCompilerApp(getAdditionalOptions(),
+					"-o", binarFile.toString(), "--c-include",
+					cIncludeFilePath.toString(),
 					sourceFile.toAbsolutePath().toString());
 		} else {
-			compilingState = TestUtils.startCompilerApp("-o", binarFile.toString(), "--compile-firm", sourceFile.toAbsolutePath().toString());
+			compilingState = TestUtils.startCompilerApp(getAdditionalOptions(),
+					"-o", binarFile.toString(), sourceFile.toAbsolutePath().toString());
 		}
 
 		for (String line : compilingState.getSecond()) {
@@ -80,5 +83,9 @@ public class AutomatedOutputComparisonTest implements TestFileVisitor.FileTester
 		}
 
 		System.out.println(sourceFile + " passed ------------------------------------------------------------------------\n");
+	}
+
+	protected String[] getAdditionalOptions() {
+		return new String[] { "--compile-firm" };
 	}
 }
