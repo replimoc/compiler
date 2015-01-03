@@ -62,6 +62,7 @@ public abstract class AssemblerBitOperation extends AssemblerOperation {
 				VirtualRegister virtualRegister = storageMap.getKey();
 				Storage stackPointer = storageMap.getValue();
 				if (getClass() != CmpOperation.class) {
+					// TODO: Correct mode, see other comment for more details.
 					MovOperation spillOperation = new MovOperation(Bit.BIT64, virtualRegister.getRegister(), stackPointer);
 					result.add(spillOperation.toString());
 				}
@@ -79,14 +80,18 @@ public abstract class AssemblerBitOperation extends AssemblerOperation {
 	private Storage insertSpillcode(VirtualRegister virtualRegister, List<String> result, boolean restore) {
 		Register temporaryRegister = getTemporaryRegister();
 		Storage stackPointer = virtualRegister.getRegister();
-		MovOperation spillOperation = new MovOperation(Bit.BIT64, stackPointer, temporaryRegister); // TODO, correct mode
+		MovOperation spillOperation = new MovOperation(Bit.BIT64, stackPointer, temporaryRegister);
+		/*
+		 * TODO, correct mode, but it is not possible to use global AssemblerBitOperation mode. Reason is, that this register can also contains
+		 * addresses. For example mov %r10d, (%r11) -> read mode is the problem.
+		 */
 		if (!restore) {
 			spillOperation = new MovOperation(Bit.BIT64, new Constant(0), temporaryRegister); // Clear should be only on mode 64
 		}
 		virtualRegister.setStorage(temporaryRegister);
-		// if (restore) {
-		result.add(spillOperation.toString());
-		// }
+		if (restore || mode == Bit.BIT8) {
+			result.add(spillOperation.toString());
+		}
 		return stackPointer;
 	}
 
