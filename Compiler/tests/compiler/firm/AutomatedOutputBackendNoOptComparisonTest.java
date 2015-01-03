@@ -6,4 +6,9 @@ public class AutomatedOutputBackendNoOptComparisonTest extends AbstractAutomated
 	protected String[] getAdditionalOptions() {
 		return new String[] { "--no-opt" };
 	}
+
+	@Override
+	protected boolean forkProcess() {
+		return false;
+	}
 }

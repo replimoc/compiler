@@ -6,4 +6,9 @@ public class AutomatedOutputFirmOptComparisonTest extends AbstractAutomatedOutpu
 	protected String[] getAdditionalOptions() {
 		return new String[] { "--compile-firm" };
 	}
+
+	@Override
+	protected boolean forkProcess() {
+		return true;
+	}
 }

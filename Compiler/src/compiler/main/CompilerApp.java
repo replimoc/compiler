@@ -62,7 +62,7 @@ public final class CompilerApp {
 		}).start();
 	}
 
-	private static int execute(String[] args) {
+	public static synchronized int execute(String[] args) {
 		boolean debug = false;
 
 		Options options = new Options();
@@ -98,44 +98,44 @@ public final class CompilerApp {
 			if (remainingArgs.length == 1) {
 				Path file = Paths.get(remainingArgs[0]);
 
+				// Execute Lexer
+				StringTable stringTable = new StringTable();
+				Lexer lexer = new Lexer(Files.newBufferedReader(file, StandardCharsets.US_ASCII), stringTable);
+
+				if (cmd.hasOption(LEXTEST)) {
+					return executeLextest(lexer);
+				}
+
+				// Execute Parser
+				Parser parser = new Parser(lexer);
+
+				AstNode ast;
 				try {
-					// Execute Lexer
-					StringTable stringTable = new StringTable();
-					Lexer lexer = new Lexer(Files.newBufferedReader(file, StandardCharsets.US_ASCII), stringTable);
+					ast = parser.parse();
+				} catch (ParsingFailedException e) {
+					e.printParserExceptions();
+					return 1;
+				}
 
-					if (cmd.hasOption(LEXTEST)) {
-						return executeLextest(lexer);
+				if (cmd.hasOption(PRETTY_PRINT_AST)) {
+					System.out.print(PrettyPrinter.prettyPrint(ast));
+					return 0;
+				}
+
+				final SemanticCheckResults semanticResult = SemanticChecker.checkSemantic(ast, stringTable);
+				if (semanticResult.hasErrors()) {
+					for (SemanticAnalysisException curr : semanticResult.getExceptions()) {
+						System.err.println(curr.getMessage());
 					}
+					return 1;
+				}
 
-					// Execute Parser
-					Parser parser = new Parser(lexer);
+				if (cmd.hasOption(CHECK)) {
+					return 0; // Abort execution, if only check is required
+				}
 
-					AstNode ast;
-					try {
-						ast = parser.parse();
-					} catch (ParsingFailedException e) {
-						e.printParserExceptions();
-						return 1;
-					}
-
-					if (cmd.hasOption(PRETTY_PRINT_AST)) {
-						System.out.print(PrettyPrinter.prettyPrint(ast));
-						return 0;
-					}
-
-					final SemanticCheckResults semanticResult = SemanticChecker.checkSemantic(ast, stringTable);
-					if (semanticResult.hasErrors()) {
-						for (SemanticAnalysisException curr : semanticResult.getExceptions()) {
-							System.err.println(curr.getMessage());
-						}
-						return 1;
-					}
-
-					if (cmd.hasOption(CHECK)) {
-						return 0; // Abort execution, if only check is required
-					}
-
-					FirmUtils.initFirm();
+				FirmUtils.initFirm();
+				try {
 					FirmGraphGenerator.transformToFirm(ast, semanticResult.getClassScopes());
 
 					FirmUtils.highToLowLevel();
@@ -188,13 +188,14 @@ public final class CompilerApp {
 						return ex.getStatusCode();
 					}
 
-					FirmUtils.finishFirm();
-
 					return 0;
-				} catch (IOException e) {
-					System.err.println("Error accessing file " + file + ": " + e.getMessage());
+
+				} finally {
+					FirmUtils.finishFirm();
 				}
 			}
+		} catch (IOException e) {
+			System.err.println("Error accessing file : " + e.getMessage());
 		} catch (ParseException e) {
 			System.err.println("Wrong Command Line Parameters: " + e.getMessage());
 		} catch (Throwable t) {

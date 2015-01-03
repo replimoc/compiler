@@ -6,4 +6,9 @@ public class AutomatedOutputBackendOptComparisonTest extends AbstractAutomatedOu
 	protected String[] getAdditionalOptions() {
 		return new String[] {};
 	}
+
+	@Override
+	protected boolean forkProcess() {
+		return false;
+	}
 }
