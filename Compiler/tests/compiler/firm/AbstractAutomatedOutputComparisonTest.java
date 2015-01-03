@@ -22,7 +22,7 @@ import compiler.utils.Utils;
  * <p/>
  * this test should be started from Compiler directory
  */
-public class AutomatedOutputComparisonTest implements TestFileVisitor.FileTester {
+public abstract class AbstractAutomatedOutputComparisonTest implements TestFileVisitor.FileTester {
 
 	private static final String OUTPUT_FILE_EXTENSION = ".result";
 	private static final String OUTPUT_FILE_EXTENSION_MJTEST = ".check";
@@ -85,7 +85,5 @@ public class AutomatedOutputComparisonTest implements TestFileVisitor.FileTester
 		System.out.println(sourceFile + " passed ------------------------------------------------------------------------\n");
 	}
 
-	protected String[] getAdditionalOptions() {
-		return new String[] { "--compile-firm" };
-	}
+	protected abstract String[] getAdditionalOptions();
 }
