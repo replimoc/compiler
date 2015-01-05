@@ -1,5 +1,6 @@
 package compiler.firm.backend.operations;
 
+import compiler.firm.backend.Bit;
 import compiler.firm.backend.operations.templates.AssemblerOperation;
 import compiler.firm.backend.storage.Register;
 import compiler.firm.backend.storage.RegisterBased;
@@ -22,12 +23,11 @@ public class CltdOperation extends AssemblerOperation {
 
 	@Override
 	public RegisterBased[] getReadRegisters() {
-		return new RegisterBased[] { new VirtualRegister(Register._AX) };
+		return new RegisterBased[] { new VirtualRegister(Bit.BIT64, Register._AX) };
 	}
 
 	@Override
 	public RegisterBased[] getWriteRegisters() {
-		return new RegisterBased[] { new VirtualRegister(Register._DX) };
+		return new RegisterBased[] { new VirtualRegister(Bit.BIT64, Register._DX) };
 	}
-
 }

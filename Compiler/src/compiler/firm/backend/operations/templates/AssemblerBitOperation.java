@@ -8,7 +8,6 @@ import java.util.Map.Entry;
 import compiler.firm.backend.Bit;
 import compiler.firm.backend.operations.Comment;
 import compiler.firm.backend.operations.MovOperation;
-import compiler.firm.backend.storage.Constant;
 import compiler.firm.backend.storage.Register;
 import compiler.firm.backend.storage.RegisterBased;
 import compiler.firm.backend.storage.Storage;
@@ -17,7 +16,7 @@ import compiler.firm.backend.storage.VirtualRegister;
 public abstract class AssemblerBitOperation extends AssemblerOperation {
 	private static final Register[] accumulatorRegisters = { Register._10D, Register._11D };
 
-	private final Bit mode;
+	protected final Bit mode;
 	private int accumulatorRegister = 0;
 
 	public AssemblerBitOperation(String comment, Bit mode) {
@@ -62,8 +61,7 @@ public abstract class AssemblerBitOperation extends AssemblerOperation {
 				VirtualRegister virtualRegister = storageMap.getKey();
 				Storage stackPointer = storageMap.getValue();
 				if (storageMappingWrite.contains(virtualRegister)) {
-					// TODO: Correct mode, see other comment for more details.
-					MovOperation spillOperation = new MovOperation(Bit.BIT64, virtualRegister, stackPointer);
+					MovOperation spillOperation = new MovOperation(virtualRegister.getMode(), virtualRegister, stackPointer);
 					result.add(spillOperation.toString());
 				}
 				virtualRegister.setStorage(stackPointer);
@@ -80,18 +78,13 @@ public abstract class AssemblerBitOperation extends AssemblerOperation {
 	private Storage insertSpillcode(VirtualRegister virtualRegister, List<String> result, boolean restore) {
 		Register temporaryRegister = getTemporaryRegister();
 		Storage stackPointer = virtualRegister.getRegister();
-		MovOperation spillOperation = new MovOperation(Bit.BIT64, stackPointer, temporaryRegister);
-		/*
-		 * TODO, correct mode, but it is not possible to use global AssemblerBitOperation mode. Reason is, that this register can also contains
-		 * addresses. For example mov %r10d, (%r11) -> read mode is the problem.
-		 */
-		if (!restore) {
-			spillOperation = new MovOperation(Bit.BIT64, new Constant(0), temporaryRegister); // Clear should be only on mode 64
-		}
-		virtualRegister.setStorage(temporaryRegister);
-		if (restore || mode == Bit.BIT8) {
+
+		if (restore) {
+			MovOperation spillOperation = new MovOperation(virtualRegister.getMode(), stackPointer, temporaryRegister);
 			result.add(spillOperation.toString());
 		}
+		virtualRegister.setStorage(temporaryRegister);
+
 		return stackPointer;
 	}
 

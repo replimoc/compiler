@@ -5,6 +5,8 @@ import compiler.firm.backend.Bit;
 public class VirtualRegister extends RegisterBased {
 
 	private static int I = 0;
+
+	private final Bit mode;
 	private final int num;
 
 	private Storage register;
@@ -14,13 +16,15 @@ public class VirtualRegister extends RegisterBased {
 	private int firstOccurrence = Integer.MAX_VALUE;
 	private int lastOccurrence = 0;
 
-	public VirtualRegister() {
+	public VirtualRegister(Bit mode) {
+		this.mode = mode;
 		this.register = null;
 		this.forceRegister = false;
 		this.num = I++;
 	}
 
-	public VirtualRegister(RegisterBased register) {
+	public VirtualRegister(Bit mode, RegisterBased register) {
+		this.mode = mode;
 		this.register = register;
 		this.forceRegister = true;
 		this.num = I++;
@@ -76,5 +80,9 @@ public class VirtualRegister extends RegisterBased {
 		if (occurrence > this.lastOccurrence) {
 			this.lastOccurrence = occurrence;
 		}
+	}
+
+	public Bit getMode() {
+		return mode;
 	}
 }

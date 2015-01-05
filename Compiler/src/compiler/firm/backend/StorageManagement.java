@@ -62,10 +62,10 @@ public class StorageManagement {
 		// if variable was assigned, than simply load it from stack
 
 		if (!nodeStorages.containsKey(node)) {
-			addStorage(node, new VirtualRegister());
+			addStorage(node, new VirtualRegister(getMode(node)));
 			addOperation(new Comment("expected " + node + " to be on stack"));
-
 		}
+
 		return getValue(node, registerOverwrite, register, getStorage(node));
 	}
 
@@ -86,13 +86,14 @@ public class StorageManagement {
 	}
 
 	public RegisterBased getValueFromStorage(Node node, boolean registerOverwrite, RegisterBased register, Storage originalStorage) {
-		register = new VirtualRegister(register);
+		Bit mode = getMode(node);
+		register = new VirtualRegister(mode, register);
 
-		if (getMode(node) == Bit.BIT8) {
+		if (mode == Bit.BIT8) {
 			addOperation(new MovOperation("movb does not clear the register before write", Bit.BIT64, new Constant(0), register));
 		}
 
-		addOperation(new MovOperation("Load address " + node.toString(), getMode(node), originalStorage, register));
+		addOperation(new MovOperation("Load address " + node.toString(), mode, originalStorage, register));
 		return register;
 	}
 
@@ -112,7 +113,7 @@ public class StorageManagement {
 	public void storeValueAndCreateNewStorage(Node node, Storage storage) {
 		Storage destination = nodeStorages.get(node);
 		if (destination == null) {
-			destination = new VirtualRegister();
+			destination = new VirtualRegister(getMode(node));
 			addStorage(node, destination);
 		}
 		storeValue(node, storage, destination);
@@ -124,7 +125,7 @@ public class StorageManagement {
 		}
 	}
 
-	public Bit getMode(Node node) {
+	public static Bit getMode(Node node) {
 		if (node.getMode().equals(FirmUtils.getModeReference())) {
 			return Bit.BIT64;
 		} else if (node.getMode().equals(FirmUtils.getModeBoolean())) {
@@ -137,7 +138,7 @@ public class StorageManagement {
 	public void reserveMemoryForPhis(List<Phi> phis) {
 		addOperation(new Comment("Reserve space for phis"));
 		for (Phi phi : phis) {
-			addStorage(phi, new VirtualRegister());
+			addStorage(phi, new VirtualRegister(getMode(phi)));
 		}
 	}
 }
