@@ -2,20 +2,26 @@ package compiler.firm.backend.operations;
 
 import compiler.firm.backend.Bit;
 import compiler.firm.backend.operations.templates.StorageRegisterOperation;
-import compiler.firm.backend.storage.Register;
+import compiler.firm.backend.operations.templates.StorageRegisterOperationFactory;
+import compiler.firm.backend.storage.RegisterBased;
 import compiler.firm.backend.storage.Storage;
 
 public class AddOperation extends StorageRegisterOperation {
 
-	public AddOperation(String comment, Bit mode) {
-		super(comment, mode);
+	public static StorageRegisterOperationFactory getFactory(final String comment, final Bit mode) {
+		return new StorageRegisterOperationFactory() {
+			@Override
+			public StorageRegisterOperation instantiate(Storage input, RegisterBased destination) {
+				return new AddOperation(comment, mode, input, destination);
+			}
+		};
 	}
 
-	public AddOperation(Bit mode, Storage input, Register destinationRegister) {
+	public AddOperation(Bit mode, Storage input, RegisterBased destinationRegister) {
 		super(null, mode, input, destinationRegister);
 	}
 
-	public AddOperation(String comment, Bit mode, Storage input, Register destinationRegister) {
+	public AddOperation(String comment, Bit mode, Storage input, RegisterBased destinationRegister) {
 		super(comment, mode, input, destinationRegister);
 	}
 

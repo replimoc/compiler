@@ -33,6 +33,7 @@ import compiler.firm.backend.operations.jump.JmpOperation;
 import compiler.firm.backend.operations.jump.JzOperation;
 import compiler.firm.backend.operations.templates.AssemblerOperation;
 import compiler.firm.backend.operations.templates.StorageRegisterOperation;
+import compiler.firm.backend.operations.templates.StorageRegisterOperationFactory;
 import compiler.firm.backend.storage.Constant;
 import compiler.firm.backend.storage.Register;
 import compiler.firm.backend.storage.RegisterBased;
@@ -127,13 +128,14 @@ public class X8664AssemblerGenerationVisitor implements BulkPhiNodeVisitor {
 		operations.add(assemblerOption);
 	}
 
-	private <T extends StorageRegisterOperation> void visitTwoOperandsNode(T operation, Node parent, Node left, Node right) {
+	private <T extends StorageRegisterOperation> void visitTwoOperandsNode(StorageRegisterOperationFactory operationFactory, Node parent,
+			Node left, Node right) {
 		// get left node
 		Storage registerLeft = registerAllocation.getValueAvoidNewRegister(left, false);
 		// get right node
 		RegisterBased registerRight = registerAllocation.getValue(right, true);
-		// TODO: find a nicer way to instantiate T directly instead of passing an instance and then initializing
-		operation.initialize(registerLeft, registerRight);
+		// create operation object
+		StorageRegisterOperation operation = operationFactory.instantiate(registerLeft, registerRight);
 		// execute operation
 		addOperation(operation);
 		// store on stack
@@ -159,7 +161,7 @@ public class X8664AssemblerGenerationVisitor implements BulkPhiNodeVisitor {
 
 	@Override
 	public void visit(Add node) {
-		visitTwoOperandsNode(new AddOperation("add operation", registerAllocation.getMode(node)), node, node.getLeft(), node.getRight());
+		visitTwoOperandsNode(AddOperation.getFactory("add operation", registerAllocation.getMode(node)), node, node.getLeft(), node.getRight());
 	}
 
 	@Override
@@ -408,7 +410,7 @@ public class X8664AssemblerGenerationVisitor implements BulkPhiNodeVisitor {
 
 	@Override
 	public void visit(Mul node) {
-		visitTwoOperandsNode(new ImulOperation("mul operation", registerAllocation.getMode(node)), node, node.getRight(), node.getLeft());
+		visitTwoOperandsNode(ImulOperation.getFactory("mul operation", registerAllocation.getMode(node)), node, node.getRight(), node.getLeft());
 	}
 
 	private void visitCmpNode(Cmp node) {
@@ -486,7 +488,7 @@ public class X8664AssemblerGenerationVisitor implements BulkPhiNodeVisitor {
 
 	@Override
 	public void visit(Sub node) { // we subtract the right node from the left, not the otherway around
-		visitTwoOperandsNode(new SubOperation("sub operation", registerAllocation.getMode(node)), node, node.getRight(), node.getLeft());
+		visitTwoOperandsNode(SubOperation.getFactory("sub operation", registerAllocation.getMode(node)), node, node.getRight(), node.getLeft());
 	}
 
 	private Node getRelevantPredecessor(Phi phi) {

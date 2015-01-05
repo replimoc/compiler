@@ -6,12 +6,8 @@ import compiler.firm.backend.storage.Storage;
 
 public abstract class StorageRegisterOperation extends AssemblerBitOperation {
 
-	private Storage storage;
-	private RegisterBased destination;
-
-	public StorageRegisterOperation(String comment, Bit mode) {
-		super(comment, mode);
-	}
+	private final Storage storage;
+	private final RegisterBased destination;
 
 	public StorageRegisterOperation(String comment, Bit mode, Storage storage, RegisterBased destination) {
 		super(comment, mode);
@@ -25,11 +21,6 @@ public abstract class StorageRegisterOperation extends AssemblerBitOperation {
 
 	public RegisterBased getDestination() {
 		return destination;
-	}
-
-	public void initialize(Storage storage, RegisterBased destination) {
-		this.storage = storage;
-		this.destination = destination;
 	}
 
 	@Override
