@@ -84,8 +84,6 @@ public class BlockNodesCollectingVisitor implements NodeVisitor {
 
 	private BlockNodes getBlockNodes(Node node) {
 		Block block = (Block) node.getBlock();
-		if (block == null)
-			block = (Block) node;
 
 		BlockNodes blockNodes = nodesPerBlock.get(block);
 		if (blockNodes == null) {

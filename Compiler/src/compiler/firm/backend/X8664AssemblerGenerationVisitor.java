@@ -393,13 +393,7 @@ public class X8664AssemblerGenerationVisitor implements BulkPhiNodeVisitor {
 
 	@Override
 	public void visit(Jmp node) {
-		for (Edge edge : BackEdges.getOuts(node)) {
-			Node edgeNode = edge.node;
-			if (edgeNode instanceof Block) {
-				addOperation(new JmpOperation(getBlockLabel((Block) edgeNode)));
-				break;
-			}
-		}
+		addOperation(new JmpOperation(getBlockLabel((Block) FirmUtils.getFirstSuccessor(node))));
 	}
 
 	@Override
@@ -468,16 +462,6 @@ public class X8664AssemblerGenerationVisitor implements BulkPhiNodeVisitor {
 	}
 
 	@Override
-	public void visit(Shr node) {
-		throw new RuntimeException(node + " is not implemented yet!");
-	}
-
-	@Override
-	public void visit(Shrs node) {
-		throw new RuntimeException(node + " is not implemented yet!");
-	}
-
-	@Override
 	public void visit(Load node) {
 		addOperation(new Comment("load operation " + node));
 		Node referenceNode = node.getPred(1);
@@ -535,6 +519,16 @@ public class X8664AssemblerGenerationVisitor implements BulkPhiNodeVisitor {
 			RegisterBased register = registerAllocation.getValue(phi, false, phiTempStackMapping.get(phi));
 			registerAllocation.storeValue(phi, register);
 		}
+	}
+
+	@Override
+	public void visit(Shr node) {
+		throw new RuntimeException(node + " is not implemented yet!");
+	}
+
+	@Override
+	public void visit(Shrs node) {
+		throw new RuntimeException(node + " is not implemented yet!");
 	}
 
 	@Override

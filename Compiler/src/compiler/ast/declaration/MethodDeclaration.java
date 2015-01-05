@@ -1,6 +1,5 @@
 package compiler.ast.declaration;
 
-import java.util.Arrays;
 import java.util.List;
 
 import compiler.Symbol;
@@ -18,10 +17,6 @@ public class MethodDeclaration extends MethodMemberDeclaration {
 			Block body) {
 		super(position, isStatic, identifier, parameters, returnType);
 		this.block = body;
-	}
-
-	public MethodDeclaration(boolean isStatic, Symbol identifier, Type returnType, Block body, ParameterDeclaration... parameters) {
-		this(null, isStatic, identifier, Arrays.asList(parameters), returnType, body);
 	}
 
 	public Block getBlock() {

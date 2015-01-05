@@ -9,7 +9,7 @@ import java.util.List;
 import compiler.utils.ExecutionFailedException;
 import compiler.utils.Pair;
 import compiler.utils.Utils;
-
+import firm.BackEdges;
 import firm.Backend;
 import firm.ClassType;
 import firm.Dump;
@@ -21,6 +21,7 @@ import firm.Mode;
 import firm.Program;
 import firm.Type;
 import firm.Util;
+import firm.nodes.Node;
 
 public final class FirmUtils {
 
@@ -169,5 +170,9 @@ public final class FirmUtils {
 
 	public static void finishFirm() {
 		Firm.finish();
+	}
+
+	public static Node getFirstSuccessor(Node node) {
+		return BackEdges.getOuts(node).iterator().next().node;
 	}
 }

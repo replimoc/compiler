@@ -22,10 +22,6 @@ public class LocalVariableDeclaration extends Declaration implements Statement {
 		this(position, type, identifier, expression, 0);
 	}
 
-	public LocalVariableDeclaration(Position position, Type type, Symbol identifier, int variableNumber) {
-		this(position, type, identifier, null, variableNumber);
-	}
-
 	public LocalVariableDeclaration(Type type, Symbol identifier, int variableNumber) {
 		this(null, type, identifier, null, variableNumber);
 	}

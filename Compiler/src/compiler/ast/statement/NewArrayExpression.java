@@ -15,22 +15,13 @@ public class NewArrayExpression extends PrimaryExpression {
 		this.firstDimension = firstDimension;
 	}
 
+	@Override
 	public Type getType() {
 		return type;
 	}
 
 	public Expression getFirstDimension() {
 		return firstDimension;
-	}
-
-	public int getDimensions() {
-		int dim = 0;
-		Type tmpType = type;
-		while (tmpType.getSubType() != null) {
-			dim++;
-			tmpType = tmpType.getSubType();
-		}
-		return dim;
 	}
 
 	@Override

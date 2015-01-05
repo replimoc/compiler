@@ -2,8 +2,6 @@ package compiler.firm.optimization.visitor;
 
 import java.util.HashMap;
 
-import firm.BackEdges;
-import firm.BackEdges.Edge;
 import firm.Mode;
 import firm.nodes.Add;
 import firm.nodes.Address;
@@ -75,13 +73,6 @@ public abstract class OptimizationVisitor<T extends Object> implements NodeVisit
 	}
 
 	public abstract HashMap<Node, T> getLatticeValues();
-
-	protected Node getFirstSuccessor(Node node) {
-		for (Edge edge : BackEdges.getOuts(node)) {
-			return edge.node;
-		}
-		return null;
-	}
 
 	protected boolean isConstant(Node node) {
 		return node instanceof Const &&
