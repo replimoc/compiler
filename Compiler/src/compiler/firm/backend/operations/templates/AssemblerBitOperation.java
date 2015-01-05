@@ -6,7 +6,6 @@ import java.util.List;
 import java.util.Map.Entry;
 
 import compiler.firm.backend.Bit;
-import compiler.firm.backend.operations.CmpOperation;
 import compiler.firm.backend.operations.Comment;
 import compiler.firm.backend.operations.MovOperation;
 import compiler.firm.backend.storage.Constant;
@@ -36,6 +35,7 @@ public abstract class AssemblerBitOperation extends AssemblerOperation {
 			List<String> result = new ArrayList<>();
 			result.add(new Comment("Operation with spill code").toString());
 			HashMap<VirtualRegister, Storage> storageMapping = new HashMap<>();
+			List<VirtualRegister> storageMappingWrite = new ArrayList<>();
 
 			for (RegisterBased register : getReadRegisters()) {
 				if (register.isSpilled()) {
@@ -45,10 +45,14 @@ public abstract class AssemblerBitOperation extends AssemblerOperation {
 				}
 			}
 			for (RegisterBased register : getWriteRegisters()) {
-				if (register.isSpilled() && !storageMapping.containsKey(register)) {
+				if (register.isSpilled()) {
+
 					VirtualRegister virtualRegister = (VirtualRegister) register;
-					Storage storage = insertSpillcode(virtualRegister, result, false);
-					storageMapping.put(virtualRegister, storage);
+					if (!storageMapping.containsKey(register)) {
+						Storage storage = insertSpillcode(virtualRegister, result, false);
+						storageMapping.put(virtualRegister, storage);
+					}
+					storageMappingWrite.add(virtualRegister);
 				}
 			}
 
@@ -57,9 +61,9 @@ public abstract class AssemblerBitOperation extends AssemblerOperation {
 			for (Entry<VirtualRegister, Storage> storageMap : storageMapping.entrySet()) {
 				VirtualRegister virtualRegister = storageMap.getKey();
 				Storage stackPointer = storageMap.getValue();
-				if (getClass() != CmpOperation.class) {
+				if (storageMappingWrite.contains(virtualRegister)) {
 					// TODO: Correct mode, see other comment for more details.
-					MovOperation spillOperation = new MovOperation(Bit.BIT64, virtualRegister.getRegister(), stackPointer);
+					MovOperation spillOperation = new MovOperation(Bit.BIT64, virtualRegister, stackPointer);
 					result.add(spillOperation.toString());
 				}
 				virtualRegister.setStorage(stackPointer);
