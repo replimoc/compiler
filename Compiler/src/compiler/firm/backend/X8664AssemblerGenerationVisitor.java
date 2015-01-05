@@ -35,9 +35,9 @@ import compiler.firm.backend.operations.templates.AssemblerOperation;
 import compiler.firm.backend.operations.templates.StorageRegisterOperation;
 import compiler.firm.backend.operations.templates.StorageRegisterOperationFactory;
 import compiler.firm.backend.storage.Constant;
+import compiler.firm.backend.storage.MemoryPointer;
 import compiler.firm.backend.storage.Register;
 import compiler.firm.backend.storage.RegisterBased;
-import compiler.firm.backend.storage.MemoryPointer;
 import compiler.firm.backend.storage.Storage;
 import compiler.firm.backend.storage.VirtualRegister;
 import compiler.utils.Utils;
@@ -217,38 +217,35 @@ public class X8664AssemblerGenerationVisitor implements BulkPhiNodeVisitor {
 			addOperation(operation);
 		}
 
-		Register[] callingRegisters = callingConvention.getParameterRegisters();
-
-		// The following is before filling registers to have no problem with register allocation.
-		int remainingParameters = Math.max(0, parametersCount - callingRegisters.length);
-		firmOffset += callingRegisters.length;
-
 		Register[] callerSavedRegisters = callingConvention.callerSavedRegisters();
-
-		int stackSize = remainingParameters + callerSavedRegisters.length;
-
-		Constant stackAllocationSize = new Constant(STACK_ITEM_SIZE * stackSize);
-
-		addOperation(new SubOperation(Bit.BIT64, stackAllocationSize, Register._SP));
-
-		// Copy parameters to stack
-		for (int i = 0; i < remainingParameters; i++) {
-			Storage sourcePointer = registerAllocation.getStorage(node.getPred(i + firmOffset));
-			// Copy parameter
-			VirtualRegister temporaryRegister = new VirtualRegister();
-			MemoryPointer destinationPointer = new MemoryPointer(i * STACK_ITEM_SIZE, Register._SP);
-			Bit mode = registerAllocation.getMode(node.getPred(i + firmOffset));
-			addOperation(new MovOperation(mode, sourcePointer, temporaryRegister));
-			addOperation(new MovOperation(mode, temporaryRegister, destinationPointer));
-		}
-		firmOffset -= callingRegisters.length;
 
 		// Save all callerSavedRegisters to stack
 		// TODO: Save only necessary registers
-		int stackOffset = remainingParameters * STACK_ITEM_SIZE;
 		for (Register saveRegister : callerSavedRegisters) {
-			addOperation(new MovOperation(Bit.BIT64, saveRegister, new MemoryPointer(stackOffset, Register._SP)));
-			stackOffset += STACK_ITEM_SIZE;
+			addOperation(new PushOperation(Bit.BIT64, saveRegister));
+		}
+
+		// The following is before filling registers to have no problem with register allocation.
+		Register[] callingRegisters = callingConvention.getParameterRegisters();
+		int numberOfstackParameters = parametersCount - callingRegisters.length;
+		Constant stackAllocationSize = new Constant(STACK_ITEM_SIZE * numberOfstackParameters);
+
+		if (numberOfstackParameters > 0) {
+			firmOffset += callingRegisters.length;
+
+			addOperation(new SubOperation(Bit.BIT64, stackAllocationSize, Register._SP));
+
+			// Copy parameters to stack
+			for (int i = 0; i < numberOfstackParameters; i++) {
+				Storage sourcePointer = registerAllocation.getStorage(node.getPred(i + firmOffset));
+				// Copy parameter
+				VirtualRegister temporaryRegister = new VirtualRegister();
+				MemoryPointer destinationPointer = new MemoryPointer(i * STACK_ITEM_SIZE, Register._SP);
+				Bit mode = registerAllocation.getMode(node.getPred(i + firmOffset));
+				addOperation(new MovOperation(mode, sourcePointer, temporaryRegister));
+				addOperation(new MovOperation(mode, temporaryRegister, destinationPointer));
+			}
+			firmOffset -= callingRegisters.length;
 		}
 
 		// Copy parameters in calling registers
@@ -259,13 +256,13 @@ public class X8664AssemblerGenerationVisitor implements BulkPhiNodeVisitor {
 
 		addOperation(new CallOperation(methodName, callingConvention));
 
-		stackOffset = remainingParameters * STACK_ITEM_SIZE;
-		for (Register saveRegister : callerSavedRegisters) {
-			addOperation(new MovOperation(Bit.BIT64, new MemoryPointer(stackOffset, Register._SP), saveRegister));
-			stackOffset += STACK_ITEM_SIZE;
+		if (numberOfstackParameters > 0) {
+			addOperation(new AddOperation(Bit.BIT64, stackAllocationSize, Register._SP));
 		}
 
-		addOperation(new AddOperation(Bit.BIT64, stackAllocationSize, Register._SP));
+		for (int i = callerSavedRegisters.length - 1; i >= 0; i--) {
+			addOperation(new PopOperation(Bit.BIT64, callerSavedRegisters[i]));
+		}
 
 		for (AssemblerOperation operation : callingConvention.getSuffixOperations()) {
 			addOperation(operation);
