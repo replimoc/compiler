@@ -20,7 +20,7 @@ import compiler.firm.backend.operations.templates.JumpOperation;
 import compiler.firm.backend.storage.Constant;
 import compiler.firm.backend.storage.Register;
 import compiler.firm.backend.storage.RegisterBased;
-import compiler.firm.backend.storage.StackPointer;
+import compiler.firm.backend.storage.MemoryPointer;
 import compiler.firm.backend.storage.VirtualRegister;
 
 public class LinearScanRegisterAllocation {
@@ -114,7 +114,7 @@ public class LinearScanRegisterAllocation {
 		}
 		virtualRegister.setSpilled(true);
 		currentStackOffset += STACK_ITEM_SIZE;
-		virtualRegister.setStorage(new StackPointer(-currentStackOffset, Register._BP));
+		virtualRegister.setStorage(new MemoryPointer(-currentStackOffset, Register._BP));
 	}
 
 	private VirtualRegister getRegisterWithLongestLifetime() {

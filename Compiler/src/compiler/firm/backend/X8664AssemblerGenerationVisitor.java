@@ -37,7 +37,7 @@ import compiler.firm.backend.operations.templates.StorageRegisterOperationFactor
 import compiler.firm.backend.storage.Constant;
 import compiler.firm.backend.storage.Register;
 import compiler.firm.backend.storage.RegisterBased;
-import compiler.firm.backend.storage.StackPointer;
+import compiler.firm.backend.storage.MemoryPointer;
 import compiler.firm.backend.storage.Storage;
 import compiler.firm.backend.storage.VirtualRegister;
 import compiler.utils.Utils;
@@ -236,7 +236,7 @@ public class X8664AssemblerGenerationVisitor implements BulkPhiNodeVisitor {
 			Storage sourcePointer = registerAllocation.getStorage(node.getPred(i + firmOffset));
 			// Copy parameter
 			VirtualRegister temporaryRegister = new VirtualRegister();
-			StackPointer destinationPointer = new StackPointer(i * STACK_ITEM_SIZE, Register._SP);
+			MemoryPointer destinationPointer = new MemoryPointer(i * STACK_ITEM_SIZE, Register._SP);
 			Bit mode = registerAllocation.getMode(node.getPred(i + firmOffset));
 			addOperation(new MovOperation(mode, sourcePointer, temporaryRegister));
 			addOperation(new MovOperation(mode, temporaryRegister, destinationPointer));
@@ -247,7 +247,7 @@ public class X8664AssemblerGenerationVisitor implements BulkPhiNodeVisitor {
 		// TODO: Save only necessary registers
 		int stackOffset = remainingParameters * STACK_ITEM_SIZE;
 		for (Register saveRegister : callerSavedRegisters) {
-			addOperation(new MovOperation(Bit.BIT64, saveRegister, new StackPointer(stackOffset, Register._SP)));
+			addOperation(new MovOperation(Bit.BIT64, saveRegister, new MemoryPointer(stackOffset, Register._SP)));
 			stackOffset += STACK_ITEM_SIZE;
 		}
 
@@ -261,7 +261,7 @@ public class X8664AssemblerGenerationVisitor implements BulkPhiNodeVisitor {
 
 		stackOffset = remainingParameters * STACK_ITEM_SIZE;
 		for (Register saveRegister : callerSavedRegisters) {
-			addOperation(new MovOperation(Bit.BIT64, new StackPointer(stackOffset, Register._SP), saveRegister));
+			addOperation(new MovOperation(Bit.BIT64, new MemoryPointer(stackOffset, Register._SP), saveRegister));
 			stackOffset += STACK_ITEM_SIZE;
 		}
 
@@ -426,7 +426,7 @@ public class X8664AssemblerGenerationVisitor implements BulkPhiNodeVisitor {
 				if (edge.node instanceof Proj) {
 					Proj proj = (Proj) edge.node;
 					registerAllocation.addStorage(proj,
-							new StackPointer(STACK_ITEM_SIZE * (proj.getNum() + 2), Register._BP));
+							new MemoryPointer(STACK_ITEM_SIZE * (proj.getNum() + 2), Register._BP));
 					// + 2 for dynamic link
 				}
 			}
@@ -467,7 +467,7 @@ public class X8664AssemblerGenerationVisitor implements BulkPhiNodeVisitor {
 		Node referenceNode = node.getPred(1);
 		RegisterBased register = registerAllocation.getValue(referenceNode, false);
 		VirtualRegister registerStore = new VirtualRegister();
-		addOperation(new MovOperation(Bit.BIT64, new StackPointer(0, register), registerStore));
+		addOperation(new MovOperation(Bit.BIT64, new MemoryPointer(0, register), registerStore));
 		for (Edge edge : BackEdges.getOuts(node)) {
 			Node edgeNode = edge.node;
 			if (!edgeNode.getMode().equals(Mode.getM())) {
@@ -483,7 +483,7 @@ public class X8664AssemblerGenerationVisitor implements BulkPhiNodeVisitor {
 		RegisterBased registerAddress = registerAllocation.getValue(addressNode, false);
 		Node valueNode = node.getPred(2);
 		RegisterBased registerOffset = registerAllocation.getValue(valueNode, false);
-		addOperation(new MovOperation(registerAllocation.getMode(valueNode), registerOffset, new StackPointer(0, registerAddress)));
+		addOperation(new MovOperation(registerAllocation.getMode(valueNode), registerOffset, new MemoryPointer(0, registerAddress)));
 	}
 
 	@Override

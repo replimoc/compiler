@@ -2,12 +2,12 @@ package compiler.firm.backend.storage;
 
 import compiler.firm.backend.Bit;
 
-public class StackPointer extends Storage {
+public class MemoryPointer extends Storage {
 
 	private final int offset;
 	private final RegisterBased register;
 
-	public StackPointer(int offset, RegisterBased register) {
+	public MemoryPointer(int offset, RegisterBased register) {
 		this.offset = offset;
 		this.register = register;
 	}
