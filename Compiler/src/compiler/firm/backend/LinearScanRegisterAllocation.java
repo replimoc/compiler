@@ -49,9 +49,9 @@ public class LinearScanRegisterAllocation {
 		readPartialAllocatedRegisters();
 		assignRegisters();
 		setStackSize(currentStackOffset);
-		for (VirtualRegister register : virtualRegisters) {
-			System.out.println(register);
-		}
+		// for (VirtualRegister register : virtualRegisters) {
+		// System.out.println(register);
+		// }
 	}
 
 	private void sortRegisterListByStart(List<VirtualRegister> registers) {
@@ -141,7 +141,6 @@ public class LinearScanRegisterAllocation {
 				LabelOperation labelOperation = ((JumpOperation) operation).getLabel();
 				if (passedLabels.contains(labelOperation)) {
 					int startOperation = operations.indexOf(labelOperation);
-					System.out.println("Loop detected: " + startOperation + " -> " + line);
 					expandRegisterUsage(startOperation, line);
 				}
 			}
@@ -216,9 +215,7 @@ public class LinearScanRegisterAllocation {
 					partialAllocatedRegisters.put(register, new LinkedList<VirtualRegister>());
 
 				}
-				partialAllocatedRegisters.get(virtualRegister.getRegister())
-						.add(virtualRegister);
-				System.out.println("partial allocated register " + virtualRegister);
+				partialAllocatedRegisters.get(virtualRegister.getRegister()).add(virtualRegister);
 			}
 		}
 	}

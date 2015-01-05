@@ -245,7 +245,6 @@ public class X8664AssemblerGenerationVisitor implements BulkPhiNodeVisitor {
 		// TODO: Save only necessary registers
 		int stackOffset = remainingParameters * STACK_ITEM_SIZE;
 		for (Register saveRegister : callerSavedRegisters) {
-			System.out.println("Save register: " + saveRegister + " to " + stackOffset);
 			addOperation(new MovOperation(Bit.BIT64, saveRegister, new StackPointer(stackOffset, Register._SP)));
 			stackOffset += STACK_ITEM_SIZE;
 		}
@@ -260,7 +259,6 @@ public class X8664AssemblerGenerationVisitor implements BulkPhiNodeVisitor {
 
 		stackOffset = remainingParameters * STACK_ITEM_SIZE;
 		for (Register saveRegister : callerSavedRegisters) {
-			System.out.println("Restore register: " + saveRegister + " from " + stackOffset);
 			addOperation(new MovOperation(Bit.BIT64, new StackPointer(stackOffset, Register._SP), saveRegister));
 			stackOffset += STACK_ITEM_SIZE;
 		}
