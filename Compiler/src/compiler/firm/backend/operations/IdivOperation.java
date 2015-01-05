@@ -9,11 +9,7 @@ import compiler.firm.backend.storage.VirtualRegister;
 public class IdivOperation extends RegisterOperation {
 
 	public IdivOperation(Bit mode, RegisterBased register) {
-		this(null, mode, register);
-	}
-
-	public IdivOperation(String comment, Bit mode, RegisterBased register) {
-		super(comment, mode, register);
+		super(null, mode, register);
 	}
 
 	@Override

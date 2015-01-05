@@ -11,10 +11,6 @@ public class ShlOperation extends RegisterConstantOperation {
 		super(mode, register, constant);
 	}
 
-	public ShlOperation(String comment, Bit mode, RegisterBased register, Constant constant) {
-		super(comment, mode, register, constant);
-	}
-
 	@Override
 	public String getOperationString() {
 		return String.format("\tshl%s %s, %s", getMode(), getConstant().toString(getMode()), getRegister().toString(getMode()));

@@ -2,9 +2,11 @@ package compiler.firm;
 
 import java.io.File;
 import java.io.IOException;
-import java.nio.file.Files;
+import java.util.Arrays;
+import java.util.LinkedList;
 import java.util.List;
 
+import compiler.utils.ExecutionFailedException;
 import compiler.utils.Pair;
 import compiler.utils.Utils;
 
@@ -79,7 +81,7 @@ public final class FirmUtils {
 	}
 
 	public interface AssemblerCreator {
-		public void create(File file) throws IOException;
+		public void create(String file) throws IOException;
 	}
 
 	/**
@@ -87,50 +89,48 @@ public final class FirmUtils {
 	 * 
 	 * @param outputFileName
 	 *            File for the binary executable.
-	 * @return
 	 * @throws IOException
+	 * @throws ExecutionFailedException
 	 */
-	public static int createBinary(String outputFileName, String assemblerName, AssemblerCreator assemblerCreator) throws IOException {
+	public static void createBinary(String outputFileName, String assemblerFile, AssemblerCreator assemblerCreator, String cInclude, String cLibrary)
+			throws IOException,
+			ExecutionFailedException {
 		String base = Utils.getJarLocation() + File.separator;
-		File assembler;
-		if (assemblerName == null) {
-			assembler = File.createTempFile("assembler", ".s");
-			assembler.deleteOnExit();
-		} else {
-			assembler = new File(assemblerName);
+		if (assemblerFile == null) {
+			assemblerFile = Utils.createAutoDeleteTempFile("assembler", ".s");
 		}
-		File build = File.createTempFile("build", ".o");
-		build.deleteOnExit();
 
-		String standardlibO = Files.createTempFile("standardlib", ".o").toString();
-		new File(standardlibO).deleteOnExit();
+		assemblerCreator.create(assemblerFile);
 
-		String buildFile = build.getAbsolutePath();
+		List<String> execOptions = new LinkedList<String>();
+		execOptions.addAll(Arrays.asList("gcc", "-o", outputFileName));
+		execOptions.add(compileToO(assemblerFile, "build"));
+		execOptions.add(compileToO(base + "resources/standardlib.c", "standardlib"));
 
-		assemblerCreator.create(assembler);
+		if (cInclude != null)
+			execOptions.add(compileToO(cInclude, "cInclude"));
 
-		int result = 0;
-		String assemblerFile = assembler.getAbsolutePath();
-		result = printOutput(Utils.systemExec("gcc", "-g3", "-c", assemblerFile, "-o", buildFile));
-		if (result != 0)
-			return result;
-		result = printOutput(Utils.systemExec("gcc", "-g3", "-c", base + "resources/standardlib.c", "-o", standardlibO));
-		if (result != 0)
-			return result;
-		result = printOutput(Utils.systemExec("gcc", "-g3", "-o", outputFileName, buildFile, standardlibO));
+		if (cLibrary != null)
+			execOptions.add("-l" + cLibrary);
 
-		return result;
+		printOutput(Utils.systemExec(execOptions));
 	}
 
-	private static int printOutput(Pair<Integer, List<String>> executionState) {
-		int exitCode = 0;
-		if (!executionState.getSecond().isEmpty())
-			exitCode = executionState.getFirst();
+	private static String compileToO(String inputFile, String outputFileName) throws IOException, ExecutionFailedException {
+		String standardlibO = Utils.createAutoDeleteTempFile(outputFileName, ".o");
+		printOutput(Utils.systemExec("gcc", "-c", inputFile, "-o", standardlibO));
+		return standardlibO;
+	}
 
+	private static void printOutput(Pair<Integer, List<String>> executionState) throws ExecutionFailedException {
 		for (String line : executionState.getSecond()) {
 			System.out.println(line);
 		}
-		return exitCode;
+
+		int exitCode = executionState.getFirst();
+		if (exitCode != 0) {
+			throw new ExecutionFailedException(exitCode);
+		}
 	}
 
 	public static void createFirmGraph(String suffix) {

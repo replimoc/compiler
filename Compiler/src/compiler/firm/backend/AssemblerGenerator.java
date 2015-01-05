@@ -40,13 +40,13 @@ public final class AssemblerGenerator {
 
 			final List<BlockNodes> nodesPerBlock = collectorVisitor.getNodesPerBlock();
 			final X8664AssemblerGenerationVisitor visitor = new X8664AssemblerGenerationVisitor(callingConvention);
-			final NodeNumberPrintingVisitor printer = new NodeNumberPrintingVisitor();
+			// final NodeNumberPrintingVisitor printer = new NodeNumberPrintingVisitor();
 
 			visitor.addListOfAllPhis(collectorVisitor.getAllPhis());
 
 			BackEdges.enable(graph);
 			for (BlockNodes blockNodes : nodesPerBlock) {
-				blockNodes.visitNodes(printer, collectorVisitor.getNodesPerBlockMap());
+				// blockNodes.visitNodes(printer, collectorVisitor.getNodesPerBlockMap());
 				blockNodes.visitNodes(visitor, collectorVisitor.getNodesPerBlockMap());
 			}
 			BackEdges.disable(graph);

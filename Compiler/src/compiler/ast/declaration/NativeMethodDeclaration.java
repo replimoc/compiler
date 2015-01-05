@@ -10,22 +10,18 @@ import compiler.lexer.Position;
 
 public class NativeMethodDeclaration extends MethodMemberDeclaration {
 
-	private static final CallingConvention CALLING_CONVENTION = CallingConvention.SYSTEMV_ABI;
-	private final String assemblerName;
-
-	public NativeMethodDeclaration(Position position, String assemblerName, Symbol identifier, List<ParameterDeclaration> parameters, Type returnType) {
-		super(position, identifier, parameters, returnType);
-		this.assemblerName = assemblerName;
+	public NativeMethodDeclaration(Position position, boolean isStatic, Symbol identifier, List<ParameterDeclaration> parameters, Type returnType) {
+		super(position, isStatic, identifier, parameters, returnType);
 	}
 
 	@Override
-	public String getAssemblerName() {
-		return assemblerName;
+	protected String getAssemblerNamePrefix() {
+		return "";
 	}
 
 	@Override
 	public CallingConvention getCallingConvention() {
-		return CALLING_CONVENTION;
+		return CallingConvention.SYSTEMV_ABI;
 	}
 
 	@Override
@@ -34,27 +30,7 @@ public class NativeMethodDeclaration extends MethodMemberDeclaration {
 	}
 
 	@Override
-	public int hashCode() {
-		final int prime = 31;
-		int result = super.hashCode();
-		result = prime * result + ((assemblerName == null) ? 0 : assemblerName.hashCode());
-		return result;
-	}
-
-	@Override
-	public boolean equals(Object obj) {
-		if (this == obj)
-			return true;
-		if (!super.equals(obj))
-			return false;
-		if (getClass() != obj.getClass())
-			return false;
-		NativeMethodDeclaration other = (NativeMethodDeclaration) obj;
-		if (assemblerName == null) {
-			if (other.assemblerName != null)
-				return false;
-		} else if (!assemblerName.equals(other.assemblerName))
-			return false;
+	public boolean isNative() {
 		return true;
 	}
 }

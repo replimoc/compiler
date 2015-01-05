@@ -146,7 +146,7 @@ public class DeepCheckingVisitorTest {
 		assertNumberOfErrors(0, TestUtils
 				.checkSemantic("class Main{public static void main(String[] vargs){int a = a;}}"));
 
-		assertNumberOfErrors(2, TestUtils
+		assertNumberOfErrors(3, TestUtils
 				.checkSemantic("class Main{public static void asdf(String[] vargs){return 0;}}"));
 
 		assertNumberOfErrors(1, TestUtils

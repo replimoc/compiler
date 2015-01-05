@@ -1,6 +1,7 @@
 package compiler.firm.backend;
 
 import java.util.HashMap;
+import java.util.Iterator;
 import java.util.LinkedList;
 import java.util.List;
 
@@ -162,41 +163,6 @@ public class X8664AssemblerGenerationVisitor implements BulkPhiNodeVisitor {
 	}
 
 	@Override
-	public void visit(Address node) {
-		// This is handled in a call.
-	}
-
-	@Override
-	public void visit(Align node) {
-		throw new RuntimeException(node + " is not implemented yet!");
-	}
-
-	@Override
-	public void visit(Alloc node) {
-		throw new RuntimeException(node + " is not implemented yet!");
-	}
-
-	@Override
-	public void visit(Anchor node) {
-		throw new RuntimeException(node + " is not implemented yet!");
-	}
-
-	@Override
-	public void visit(And node) {
-		throw new RuntimeException(node + " is not implemented yet!");
-	}
-
-	@Override
-	public void visit(Bad node) {
-		// Ignore Bad nodes.
-	}
-
-	@Override
-	public void visit(Bitcast node) {
-		throw new RuntimeException(node + " is not implemented yet!");
-	}
-
-	@Override
 	public void visit(Block node) {
 		currentBlock = node;
 		addOperation(new Comment(node.toString()));
@@ -229,100 +195,89 @@ public class X8664AssemblerGenerationVisitor implements BulkPhiNodeVisitor {
 	}
 
 	@Override
-	public void visit(Builtin node) {
-		throw new RuntimeException(node + " is not implemented yet!");
-	}
-
-	@Override
 	public void visit(Call node) {
 		int predCount = node.getPredCount();
-		if (predCount >= 2 && node.getPred(1) instanceof Address) { // Minimum for all calls
-			int firmOffset = 2;
-			int parametersCount = (predCount - firmOffset);
-			Address callAddress = (Address) node.getPred(1);
-			String methodName = callAddress.getEntity().getLdName();
+		assert predCount >= 2 && node.getPred(1) instanceof Address : "Minimum for all calls";
 
-			addOperation(new Comment("Call " + methodName + " " + node.getNr()));
+		int firmOffset = 2;
+		int parametersCount = (predCount - firmOffset);
+		Address callAddress = (Address) node.getPred(1);
+		String methodName = callAddress.getEntity().getLdName();
 
-			CallingConvention callingConvention = CallingConvention.SYSTEMV_ABI;
-			if (callingConventions.containsKey(methodName)) {
-				callingConvention = callingConventions.get(methodName);
-			}
+		addOperation(new Comment("Call " + methodName + " " + node.getNr()));
 
-			for (AssemblerOperation operation : callingConvention.getPrefixOperations()) {
-				addOperation(operation);
-			}
+		CallingConvention callingConvention = CallingConvention.SYSTEMV_ABI;
+		if (callingConventions.containsKey(methodName)) {
+			callingConvention = callingConventions.get(methodName);
+		}
 
-			Register[] callingRegisters = callingConvention.getParameterRegisters();
+		for (AssemblerOperation operation : callingConvention.getPrefixOperations()) {
+			addOperation(operation);
+		}
 
-			// The following is before filling registers to have no problem with register allocation.
-			int remainingParameters = Math.max(0, parametersCount - callingRegisters.length);
-			firmOffset += callingRegisters.length;
+		Register[] callingRegisters = callingConvention.getParameterRegisters();
 
-			Register[] callerSavedRegisters = callingConvention.callerSavedRegisters();
+		// The following is before filling registers to have no problem with register allocation.
+		int remainingParameters = Math.max(0, parametersCount - callingRegisters.length);
+		firmOffset += callingRegisters.length;
 
-			int stackSize = remainingParameters + callerSavedRegisters.length;
+		Register[] callerSavedRegisters = callingConvention.callerSavedRegisters();
 
-			Constant stackAllocationSize = new Constant(STACK_ITEM_SIZE * stackSize);
+		int stackSize = remainingParameters + callerSavedRegisters.length;
 
-			addOperation(new SubOperation(Bit.BIT64, stackAllocationSize, Register._SP));
+		Constant stackAllocationSize = new Constant(STACK_ITEM_SIZE * stackSize);
 
-			// Copy parameters to stack
-			for (int i = 0; i < remainingParameters; i++) {
-				Storage sourcePointer = registerAllocation.getStorage(node.getPred(i + firmOffset));
-				// Copy parameter
-				VirtualRegister temporaryRegister = new VirtualRegister();
-				StackPointer destinationPointer = new StackPointer(i * STACK_ITEM_SIZE, Register._SP);
-				Bit mode = registerAllocation.getMode(node.getPred(i + firmOffset));
-				addOperation(new MovOperation(mode, sourcePointer, temporaryRegister));
-				addOperation(new MovOperation(mode, temporaryRegister, destinationPointer));
-			}
-			firmOffset -= callingRegisters.length;
+		addOperation(new SubOperation(Bit.BIT64, stackAllocationSize, Register._SP));
 
-			// Save all callerSavedRegisters to stack
-			// TODO: Save only necessary registers
-			int stackOffset = remainingParameters * STACK_ITEM_SIZE;
-			for (Register saveRegister : callerSavedRegisters) {
-				System.out.println("Save register: " + saveRegister + " to " + stackOffset);
-				addOperation(new MovOperation(Bit.BIT64, saveRegister, new StackPointer(stackOffset, Register._SP)));
-				stackOffset += STACK_ITEM_SIZE;
-			}
+		// Copy parameters to stack
+		for (int i = 0; i < remainingParameters; i++) {
+			Storage sourcePointer = registerAllocation.getStorage(node.getPred(i + firmOffset));
+			// Copy parameter
+			VirtualRegister temporaryRegister = new VirtualRegister();
+			StackPointer destinationPointer = new StackPointer(i * STACK_ITEM_SIZE, Register._SP);
+			Bit mode = registerAllocation.getMode(node.getPred(i + firmOffset));
+			addOperation(new MovOperation(mode, sourcePointer, temporaryRegister));
+			addOperation(new MovOperation(mode, temporaryRegister, destinationPointer));
+		}
+		firmOffset -= callingRegisters.length;
 
-			// Copy parameters in calling registers
-			for (int i = 0; i < parametersCount && i < callingRegisters.length; i++) {
-				Node parameterNode = node.getPred(i + firmOffset);
-				registerAllocation.getValue(parameterNode, true, callingRegisters[i]);
-			}
+		// Save all callerSavedRegisters to stack
+		// TODO: Save only necessary registers
+		int stackOffset = remainingParameters * STACK_ITEM_SIZE;
+		for (Register saveRegister : callerSavedRegisters) {
+			System.out.println("Save register: " + saveRegister + " to " + stackOffset);
+			addOperation(new MovOperation(Bit.BIT64, saveRegister, new StackPointer(stackOffset, Register._SP)));
+			stackOffset += STACK_ITEM_SIZE;
+		}
 
-			addOperation(new CallOperation(methodName, callingConvention));
+		// Copy parameters in calling registers
+		for (int i = 0; i < parametersCount && i < callingRegisters.length; i++) {
+			Node parameterNode = node.getPred(i + firmOffset);
+			registerAllocation.getValue(parameterNode, true, callingRegisters[i]);
+		}
 
-			stackOffset = remainingParameters * STACK_ITEM_SIZE;
-			for (Register saveRegister : callerSavedRegisters) {
-				System.out.println("Restore register: " + saveRegister + " from " + stackOffset);
-				addOperation(new MovOperation(Bit.BIT64, new StackPointer(stackOffset, Register._SP), saveRegister));
-				stackOffset += STACK_ITEM_SIZE;
-			}
+		addOperation(new CallOperation(methodName, callingConvention));
 
-			addOperation(new AddOperation(Bit.BIT64, stackAllocationSize, Register._SP));
+		stackOffset = remainingParameters * STACK_ITEM_SIZE;
+		for (Register saveRegister : callerSavedRegisters) {
+			System.out.println("Restore register: " + saveRegister + " from " + stackOffset);
+			addOperation(new MovOperation(Bit.BIT64, new StackPointer(stackOffset, Register._SP), saveRegister));
+			stackOffset += STACK_ITEM_SIZE;
+		}
 
-			for (AssemblerOperation operation : callingConvention.getSuffixOperations()) {
-				addOperation(operation);
-			}
+		addOperation(new AddOperation(Bit.BIT64, stackAllocationSize, Register._SP));
 
-			for (Edge edge : BackEdges.getOuts(node)) {
-				if (edge.node.getMode().equals(Mode.getT())) {
-					for (Edge innerEdge : BackEdges.getOuts(edge.node)) {
-						registerAllocation.storeValue(innerEdge.node, callingConvention.getReturnRegister());
-					}
+		for (AssemblerOperation operation : callingConvention.getSuffixOperations()) {
+			addOperation(operation);
+		}
+
+		for (Edge edge : BackEdges.getOuts(node)) {
+			if (edge.node.getMode().equals(Mode.getT())) {
+				for (Edge innerEdge : BackEdges.getOuts(edge.node)) {
+					registerAllocation.storeValue(innerEdge.node, callingConvention.getReturnRegister());
 				}
 			}
 		}
-
-	}
-
-	@Override
-	public void visit(Cmp node) {
-		// Nothing to do here, its handled in Cond.
 	}
 
 	@Override
@@ -332,22 +287,18 @@ public class X8664AssemblerGenerationVisitor implements BulkPhiNodeVisitor {
 		Block blockFalse = null;
 
 		// get blocks the cond node shows to
-		// TODO: Refactore me!
-		for (Edge edge : BackEdges.getOuts(node)) {
-			Node edgeNode = edge.node;
-			if (edgeNode instanceof Proj) {
-				boolean trueCase = ((Proj) edgeNode).getNum() == FirmUtils.TRUE;
-				for (Edge nextEdge : BackEdges.getOuts(edgeNode)) {
-					Node nextEdgeNode = nextEdge.node;
-					if (nextEdgeNode instanceof Block) {
-						if (trueCase) {
-							blockTrue = (Block) nextEdgeNode;
-						} else {
-							blockFalse = (Block) nextEdgeNode;
-						}
-					}
-				}
-			}
+		Iterator<Edge> outs = BackEdges.getOuts(node).iterator();
+		Proj out1 = (Proj) outs.next().node;
+		Proj out2 = (Proj) outs.next().node;
+		Block block1 = ((Block) (BackEdges.getOuts(out1).iterator().next().node));
+		Block block2 = ((Block) (BackEdges.getOuts(out2).iterator().next().node));
+
+		if (out1.getNum() == FirmUtils.TRUE) {
+			blockTrue = block1;
+			blockFalse = block2;
+		} else {
+			blockTrue = block2;
+			blockFalse = block1;
 		}
 
 		// generate cmp instruction
@@ -402,11 +353,6 @@ public class X8664AssemblerGenerationVisitor implements BulkPhiNodeVisitor {
 	}
 
 	@Override
-	public void visit(Confirm node) {
-		throw new RuntimeException(node + " is not implemented yet!");
-	}
-
-	@Override
 	public void visit(Const node) {
 		// nothing to do
 		registerAllocation.addConstant(node);
@@ -414,20 +360,10 @@ public class X8664AssemblerGenerationVisitor implements BulkPhiNodeVisitor {
 
 	@Override
 	public void visit(Conv node) {
-		if (node.getPredCount() >= 1) {
-			Storage register = registerAllocation.getValueAvoidNewRegister(node.getPred(0), false);
-			registerAllocation.addStorage(node, register);
-		}
-	}
+		assert node.getPredCount() >= 1 : "Conv nodes should have a predecessor";
 
-	@Override
-	public void visit(CopyB node) {
-		throw new RuntimeException(node + " is not implemented yet!");
-	}
-
-	@Override
-	public void visit(Deleted node) {
-		throw new RuntimeException(node + " is not implemented yet!");
+		Storage register = registerAllocation.getValueAvoidNewRegister(node.getPred(0), false);
+		registerAllocation.addStorage(node, register);
 	}
 
 	private void visitDivMod(Node node, Node left, Node right, Register storeRegister) {
@@ -451,33 +387,8 @@ public class X8664AssemblerGenerationVisitor implements BulkPhiNodeVisitor {
 	}
 
 	@Override
-	public void visit(Dummy node) {
-		throw new RuntimeException(node + " is not implemented yet!");
-	}
-
-	@Override
 	public void visit(End node) {
 		addOperation(new Comment("end node"));
-	}
-
-	@Override
-	public void visit(Eor node) {
-		throw new RuntimeException(node + " is not implemented yet!");
-	}
-
-	@Override
-	public void visit(Free node) {
-		throw new RuntimeException(node + " is not implemented yet!");
-	}
-
-	@Override
-	public void visit(IJmp node) {
-		throw new RuntimeException(node + " is not implemented yet!");
-	}
-
-	@Override
-	public void visit(Id node) {
-		throw new RuntimeException(node + " is not implemented yet!");
 	}
 
 	@Override
@@ -489,11 +400,6 @@ public class X8664AssemblerGenerationVisitor implements BulkPhiNodeVisitor {
 				break;
 			}
 		}
-	}
-
-	@Override
-	public void visit(Member node) {
-		throw new RuntimeException(node + " is not implemented yet!");
 	}
 
 	@Override
@@ -511,6 +417,199 @@ public class X8664AssemblerGenerationVisitor implements BulkPhiNodeVisitor {
 	@Override
 	public void visit(Mul node) {
 		visitTwoOperandsNode(new ImulOperation("mul operation", registerAllocation.getMode(node)), node, node.getRight(), node.getLeft());
+	}
+
+	private void visitCmpNode(Cmp node) {
+		RegisterBased register1 = registerAllocation.getValue(node.getRight(), false);
+		RegisterBased register2 = registerAllocation.getValue(node.getLeft(), false);
+		addOperation(new CmpOperation("cmp operation", registerAllocation.getMode(node), register1, register2));
+	}
+
+	@Override
+	public void visit(Proj node) {
+		if (node.getPredCount() == 1 && node.getPred(0) instanceof Start && node.getMode().equals(Mode.getT())) {
+			for (Edge edge : BackEdges.getOuts(node)) {
+				if (edge.node instanceof Proj) {
+					Proj proj = (Proj) edge.node;
+					registerAllocation.addStorage(proj,
+							new StackPointer(STACK_ITEM_SIZE * (proj.getNum() + 2), Register._BP));
+					// + 2 for dynamic link
+				}
+			}
+		}
+	}
+
+	@Override
+	public void visit(Return node) {
+		addOperation(new Comment("restore stack size"));
+		if (node.getPredCount() > 1) {
+			// Store return value in EAX register
+			registerAllocation.getValue(node.getPred(1), true, Register._AX);
+		}
+
+		// addOperation(node.getBlock(), new AddqOperation(new Constant(-currentStackOffset), Register.RSP));
+		// better move rbp to rsp
+		addOperation(new MovOperation(Bit.BIT64, Register._BP, Register._SP));
+		addOperation(new PopOperation(Bit.BIT64, Register._BP));
+		addOperation(new RetOperation());
+	}
+
+	@Override
+	public void visit(Shl node) {
+		// move left node to a register
+		RegisterBased register = registerAllocation.getValue(node.getLeft(), true);
+
+		Constant constant = new Constant((Const) node.getRight());
+
+		// execute operation
+		addOperation(new ShlOperation(registerAllocation.getMode(node), register, constant));
+		// store on stack
+		registerAllocation.storeValue(node, register);
+	}
+
+	@Override
+	public void visit(Shr node) {
+		throw new RuntimeException(node + " is not implemented yet!");
+	}
+
+	@Override
+	public void visit(Shrs node) {
+		throw new RuntimeException(node + " is not implemented yet!");
+	}
+
+	@Override
+	public void visit(Load node) {
+		addOperation(new Comment("load operation " + node));
+		Node referenceNode = node.getPred(1);
+		RegisterBased register = registerAllocation.getValue(referenceNode, false);
+		VirtualRegister registerStore = new VirtualRegister();
+		addOperation(new MovOperation(Bit.BIT64, new StackPointer(0, register), registerStore));
+		for (Edge edge : BackEdges.getOuts(node)) {
+			Node edgeNode = edge.node;
+			if (!edgeNode.getMode().equals(Mode.getM())) {
+				registerAllocation.storeValue(edgeNode, registerStore);
+			}
+		}
+	}
+
+	@Override
+	public void visit(Store node) {
+		addOperation(new Comment("Store operation " + node));
+		Node addressNode = node.getPred(1);
+		RegisterBased registerAddress = registerAllocation.getValue(addressNode, false);
+		Node valueNode = node.getPred(2);
+		RegisterBased registerOffset = registerAllocation.getValue(valueNode, false);
+		addOperation(new MovOperation(registerAllocation.getMode(valueNode), registerOffset, new StackPointer(0, registerAddress)));
+	}
+
+	@Override
+	public void visit(Sub node) { // we subtract the right node from the left, not the otherway around
+		visitTwoOperandsNode(new SubOperation("sub operation", registerAllocation.getMode(node)), node, node.getRight(), node.getLeft());
+	}
+
+	private Node getRelevantPredecessor(Phi phi) {
+		Node phiBlock = phi.getBlock();
+
+		for (int i = 0; i < phiBlock.getPredCount(); i++) {
+			Node blockPredecessors = phiBlock.getPred(i);
+			if (blockPredecessors.getBlock().getNr() == currentBlock.getNr()) {
+				return phi.getPred(i);
+			}
+		}
+		return null;
+	}
+
+	@Override
+	public void visit(List<Phi> phis) {
+		addOperation(new Comment("Handle phis of current block"));
+		HashMap<Phi, Storage> phiTempStackMapping = new HashMap<>();
+		for (Phi phi : phis) {
+			Node predecessor = getRelevantPredecessor(phi);
+			Storage register = registerAllocation.getValueAvoidNewRegister(predecessor, false);
+			Storage temporaryStorage = new VirtualRegister();
+			registerAllocation.storeValue(predecessor, register, temporaryStorage);
+			phiTempStackMapping.put(phi, temporaryStorage);
+		}
+
+		for (Phi phi : phis) {
+			RegisterBased register = registerAllocation.getValue(phi, false, phiTempStackMapping.get(phi));
+			registerAllocation.storeValue(phi, register);
+		}
+	}
+
+	@Override
+	public void visit(Raise node) {
+		throw new RuntimeException(node + " is not implemented yet!");
+	}
+
+	@Override
+	public void visit(Sel node) {
+		throw new RuntimeException(node + " is not implemented yet!");
+	}
+
+	@Override
+	public void visit(Switch node) {
+		throw new RuntimeException(node + " is not implemented yet!");
+	}
+
+	@Override
+	public void visit(Sync node) {
+		throw new RuntimeException(node + " is not implemented yet!");
+	}
+
+	@Override
+	public void visit(Tuple node) {
+		throw new RuntimeException(node + " is not implemented yet!");
+	}
+
+	@Override
+	public void visit(Unknown node) {
+		throw new RuntimeException(node + " is not implemented yet!");
+	}
+
+	@Override
+	public void visitUnknown(Node node) {
+		throw new RuntimeException(node + " is not implemented yet!");
+	}
+
+	@Override
+	public void visit(Align node) {
+		throw new RuntimeException(node + " is not implemented yet!");
+	}
+
+	@Override
+	public void visit(Alloc node) {
+		throw new RuntimeException(node + " is not implemented yet!");
+	}
+
+	@Override
+	public void visit(Anchor node) {
+		throw new RuntimeException(node + " is not implemented yet!");
+	}
+
+	@Override
+	public void visit(And node) {
+		throw new RuntimeException(node + " is not implemented yet!");
+	}
+
+	@Override
+	public void visit(Bitcast node) {
+		throw new RuntimeException(node + " is not implemented yet!");
+	}
+
+	@Override
+	public void visit(Confirm node) {
+		throw new RuntimeException(node + " is not implemented yet!");
+	}
+
+	@Override
+	public void visit(CopyB node) {
+		throw new RuntimeException(node + " is not implemented yet!");
+	}
+
+	@Override
+	public void visit(Deleted node) {
+		throw new RuntimeException(node + " is not implemented yet!");
 	}
 
 	@Override
@@ -553,72 +652,54 @@ public class X8664AssemblerGenerationVisitor implements BulkPhiNodeVisitor {
 		throw new RuntimeException(node + " is not implemented yet!");
 	}
 
-	private void visitCmpNode(Cmp node) {
-		RegisterBased register1 = registerAllocation.getValue(node.getRight(), false);
-		RegisterBased register2 = registerAllocation.getValue(node.getLeft(), false);
-		addOperation(new CmpOperation("cmp operation", registerAllocation.getMode(node), register1, register2));
-	}
-
 	@Override
-	public void visit(Proj node) {
-		if (node.getPredCount() == 1 && node.getPred(0) instanceof Start && node.getMode().equals(Mode.getT())) {
-			for (Edge edge : BackEdges.getOuts(node)) {
-				if (edge.node instanceof Proj) {
-					Proj proj = (Proj) edge.node;
-					registerAllocation.addStorage(proj,
-							new StackPointer(STACK_ITEM_SIZE * (proj.getNum() + 2), Register._BP));
-					// + 2 for dynamic link
-				}
-			}
-		}
-	}
-
-	@Override
-	public void visit(Raise node) {
+	public void visit(Dummy node) {
 		throw new RuntimeException(node + " is not implemented yet!");
 	}
 
 	@Override
-	public void visit(Return node) {
-		addOperation(new Comment("restore stack size"));
-		if (node.getPredCount() > 1) {
-			// Store return value in EAX register
-			registerAllocation.getValue(node.getPred(1), true, Register._AX);
-		}
-
-		// addOperation(node.getBlock(), new AddqOperation(new Constant(-currentStackOffset), Register.RSP));
-		// better move rbp to rsp
-		addOperation(new MovOperation(Bit.BIT64, Register._BP, Register._SP));
-		addOperation(new PopOperation(Bit.BIT64, Register._BP));
-		addOperation(new RetOperation());
-	}
-
-	@Override
-	public void visit(Sel node) {
+	public void visit(Eor node) {
 		throw new RuntimeException(node + " is not implemented yet!");
 	}
 
 	@Override
-	public void visit(Shl node) {
-		// move left node to a register
-		RegisterBased register = registerAllocation.getValue(node.getLeft(), true);
-
-		Constant constant = new Constant((Const) node.getRight());
-
-		// execute operation
-		addOperation(new ShlOperation(registerAllocation.getMode(node), register, constant));
-		// store on stack
-		registerAllocation.storeValue(node, register);
-	}
-
-	@Override
-	public void visit(Shr node) {
+	public void visit(Builtin node) {
 		throw new RuntimeException(node + " is not implemented yet!");
 	}
 
 	@Override
-	public void visit(Shrs node) {
+	public void visit(Free node) {
 		throw new RuntimeException(node + " is not implemented yet!");
+	}
+
+	@Override
+	public void visit(IJmp node) {
+		throw new RuntimeException(node + " is not implemented yet!");
+	}
+
+	@Override
+	public void visit(Id node) {
+		throw new RuntimeException(node + " is not implemented yet!");
+	}
+
+	@Override
+	public void visit(Member node) {
+		throw new RuntimeException(node + " is not implemented yet!");
+	}
+
+	@Override
+	public void visit(Address node) {
+		// This is handled in a call.
+	}
+
+	@Override
+	public void visit(Bad node) {
+		// Ignore Bad nodes.
+	}
+
+	@Override
+	public void visit(Cmp node) {
+		// Nothing to do here, its handled in Cond.
 	}
 
 	@Override
@@ -629,89 +710,4 @@ public class X8664AssemblerGenerationVisitor implements BulkPhiNodeVisitor {
 	public void visit(Start node) {
 	}
 
-	@Override
-	public void visit(Load node) {
-		addOperation(new Comment("load operation " + node));
-		Node referenceNode = node.getPred(1);
-		RegisterBased register = registerAllocation.getValue(referenceNode, false);
-		VirtualRegister registerStore = new VirtualRegister();
-		addOperation(new MovOperation(Bit.BIT64, new StackPointer(0, register), registerStore));
-		for (Edge edge : BackEdges.getOuts(node)) {
-			Node edgeNode = edge.node;
-			if (!edgeNode.getMode().equals(Mode.getM())) {
-				registerAllocation.storeValue(edgeNode, registerStore);
-			}
-		}
-	}
-
-	@Override
-	public void visit(Store node) {
-		addOperation(new Comment("Store operation " + node));
-		Node addressNode = node.getPred(1);
-		RegisterBased registerAddress = registerAllocation.getValue(addressNode, false);
-		Node valueNode = node.getPred(2);
-		RegisterBased registerOffset = registerAllocation.getValue(valueNode, false);
-		addOperation(new MovOperation(registerAllocation.getMode(valueNode), registerOffset, new StackPointer(0, registerAddress)));
-	}
-
-	@Override
-	public void visit(Sub node) {
-		// we subtract the right node from the left, not the otherway around
-		visitTwoOperandsNode(new SubOperation("sub operation", registerAllocation.getMode(node)), node, node.getRight(), node.getLeft());
-	}
-
-	@Override
-	public void visit(Switch node) {
-		throw new RuntimeException(node + " is not implemented yet!");
-	}
-
-	@Override
-	public void visit(Sync node) {
-		throw new RuntimeException(node + " is not implemented yet!");
-	}
-
-	@Override
-	public void visit(Tuple node) {
-		throw new RuntimeException(node + " is not implemented yet!");
-	}
-
-	@Override
-	public void visit(Unknown node) {
-		throw new RuntimeException(node + " is not implemented yet!");
-	}
-
-	@Override
-	public void visitUnknown(Node node) {
-		throw new RuntimeException(node + " is not implemented yet!");
-	}
-
-	private Node getRelevantPredecessor(Phi phi) {
-		Node phiBlock = phi.getBlock();
-
-		for (int i = 0; i < phiBlock.getPredCount(); i++) {
-			Node blockPredecessors = phiBlock.getPred(i);
-			if (blockPredecessors.getBlock().getNr() == currentBlock.getNr()) {
-				return phi.getPred(i);
-			}
-		}
-		return null;
-	}
-
-	@Override
-	public void visit(List<Phi> phis) {
-		addOperation(new Comment("Handle phis of current block"));
-		HashMap<Phi, Storage> phiTempStackMapping = new HashMap<>();
-		for (Phi phi : phis) {
-			Node predecessor = getRelevantPredecessor(phi);
-			Storage register = registerAllocation.getValueAvoidNewRegister(predecessor, false);
-			Storage temporaryStorage = new VirtualRegister();
-			registerAllocation.storeValue(predecessor, register, temporaryStorage);
-			phiTempStackMapping.put(phi, temporaryStorage);
-		}
-
-		for (Phi phi : phis) {
-			RegisterBased register = registerAllocation.getValue(phi, false, phiTempStackMapping.get(phi));
-			registerAllocation.storeValue(phi, register);
-		}
-	}
 }

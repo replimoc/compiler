@@ -4,6 +4,8 @@ import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
 import java.net.URISyntaxException;
+import java.nio.file.Files;
+import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Scanner;
@@ -18,6 +20,10 @@ public class Utils {
 
 	public static boolean isWindows() {
 		return System.getProperty("os.name").startsWith("Windows");
+	}
+
+	public static Pair<Integer, List<String>> systemExec(List<String> strings) throws IOException {
+		return runProcessBuilder(new ProcessBuilder(strings));
 	}
 
 	public static Pair<Integer, List<String>> systemExec(String... strings) throws IOException {
@@ -49,7 +55,11 @@ public class Utils {
 	}
 
 	public static String getBinaryFileName(String fileName) {
-		return fileName + (isWindows() ? ".exe" : ".out");
+		return fileName + getBinaryFileEnding();
+	}
+
+	public static String getBinaryFileEnding() {
+		return isWindows() ? ".exe" : ".out";
 	}
 
 	public static String getJarLocation() {
@@ -68,5 +78,11 @@ public class Utils {
 				return new Thread(null, r, "runner", stackSizeMB * 1024 * 1024);
 			}
 		};
+	}
+
+	public static String createAutoDeleteTempFile(String prefix, String suffix) throws IOException {
+		Path standardLibOFile = Files.createTempFile(prefix, suffix);
+		standardLibOFile.toFile().deleteOnExit();
+		return standardLibOFile.toString();
 	}
 }

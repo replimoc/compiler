@@ -8,7 +8,6 @@ import static org.junit.Assert.assertTrue;
 import java.util.AbstractMap.SimpleEntry;
 import java.util.Arrays;
 import java.util.HashMap;
-import java.util.LinkedList;
 import java.util.List;
 import java.util.Map.Entry;
 
@@ -21,10 +20,10 @@ import compiler.ast.Program;
 import compiler.ast.declaration.ClassDeclaration;
 import compiler.ast.declaration.Declaration;
 import compiler.ast.declaration.FieldDeclaration;
+import compiler.ast.declaration.MainMethodDeclaration;
 import compiler.ast.declaration.MethodDeclaration;
 import compiler.ast.declaration.MethodMemberDeclaration;
 import compiler.ast.declaration.ParameterDeclaration;
-import compiler.ast.declaration.StaticMethodDeclaration;
 import compiler.ast.type.ArrayType;
 import compiler.ast.type.BasicType;
 import compiler.ast.type.ClassType;
@@ -38,10 +37,11 @@ public class PreNamingAnalysisVisitorTest {
 	private final StringTable stringTable = new StringTable();
 
 	private final MethodDeclaration[] testMethods = {
-			m("method1", t(BasicType.INT), pd("param1", t(BasicType.INT))),
-			m("method2", t(BasicType.VOID), pd("param1", t(BasicType.INT))),
-			m("method3", t(BasicType.VOID), pd("param1", t(BasicType.INT)), pd("param1", t(BasicType.BOOLEAN)), pd("param1", t(BasicType.INT, 3))),
-			m("method4", t(BasicType.VOID), pd("param1", t(BasicType.INT)))
+			m("method1", false, t(BasicType.INT), pd("param1", t(BasicType.INT))),
+			m("method2", false, t(BasicType.VOID), pd("param1", t(BasicType.INT))),
+			m("method3", false, t(BasicType.VOID), pd("param1", t(BasicType.INT)),
+					pd("param1", t(BasicType.BOOLEAN)), pd("param1", t(BasicType.INT, 3))),
+			m("method4", false, t(BasicType.VOID), pd("param1", t(BasicType.INT)))
 	};
 
 	private final FieldDeclaration[] testFields = new FieldDeclaration[] {
@@ -135,7 +135,7 @@ public class PreNamingAnalysisVisitorTest {
 
 	@Test
 	public void testValidMain() {
-		ClassScope scope1 = scope(f(), asArray(m("main", t(BasicType.VOID), pd("args", t(ct("String"), 1)))));
+		ClassScope scope1 = scope(f(), asArray(m("main", true, t(BasicType.VOID), pd("args", t(ct("String"), 1)))));
 		HashMap<Symbol, ClassScope> expectedScopes = scopes(c("class1", scope1));
 
 		Program program = createAst(expectedScopes);
@@ -149,7 +149,7 @@ public class PreNamingAnalysisVisitorTest {
 
 	@Test
 	public void testMainInvalidReturnType() {
-		ClassScope scope1 = scope(f(), asArray(m("main", t(BasicType.INT), pd("args", t(ct("String"), 1)))));
+		ClassScope scope1 = scope(f(), asArray(m("main", true, t(BasicType.INT), pd("args", t(ct("String"), 1)))));
 		HashMap<Symbol, ClassScope> expectedScopes = scopes(c("class1", scope1));
 
 		Program program = createAst(expectedScopes);
@@ -161,7 +161,7 @@ public class PreNamingAnalysisVisitorTest {
 
 	@Test
 	public void testMainNoParameter() {
-		ClassScope scope1 = scope(f(), asArray(m("main", t(BasicType.VOID))));
+		ClassScope scope1 = scope(f(), asArray(m("main", true, t(BasicType.VOID))));
 		HashMap<Symbol, ClassScope> expectedScopes = scopes(c("class1", scope1));
 
 		Program program = createAst(expectedScopes);
@@ -173,7 +173,7 @@ public class PreNamingAnalysisVisitorTest {
 
 	@Test
 	public void testMainInvalidParameterArrayType() {
-		ClassScope scope1 = scope(f(), asArray(m("main", t(BasicType.VOID), pd("args", t(ct("Bla"), 1)))));
+		ClassScope scope1 = scope(f(), asArray(m("main", true, t(BasicType.VOID), pd("args", t(ct("Bla"), 1)))));
 		ClassScope scope2 = scope(f(), m());
 		HashMap<Symbol, ClassScope> expectedScopes = scopes(c("class1", scope1), c("Bla", scope2));
 
@@ -186,7 +186,7 @@ public class PreNamingAnalysisVisitorTest {
 
 	@Test
 	public void testMainInvalidParameterNoArrayType() {
-		ClassScope scope1 = scope(f(), asArray(m("main", t(BasicType.VOID), pd("args", t(BasicType.INT)))));
+		ClassScope scope1 = scope(f(), asArray(m("main", true, t(BasicType.VOID), pd("args", t(BasicType.INT)))));
 		HashMap<Symbol, ClassScope> expectedScopes = scopes(c("class1", scope1));
 
 		Program program = createAst(expectedScopes);
@@ -198,7 +198,7 @@ public class PreNamingAnalysisVisitorTest {
 
 	@Test
 	public void testMainNoArrayParameterType() {
-		ClassScope scope1 = scope(f(), asArray(m("main", t(BasicType.INT), pd("args", ct("String")))));
+		ClassScope scope1 = scope(f(), asArray(m("main", true, t(BasicType.INT), pd("args", ct("String")))));
 		HashMap<Symbol, ClassScope> expectedScopes = scopes(c("class1", scope1));
 
 		Program program = createAst(expectedScopes);
@@ -231,21 +231,7 @@ public class PreNamingAnalysisVisitorTest {
 		for (Declaration field : fields) {
 			classDeclaration.addClassMember(new FieldDeclaration(null, field.getType(), field.getIdentifier()));
 		}
-		for (MethodMemberDeclaration method : methods) {
-			List<ParameterDeclaration> parameters = new LinkedList<ParameterDeclaration>();
-			for (Declaration param : method.getParameters()) {
-				parameters.add(new ParameterDeclaration(null, param.getType(), param.getIdentifier()));
-			}
-
-			MethodDeclaration methodDeclaration;
-			if ("main".equals(method.getIdentifier().getValue())) { // hack to test static main
-				methodDeclaration = new StaticMethodDeclaration(null, method.getIdentifier(),
-						parameters, method.getType(), new Block((Position) null));
-			} else {
-				methodDeclaration = new MethodDeclaration(null, method.getIdentifier(),
-						parameters, method.getType(), new Block((Position) null));
-			}
-
+		for (MethodMemberDeclaration methodDeclaration : methods) {
 			classDeclaration.addClassMember(methodDeclaration);
 		}
 		return classDeclaration;
@@ -318,8 +304,15 @@ public class PreNamingAnalysisVisitorTest {
 		return type;
 	}
 
-	private MethodDeclaration m(String name, Type returnType, ParameterDeclaration... parameters) {
-		return new MethodDeclaration(null, s(name), Arrays.asList(parameters), returnType, new Block((Position) null));
+	private MethodDeclaration m(String name, boolean isStatic, Type returnType, ParameterDeclaration... parameters) {
+		Block block = new Block((Position) null);
+		List<ParameterDeclaration> parameterList = Arrays.asList(parameters);
+
+		if ("main".equals(name) && isStatic) {
+			return new MainMethodDeclaration(null, s(name), parameterList, returnType, block);
+		} else {
+			return new MethodDeclaration(null, isStatic, s(name), parameterList, returnType, block);
+		}
 	}
 
 	private ParameterDeclaration pd(String name, Type type) {

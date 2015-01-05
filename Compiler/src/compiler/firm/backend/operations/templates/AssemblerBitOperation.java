@@ -21,10 +21,6 @@ public abstract class AssemblerBitOperation extends AssemblerOperation {
 	private int accumulatorRegister = 0;
 	private final Register[] accumulatorRegisters = { Register._10D, Register._11D };
 
-	public AssemblerBitOperation(Bit mode) {
-		this.mode = mode;
-	}
-
 	public AssemblerBitOperation(String comment, Bit mode) {
 		super(comment);
 		this.mode = mode;

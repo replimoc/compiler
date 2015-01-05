@@ -1,18 +1,17 @@
 package compiler.main;
 
-import java.io.File;
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 
-import org.apache.commons.cli.BasicParser;
 import org.apache.commons.cli.CommandLine;
 import org.apache.commons.cli.CommandLineParser;
 import org.apache.commons.cli.HelpFormatter;
 import org.apache.commons.cli.Options;
 import org.apache.commons.cli.ParseException;
+import org.apache.commons.cli.PosixParser;
 
 import compiler.StringTable;
 import compiler.ast.AstNode;
@@ -30,6 +29,7 @@ import compiler.parser.printer.PrettyPrinter;
 import compiler.semantic.SemanticCheckResults;
 import compiler.semantic.SemanticChecker;
 import compiler.semantic.exceptions.SemanticAnalysisException;
+import compiler.utils.ExecutionFailedException;
 import compiler.utils.Utils;
 
 public final class CompilerApp {
@@ -42,6 +42,9 @@ public final class CompilerApp {
 	private static final String OUTPUT_ASSEMBLER = "assembler";
 	private static final String COMPILE_FIRM = "compile-firm";
 	private static final String NO_OPT = "no-opt";
+	private static final String OUTPUT_FILE = "o";
+	private static final String C_INCLUDE = "c-include";
+	private static final String C_LIBRARY = "l";
 
 	/**
 	 * Private constructor, as no objects of this class shall be created.
@@ -59,7 +62,7 @@ public final class CompilerApp {
 		}).start();
 	}
 
-	private static int execute(String[] args) {
+	public static synchronized int execute(String[] args) {
 		boolean debug = false;
 
 		Options options = new Options();
@@ -74,11 +77,13 @@ public final class CompilerApp {
 				+ GRAPH_FIRM + ")");
 		options.addOption(null, OUTPUT_ASSEMBLER, true, "outputs the generated assembler into a specified file.");
 		options.addOption(null, COMPILE_FIRM, false, "use the firm backend to produce amd64 code.");
-		options.addOption("o", null, true, "Used to define the filename/path of the generated executable. (Only to be used with --"
+		options.addOption(OUTPUT_FILE, true, "Used to define the filename/path of the generated executable. (Only to be used with --"
 				+ COMPILE_FIRM + ")");
 		options.addOption(null, NO_OPT, false, "deactivate optimizations");
+		options.addOption(null, C_INCLUDE, true, "Compile the given file and use it for the mapping of native methods.");
+		options.addOption(C_LIBRARY, true, "Use the given library for linking the c file given with --" + C_INCLUDE + ".");
 
-		CommandLineParser commandLineParser = new BasicParser();
+		CommandLineParser commandLineParser = new PosixParser();
 		try {
 			CommandLine cmd = commandLineParser.parse(options, args);
 			debug = cmd.hasOption(DEBUG);
@@ -93,44 +98,44 @@ public final class CompilerApp {
 			if (remainingArgs.length == 1) {
 				Path file = Paths.get(remainingArgs[0]);
 
+				// Execute Lexer
+				StringTable stringTable = new StringTable();
+				Lexer lexer = new Lexer(Files.newBufferedReader(file, StandardCharsets.US_ASCII), stringTable);
+
+				if (cmd.hasOption(LEXTEST)) {
+					return executeLextest(lexer);
+				}
+
+				// Execute Parser
+				Parser parser = new Parser(lexer);
+
+				AstNode ast;
 				try {
-					// Execute Lexer
-					StringTable stringTable = new StringTable();
-					Lexer lexer = new Lexer(Files.newBufferedReader(file, StandardCharsets.US_ASCII), stringTable);
+					ast = parser.parse();
+				} catch (ParsingFailedException e) {
+					e.printParserExceptions();
+					return 1;
+				}
 
-					if (cmd.hasOption(LEXTEST)) {
-						return executeLextest(lexer);
+				if (cmd.hasOption(PRETTY_PRINT_AST)) {
+					System.out.print(PrettyPrinter.prettyPrint(ast));
+					return 0;
+				}
+
+				final SemanticCheckResults semanticResult = SemanticChecker.checkSemantic(ast, stringTable);
+				if (semanticResult.hasErrors()) {
+					for (SemanticAnalysisException curr : semanticResult.getExceptions()) {
+						System.err.println(curr.getMessage());
 					}
+					return 1;
+				}
 
-					// Execute Parser
-					Parser parser = new Parser(lexer);
+				if (cmd.hasOption(CHECK)) {
+					return 0; // Abort execution, if only check is required
+				}
 
-					AstNode ast;
-					try {
-						ast = parser.parse();
-					} catch (ParsingFailedException e) {
-						e.printParserExceptions();
-						return 1;
-					}
-
-					if (cmd.hasOption(PRETTY_PRINT_AST)) {
-						System.out.print(PrettyPrinter.prettyPrint(ast));
-						return 0;
-					}
-
-					final SemanticCheckResults semanticResult = SemanticChecker.checkSemantic(ast, stringTable);
-					if (semanticResult.hasErrors()) {
-						for (SemanticAnalysisException curr : semanticResult.getExceptions()) {
-							System.err.println(curr.getMessage());
-						}
-						return 1;
-					}
-
-					if (cmd.hasOption(CHECK)) {
-						return 0; // Abort execution, if only check is required
-					}
-
-					FirmUtils.initFirm();
+				FirmUtils.initFirm();
+				try {
 					FirmGraphGenerator.transformToFirm(ast, semanticResult.getClassScopes());
 
 					FirmUtils.highToLowLevel();
@@ -147,11 +152,9 @@ public final class CompilerApp {
 						FirmUtils.createFirmGraph(suffix);
 					}
 
-					int result = 0;
-
 					String outputFile;
-					if (cmd.hasOption('o')) {
-						outputFile = cmd.getOptionValue('o');
+					if (cmd.hasOption(OUTPUT_FILE)) {
+						outputFile = cmd.getOptionValue(OUTPUT_FILE);
 					} else {
 						outputFile = Utils.getBinaryFileName("a");
 					}
@@ -164,30 +167,35 @@ public final class CompilerApp {
 					FirmUtils.AssemblerCreator assemblerCreator = null;
 					if (cmd.hasOption(COMPILE_FIRM)) {
 						assemblerCreator = new AssemblerCreator() {
-
 							@Override
-							public void create(File file) throws IOException {
-								FirmUtils.createAssembler(file.getAbsolutePath());
+							public void create(String fileName) throws IOException {
+								FirmUtils.createAssembler(fileName);
 							}
 						};
 					} else { // Default case: use our own assembler
 						assemblerCreator = new AssemblerCreator() {
-
 							@Override
-							public void create(File file) throws IOException {
-								AssemblerGenerator.createAssemblerX8664(file.toPath(), semanticResult.getCallingConventions());
+							public void create(String fileName) throws IOException {
+								AssemblerGenerator.createAssemblerX8664(Paths.get(fileName), semanticResult.getCallingConventions());
 							}
 						};
 					}
-					result = FirmUtils.createBinary(outputFile, assemblerName, assemblerCreator);
 
+					try {
+						FirmUtils.createBinary(outputFile, assemblerName, assemblerCreator, cmd.getOptionValue(C_INCLUDE),
+								cmd.getOptionValue(C_LIBRARY));
+					} catch (ExecutionFailedException ex) {
+						return ex.getStatusCode();
+					}
+
+					return 0;
+
+				} finally {
 					FirmUtils.finishFirm();
-
-					return result;
-				} catch (IOException e) {
-					System.err.println("Error accessing file " + file + ": " + e.getMessage());
 				}
 			}
+		} catch (IOException e) {
+			System.err.println("Error accessing file : " + e.getMessage());
 		} catch (ParseException e) {
 			System.err.println("Wrong Command Line Parameters: " + e.getMessage());
 		} catch (Throwable t) {

@@ -11,10 +11,6 @@ public class AndOperation extends StorageRegisterOperation {
 		super(null, mode, storage, destination);
 	}
 
-	public AndOperation(String comment, Bit mode, Storage storage, Register destination) {
-		super(comment, mode, storage, destination);
-	}
-
 	@Override
 	public String getOperationString() {
 		return String.format("\tand%s %s, %s", getMode(), getStorage().toString(getMode()), getDestination().toString(getMode()));

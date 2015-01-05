@@ -13,15 +13,15 @@ import compiler.lexer.Position;
 public class MethodDeclaration extends MethodMemberDeclaration {
 	private final Block block;
 	private int numberOfLocalVariables;
-	private static final CallingConvention CALLING_CONVENTION = CallingConvention.OWN;
 
-	public MethodDeclaration(Position position, Symbol identifier, List<ParameterDeclaration> parameters, Type returnType, Block body) {
-		super(position, identifier, parameters, returnType);
+	public MethodDeclaration(Position position, boolean isStatic, Symbol identifier, List<ParameterDeclaration> parameters, Type returnType,
+			Block body) {
+		super(position, isStatic, identifier, parameters, returnType);
 		this.block = body;
 	}
 
-	public MethodDeclaration(Symbol identifier, Type returnType, Block body, ParameterDeclaration... parameters) {
-		this(null, identifier, Arrays.asList(parameters), returnType, body);
+	public MethodDeclaration(boolean isStatic, Symbol identifier, Type returnType, Block body, ParameterDeclaration... parameters) {
+		this(null, isStatic, identifier, Arrays.asList(parameters), returnType, body);
 	}
 
 	public Block getBlock() {
@@ -42,11 +42,21 @@ public class MethodDeclaration extends MethodMemberDeclaration {
 
 	@Override
 	public CallingConvention getCallingConvention() {
-		return CALLING_CONVENTION;
+		return CallingConvention.OWN;
+	}
+
+	@Override
+	protected String getAssemblerNamePrefix() {
+		return "m$";
 	}
 
 	@Override
 	public void accept(AstVisitor visitor) {
 		visitor.visit(this);
+	}
+
+	@Override
+	public boolean isNative() {
+		return false;
 	}
 }

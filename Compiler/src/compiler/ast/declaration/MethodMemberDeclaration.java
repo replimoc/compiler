@@ -8,13 +8,12 @@ import compiler.firm.backend.calling.CallingConvention;
 import compiler.lexer.Position;
 
 public abstract class MethodMemberDeclaration extends MemberDeclaration {
-	private static final String MEMBER_TYPE = "m";
 
 	private final List<ParameterDeclaration> parameters;
 	private final Type returnType;
 
-	public MethodMemberDeclaration(Position position, Symbol identifier, List<ParameterDeclaration> parameters, Type returnType) {
-		super(position, identifier);
+	public MethodMemberDeclaration(Position position, boolean isStatic, Symbol identifier, List<ParameterDeclaration> parameters, Type returnType) {
+		super(position, isStatic, identifier);
 		this.parameters = parameters;
 		this.returnType = returnType;
 	}
@@ -37,10 +36,7 @@ public abstract class MethodMemberDeclaration extends MemberDeclaration {
 		return 0;
 	}
 
-	@Override
-	public String getMemberType() {
-		return MEMBER_TYPE;
-	}
+	public abstract boolean isNative();
 
 	public abstract CallingConvention getCallingConvention();
 
