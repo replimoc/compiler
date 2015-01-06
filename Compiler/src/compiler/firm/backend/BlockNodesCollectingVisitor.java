@@ -4,6 +4,7 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 
+import firm.Mode;
 import firm.nodes.Add;
 import firm.nodes.Address;
 import firm.nodes.Align;
@@ -281,8 +282,10 @@ public class BlockNodesCollectingVisitor implements NodeVisitor {
 
 	@Override
 	public void visit(Phi phi) {
-		getBlockNodes(phi).addPhi(phi);
-		phiList.add(phi);
+		if (!phi.getMode().equals(Mode.getM())) {
+			getBlockNodes(phi).addPhi(phi);
+			phiList.add(phi);
+		}
 	}
 
 	@Override
@@ -291,8 +294,10 @@ public class BlockNodesCollectingVisitor implements NodeVisitor {
 	}
 
 	@Override
-	public void visit(Proj arg0) {
-		collectNode(arg0);
+	public void visit(Proj proj) {
+		if (!proj.getMode().equals(Mode.getM())) {
+			collectNode(proj);
+		}
 	}
 
 	@Override
