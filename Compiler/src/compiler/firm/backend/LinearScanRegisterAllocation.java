@@ -18,9 +18,9 @@ import compiler.firm.backend.operations.dummy.ReserveStackOperation;
 import compiler.firm.backend.operations.templates.AssemblerOperation;
 import compiler.firm.backend.operations.templates.JumpOperation;
 import compiler.firm.backend.storage.Constant;
+import compiler.firm.backend.storage.MemoryPointer;
 import compiler.firm.backend.storage.Register;
 import compiler.firm.backend.storage.RegisterBased;
-import compiler.firm.backend.storage.MemoryPointer;
 import compiler.firm.backend.storage.VirtualRegister;
 
 public class LinearScanRegisterAllocation {
@@ -132,16 +132,16 @@ public class LinearScanRegisterAllocation {
 
 	private void fillRegisterList() {
 		int line = 0;
-		List<LabelOperation> passedLabels = new LinkedList<>();
+		HashMap<LabelOperation, Integer> passedLabels = new HashMap<>();
 		for (AssemblerOperation operation : operations) {
 			if (operation instanceof LabelOperation) {
-				passedLabels.add((LabelOperation) operation);
+				passedLabels.put((LabelOperation) operation, line);
 			}
 			if (operation instanceof JumpOperation) {
 				LabelOperation labelOperation = ((JumpOperation) operation).getLabel();
-				if (passedLabels.contains(labelOperation)) {
-					int startOperation = operations.indexOf(labelOperation);
-					expandRegisterUsage(startOperation, line);
+				Integer lineOfLabel = passedLabels.get(labelOperation);
+				if (lineOfLabel != null) { // we already had this label => loop detected
+					expandRegisterUsage(lineOfLabel, line);
 				}
 			}
 
