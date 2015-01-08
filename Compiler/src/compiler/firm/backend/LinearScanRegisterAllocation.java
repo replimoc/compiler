@@ -161,32 +161,32 @@ public class LinearScanRegisterAllocation {
 	}
 
 	private void expandRegisterUsage(int startOperation, int endOperation) {
-		// for (VirtualRegister register : virtualRegisters) { TODO @Valentin Zickner: make this work instead of your code
-		// if (register.isAliveAt(startOperation)) {
+		for (VirtualRegister register : virtualRegisters) { // TODO @Valentin Zickner: make this work instead of your code
+			if (register.isAliveAt(startOperation)) {
+				setOccurrence(register, endOperation);
+			}
+		}
+
+		// List<RegisterBased> writeRegisters = new ArrayList<RegisterBased>();
+		// for (int i = startOperation; i < endOperation; i++) {
+		// AssemblerOperation operation = operations.get(i);
+		//
+		// // TODO: The next loop should not be necessary. But without this loop it fails for fannkuch.mj.
+		// // Maybe there is somewhere a missing read register.
+		// for (RegisterBased register : operation.getWriteRegisters()) {
+		// if (!writeRegisters.contains(register)) {
+		// setOccurrence(register, startOperation);
 		// setOccurrence(register, endOperation);
 		// }
 		// }
-
-		List<RegisterBased> writeRegisters = new ArrayList<RegisterBased>();
-		for (int i = startOperation; i < endOperation; i++) {
-			AssemblerOperation operation = operations.get(i);
-
-			// TODO: The next loop should not be necessary. But without this loop it fails for fannkuch.mj.
-			// Maybe there is somewhere a missing read register.
-			for (RegisterBased register : operation.getWriteRegisters()) {
-				if (!writeRegisters.contains(register)) {
-					setOccurrence(register, startOperation);
-					setOccurrence(register, endOperation);
-				}
-			}
-			for (RegisterBased register : operation.getReadRegisters()) {
-				if (!writeRegisters.contains(register)) {
-					setOccurrence(register, startOperation);
-					setOccurrence(register, endOperation);
-				}
-			}
-			writeRegisters.addAll(Arrays.asList(operation.getWriteRegisters()));
-		}
+		// for (RegisterBased register : operation.getReadRegisters()) {
+		// if (!writeRegisters.contains(register)) {
+		// setOccurrence(register, startOperation);
+		// setOccurrence(register, endOperation);
+		// }
+		// }
+		// writeRegisters.addAll(Arrays.asList(operation.getWriteRegisters()));
+		// }
 	}
 
 	private void setOccurrence(RegisterBased register, int occurrence) {
