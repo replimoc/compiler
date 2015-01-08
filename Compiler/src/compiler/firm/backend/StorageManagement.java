@@ -138,7 +138,10 @@ public class StorageManagement {
 	public void reserveMemoryForPhis(List<Phi> phis) {
 		addOperation(new Comment("Reserve space for phis"));
 		for (Phi phi : phis) {
-			addStorage(phi, new VirtualRegister(getMode(phi)));
+			Bit mode = getMode(phi);
+			VirtualRegister virtualRegister = new VirtualRegister(mode);
+			addStorage(phi, virtualRegister);
+			addOperation(new MovOperation(mode, new Constant(0), virtualRegister));
 		}
 	}
 }
