@@ -89,10 +89,6 @@ public class StorageManagement {
 		Bit mode = getMode(node);
 		register = new VirtualRegister(mode, register);
 
-		if (mode == Bit.BIT8) {
-			addOperation(new MovOperation("movb does not clear the register before write", Bit.BIT64, new Constant(0), register));
-		}
-
 		addOperation(new MovOperation("Load address " + node.toString(), mode, originalStorage, register));
 		return register;
 	}
