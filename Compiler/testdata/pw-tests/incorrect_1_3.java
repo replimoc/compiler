@@ -1,6 +1,6 @@
 class _ {
 
-    /* Incorrect main method. */
+    /* Valid static method method. */
     public static void _ (int[] _) {
     }
 

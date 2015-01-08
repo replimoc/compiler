@@ -1,8 +1,4 @@
-/**
- * comma after last parameter
- */
-
-class Error {
+class Test {
 
     
     public static void main(){

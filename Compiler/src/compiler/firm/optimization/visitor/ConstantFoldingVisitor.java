@@ -4,8 +4,8 @@ import java.util.HashMap;
 import java.util.LinkedList;
 import java.util.Map.Entry;
 
+import compiler.firm.FirmUtils;
 import compiler.firm.optimization.FirmOptimizer;
-
 import firm.BackEdges;
 import firm.BackEdges.Edge;
 import firm.Graph;
@@ -100,27 +100,27 @@ public class ConstantFoldingVisitor extends OptimizationVisitor<TargetValue> {
 
 	private void divTransferFunction(Node node, TargetValue leftTarget, TargetValue rightTarget, TargetValue newTargetValue) {
 		if (leftTarget.isNull()) {
-			setTargetValue(getFirstSuccessor(node), leftTarget);
+			setTargetValue(FirmUtils.getFirstSuccessor(node), leftTarget);
 		} else if (leftTarget.isConstant() && rightTarget.isConstant()) {
-			setTargetValue(getFirstSuccessor(node), newTargetValue);
+			setTargetValue(FirmUtils.getFirstSuccessor(node), newTargetValue);
 		} else if (leftTarget.equals(TargetValue.getBad()) || rightTarget.equals(TargetValue.getBad())) {
-			setTargetValue(getFirstSuccessor(node), TargetValue.getBad());
+			setTargetValue(FirmUtils.getFirstSuccessor(node), TargetValue.getBad());
 		} else {
-			setTargetValue(getFirstSuccessor(node), TargetValue.getUnknown());
+			setTargetValue(FirmUtils.getFirstSuccessor(node), TargetValue.getUnknown());
 		}
 	}
 
 	private void modTransferFunction(Node node, TargetValue leftTarget, TargetValue rightTarget, TargetValue newTargetValue) {
 		if (leftTarget.isConstant() && rightTarget.isConstant()) {
-			setTargetValue(getFirstSuccessor(node), newTargetValue);
+			setTargetValue(FirmUtils.getFirstSuccessor(node), newTargetValue);
 		} else if (leftTarget.isNull()) {
-			setTargetValue(getFirstSuccessor(node), new TargetValue(0, leftTarget.getMode()));
+			setTargetValue(FirmUtils.getFirstSuccessor(node), new TargetValue(0, leftTarget.getMode()));
 		} else if (leftTarget.isOne()) {
-			setTargetValue(getFirstSuccessor(node), new TargetValue(0, leftTarget.getMode()));
+			setTargetValue(FirmUtils.getFirstSuccessor(node), new TargetValue(0, leftTarget.getMode()));
 		} else if (leftTarget.equals(TargetValue.getBad()) || rightTarget.equals(TargetValue.getBad())) {
-			setTargetValue(getFirstSuccessor(node), TargetValue.getBad());
+			setTargetValue(FirmUtils.getFirstSuccessor(node), TargetValue.getBad());
 		} else {
-			setTargetValue(getFirstSuccessor(node), TargetValue.getUnknown());
+			setTargetValue(FirmUtils.getFirstSuccessor(node), TargetValue.getUnknown());
 		}
 	}
 

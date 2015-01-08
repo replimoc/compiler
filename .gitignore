@@ -17,3 +17,4 @@ bin
 /Compiler/*.log
 /Compiler/a.exe
 /progpar_compiler
+/SDL-1.2.15

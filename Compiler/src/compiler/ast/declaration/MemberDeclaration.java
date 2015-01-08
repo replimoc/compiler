@@ -5,8 +5,11 @@ import compiler.lexer.Position;
 
 public abstract class MemberDeclaration extends Declaration implements Comparable<MemberDeclaration> {
 
-	public MemberDeclaration(Position position, Symbol identifier) {
+	private final boolean isStatic;
+
+	public MemberDeclaration(Position position, boolean isStatic, Symbol identifier) {
 		super(position, identifier);
+		this.isStatic = isStatic;
 	}
 
 	@Override
@@ -20,4 +23,8 @@ public abstract class MemberDeclaration extends Declaration implements Comparabl
 	}
 
 	protected abstract int getSortPriority();
+
+	public boolean isStatic() {
+		return isStatic;
+	}
 }

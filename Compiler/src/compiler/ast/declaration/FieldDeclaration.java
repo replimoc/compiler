@@ -6,18 +6,26 @@ import compiler.ast.visitor.AstVisitor;
 import compiler.lexer.Position;
 
 public class FieldDeclaration extends MemberDeclaration {
-	private static final String MEMBER_TYPE = "f";
 	private final Type type;
 
-	public FieldDeclaration(Type type, Symbol identifier) {
-		this(null, type, identifier);
-	}
-
-	public FieldDeclaration(Position position, Type type, Symbol identifier) {
-		super(position, identifier);
+	public FieldDeclaration(Position position, boolean isStatic, Type type, Symbol identifier) {
+		super(position, isStatic, identifier);
 		this.type = type;
 	}
 
+	public FieldDeclaration(Type type, Symbol identifier) {
+		this(null, false, type, identifier);
+	}
+
+	public FieldDeclaration(Position position, Type type, Symbol identifier) {
+		this(position, false, type, identifier);
+	}
+
+	public FieldDeclaration(boolean isStatic, Type type, Symbol identifier) {
+		this(null, isStatic, type, identifier);
+	}
+
+	@Override
 	public Type getType() {
 		return type;
 	}
@@ -33,8 +41,8 @@ public class FieldDeclaration extends MemberDeclaration {
 	}
 
 	@Override
-	public String getMemberType() {
-		return MEMBER_TYPE;
+	protected String getAssemblerNamePrefix() {
+		return "f$";
 	}
 
 	@Override

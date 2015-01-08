@@ -3,7 +3,7 @@ package compiler.semantic.symbolTable;
 import java.util.LinkedList;
 
 import compiler.Symbol;
-import compiler.ast.statement.LocalVariableDeclaration;
+import compiler.ast.declaration.LocalVariableDeclaration;
 import compiler.ast.type.Type;
 
 public class SymbolTable {

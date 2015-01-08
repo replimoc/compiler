@@ -53,7 +53,7 @@ public class AutomatedAstComparisionTest implements TestFileVisitor.FileTester {
 	}
 
 	@Override
-	public void testSourceFile(Path sourceFile, Path expectedFile) throws Exception {
+	public void testSourceFile(Path sourceFile, Path expectedFile, Path cIncludeFilePath) throws Exception {
 		// read expected output
 		List<String> expectedOutput = Files.readAllLines(expectedFile, StandardCharsets.US_ASCII);
 		boolean failingExpected = (!expectedOutput.isEmpty() && "error".equals(expectedOutput.get(0)));

@@ -2,8 +2,11 @@ package compiler.semantic;
 
 import java.util.HashMap;
 import java.util.List;
+import java.util.Map.Entry;
 
 import compiler.Symbol;
+import compiler.ast.declaration.MethodMemberDeclaration;
+import compiler.firm.backend.calling.CallingConvention;
 import compiler.semantic.exceptions.SemanticAnalysisException;
 
 public class SemanticCheckResults {
@@ -32,4 +35,15 @@ public class SemanticCheckResults {
 		return exceptions.size();
 	}
 
+	public HashMap<String, CallingConvention> getCallingConventions() {
+		HashMap<String, CallingConvention> callingConventions = new HashMap<String, CallingConvention>();
+		for (Entry<Symbol, ClassScope> entry : classScopes.entrySet()) {
+			for (MethodMemberDeclaration methodDeclaration : entry.getValue().getMethodDeclarations()) {
+				if (methodDeclaration instanceof MethodMemberDeclaration) {
+					callingConventions.put(methodDeclaration.getAssemblerName(), methodDeclaration.getCallingConvention());
+				}
+			}
+		}
+		return callingConventions;
+	}
 }

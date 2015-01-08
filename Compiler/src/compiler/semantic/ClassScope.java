@@ -5,10 +5,8 @@ import java.util.Map.Entry;
 
 import compiler.Symbol;
 import compiler.ast.declaration.ClassDeclaration;
-import compiler.ast.declaration.Declaration;
 import compiler.ast.declaration.FieldDeclaration;
 import compiler.ast.declaration.MethodMemberDeclaration;
-import compiler.ast.declaration.StaticFieldDeclaration;
 
 public class ClassScope {
 	private final ClassDeclaration classDeclaration;
@@ -33,7 +31,7 @@ public class ClassScope {
 		return methods.get(identifier);
 	}
 
-	public Declaration getFieldDeclaration(Symbol identifier) {
+	public FieldDeclaration getFieldDeclaration(Symbol identifier) {
 		return fields.get(identifier);
 	}
 
@@ -47,7 +45,7 @@ public class ClassScope {
 
 	public boolean hasStaticField() {
 		for (Entry<Symbol, FieldDeclaration> curr : this.fields.entrySet()) {
-			if (curr.getValue() instanceof StaticFieldDeclaration) {
+			if (curr.getValue().isStatic()) {
 				return true;
 			}
 		}

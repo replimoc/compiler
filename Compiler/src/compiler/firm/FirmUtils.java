@@ -2,12 +2,15 @@ package compiler.firm;
 
 import java.io.File;
 import java.io.IOException;
-import java.nio.file.Files;
+import java.util.Arrays;
+import java.util.LinkedList;
 import java.util.List;
 
+import compiler.utils.ExecutionFailedException;
 import compiler.utils.Pair;
 import compiler.utils.Utils;
 
+import firm.BackEdges;
 import firm.Backend;
 import firm.ClassType;
 import firm.Dump;
@@ -19,12 +22,15 @@ import firm.Mode;
 import firm.Program;
 import firm.Type;
 import firm.Util;
+import firm.nodes.Node;
 
 public final class FirmUtils {
 
 	private static final String JNA_LIBRARY_PATH = "jna.library.path";
 	private static final String LIB_FIRM_FOLDER = "lib/firm/";
 	private static final String ISA_AMD64 = "isa=amd64";
+	private static final String GCC = "gcc";
+	private static final String GCC_DEBUG = "-g3";
 
 	public static final int TRUE = 1;
 	public static final int FALSE = 0;
@@ -78,53 +84,57 @@ public final class FirmUtils {
 		Backend.createAssembler(outputFileName, "<builtin>");
 	}
 
+	public interface AssemblerCreator {
+		public void create(String file) throws IOException;
+	}
+
 	/**
 	 * Expect escaped outputFileName.
 	 * 
 	 * @param outputFileName
 	 *            File for the binary executable.
-	 * @return
 	 * @throws IOException
+	 * @throws ExecutionFailedException
 	 */
-	public static int createBinary(String outputFileName, boolean keepAssembler) throws IOException {
+	public static void createBinary(String outputFileName, String assemblerFile, AssemblerCreator assemblerCreator, String cInclude, String cLibrary)
+			throws IOException,
+			ExecutionFailedException {
 		String base = Utils.getJarLocation() + File.separator;
-		File assembler = new File("assembler.s");
-		if (!keepAssembler) {
-			assembler = File.createTempFile("assembler", ".s");
-			assembler.deleteOnExit();
+		if (assemblerFile == null) {
+			assemblerFile = Utils.createAutoDeleteTempFile("assembler", ".s");
 		}
-		File build = File.createTempFile("build", ".o");
-		build.deleteOnExit();
 
-		String standardlibO = Files.createTempFile("standardlib", ".o").toString();
-		new File(standardlibO).deleteOnExit();
+		assemblerCreator.create(assemblerFile);
 
-		String assemblerFile = assembler.getAbsolutePath();
-		String buildFile = build.getAbsolutePath();
+		List<String> execOptions = new LinkedList<String>();
+		execOptions.addAll(Arrays.asList(GCC, GCC_DEBUG, "-o", outputFileName));
+		execOptions.add(compileToO(assemblerFile, "build"));
+		execOptions.add(compileToO(base + "resources/standardlib.c", "standardlib"));
 
-		createAssembler(assemblerFile);
+		if (cInclude != null)
+			execOptions.add(compileToO(cInclude, "cInclude"));
 
-		int result = 0;
-		result = printOutput(Utils.systemExec("gcc", "-c", assemblerFile, "-o", buildFile));
-		if (result != 0)
-			return result;
-		result = printOutput(Utils.systemExec("gcc", "-c", base + "resources/standardlib.c", "-o", standardlibO));
-		if (result != 0)
-			return result;
-		result = printOutput(Utils.systemExec("gcc", "-o", outputFileName, buildFile, standardlibO));
+		if (cLibrary != null)
+			execOptions.add("-l" + cLibrary);
 
-		return result;
+		printOutput(Utils.systemExec(execOptions));
 	}
 
-	private static int printOutput(Pair<Integer, List<String>> executionState) {
-		int exitCode = 0;
-		if (!executionState.getSecond().isEmpty())
-			exitCode = executionState.getFirst();
+	private static String compileToO(String inputFile, String outputFileName) throws IOException, ExecutionFailedException {
+		String oName = Utils.createAutoDeleteTempFile(outputFileName, ".o");
+		printOutput(Utils.systemExec(GCC, GCC_DEBUG, "-c", inputFile, "-o", oName));
+		return oName;
+	}
 
+	private static void printOutput(Pair<Integer, List<String>> executionState) throws ExecutionFailedException {
 		for (String line : executionState.getSecond()) {
 			System.out.println(line);
 		}
-		return exitCode;
+
+		int exitCode = executionState.getFirst();
+		if (exitCode != 0) {
+			throw new ExecutionFailedException(exitCode);
+		}
 	}
 
 	public static void createFirmGraph(String suffix) {
@@ -163,5 +173,9 @@ public final class FirmUtils {
 
 	public static void finishFirm() {
 		Firm.finish();
+	}
+
+	public static Node getFirstSuccessor(Node node) {
+		return BackEdges.getOuts(node).iterator().next().node;
 	}
 }

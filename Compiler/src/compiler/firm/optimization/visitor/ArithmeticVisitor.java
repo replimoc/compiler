@@ -2,6 +2,8 @@ package compiler.firm.optimization.visitor;
 
 import java.util.HashMap;
 
+import compiler.firm.FirmUtils;
+
 import firm.Mode;
 import firm.TargetValue;
 import firm.nodes.Add;
@@ -51,7 +53,7 @@ public class ArithmeticVisitor extends OptimizationVisitor<Node> {
 
 		// reduce x = y / 1 if possible
 		if (isConstant(right) && getTargetValue(right).isOne()) {
-			addReplacement(getFirstSuccessor(division), division.getLeft());
+			addReplacement(FirmUtils.getFirstSuccessor(division), division.getLeft());
 		}
 	}
 
