@@ -30,7 +30,7 @@ public class AutomatedLextestComparisonTest implements TestFileVisitor.FileTeste
 	}
 
 	@Override
-	public void testSourceFile(Path sourceFile, Path lexFile) throws Exception {
+	public void testSourceFile(Path sourceFile, Path lexFile, Path cIncludeFilePath) throws Exception {
 		// read expected output
 		BufferedReader expectedOutput = Files.newBufferedReader(lexFile, StandardCharsets.US_ASCII);
 

@@ -3,15 +3,17 @@ package compiler.firm;
 import static org.junit.Assert.assertEquals;
 
 import java.io.File;
+import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.util.LinkedList;
 import java.util.List;
 
-import org.junit.After;
-import org.junit.Before;
+import org.junit.Ignore;
 import org.junit.Test;
 
+import compiler.main.CompilerApp;
 import compiler.utils.Pair;
 import compiler.utils.TestFileVisitor;
 import compiler.utils.TestUtils;
@@ -22,15 +24,11 @@ import compiler.utils.Utils;
  * <p/>
  * this test should be started from Compiler directory
  */
-public class AutomatedOutputComparisonTest implements TestFileVisitor.FileTester {
+@Ignore
+public abstract class AbstractAutomatedOutputComparisonTest implements TestFileVisitor.FileTester {
 
 	private static final String OUTPUT_FILE_EXTENSION = ".result";
 	private static final String OUTPUT_FILE_EXTENSION_MJTEST = ".check";
-
-	@Before
-	public void initFirm() {
-		FirmUtils.initFirm();
-	}
 
 	@Test
 	public void testCompareJavaOutputWithResultReference() throws Exception {
@@ -47,19 +45,23 @@ public class AutomatedOutputComparisonTest implements TestFileVisitor.FileTester
 		TestFileVisitor.runTestsForFolder(this, "testdata/mj-test/pos");
 	}
 
-	@After
-	public void finishFirm() {
-		FirmUtils.finishFirm();
-	}
-
 	@Override
-	public void testSourceFile(Path sourceFile, Path expectedFile) throws Exception {
+	public void testSourceFile(Path sourceFile, Path expectedFile, Path cIncludeFilePath) throws Exception {
 		System.out.println("Testing execution result of " + sourceFile);
 		File binarFile = File.createTempFile("executable", Utils.getBinaryFileName(""));
 		binarFile.deleteOnExit();
 
-		Pair<Integer, List<String>> compilingState = TestUtils.startCompilerApp("-o", binarFile.toString(), "--compile-firm",
-				sourceFile.toAbsolutePath().toString());
+		Pair<Integer, List<String>> compilingState;
+		if (Files.exists(cIncludeFilePath)) {
+			compilingState = compile(getAdditionalOptions(),
+					"-o", binarFile.toString(), "--c-include",
+					cIncludeFilePath.toString(),
+					sourceFile.toAbsolutePath().toString());
+		} else {
+			compilingState = compile(getAdditionalOptions(),
+					"-o", binarFile.toString(), sourceFile.toAbsolutePath().toString());
+		}
+
 		for (String line : compilingState.getSecond()) {
 			System.out.println(line);
 		}
@@ -75,4 +77,21 @@ public class AutomatedOutputComparisonTest implements TestFileVisitor.FileTester
 
 		System.out.println(sourceFile + " passed ------------------------------------------------------------------------\n");
 	}
+
+	private Pair<Integer, List<String>> compile(String[] args0, String... args1) throws IOException {
+		String[] args = new String[args0.length + args1.length];
+		System.arraycopy(args0, 0, args, 0, args0.length);
+		System.arraycopy(args1, 0, args, args0.length, args1.length);
+
+		if (forkProcess()) {
+			return TestUtils.startCompilerApp(args);
+		} else {
+			int exitCode = CompilerApp.execute(args);
+			return new Pair<Integer, List<String>>(exitCode, new LinkedList<String>());
+		}
+	}
+
+	protected abstract String[] getAdditionalOptions();
+
+	protected abstract boolean forkProcess();
 }

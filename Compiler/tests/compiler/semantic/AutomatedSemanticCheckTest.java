@@ -57,7 +57,7 @@ public class AutomatedSemanticCheckTest implements TestFileVisitor.FileTester {
 	}
 
 	@Override
-	public void testSourceFile(Path sourceFilePath, Path expectedResultFilePath) throws Exception {
+	public void testSourceFile(Path sourceFilePath, Path expectedResultFilePath, Path cIncludeFilePath) throws Exception {
 
 		System.out.println("Testing file = " + sourceFilePath + "----------------------------------------------->");
 

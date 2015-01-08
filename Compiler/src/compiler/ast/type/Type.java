@@ -98,10 +98,6 @@ public class Type extends AstNode {
 	}
 
 	protected firm.Type generateFirmType() {
-		firm.Mode mode = getMode();
-		if (mode != null) {
-			return new PrimitiveType(mode);
-		}
-		return null;
+		return new PrimitiveType(getMode());
 	}
 }

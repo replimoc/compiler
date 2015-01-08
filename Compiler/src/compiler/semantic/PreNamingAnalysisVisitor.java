@@ -10,17 +10,17 @@ import compiler.ast.Block;
 import compiler.ast.Program;
 import compiler.ast.declaration.ClassDeclaration;
 import compiler.ast.declaration.FieldDeclaration;
+import compiler.ast.declaration.LocalVariableDeclaration;
+import compiler.ast.declaration.MainMethodDeclaration;
 import compiler.ast.declaration.MemberDeclaration;
 import compiler.ast.declaration.MethodDeclaration;
 import compiler.ast.declaration.MethodMemberDeclaration;
 import compiler.ast.declaration.NativeMethodDeclaration;
 import compiler.ast.declaration.ParameterDeclaration;
-import compiler.ast.declaration.StaticMethodDeclaration;
 import compiler.ast.statement.ArrayAccessExpression;
 import compiler.ast.statement.BooleanConstantExpression;
 import compiler.ast.statement.IfStatement;
 import compiler.ast.statement.IntegerConstantExpression;
-import compiler.ast.statement.LocalVariableDeclaration;
 import compiler.ast.statement.MethodInvocationExpression;
 import compiler.ast.statement.NewArrayExpression;
 import compiler.ast.statement.NewObjectExpression;
@@ -125,40 +125,40 @@ public class PreNamingAnalysisVisitor implements AstVisitor {
 	}
 
 	@Override
-	public void visit(StaticMethodDeclaration staticMethodDeclaration) {
+	public void visit(MainMethodDeclaration mainMethodDeclaration) {
 		if (mainFound) {
-			throwMultipleStaticMethodsError(staticMethodDeclaration.getPosition());
+			throwMultipleStaticMethodsError(mainMethodDeclaration.getPosition());
 			return;
 		}
 
-		Type returnType = staticMethodDeclaration.getType();
+		Type returnType = mainMethodDeclaration.getType();
 		if (returnType.getBasicType() != BasicType.VOID) {
-			throwTypeError(staticMethodDeclaration, "Invalid return type for main method.");
+			throwTypeError(mainMethodDeclaration, "Invalid return type for main method.");
 			return;
 		}
 
-		Symbol identifier = staticMethodDeclaration.getIdentifier();
+		Symbol identifier = mainMethodDeclaration.getIdentifier();
 		if (!"main".equals(identifier.getValue())) {
-			throwTypeError(staticMethodDeclaration, "'public static void' method must be called 'main'.");
+			throwTypeError(mainMethodDeclaration, "'public static void' method must be called 'main'.");
 			return;
 		}
 
-		if (staticMethodDeclaration.getParameters().size() != 1) {
-			throwTypeError(staticMethodDeclaration, "'public static void main' method must have a single argument of type String[].");
+		if (mainMethodDeclaration.getParameters().size() != 1) {
+			throwTypeError(mainMethodDeclaration, "'public static void main' method must have a single argument of type String[].");
 			return;
 		}
 
-		ParameterDeclaration parameter = staticMethodDeclaration.getParameters().get(0);
+		ParameterDeclaration parameter = mainMethodDeclaration.getParameters().get(0);
 		Type parameterType = parameter.getType();
 		if (parameterType.getBasicType() != BasicType.ARRAY || !"String".equals(parameterType.getSubType().getIdentifier().getValue())) {
-			throwTypeError(staticMethodDeclaration, "'public static void main' method must have a single argument of type String[].");
+			throwTypeError(mainMethodDeclaration, "'public static void main' method must have a single argument of type String[].");
 			return;
 		}
 
 		mainFound = true;
-		staticMethodDeclaration.getParameters().get(0)
-				.setType(new ArrayType(parameter.getPosition(), new Type(parameter.getPosition(), BasicType.STRING_ARGS)));
-		checkAndInsertDeclaration(staticMethodDeclaration);
+		mainMethodDeclaration.getParameters().get(0)
+				.setType(new Type(parameter.getPosition(), BasicType.STRING_ARGS));
+		checkAndInsertDeclaration(mainMethodDeclaration);
 	}
 
 	private void checkAndInsertDeclaration(MethodMemberDeclaration declaration) {
