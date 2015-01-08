@@ -13,6 +13,9 @@ import compiler.firm.backend.storage.RegisterBased;
 import compiler.firm.backend.storage.Storage;
 import compiler.firm.backend.storage.VirtualRegister;
 
+import firm.BackEdges;
+import firm.BackEdges.Edge;
+import firm.Mode;
 import firm.nodes.Const;
 import firm.nodes.Node;
 import firm.nodes.Phi;
@@ -89,10 +92,6 @@ public class StorageManagement {
 		Bit mode = getMode(node);
 		register = new VirtualRegister(mode, register);
 
-		if (mode == Bit.BIT8) {
-			addOperation(new MovOperation("movb does not clear the register before write", Bit.BIT64, new Constant(0), register));
-		}
-
 		addOperation(new MovOperation("Load address " + node.toString(), mode, originalStorage, register));
 		return register;
 	}
@@ -113,7 +112,11 @@ public class StorageManagement {
 	public void storeValueAndCreateNewStorage(Node node, Storage storage) {
 		Storage destination = nodeStorages.get(node);
 		if (destination == null) {
-			destination = new VirtualRegister(getMode(node));
+			if (newRegisterIsNecessary(node)) {
+				destination = new VirtualRegister(getMode(node));
+			} else {
+				destination = storage;
+			}
 			addStorage(node, destination);
 		}
 		storeValue(node, storage, destination);
@@ -140,5 +143,26 @@ public class StorageManagement {
 		for (Phi phi : phis) {
 			addStorage(phi, new VirtualRegister(getMode(phi)));
 		}
+	}
+
+	private boolean newRegisterIsNecessary(Node node) {
+		boolean result = true;
+		for (Node predecessor : node.getPreds()) {
+			if (isNotModeM(predecessor)) {
+				int n = 0;
+				for (Edge predecessorSuccessors : BackEdges.getOuts(predecessor)) {
+					if (isNotModeM(predecessorSuccessors.node)) {
+						n++;
+					}
+				}
+				result &= (n <= 1);
+			}
+		}
+
+		return result;
+	}
+
+	private boolean isNotModeM(Node node) {
+		return !node.getMode().equals(Mode.getM());
 	}
 }
