@@ -12,12 +12,12 @@ public class FreeStackOperation extends AssemblerOperation {
 
 	@Override
 	public String getOperationString() {
-		return operation.getOperationString();
+		return operation == null ? "FreeStackOperation" : operation.getOperationString();
 	}
 
 	@Override
 	public String getComment() {
-		return operation.getComment();
+		return operation == null ? "" : operation.getComment();
 	}
 
 }

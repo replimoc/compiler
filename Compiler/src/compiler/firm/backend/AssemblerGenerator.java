@@ -5,6 +5,7 @@ import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -52,6 +53,8 @@ public final class AssemblerGenerator {
 			BackEdges.disable(graph);
 
 			List<AssemblerOperation> operations = visitor.getOperations();
+			// TODO remove next line when it's not needed any more
+			generatePlainAssemblerFile(Paths.get(graph.getEntity().getLdName() + ".plain"), operations);
 			allocateRegisters(operations);
 			assembler.addAll(operations);
 		}
@@ -74,5 +77,18 @@ public final class AssemblerGenerator {
 			}
 		}
 		writer.close();
+	}
+
+	private static void generatePlainAssemblerFile(Path outputFile, List<AssemblerOperation> operations) {
+		try {
+			BufferedWriter writer = Files.newBufferedWriter(outputFile, StandardCharsets.US_ASCII);
+			for (AssemblerOperation operation : operations) {
+				writer.write(operation.toString());
+				writer.newLine();
+			}
+			writer.close();
+		} catch (IOException e) {
+			e.printStackTrace();
+		}
 	}
 }

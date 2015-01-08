@@ -37,7 +37,7 @@ public class VirtualRegister extends RegisterBased {
 
 	@Override
 	public String toString(Bit bit) {
-		return this.register.toString(bit);
+		return register == null ? "VR" + num : register.toString(bit);
 	}
 
 	public Storage getRegister() {
@@ -84,5 +84,9 @@ public class VirtualRegister extends RegisterBased {
 
 	public Bit getMode() {
 		return mode;
+	}
+
+	public boolean isAliveAt(int line) {
+		return firstOccurrence <= line && line <= lastOccurrence;
 	}
 }
