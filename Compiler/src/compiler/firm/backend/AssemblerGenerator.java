@@ -5,7 +5,6 @@ import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
-import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -60,7 +59,7 @@ public final class AssemblerGenerator {
 			List<AssemblerOperation> operations = visitor.getOperations();
 
 			// TODO remove next line when it's not needed any more
-			generatePlainAssemblerFile(Paths.get(graph.getEntity().getLdName() + ".plain"), operations);
+			// generatePlainAssemblerFile(Paths.get(graph.getEntity().getLdName() + ".plain"), operations);
 
 			allocateRegisters(operations);
 			assembler.addAll(operations);
