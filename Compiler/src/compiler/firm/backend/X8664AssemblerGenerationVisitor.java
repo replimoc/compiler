@@ -349,6 +349,12 @@ public class X8664AssemblerGenerationVisitor implements BulkPhiNodeVisitor {
 		}
 	}
 
+	private void visitCmpNode(Cmp node) {
+		RegisterBased register1 = registerAllocation.getValue(node.getRight(), false);
+		RegisterBased register2 = registerAllocation.getValue(node.getLeft(), false);
+		addOperation(new CmpOperation("cmp operation", StorageManagement.getMode(node.getLeft()), register1, register2));
+	}
+
 	@Override
 	public void visit(Const node) {
 		// nothing to do
@@ -408,12 +414,6 @@ public class X8664AssemblerGenerationVisitor implements BulkPhiNodeVisitor {
 	@Override
 	public void visit(Mul node) {
 		visitTwoOperandsNode(ImulOperation.getFactory("mul operation", StorageManagement.getMode(node)), node, node.getRight(), node.getLeft());
-	}
-
-	private void visitCmpNode(Cmp node) {
-		RegisterBased register1 = registerAllocation.getValue(node.getRight(), false);
-		RegisterBased register2 = registerAllocation.getValue(node.getLeft(), false);
-		addOperation(new CmpOperation("cmp operation", StorageManagement.getMode(node.getLeft()), register1, register2));
 	}
 
 	@Override
