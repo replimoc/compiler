@@ -9,6 +9,7 @@ import java.util.List;
 import compiler.utils.ExecutionFailedException;
 import compiler.utils.Pair;
 import compiler.utils.Utils;
+
 import firm.BackEdges;
 import firm.Backend;
 import firm.ClassType;
@@ -28,6 +29,8 @@ public final class FirmUtils {
 	private static final String JNA_LIBRARY_PATH = "jna.library.path";
 	private static final String LIB_FIRM_FOLDER = "lib/firm/";
 	private static final String ISA_AMD64 = "isa=amd64";
+	private static final String GCC = "gcc";
+	private static final String GCC_DEBUG = "-g3";
 
 	public static final int TRUE = 1;
 	public static final int FALSE = 0;
@@ -104,7 +107,7 @@ public final class FirmUtils {
 		assemblerCreator.create(assemblerFile);
 
 		List<String> execOptions = new LinkedList<String>();
-		execOptions.addAll(Arrays.asList("gcc", "-o", outputFileName));
+		execOptions.addAll(Arrays.asList(GCC, GCC_DEBUG, "-o", outputFileName));
 		execOptions.add(compileToO(assemblerFile, "build"));
 		execOptions.add(compileToO(base + "resources/standardlib.c", "standardlib"));
 
@@ -118,9 +121,9 @@ public final class FirmUtils {
 	}
 
 	private static String compileToO(String inputFile, String outputFileName) throws IOException, ExecutionFailedException {
-		String standardlibO = Utils.createAutoDeleteTempFile(outputFileName, ".o");
-		printOutput(Utils.systemExec("gcc", "-c", inputFile, "-o", standardlibO));
-		return standardlibO;
+		String oName = Utils.createAutoDeleteTempFile(outputFileName, ".o");
+		printOutput(Utils.systemExec(GCC, GCC_DEBUG, "-c", inputFile, "-o", oName));
+		return oName;
 	}
 
 	private static void printOutput(Pair<Integer, List<String>> executionState) throws ExecutionFailedException {
