@@ -64,12 +64,7 @@ import firm.nodes.Unknown;
 
 public class BlockNodesCollectingVisitor implements NodeVisitor {
 	private final HashMap<Block, BlockNodes> nodesPerBlock = new HashMap<>();
-	private final List<BlockNodes> cronologicalBlockNodes = new ArrayList<>();
 	private final List<Phi> phiList = new ArrayList<>();
-
-	public List<BlockNodes> getNodesPerBlock() {
-		return cronologicalBlockNodes;
-	}
 
 	public HashMap<Block, BlockNodes> getNodesPerBlockMap() {
 		return nodesPerBlock;
@@ -91,7 +86,6 @@ public class BlockNodesCollectingVisitor implements NodeVisitor {
 			blockNodes = new BlockNodes();
 			blockNodes.addNode(block);
 			nodesPerBlock.put(block, blockNodes);
-			cronologicalBlockNodes.add(blockNodes);
 		}
 		return blockNodes;
 	}

@@ -17,8 +17,10 @@ import compiler.firm.backend.operations.TextOperation;
 import compiler.firm.backend.operations.templates.AssemblerOperation;
 
 import firm.BackEdges;
+import firm.BlockWalker;
 import firm.Graph;
 import firm.Program;
+import firm.nodes.Block;
 
 public final class AssemblerGenerator {
 
@@ -39,22 +41,27 @@ public final class AssemblerGenerator {
 			BlockNodesCollectingVisitor collectorVisitor = new BlockNodesCollectingVisitor();
 			graph.walkTopological(collectorVisitor);
 
-			final List<BlockNodes> nodesPerBlock = collectorVisitor.getNodesPerBlock();
 			final X8664AssemblerGenerationVisitor visitor = new X8664AssemblerGenerationVisitor(callingConvention);
 			// final NodeNumberPrintingVisitor printer = new NodeNumberPrintingVisitor();
 
 			visitor.addListOfAllPhis(collectorVisitor.getAllPhis());
 
 			BackEdges.enable(graph);
-			for (BlockNodes blockNodes : nodesPerBlock) {
-				// blockNodes.visitNodes(printer, collectorVisitor.getNodesPerBlockMap());
-				blockNodes.visitNodes(visitor, collectorVisitor.getNodesPerBlockMap());
-			}
+
+			final HashMap<Block, BlockNodes> nodesPerBlockMap = collectorVisitor.getNodesPerBlockMap();
+			graph.walkBlocksPostorder(new BlockWalker() {
+				@Override
+				public void visitBlock(Block block) {
+					nodesPerBlockMap.get(block).visitNodes(visitor, nodesPerBlockMap);
+				}
+			});
 			BackEdges.disable(graph);
 
 			List<AssemblerOperation> operations = visitor.getOperations();
+
 			// TODO remove next line when it's not needed any more
 			generatePlainAssemblerFile(Paths.get(graph.getEntity().getLdName() + ".plain"), operations);
+
 			allocateRegisters(operations);
 			assembler.addAll(operations);
 		}
