@@ -56,10 +56,10 @@ public class StorageManagement {
 	}
 
 	public RegisterBased getValue(Node node, boolean registerOverwrite) {
-		return getValue(node, registerOverwrite, null);
+		return getValue(node, null);
 	}
 
-	public RegisterBased getValue(Node node, boolean registerOverwrite, Register register) {
+	public RegisterBased getValue(Node node, Register register) {
 		addOperation(new Comment("restore from stack"));
 
 		// if variable was assigned, than simply load it from stack
@@ -69,26 +69,26 @@ public class StorageManagement {
 			addOperation(new Comment("expected " + node + " to be on stack"));
 		}
 
-		return getValue(node, registerOverwrite, register, getStorage(node));
+		return getValue(node, register, getStorage(node));
 	}
 
-	public RegisterBased getValue(Node node, boolean registerOverwrite, Storage originalStorage) {
-		return getValue(node, registerOverwrite, null, originalStorage);
+	public RegisterBased getValue(Node node, boolean registerOverride, Storage originalStorage) {
+		return getValue(node, null, originalStorage);
 	}
 
 	public RegisterBased getValue(Node node, boolean registerOverwrite, RegisterBased register, RegisterBased originalStorage) {
 		if (register == null && !registerOverwrite) {
 			return originalStorage;
 		} else {
-			return getValueFromStorage(node, registerOverwrite, register, originalStorage);
+			return getValueFromStorage(node, register, originalStorage);
 		}
 	}
 
-	public RegisterBased getValue(Node node, boolean registerOverwrite, RegisterBased register, Storage originalStorage) {
-		return getValueFromStorage(node, registerOverwrite, register, originalStorage);
+	public RegisterBased getValue(Node node, RegisterBased register, Storage originalStorage) {
+		return getValueFromStorage(node, register, originalStorage);
 	}
 
-	public RegisterBased getValueFromStorage(Node node, boolean registerOverwrite, RegisterBased register, Storage originalStorage) {
+	public RegisterBased getValueFromStorage(Node node, RegisterBased register, Storage originalStorage) {
 		Bit mode = getMode(node);
 		register = new VirtualRegister(mode, register);
 
