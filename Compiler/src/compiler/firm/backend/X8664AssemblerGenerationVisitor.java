@@ -185,8 +185,6 @@ public class X8664AssemblerGenerationVisitor implements BulkPhiNodeVisitor {
 		}
 
 		if (node.equals(graph.getEndBlock())) {
-			addOperation(new FreeStackOperation());
-
 			if (!Utils.isWindows()) {
 				addOperation(new SizeOperation(methodName));
 			}
@@ -440,6 +438,7 @@ public class X8664AssemblerGenerationVisitor implements BulkPhiNodeVisitor {
 
 		// addOperation(node.getBlock(), new AddqOperation(new Constant(-currentStackOffset), Register.RSP));
 		// better move rbp to rsp
+		addOperation(new FreeStackOperation());
 		addOperation(new MovOperation(Bit.BIT64, Register._BP, Register._SP));
 		addOperation(new PopOperation(Bit.BIT64, Register._BP));
 		addOperation(new RetOperation());
