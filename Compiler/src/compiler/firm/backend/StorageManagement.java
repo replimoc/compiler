@@ -107,18 +107,18 @@ public class StorageManagement {
 		if (destination == null && storage.getRegister() == null) {
 			addStorage(node, storage);
 		} else {
-			storeValueAndCreateNewStorage(node, storage);
+			storeValueAndCreateNewStorage(node, storage, false);
 		}
 	}
 
 	public void storeValue(Node node, Storage storage) {
-		storeValueAndCreateNewStorage(node, storage);
+		storeValueAndCreateNewStorage(node, storage, false);
 	}
 
-	public void storeValueAndCreateNewStorage(Node node, Storage storage) {
+	public void storeValueAndCreateNewStorage(Node node, Storage storage, boolean forceNew) {
 		Storage destination = nodeStorages.get(node);
 		if (destination == null) {
-			if (newRegisterIsNecessary(node)) {
+			if (forceNew || countSuccessors(node) > 1) {
 				destination = new VirtualRegister(getMode(node));
 			} else {
 				destination = storage;
@@ -149,17 +149,6 @@ public class StorageManagement {
 		for (Phi phi : phis) {
 			addStorage(phi, new VirtualRegister(getMode(phi)));
 		}
-	}
-
-	private boolean newRegisterIsNecessary(Node node) {
-		boolean result = true;
-		for (Node predecessor : node.getPreds()) {
-			if (isNotModeM(predecessor)) {
-				result &= (countSuccessors(predecessor) <= 1);
-			}
-		}
-
-		return result;
 	}
 
 	private int countSuccessors(Node node) {

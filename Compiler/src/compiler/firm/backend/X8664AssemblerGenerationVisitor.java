@@ -269,7 +269,7 @@ public class X8664AssemblerGenerationVisitor implements BulkPhiNodeVisitor {
 		for (Edge edge : BackEdges.getOuts(node)) {
 			if (edge.node.getMode().equals(Mode.getT())) {
 				for (Edge innerEdge : BackEdges.getOuts(edge.node)) {
-					storageManagement.storeValue(innerEdge.node, callingConvention.getReturnRegister());
+					storageManagement.storeValueAndCreateNewStorage(innerEdge.node, callingConvention.getReturnRegister(), true);
 				}
 			}
 		}
@@ -378,7 +378,7 @@ public class X8664AssemblerGenerationVisitor implements BulkPhiNodeVisitor {
 		addOperation(new IdivOperation(StorageManagement.getMode(right), registerRight));
 		// store on stack
 		for (Edge edge : BackEdges.getOuts(node)) {
-			storageManagement.storeValue(edge.node, storeRegister);
+			storageManagement.storeValueAndCreateNewStorage(edge.node, storeRegister, true);
 		}
 	}
 
