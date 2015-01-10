@@ -17,6 +17,7 @@ import firm.BackEdges;
 import firm.BackEdges.Edge;
 import firm.Mode;
 import firm.nodes.Const;
+import firm.nodes.Conv;
 import firm.nodes.Node;
 import firm.nodes.Phi;
 
@@ -89,6 +90,11 @@ public class StorageManagement {
 	}
 
 	public RegisterBased getValueFromStorage(Node node, RegisterBased register, Storage originalStorage) {
+
+		if (countSuccessors(node) <= 1 && register == null && originalStorage.getClass() == VirtualRegister.class && !(node instanceof Conv)) {
+			return (VirtualRegister) originalStorage;
+		}
+
 		Bit mode = getMode(node);
 		register = new VirtualRegister(mode, register);
 
@@ -149,17 +155,21 @@ public class StorageManagement {
 		boolean result = true;
 		for (Node predecessor : node.getPreds()) {
 			if (isNotModeM(predecessor)) {
-				int n = 0;
-				for (Edge predecessorSuccessors : BackEdges.getOuts(predecessor)) {
-					if (isNotModeM(predecessorSuccessors.node)) {
-						n++;
-					}
-				}
-				result &= (n <= 1);
+				result &= (countSuccessors(predecessor) <= 1);
 			}
 		}
 
 		return result;
+	}
+
+	private int countSuccessors(Node node) {
+		int n = 0;
+		for (Edge successors : BackEdges.getOuts(node)) {
+			if (isNotModeM(successors.node)) {
+				n++;
+			}
+		}
+		return n;
 	}
 
 	private boolean isNotModeM(Node node) {
