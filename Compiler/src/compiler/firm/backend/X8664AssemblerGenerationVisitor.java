@@ -131,7 +131,7 @@ public class X8664AssemblerGenerationVisitor implements BulkPhiNodeVisitor {
 	private <T extends StorageRegisterOperation> void visitTwoOperandsNode(StorageRegisterOperationFactory operationFactory, Node parent,
 			Node left, Node right) {
 		// get left node
-		Storage registerLeft = storageManagement.getValueAvoidNewRegister(left, false);
+		Storage registerLeft = storageManagement.getValueAvoidNewRegister(left);
 		// get right node
 		RegisterBased registerRight = storageManagement.getValue(right, true);
 		// create operation object
@@ -348,7 +348,7 @@ public class X8664AssemblerGenerationVisitor implements BulkPhiNodeVisitor {
 	}
 
 	private void visitCmpNode(Cmp node) {
-		Storage register1 = storageManagement.getValueAvoidNewRegister(node.getRight(), false);
+		Storage register1 = storageManagement.getValueAvoidNewRegister(node.getRight());
 		RegisterBased register2 = storageManagement.getValue(node.getLeft(), false);
 		addOperation(new CmpOperation("cmp operation", StorageManagement.getMode(node.getLeft()), register1, register2));
 	}
@@ -363,7 +363,7 @@ public class X8664AssemblerGenerationVisitor implements BulkPhiNodeVisitor {
 	public void visit(Conv node) {
 		assert node.getPredCount() >= 1 : "Conv nodes should have a predecessor";
 
-		Storage register = storageManagement.getValueAvoidNewRegister(node.getPred(0), false);
+		Storage register = storageManagement.getValueAvoidNewRegister(node.getPred(0));
 		storageManagement.addStorage(node, register);
 	}
 
@@ -505,7 +505,7 @@ public class X8664AssemblerGenerationVisitor implements BulkPhiNodeVisitor {
 		HashMap<Phi, Storage> phiTempStackMapping = new HashMap<>();
 		for (Phi phi : phis) {
 			Node predecessor = getRelevantPredecessor(phi);
-			Storage register = storageManagement.getValueAvoidNewRegister(predecessor, false);
+			Storage register = storageManagement.getValueAvoidNewRegister(predecessor);
 			Storage temporaryStorage = new VirtualRegister(StorageManagement.getMode(predecessor));
 			storageManagement.storeValue(predecessor, register, temporaryStorage);
 			phiTempStackMapping.put(phi, temporaryStorage);

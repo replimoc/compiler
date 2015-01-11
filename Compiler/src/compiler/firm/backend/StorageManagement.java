@@ -48,58 +48,38 @@ public class StorageManagement {
 		addStorage(node, new Constant(node));
 	}
 
-	public Storage getValueAvoidNewRegister(Node node, boolean registerOverwrite) {
-		if (!registerOverwrite && nodeStorages.containsKey(node)) {
+	public Storage getValueAvoidNewRegister(Node node) {
+		if (nodeStorages.containsKey(node)) {
 			return nodeStorages.get(node);
 		} else {
-			return getValue(node, registerOverwrite);
+			return getValue(node, false);
 		}
 	}
 
-	public RegisterBased getValue(Node node, boolean registerOverwrite) {
-		return getValue(node, null);
+	public RegisterBased getValue(Node node, boolean overwrite) {
+		return getValue(node, null, overwrite);
 	}
 
-	public RegisterBased getValue(Node node, Register register) {
-		addOperation(new Comment("restore from stack"));
+	public RegisterBased getValue(Node node, Register resultRegister) {
+		return getValue(node, resultRegister, true);
+	}
 
-		// if variable was assigned, than simply load it from stack
-
+	private RegisterBased getValue(Node node, RegisterBased resultRegister, boolean overwrite) {
 		if (!nodeStorages.containsKey(node)) {
 			addStorage(node, new VirtualRegister(getMode(node)));
-			addOperation(new Comment("expected " + node + " to be on stack"));
 		}
+		Storage originalStorage = nodeStorages.get(node);
 
-		return getValue(node, register, getStorage(node));
-	}
-
-	public RegisterBased getValue(Node node, boolean registerOverride, Storage originalStorage) {
-		return getValue(node, null, originalStorage);
-	}
-
-	public RegisterBased getValue(Node node, boolean registerOverwrite, RegisterBased register, RegisterBased originalStorage) {
-		if (register == null && !registerOverwrite) {
-			return originalStorage;
-		} else {
-			return getValueFromStorage(node, register, originalStorage);
-		}
-	}
-
-	public RegisterBased getValue(Node node, RegisterBased register, Storage originalStorage) {
-		return getValueFromStorage(node, register, originalStorage);
-	}
-
-	public RegisterBased getValueFromStorage(Node node, RegisterBased register, Storage originalStorage) {
-
-		if (countSuccessors(node) <= 1 && register == null && originalStorage.getClass() == VirtualRegister.class && !(node instanceof Conv)) {
+		if (countSuccessors(node) <= 1 && resultRegister == null && originalStorage.getClass() == VirtualRegister.class
+				&& !(node instanceof Conv)) {
 			return (VirtualRegister) originalStorage;
 		}
 
 		Bit mode = getMode(node);
-		register = new VirtualRegister(mode, register);
+		resultRegister = new VirtualRegister(mode, resultRegister);
 
-		addOperation(new MovOperation("Load address " + node.toString(), mode, originalStorage, register));
-		return register;
+		addOperation(new MovOperation("Load address " + node.toString(), mode, originalStorage, resultRegister));
+		return resultRegister;
 	}
 
 	public void storeValue(Node node, VirtualRegister storage) {
