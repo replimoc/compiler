@@ -4,7 +4,6 @@ import java.util.HashMap;
 import java.util.List;
 
 import compiler.firm.FirmUtils;
-import compiler.firm.backend.operations.Comment;
 import compiler.firm.backend.operations.MovOperation;
 import compiler.firm.backend.operations.templates.AssemblerOperation;
 import compiler.firm.backend.storage.Constant;
@@ -17,6 +16,7 @@ import firm.BackEdges;
 import firm.BackEdges.Edge;
 import firm.Mode;
 import firm.nodes.Const;
+import firm.nodes.Conv;
 import firm.nodes.Node;
 import firm.nodes.Phi;
 
@@ -47,53 +47,38 @@ public class StorageManagement {
 		addStorage(node, new Constant(node));
 	}
 
-	public Storage getValueAvoidNewRegister(Node node, boolean registerOverwrite) {
-		if (!registerOverwrite && nodeStorages.containsKey(node)) {
+	public Storage getValueAvoidNewRegister(Node node) {
+		if (nodeStorages.containsKey(node)) {
 			return nodeStorages.get(node);
 		} else {
-			return getValue(node, registerOverwrite);
+			return getValue(node, false);
 		}
 	}
 
-	public RegisterBased getValue(Node node, boolean registerOverwrite) {
-		return getValue(node, registerOverwrite, null);
+	public RegisterBased getValue(Node node, boolean overwrite) {
+		return getValue(node, null, overwrite);
 	}
 
-	public RegisterBased getValue(Node node, boolean registerOverwrite, Register register) {
-		addOperation(new Comment("restore from stack"));
+	public RegisterBased getValue(Node node, Register resultRegister) {
+		return getValue(node, resultRegister, true);
+	}
 
-		// if variable was assigned, than simply load it from stack
-
+	private RegisterBased getValue(Node node, RegisterBased resultRegister, boolean overwrite) {
 		if (!nodeStorages.containsKey(node)) {
 			addStorage(node, new VirtualRegister(getMode(node)));
-			addOperation(new Comment("expected " + node + " to be on stack"));
+		}
+		Storage originalStorage = nodeStorages.get(node);
+
+		if ((countSuccessors(node) <= 1 || !overwrite) && resultRegister == null && originalStorage.getClass() == VirtualRegister.class
+				&& !(node instanceof Conv)) {
+			return (VirtualRegister) originalStorage;
 		}
 
-		return getValue(node, registerOverwrite, register, getStorage(node));
-	}
-
-	public RegisterBased getValue(Node node, boolean registerOverwrite, Storage originalStorage) {
-		return getValue(node, registerOverwrite, null, originalStorage);
-	}
-
-	public RegisterBased getValue(Node node, boolean registerOverwrite, RegisterBased register, RegisterBased originalStorage) {
-		if (register == null && !registerOverwrite) {
-			return originalStorage;
-		} else {
-			return getValueFromStorage(node, registerOverwrite, register, originalStorage);
-		}
-	}
-
-	public RegisterBased getValue(Node node, boolean registerOverwrite, RegisterBased register, Storage originalStorage) {
-		return getValueFromStorage(node, registerOverwrite, register, originalStorage);
-	}
-
-	public RegisterBased getValueFromStorage(Node node, boolean registerOverwrite, RegisterBased register, Storage originalStorage) {
 		Bit mode = getMode(node);
-		register = new VirtualRegister(mode, register);
+		resultRegister = new VirtualRegister(mode, resultRegister);
 
-		addOperation(new MovOperation("Load address " + node.toString(), mode, originalStorage, register));
-		return register;
+		addOperation(new MovOperation("Load address " + node.toString(), mode, originalStorage, resultRegister));
+		return resultRegister;
 	}
 
 	public void storeValue(Node node, VirtualRegister storage) {
@@ -101,18 +86,18 @@ public class StorageManagement {
 		if (destination == null && storage.getRegister() == null) {
 			addStorage(node, storage);
 		} else {
-			storeValueAndCreateNewStorage(node, storage);
+			storeValueAndCreateNewStorage(node, storage, false);
 		}
 	}
 
 	public void storeValue(Node node, Storage storage) {
-		storeValueAndCreateNewStorage(node, storage);
+		storeValueAndCreateNewStorage(node, storage, false);
 	}
 
-	public void storeValueAndCreateNewStorage(Node node, Storage storage) {
+	public void storeValueAndCreateNewStorage(Node node, Storage storage, boolean forceNew) {
 		Storage destination = nodeStorages.get(node);
 		if (destination == null) {
-			if (newRegisterIsNecessary(node)) {
+			if (forceNew || countSuccessors(node) > 1) {
 				destination = new VirtualRegister(getMode(node));
 			} else {
 				destination = storage;
@@ -139,27 +124,19 @@ public class StorageManagement {
 	}
 
 	public void reserveMemoryForPhis(List<Phi> phis) {
-		addOperation(new Comment("Reserve space for phis"));
 		for (Phi phi : phis) {
 			addStorage(phi, new VirtualRegister(getMode(phi)));
 		}
 	}
 
-	private boolean newRegisterIsNecessary(Node node) {
-		boolean result = true;
-		for (Node predecessor : node.getPreds()) {
-			if (isNotModeM(predecessor)) {
-				int n = 0;
-				for (Edge predecessorSuccessors : BackEdges.getOuts(predecessor)) {
-					if (isNotModeM(predecessorSuccessors.node)) {
-						n++;
-					}
-				}
-				result &= (n <= 1);
+	private int countSuccessors(Node node) {
+		int n = 0;
+		for (Edge successors : BackEdges.getOuts(node)) {
+			if (isNotModeM(successors.node)) {
+				n++;
 			}
 		}
-
-		return result;
+		return n;
 	}
 
 	private boolean isNotModeM(Node node) {

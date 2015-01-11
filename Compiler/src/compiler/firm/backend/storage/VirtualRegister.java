@@ -17,16 +17,13 @@ public class VirtualRegister extends RegisterBased {
 	private int lastOccurrence = 0;
 
 	public VirtualRegister(Bit mode) {
-		this.mode = mode;
-		this.register = null;
-		this.forceRegister = false;
-		this.num = I++;
+		this(mode, null);
 	}
 
 	public VirtualRegister(Bit mode, RegisterBased register) {
 		this.mode = mode;
 		this.register = register;
-		this.forceRegister = true;
+		this.forceRegister = register != null;
 		this.num = I++;
 	}
 
