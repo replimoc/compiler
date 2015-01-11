@@ -2,12 +2,12 @@ package compiler.firm.backend.storage;
 
 public abstract class RegisterBased extends Storage {
 	@Override
-	public RegisterBased getUsedRegister() {
-		return this;
+	public RegisterBased[] getUsedRegister() {
+		return new RegisterBased[] { this };
 	}
 
 	@Override
-	public RegisterBased getReadOnRightSideRegister() {
+	public RegisterBased[] getReadOnRightSideRegister() {
 		return null;
 	}
 

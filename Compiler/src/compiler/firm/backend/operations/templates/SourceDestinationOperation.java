@@ -1,5 +1,7 @@
 package compiler.firm.backend.operations.templates;
 
+import java.util.Arrays;
+
 import compiler.firm.backend.Bit;
 import compiler.firm.backend.storage.RegisterBased;
 import compiler.firm.backend.storage.Storage;
@@ -25,24 +27,26 @@ public abstract class SourceDestinationOperation extends AssemblerBitOperation {
 
 	@Override
 	public RegisterBased[] getReadRegisters() {
-		RegisterBased sourceRegister = source.getUsedRegister();
-		RegisterBased destinationRegister = destination.getReadOnRightSideRegister();
+		RegisterBased[] sourceRegister = source.getUsedRegister();
+		RegisterBased[] destinationRegister = destination.getReadOnRightSideRegister();
 		return calculateRegisters(sourceRegister, destinationRegister);
 	}
 
 	@Override
 	public RegisterBased[] getWriteRegisters() {
-		RegisterBased destinationRegister = destination.getUsedRegister();
+		RegisterBased[] destinationRegister = destination.getUsedRegister();
 		return calculateRegisters(null, destinationRegister);
 	}
 
-	private RegisterBased[] calculateRegisters(RegisterBased sourceRegister, RegisterBased destinationRegister) {
+	private RegisterBased[] calculateRegisters(RegisterBased[] sourceRegister, RegisterBased[] destinationRegister) {
 		if (sourceRegister != null && destinationRegister != null) {
-			return new RegisterBased[] { sourceRegister, destinationRegister };
+			RegisterBased[] allRegisters = Arrays.copyOf(sourceRegister, sourceRegister.length + destinationRegister.length);
+			System.arraycopy(destinationRegister, 0, allRegisters, sourceRegister.length, destinationRegister.length);
+			return allRegisters;
 		} else if (sourceRegister != null) {
-			return new RegisterBased[] { sourceRegister };
+			return sourceRegister;
 		} else if (destinationRegister != null) {
-			return new RegisterBased[] { destinationRegister };
+			return destinationRegister;
 		} else {
 			return new RegisterBased[] {};
 		}
