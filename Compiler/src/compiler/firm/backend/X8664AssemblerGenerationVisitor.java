@@ -15,6 +15,7 @@ import compiler.firm.backend.operations.Comment;
 import compiler.firm.backend.operations.IdivOperation;
 import compiler.firm.backend.operations.ImulOperation;
 import compiler.firm.backend.operations.LabelOperation;
+import compiler.firm.backend.operations.LeaOperation;
 import compiler.firm.backend.operations.MovOperation;
 import compiler.firm.backend.operations.NegOperation;
 import compiler.firm.backend.operations.PopOperation;
@@ -159,8 +160,39 @@ public class X8664AssemblerGenerationVisitor implements BulkPhiNodeVisitor {
 
 	// ----------------------------------------------- NodeVisitor ---------------------------------------------------
 
+	private boolean leaIsPossible(Shl shift) {
+		return BackEdges.getNOuts(shift) == 1
+				&& FirmUtils.getFirstSuccessor(shift).getClass() == Add.class
+				&& FirmUtils.getFirstSuccessor(shift).getMode().equals(FirmUtils.getModeReference())
+				&& leaFactor(shift) >= 0;
+	}
+
+	private int leaFactor(Shl shift) {
+		if (shift.getPred(1).getClass() == Const.class) {
+			Const constant = (Const) shift.getPred(1);
+			int factor = (int) Math.pow(2, constant.getTarval().asInt());
+			if (factor == 1 || factor == 2 || factor == 4 || factor == 8) {
+				return factor;
+			}
+		}
+		return -1;
+	}
+
 	@Override
 	public void visit(Add node) {
+		if (node.getMode().equals(FirmUtils.getModeReference()) && node.getPred(1).getClass() == Shl.class) {
+			Shl shift = (Shl) node.getPred(1);
+			if (leaIsPossible(shift)) {
+				RegisterBased baseRegister = storageManagement.getValue(node.getPred(0), false);
+				RegisterBased factorRegister = storageManagement.getValue(shift.getPred(0), false);
+				int factor = leaFactor(shift);
+
+				VirtualRegister resultRegister = new VirtualRegister(Bit.BIT64);
+				addOperation(new LeaOperation(baseRegister, factorRegister, factor, resultRegister));
+				storageManagement.addStorage(node, resultRegister);
+				return;
+			}
+		}
 		visitTwoOperandsNode(AddOperation.getFactory("add operation", StorageManagement.getMode(node)), node, node.getLeft(), node.getRight());
 	}
 
@@ -446,6 +478,9 @@ public class X8664AssemblerGenerationVisitor implements BulkPhiNodeVisitor {
 
 	@Override
 	public void visit(Shl node) {
+		if (leaIsPossible(node)) {
+			return; // This case is handled in visit(Add)
+		}
 		// move left node to a register
 		RegisterBased register = storageManagement.getValue(node.getLeft(), true);
 
