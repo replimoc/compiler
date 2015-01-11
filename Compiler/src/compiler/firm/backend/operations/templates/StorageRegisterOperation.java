@@ -6,39 +6,30 @@ import compiler.firm.backend.Bit;
 import compiler.firm.backend.storage.RegisterBased;
 import compiler.firm.backend.storage.Storage;
 
-public abstract class StorageRegisterOperation extends AssemblerBitOperation {
-
-	private final Storage storage;
-	private final RegisterBased destination;
+public abstract class StorageRegisterOperation extends SourceDestinationOperation {
 
 	public StorageRegisterOperation(String comment, Bit mode, Storage storage, RegisterBased destination) {
-		super(comment, mode);
-		this.storage = storage;
-		this.destination = destination;
+		super(comment, mode, storage, destination);
 	}
 
 	public Storage getStorage() {
-		return storage;
+		return getSource();
 	}
 
+	@Override
 	public RegisterBased getDestination() {
-		return destination;
+		return (RegisterBased) super.getDestination();
 	}
 
 	@Override
 	public RegisterBased[] getReadRegisters() {
-		RegisterBased[] storageRegister = storage.getUsedRegister();
+		RegisterBased[] storageRegister = getSource().getUsedRegister();
 		if (storageRegister != null) {
 			RegisterBased[] result = Arrays.copyOf(storageRegister, storageRegister.length + 1);
-			result[storageRegister.length] = this.destination;
+			result[storageRegister.length] = getDestination();
 			return result;
 		} else {
-			return new RegisterBased[] { this.destination };
+			return new RegisterBased[] { getDestination() };
 		}
-	}
-
-	@Override
-	public RegisterBased[] getWriteRegisters() {
-		return new RegisterBased[] { this.destination };
 	}
 }
