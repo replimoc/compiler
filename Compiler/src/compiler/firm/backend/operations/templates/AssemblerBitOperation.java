@@ -29,7 +29,7 @@ public abstract class AssemblerBitOperation extends AssemblerOperation {
 	}
 
 	@Override
-	public final String[] toStringWithSpillcode() {
+	public String[] toStringWithSpillcode() {
 		if (hasSpilledRegisters()) {
 			List<String> result = new ArrayList<>();
 			result.add(new Comment("Operation with spill code").toString());
@@ -88,7 +88,7 @@ public abstract class AssemblerBitOperation extends AssemblerOperation {
 		return stackPointer;
 	}
 
-	private Register getTemporaryRegister() {
+	protected Register getTemporaryRegister() {
 		if (accumulatorRegister >= accumulatorRegisters.length) {
 			throw new RuntimeException("Running out of accumulator registers");
 		}
