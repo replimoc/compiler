@@ -8,17 +8,18 @@ import firm.Mode;
 import firm.TargetValue;
 import firm.nodes.Add;
 import firm.nodes.Const;
+import firm.nodes.Conv;
 import firm.nodes.Div;
 import firm.nodes.Mul;
 import firm.nodes.Node;
 import firm.nodes.Sub;
 
-public class ArithmeticVisitor extends OptimizationVisitor<Node> {
+public class LocalOptimizationVisitor extends OptimizationVisitor<Node> {
 
 	public static final OptimizationVisitorFactory<Node> FACTORY = new OptimizationVisitorFactory<Node>() {
 		@Override
 		public OptimizationVisitor<Node> create() {
-			return new ArithmeticVisitor();
+			return new LocalOptimizationVisitor();
 		}
 	};
 
@@ -39,6 +40,13 @@ public class ArithmeticVisitor extends OptimizationVisitor<Node> {
 		Node left = add.getLeft();
 		Node right = add.getRight();
 
+		if (left instanceof Conv) {
+			left = ((Conv) left).getOp();
+		}
+		if (right instanceof Conv) {
+			right = ((Conv) right).getOp();
+		}
+
 		// reduce x = y + 0 if possible
 		if (isConstant(left) && getTargetValue(left).isNull()) {
 			addReplacement(add, add.getRight());
@@ -50,6 +58,10 @@ public class ArithmeticVisitor extends OptimizationVisitor<Node> {
 	@Override
 	public void visit(Div division) {
 		Node right = division.getRight();
+
+		if (right instanceof Conv) {
+			right = ((Conv) right).getOp();
+		}
 
 		// reduce x = y / 1 if possible
 		if (isConstant(right) && getTargetValue(right).isOne()) {
@@ -64,13 +76,19 @@ public class ArithmeticVisitor extends OptimizationVisitor<Node> {
 		TargetValue leftTarget = getTargetValue(left);
 		TargetValue rightTarget = getTargetValue(right);
 
+		if (left instanceof Conv) {
+			left = ((Conv) left).getOp();
+		}
+		if (right instanceof Conv) {
+			right = ((Conv) right).getOp();
+		}
+
 		// reduce x = y * 1 if possible
 		if (isConstant(left) && leftTarget.isOne()) {
 			addReplacement(multiplication, multiplication.getRight());
 		} else if (isConstant(right) && rightTarget.isOne()) {
 			addReplacement(multiplication, multiplication.getLeft());
-		}
-		else if (isConstant(left) && (leftTarget.asInt() & (leftTarget.asInt() - 1)) == 0 && !leftTarget.isNull()) {
+		} else if (isConstant(left) && (leftTarget.asInt() & (leftTarget.asInt() - 1)) == 0 && !leftTarget.isNull()) {
 			// left side is divisible by power of 2
 			Node constant = multiplication.getGraph().newConst(new TargetValue(Integer.numberOfTrailingZeros(leftTarget.asInt()), Mode.getIu()));
 			Node shl = multiplication.getGraph().newShl(multiplication.getBlock(), multiplication.getRight(), constant, multiplication.getMode());
@@ -89,6 +107,13 @@ public class ArithmeticVisitor extends OptimizationVisitor<Node> {
 	public void visit(Sub subtraction) {
 		Node right = subtraction.getRight();
 		Node left = subtraction.getLeft();
+
+		if (left instanceof Conv) {
+			left = ((Conv) left).getOp();
+		}
+		if (right instanceof Conv) {
+			right = ((Conv) right).getOp();
+		}
 
 		// reduce x = y - 0 if possible
 		if (isConstant(right) && getTargetValue(right).isNull()) {
