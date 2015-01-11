@@ -218,7 +218,6 @@ public class X8664AssemblerGenerationVisitor implements BulkPhiNodeVisitor {
 	@Override
 	public void visit(Block node) {
 		currentBlock = node;
-		addOperation(new Comment(node.toString()));
 
 		Graph graph = node.getGraph();
 		String methodName = graph.getEntity().getLdName();
