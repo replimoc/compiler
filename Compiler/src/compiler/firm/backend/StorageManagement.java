@@ -4,7 +4,6 @@ import java.util.HashMap;
 import java.util.List;
 
 import compiler.firm.FirmUtils;
-import compiler.firm.backend.operations.Comment;
 import compiler.firm.backend.operations.MovOperation;
 import compiler.firm.backend.operations.templates.AssemblerOperation;
 import compiler.firm.backend.storage.Constant;
@@ -70,7 +69,7 @@ public class StorageManagement {
 		}
 		Storage originalStorage = nodeStorages.get(node);
 
-		if (countSuccessors(node) <= 1 && resultRegister == null && originalStorage.getClass() == VirtualRegister.class
+		if ((countSuccessors(node) <= 1 || !overwrite) && resultRegister == null && originalStorage.getClass() == VirtualRegister.class
 				&& !(node instanceof Conv)) {
 			return (VirtualRegister) originalStorage;
 		}
@@ -125,7 +124,6 @@ public class StorageManagement {
 	}
 
 	public void reserveMemoryForPhis(List<Phi> phis) {
-		addOperation(new Comment("Reserve space for phis"));
 		for (Phi phi : phis) {
 			addStorage(phi, new VirtualRegister(getMode(phi)));
 		}
