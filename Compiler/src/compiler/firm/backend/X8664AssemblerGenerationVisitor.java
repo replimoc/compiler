@@ -160,6 +160,16 @@ public class X8664AssemblerGenerationVisitor implements BulkPhiNodeVisitor {
 
 	// ----------------------------------------------- NodeVisitor ---------------------------------------------------
 
+	private boolean leaIsPossible(Add node) {
+		if (node.getMode().equals(FirmUtils.getModeReference()) && node.getPred(1).getClass() == Shl.class) {
+			Shl shift = (Shl) node.getPred(1);
+			if (leaIsPossible(shift)) {
+				return true;
+			}
+		}
+		return false;
+	}
+
 	private boolean leaIsPossible(Shl shift) {
 		return BackEdges.getNOuts(shift) == 1
 				&& FirmUtils.getFirstSuccessor(shift).getClass() == Add.class
@@ -178,21 +188,29 @@ public class X8664AssemblerGenerationVisitor implements BulkPhiNodeVisitor {
 		return -1;
 	}
 
+	private MemoryPointer calculateMemoryPointer(Add add) {
+		Shl shift = (Shl) add.getPred(1);
+		RegisterBased baseRegister = storageManagement.getValue(add.getPred(0), false);
+		RegisterBased factorRegister = storageManagement.getValue(shift.getPred(0), false);
+		int factor = leaFactor(shift);
+		return new MemoryPointer(0, baseRegister, factorRegister, factor);
+	}
+
 	@Override
 	public void visit(Add node) {
-		if (node.getMode().equals(FirmUtils.getModeReference()) && node.getPred(1).getClass() == Shl.class) {
-			Shl shift = (Shl) node.getPred(1);
-			if (leaIsPossible(shift)) {
-				RegisterBased baseRegister = storageManagement.getValue(node.getPred(0), false);
-				RegisterBased factorRegister = storageManagement.getValue(shift.getPred(0), false);
-				int factor = leaFactor(shift);
-				Storage address = new MemoryPointer(0, baseRegister, factorRegister, factor);
-
-				VirtualRegister resultRegister = new VirtualRegister(Bit.BIT64);
-				addOperation(new LeaOperation(address, resultRegister));
-				storageManagement.addStorage(node, resultRegister);
+		if (leaIsPossible(node)) {
+			if (BackEdges.getNOuts(node) == 1 && (
+					FirmUtils.getFirstSuccessor(node).getClass() == Store.class ||
+					FirmUtils.getFirstSuccessor(node).getClass() == Load.class
+					)) {
 				return;
 			}
+			Storage address = calculateMemoryPointer(node);
+
+			VirtualRegister resultRegister = new VirtualRegister(Bit.BIT64);
+			addOperation(new LeaOperation(address, resultRegister));
+			storageManagement.addStorage(node, resultRegister);
+			return;
 		}
 		visitTwoOperandsNode(AddOperation.getFactory("add operation", StorageManagement.getMode(node)), node, node.getLeft(), node.getRight());
 	}
@@ -493,13 +511,23 @@ public class X8664AssemblerGenerationVisitor implements BulkPhiNodeVisitor {
 		storageManagement.storeValue(node, register);
 	}
 
+	public MemoryPointer getMemoryPointerForNode(Node addressNode) {
+		MemoryPointer memory = null;
+		if (addressNode.getClass() == Add.class && leaIsPossible((Add) addressNode) && BackEdges.getNOuts(addressNode) == 1) {
+			memory = calculateMemoryPointer((Add) addressNode);
+		} else {
+			RegisterBased registerAddress = storageManagement.getValue(addressNode, false);
+			memory = new MemoryPointer(0, registerAddress);
+		}
+		return memory;
+	}
+
 	@Override
 	public void visit(Load node) {
 		addOperation(new Comment("load operation " + node));
-		Node referenceNode = node.getPred(1);
-		RegisterBased register = storageManagement.getValue(referenceNode, false);
+		MemoryPointer memory = getMemoryPointerForNode(node.getPred(1));
 		VirtualRegister registerStore = new VirtualRegister(StorageManagement.getMode(node));
-		addOperation(new MovOperation(Bit.BIT64, new MemoryPointer(0, register), registerStore));
+		addOperation(new MovOperation(Bit.BIT64, memory, registerStore));
 		for (Edge edge : BackEdges.getOuts(node)) {
 			Node edgeNode = edge.node;
 			if (!edgeNode.getMode().equals(Mode.getM())) {
@@ -511,11 +539,10 @@ public class X8664AssemblerGenerationVisitor implements BulkPhiNodeVisitor {
 	@Override
 	public void visit(Store node) {
 		addOperation(new Comment("Store operation " + node));
-		Node addressNode = node.getPred(1);
-		RegisterBased registerAddress = storageManagement.getValue(addressNode, false);
+		MemoryPointer memory = getMemoryPointerForNode(node.getPred(1));
 		Node valueNode = node.getPred(2);
 		RegisterBased registerOffset = storageManagement.getValue(valueNode, false);
-		addOperation(new MovOperation(StorageManagement.getMode(valueNode), registerOffset, new MemoryPointer(0, registerAddress)));
+		addOperation(new MovOperation(StorageManagement.getMode(valueNode), registerOffset, memory));
 	}
 
 	@Override
