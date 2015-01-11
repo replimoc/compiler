@@ -8,6 +8,10 @@ public class Comment extends AssemblerOperation {
 		super(comment);
 	}
 
+	public Comment(AssemblerOperation operation) {
+		super(operation.toString());
+	}
+
 	@Override
 	public String getOperationString() {
 		return "";

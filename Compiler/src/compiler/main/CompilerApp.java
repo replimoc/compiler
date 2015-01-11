@@ -140,7 +140,8 @@ public final class CompilerApp {
 
 					FirmUtils.highToLowLevel();
 
-					if (!cmd.hasOption(NO_OPT)) {
+					final boolean noOpt = cmd.hasOption(NO_OPT);
+					if (!noOpt) {
 						FirmOptimizer.optimize();
 					}
 
@@ -176,7 +177,7 @@ public final class CompilerApp {
 						assemblerCreator = new AssemblerCreator() {
 							@Override
 							public void create(String fileName) throws IOException {
-								AssemblerGenerator.createAssemblerX8664(Paths.get(fileName), semanticResult.getCallingConventions());
+								AssemblerGenerator.createAssemblerX8664(Paths.get(fileName), semanticResult.getCallingConventions(), !noOpt);
 							}
 						};
 					}

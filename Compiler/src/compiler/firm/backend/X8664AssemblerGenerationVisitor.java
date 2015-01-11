@@ -1,8 +1,8 @@
 package compiler.firm.backend;
 
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Iterator;
-import java.util.LinkedList;
 import java.util.List;
 
 import compiler.firm.FirmUtils;
@@ -107,7 +107,7 @@ public class X8664AssemblerGenerationVisitor implements BulkPhiNodeVisitor {
 
 	private static final int STACK_ITEM_SIZE = 8;
 
-	private final List<AssemblerOperation> operations = new LinkedList<>();
+	private final ArrayList<AssemblerOperation> operations = new ArrayList<>();
 	private final HashMap<String, CallingConvention> callingConventions;
 	private final HashMap<Block, LabelOperation> blockLabels = new HashMap<>();
 
@@ -121,7 +121,7 @@ public class X8664AssemblerGenerationVisitor implements BulkPhiNodeVisitor {
 		this.storageManagement = new StorageManagement(operations);
 	}
 
-	public List<AssemblerOperation> getOperations() {
+	public ArrayList<AssemblerOperation> getOperations() {
 		return operations;
 	}
 
