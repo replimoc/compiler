@@ -261,10 +261,6 @@ public class X8664AssemblerGenerationVisitor implements BulkPhiNodeVisitor {
 			callingConvention = callingConventions.get(methodName);
 		}
 
-		for (AssemblerOperation operation : callingConvention.getPrefixOperations()) {
-			addOperation(operation);
-		}
-
 		Register[] callerSavedRegisters = callingConvention.callerSavedRegisters();
 
 		// Save all callerSavedRegisters to stack
@@ -310,10 +306,6 @@ public class X8664AssemblerGenerationVisitor implements BulkPhiNodeVisitor {
 
 		for (int i = callerSavedRegisters.length - 1; i >= 0; i--) {
 			addOperation(new PopOperation(Bit.BIT64, callerSavedRegisters[i]));
-		}
-
-		for (AssemblerOperation operation : callingConvention.getSuffixOperations()) {
-			addOperation(operation);
 		}
 
 		for (Edge edge : BackEdges.getOuts(node)) {
