@@ -4,11 +4,17 @@ import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
 
+import compiler.firm.backend.operations.AddOperation;
 import compiler.firm.backend.operations.Comment;
+import compiler.firm.backend.operations.DecOperation;
+import compiler.firm.backend.operations.IncOperation;
 import compiler.firm.backend.operations.LabelOperation;
+import compiler.firm.backend.operations.SubOperation;
 import compiler.firm.backend.operations.jump.JmpOperation;
 import compiler.firm.backend.operations.templates.AssemblerOperation;
 import compiler.firm.backend.operations.templates.JumpOperation;
+import compiler.firm.backend.storage.Constant;
+import compiler.firm.backend.storage.Storage;
 
 public class PeepholeOptimizer {
 
@@ -48,10 +54,32 @@ public class PeepholeOptimizer {
 				} else {
 					writeOperation(jump);
 				}
-			}
 
-			writeOperation();
-			nextOperation();
+			} else if (currentOperation instanceof SubOperation) {
+				SubOperation sub = (SubOperation) currentOperation;
+				Storage storage = sub.getStorage();
+				if (storage instanceof Constant && ((Constant) storage).getConstant() == 1) {
+					writeOperation(new DecOperation(sub.toString(), sub.getMode(), sub.getDestination()));
+				} else {
+					writeOperation();
+				}
+				nextOperation();
+
+			} else if (currentOperation instanceof AddOperation) {
+				AddOperation add = (AddOperation) currentOperation;
+				Storage storage = add.getStorage();
+				if (storage instanceof Constant && ((Constant) storage).getConstant() == 1) {
+					writeOperation(new IncOperation(add.toString(), add.getMode(), add.getDestination()));
+				} else {
+					writeOperation();
+				}
+				nextOperation();
+
+				// default case
+			} else {
+				writeOperation();
+				nextOperation();
+			}
 		}
 	}
 

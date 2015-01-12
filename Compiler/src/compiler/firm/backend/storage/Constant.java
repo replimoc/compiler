@@ -40,4 +40,8 @@ public class Constant extends Storage {
 	public RegisterBased[] getUsedRegister() {
 		return null;
 	}
+
+	public int getConstant() {
+		return constant;
+	}
 }
