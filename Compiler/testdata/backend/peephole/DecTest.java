@@ -1,4 +1,4 @@
-class AddTest {
+class DecTest {
 	public static void main(String[] args) {
 		int i = f(5);
 		i = i - 1;
