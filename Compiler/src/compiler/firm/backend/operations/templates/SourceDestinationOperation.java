@@ -4,6 +4,7 @@ import java.util.Arrays;
 
 import compiler.firm.backend.Bit;
 import compiler.firm.backend.operations.MovOperation;
+import compiler.firm.backend.storage.Constant;
 import compiler.firm.backend.storage.RegisterBased;
 import compiler.firm.backend.storage.Storage;
 import compiler.firm.backend.storage.VirtualRegister;
@@ -57,10 +58,10 @@ public abstract class SourceDestinationOperation extends AssemblerBitOperation {
 	@Override
 	public String[] toStringWithSpillcode() {
 		if (hasSpilledRegisters()) {
-			if (getSource().getClass() == VirtualRegister.class
-					&& getDestination().getClass() == VirtualRegister.class) {
-				VirtualRegister source = (VirtualRegister) getSource();
-				VirtualRegister destination = (VirtualRegister) getDestination();
+			if ((getSource().getClass() == VirtualRegister.class || getSource().getClass() == Constant.class)
+					&& (getDestination().getClass() == VirtualRegister.class || getDestination().getClass() == Constant.class)) {
+				Storage source = getSource();
+				Storage destination = getDestination();
 
 				if ((source.isSpilled() && !destination.isSpilled()) ||
 						(!source.isSpilled() && destination.isSpilled())) {

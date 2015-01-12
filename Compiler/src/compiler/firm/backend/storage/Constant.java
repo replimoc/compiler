@@ -40,4 +40,9 @@ public class Constant extends Storage {
 	public RegisterBased[] getUsedRegister() {
 		return null;
 	}
+
+	@Override
+	public boolean isSpilled() {
+		return false;
+	}
 }
