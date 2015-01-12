@@ -399,7 +399,7 @@ public class X8664AssemblerGenerationVisitor implements BulkPhiNodeVisitor {
 
 	private void visitCmpNode(Cmp node) {
 		Storage register1 = storageManagement.getValueAvoidNewRegister(node.getRight());
-		RegisterBased register2 = storageManagement.getValue(node.getLeft(), true);
+		RegisterBased register2 = storageManagement.getValue(node.getLeft(), false);
 		addOperation(new CmpOperation("cmp operation", StorageManagement.getMode(node.getLeft()), register1, register2));
 	}
 
