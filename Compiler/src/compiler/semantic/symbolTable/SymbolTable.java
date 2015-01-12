@@ -10,8 +10,12 @@ public class SymbolTable {
 
 	private final LinkedList<Change> changeStack = new LinkedList<Change>();
 	private Scope currentScope = null;
-	private int localVariables = 0;
+	private int localVariables;
 	private int maxLocalVariables = 0;
+
+	public SymbolTable(int variableNumberOffset) {
+		this.localVariables = variableNumberOffset;
+	}
 
 	public void enterScope() {
 		currentScope = new Scope(currentScope, changeStack.size());
@@ -30,9 +34,8 @@ public class SymbolTable {
 
 	public int insert(Symbol symbol, Type type) {
 		changeStack.push(new Change(symbol, symbol.getDeclaration(), symbol.getDeclarationScope()));
-		int variableNumber = localVariables + 1; // +1 for this pointer
+		int variableNumber = localVariables++;
 		symbol.setDeclaration(currentScope, new LocalVariableDeclaration(type, symbol, variableNumber));
-		localVariables++;
 		return variableNumber;
 	}
 
