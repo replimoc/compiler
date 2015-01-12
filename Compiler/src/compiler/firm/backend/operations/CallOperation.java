@@ -1,8 +1,10 @@
 package compiler.firm.backend.operations;
 
+import compiler.firm.backend.Bit;
 import compiler.firm.backend.calling.CallingConvention;
 import compiler.firm.backend.operations.templates.AssemblerOperation;
 import compiler.firm.backend.storage.RegisterBased;
+import compiler.firm.backend.storage.VirtualRegister;
 
 public class CallOperation extends AssemblerOperation {
 
@@ -21,11 +23,11 @@ public class CallOperation extends AssemblerOperation {
 
 	@Override
 	public RegisterBased[] getReadRegisters() {
-		return getWriteRegisters();
+		return new RegisterBased[0];
 	}
 
 	@Override
 	public RegisterBased[] getWriteRegisters() {
-		return new RegisterBased[] { callingConvention.getReturnRegister() };
+		return new RegisterBased[] { new VirtualRegister(Bit.BIT64, callingConvention.getReturnRegister()) };
 	}
 }
