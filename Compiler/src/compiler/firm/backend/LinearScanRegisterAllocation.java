@@ -5,6 +5,7 @@ import java.util.Arrays;
 import java.util.Collections;
 import java.util.Comparator;
 import java.util.HashMap;
+import java.util.Iterator;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map.Entry;
@@ -37,7 +38,7 @@ public class LinearScanRegisterAllocation {
 			);
 	private HashMap<Register, LinkedList<VirtualRegister>> partialAllocatedRegisters = new HashMap<>();
 
-	private HashMap<VirtualRegister, Register> usedRegister = new HashMap<>();
+	private HashMap<VirtualRegister, Register> usedRegisters = new HashMap<>();
 
 	public LinearScanRegisterAllocation(List<AssemblerOperation> operations) {
 		this.operations = operations;
@@ -61,6 +62,30 @@ public class LinearScanRegisterAllocation {
 				return o1.getFirstOccurrence() - o2.getFirstOccurrence();
 			}
 		});
+	}
+
+	private void assignRegisters() {
+		for (VirtualRegister register : virtualRegisters) {
+			removeOutdatedRegistersForLine(register.getFirstOccurrence());
+
+			if (register.getRegister() == null) {
+				Register systemRegister = allocateRegister(register);
+				if (systemRegister != null) {
+					usedRegisters.put(register, systemRegister);
+				}
+			}
+		}
+	}
+
+	private void removeOutdatedRegistersForLine(int line) {
+		Iterator<Entry<VirtualRegister, Register>> entriesIterator = usedRegisters.entrySet().iterator();
+		while (entriesIterator.hasNext()) {
+			Entry<VirtualRegister, Register> register = entriesIterator.next();
+			if (register.getKey().getLastOccurrence() < line) {
+				freeRegister(register.getValue());
+				entriesIterator.remove();
+			}
+		}
 	}
 
 	private Register allocateRegister(VirtualRegister virtualRegister) {
@@ -100,16 +125,15 @@ public class LinearScanRegisterAllocation {
 	}
 
 	private void freeRegister(Register register) {
-		if (!this.freeRegisters.contains(register)
-				&& !this.partialAllocatedRegisters.containsKey(register)) {
+		if (!this.freeRegisters.contains(register) && !this.partialAllocatedRegisters.containsKey(register)) {
 			this.freeRegisters.push(register);
 		}
 	}
 
 	private void spillRegister(VirtualRegister virtualRegister) {
-		Register freeRegister = usedRegister.get(virtualRegister);
+		Register freeRegister = usedRegisters.get(virtualRegister);
 		if (freeRegister != null) {
-			usedRegister.remove(virtualRegister);
+			usedRegisters.remove(virtualRegister);
 			this.freeRegisters.push(freeRegister);
 		}
 		virtualRegister.setSpilled(true);
@@ -120,7 +144,7 @@ public class LinearScanRegisterAllocation {
 	private VirtualRegister getRegisterWithLongestLifetime() {
 		int lifetime = 0;
 		VirtualRegister register = null;
-		for (Entry<VirtualRegister, Register> testRegister : usedRegister.entrySet()) {
+		for (Entry<VirtualRegister, Register> testRegister : usedRegisters.entrySet()) {
 			VirtualRegister virtualRegister = testRegister.getKey();
 			if (virtualRegister.getLastOccurrence() >= lifetime && !virtualRegister.isForceRegister()) {
 				lifetime = virtualRegister.getLastOccurrence();
@@ -174,27 +198,12 @@ public class LinearScanRegisterAllocation {
 		}
 	}
 
-	private void assignRegisters() {
-		for (VirtualRegister register : virtualRegisters) {
-			freeRegistersForLine(register.getFirstOccurrence());
-
-			if (register.getRegister() == null) {
-				Register systemRegister = allocateRegister(register);
-				if (systemRegister != null) {
-					usedRegister.put(register, systemRegister);
-				}
-			}
-		}
-	}
-
 	private void readPartialAllocatedRegisters() {
 		for (VirtualRegister virtualRegister : virtualRegisters) {
 			if (virtualRegister.getRegister() != null && virtualRegister.getRegister().getClass() == Register.class) {
 				Register register = (Register) virtualRegister.getRegister();
 				if (!partialAllocatedRegisters.containsKey(register)) {
-					if (freeRegisters.contains(register)) {
-						freeRegisters.remove(register);
-					} else {
+					if (!freeRegisters.remove(register)) {
 						// Do not use this register. It is not marked as register allocation register.
 						continue;
 					}
@@ -203,19 +212,6 @@ public class LinearScanRegisterAllocation {
 				}
 				partialAllocatedRegisters.get(virtualRegister.getRegister()).add(virtualRegister);
 			}
-		}
-	}
-
-	private void freeRegistersForLine(int line) {
-		List<VirtualRegister> removeRegisters = new ArrayList<>();
-		for (Entry<VirtualRegister, Register> register : usedRegister.entrySet()) {
-			if (register.getKey().getLastOccurrence() < line) {
-				freeRegister(register.getValue());
-				removeRegisters.add(register.getKey());
-			}
-		}
-		for (VirtualRegister register : removeRegisters) {
-			usedRegister.remove(register);
 		}
 	}
 
