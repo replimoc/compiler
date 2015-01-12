@@ -35,7 +35,7 @@ public class SymbolTableTest {
 		assertTrue(symbolTable.isDefinedInCurrentScope(getSymbol("number1")));
 
 		symbolTable.leaveScope();
-		assertEquals(2, symbolTable.getRequiredLocalVariables());
+		assertEquals(3, symbolTable.getRequiredLocalVariables());
 
 		Field privChangeStack = SymbolTable.class.getDeclaredField("changeStack");
 		privChangeStack.setAccessible(true);
@@ -55,7 +55,7 @@ public class SymbolTableTest {
 		assertTrue(enterDeclaration(getSymbol("number"), BasicType.INT));
 
 		symbolTable.leaveScope();
-		assertEquals(2, symbolTable.getRequiredLocalVariables());
+		assertEquals(3, symbolTable.getRequiredLocalVariables());
 
 		// we are at top level scope: currentScope is null, so this must return true
 		assertTrue(symbolTable.isDefinedInCurrentScope(getSymbol("number")));
@@ -82,7 +82,7 @@ public class SymbolTableTest {
 		symbolTable.enterScope();
 
 		symbolTable.leaveAllScopes();
-		assertEquals(3, symbolTable.getRequiredLocalVariables());
+		assertEquals(4, symbolTable.getRequiredLocalVariables());
 
 		Field privChangeStack = SymbolTable.class.getDeclaredField("changeStack");
 		privChangeStack.setAccessible(true);
