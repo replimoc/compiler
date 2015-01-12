@@ -5,52 +5,37 @@ import compiler.firm.backend.Bit;
 // Map for registers: https://upload.wikimedia.org/wikipedia/commons/4/41/Table_of_x86_Registers.png
 public class Register extends RegisterBased {
 	// reserved for special usage
-	public static final Register _SP = new Register(null, "%esp", "%rsp"); // stack pointer
-	public static final Register _BP = new Register(null, "%ebp", "%rbp"); // frame pointer
+	public static final Register _SP = new Register(SingleRegister.RSP); // stack pointer
+	public static final Register _BP = new Register(SingleRegister.RBP); // frame pointer
 
 	// free registers
-	public static final Register _DI = new Register(null, "%edi", "%rdi");
-	public static final Register _SI = new Register(null, "%esi", "%rsi");
+	public static final Register _DI = new Register(SingleRegister.RDI, SingleRegister.EDI);
+	public static final Register _SI = new Register(SingleRegister.RSI, SingleRegister.ESI);
 
 	// registers with 8bit regs
-	public static final Register _AX = new Register("%al", "%eax", "%rax"); // accumulator
-	public static final Register _BX = new Register("%bl", "%ebx", "%rbx");
-	public static final Register _CX = new Register("%cl", "%ecx", "%rcx"); // counter (for loop counters);
-	public static final Register _DX = new Register("%dl", "%edx", "%rdx");
-	public static final Register _8D = new Register("%r8b", "%r8d", "%r8");
-	public static final Register _9D = new Register("%r9b", "%r9d", "%r9");
-	public static final Register _10D = new Register("%r10b", "%r10d", "%r10");
-	public static final Register _11D = new Register("%r11b", "%r11d", "%r11");
-	public static final Register _12D = new Register("%r12b", "%r12d", "%r12");
-	public static final Register _13D = new Register("%r13b", "%r13d", "%r13");
-	public static final Register _14D = new Register("%r14b", "%r14d", "%r14");
-	public static final Register _15D = new Register("%r15b", "%r15d", "%r15");
+	public static final Register _AX = new Register(SingleRegister.RAX, SingleRegister.EAX, SingleRegister.AL); // accumulator
+	public static final Register _BX = new Register(SingleRegister.RBX, SingleRegister.EBX, SingleRegister.BL);
+	public static final Register _CX = new Register(SingleRegister.RCX, SingleRegister.ECX, SingleRegister.CL);
+	public static final Register _DX = new Register(SingleRegister.RDX, SingleRegister.EDX, SingleRegister.DL);
 
-	private final String registerName8;
-	private final String registerName32;
-	private final String registerName64;
+	public static final Register _8D = new Register(SingleRegister.R8, SingleRegister.R8D, SingleRegister.R8B);
+	public static final Register _9D = new Register(SingleRegister.R9, SingleRegister.R9D, SingleRegister.R9B);
+	public static final Register _10D = new Register(SingleRegister.R10, SingleRegister.R10D, SingleRegister.R10B);
+	public static final Register _11D = new Register(SingleRegister.R11, SingleRegister.R11D, SingleRegister.R11B);
+	public static final Register _12D = new Register(SingleRegister.R12, SingleRegister.R12D, SingleRegister.R12B);
+	public static final Register _13D = new Register(SingleRegister.R13, SingleRegister.R13D, SingleRegister.R13B);
+	public static final Register _14D = new Register(SingleRegister.R14, SingleRegister.R14D, SingleRegister.R14B);
+	public static final Register _15D = new Register(SingleRegister.R15, SingleRegister.R15D, SingleRegister.R15B);
 
-	Register(String registerName8, String registerName32, String registerName64) {
-		this.registerName8 = registerName8;
-		this.registerName32 = registerName32;
-		this.registerName64 = registerName64;
-	}
+	private final SingleRegister[] registers;
 
-	public String getRegisterName() {
-		return registerName32;
+	Register(SingleRegister... registers) {
+		this.registers = registers;
 	}
 
 	@Override
 	public String toString(Bit bit) {
-		switch (bit) {
-		case BIT64:
-			return registerName64;
-		case BIT8:
-			return registerName8;
-		case BIT32:
-		default:
-			return registerName32;
-		}
+		return registers[bit.ordinal()].toString();
 	}
 
 	@Override

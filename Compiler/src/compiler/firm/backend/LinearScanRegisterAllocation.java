@@ -25,10 +25,11 @@ import compiler.firm.backend.storage.RegisterBased;
 import compiler.firm.backend.storage.VirtualRegister;
 
 public class LinearScanRegisterAllocation {
+	private static final int STACK_ITEM_SIZE = 8;
+
 	private final List<AssemblerOperation> operations;
 	private final ArrayList<VirtualRegister> virtualRegisters = new ArrayList<VirtualRegister>();
 
-	private static final int STACK_ITEM_SIZE = 8;
 	private int currentStackOffset = 0;
 
 	private LinkedList<Register> freeRegisters = new LinkedList<Register>(

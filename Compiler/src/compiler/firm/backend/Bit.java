@@ -1,9 +1,9 @@
 package compiler.firm.backend;
 
 public enum Bit {
-	BIT8("b"),
+	BIT64("q"),
 	BIT32("l"),
-	BIT64("q");
+	BIT8("b");
 
 	private final String suffix;
 
