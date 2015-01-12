@@ -3,32 +3,27 @@ package compiler.firm.backend.operations;
 import compiler.firm.backend.Bit;
 import compiler.firm.backend.operations.templates.AssemblerBitOperation;
 import compiler.firm.backend.storage.RegisterBased;
+import compiler.firm.backend.storage.Storage;
 
 public class LeaOperation extends AssemblerBitOperation {
-	private final RegisterBased baseRegister;
-	private final RegisterBased factorRegister;
-	private final int factor;
+	private final Storage addressStorage;
 	private final RegisterBased resultRegister;
 
-	public LeaOperation(RegisterBased baseRegister, RegisterBased factorRegister, int factor, RegisterBased resultRegister) {
+	public LeaOperation(Storage addressStorage, RegisterBased resultRegister) {
 		super(null, Bit.BIT64);
 
-		this.baseRegister = baseRegister;
-		this.factorRegister = factorRegister;
-		this.factor = factor;
+		this.addressStorage = addressStorage;
 		this.resultRegister = resultRegister;
 	}
 
 	@Override
 	public String getOperationString() {
-		return "\tlea" + Bit.BIT64 + " (" + baseRegister.toString(Bit.BIT64) + ","
-				+ factorRegister.toString(Bit.BIT64) + "," + factor + "),"
-				+ resultRegister.toString(Bit.BIT64);
+		return String.format("\tlea%s %s, %s", Bit.BIT64, addressStorage.toString(Bit.BIT64), resultRegister.toString(Bit.BIT64));
 	}
 
 	@Override
 	public RegisterBased[] getReadRegisters() {
-		return new RegisterBased[] { baseRegister, factorRegister };
+		return addressStorage.getUsedRegister();
 	}
 
 	@Override

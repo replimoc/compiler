@@ -32,12 +32,16 @@ public class Constant extends Storage {
 	}
 
 	@Override
-	public RegisterBased getReadOnRightSideRegister() {
+	public RegisterBased[] getReadOnRightSideRegister() {
 		return null;
 	}
 
 	@Override
-	public RegisterBased getUsedRegister() {
+	public RegisterBased[] getUsedRegister() {
 		return null;
+	}
+
+	public int getConstant() {
+		return constant;
 	}
 }

@@ -1,5 +1,7 @@
 package compiler.firm.backend.operations;
 
+import java.util.Arrays;
+
 import compiler.firm.backend.Bit;
 import compiler.firm.backend.operations.templates.RegisterOperation;
 import compiler.firm.backend.storage.Register;
@@ -19,10 +21,11 @@ public class IdivOperation extends RegisterOperation {
 
 	@Override
 	public RegisterBased[] getReadRegisters() {
-		return new RegisterBased[] {
-				new VirtualRegister(mode, Register._DX),
-				new VirtualRegister(mode, Register._AX),
-				getRegister().getUsedRegister() };
+		RegisterBased[] usedRegister = getRegister().getUsedRegister();
+		RegisterBased[] result = Arrays.copyOf(usedRegister, usedRegister.length + 2);
+		result[usedRegister.length] = new VirtualRegister(mode, Register._DX);
+		result[usedRegister.length + 1] = new VirtualRegister(mode, Register._AX);
+		return result;
 	}
 
 	@Override

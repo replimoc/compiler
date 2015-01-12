@@ -18,5 +18,4 @@ public class MovOperation extends SourceDestinationOperation {
 	public String getOperationString() {
 		return String.format("\tmov%s %s, %s", getMode(), getSource().toString(getMode()), getDestination().toString(getMode()));
 	}
-
 }

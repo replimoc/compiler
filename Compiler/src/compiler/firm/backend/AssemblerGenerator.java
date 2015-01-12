@@ -29,8 +29,9 @@ public final class AssemblerGenerator {
 	private AssemblerGenerator() {
 	}
 
-	public static void createAssemblerX8664(Path outputFile, HashMap<String, CallingConvention> callingConvention) throws IOException {
-		final List<AssemblerOperation> assembler = new ArrayList<>();
+	public static void createAssemblerX8664(Path outputFile, HashMap<String, CallingConvention> callingConvention, boolean doPeephole)
+			throws IOException {
+		final ArrayList<AssemblerOperation> assembler = new ArrayList<>();
 
 		assembler.add(new TextOperation());
 		assembler.add(new P2AlignOperation());
@@ -59,13 +60,18 @@ public final class AssemblerGenerator {
 			});
 			BackEdges.disable(graph);
 
-			List<AssemblerOperation> operations = visitor.getOperations();
+			ArrayList<AssemblerOperation> operations = visitor.getOperations();
 
 			// TODO remove next line when it's not needed any more
 			// generatePlainAssemblerFile(Paths.get(graph.getEntity().getLdName() + ".plain"), operations);
 
 			allocateRegisters(operations);
-			assembler.addAll(operations);
+			if (doPeephole) {
+				PeepholeOptimizer peepholeOptimizer = new PeepholeOptimizer(operations, assembler);
+				peepholeOptimizer.optimize();
+			} else {
+				assembler.addAll(operations);
+			}
 		}
 
 		generateAssemblerFile(outputFile, assembler);
