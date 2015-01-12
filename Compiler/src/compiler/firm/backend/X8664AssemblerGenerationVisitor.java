@@ -245,16 +245,6 @@ public class X8664AssemblerGenerationVisitor implements BulkPhiNodeVisitor {
 		addOperation(getBlockLabel(node));
 	}
 
-	private class Parameter {
-		public final Storage storage;
-		public final Bit mode;
-
-		public Parameter(Storage storage, Bit mode) {
-			this.storage = storage;
-			this.mode = mode;
-		}
-	}
-
 	@Override
 	public void visit(Call node) {
 		int predCount = node.getPredCount();
@@ -270,55 +260,13 @@ public class X8664AssemblerGenerationVisitor implements BulkPhiNodeVisitor {
 			callingConvention = callingConventions.get(methodName);
 		}
 
-		List<Parameter> parameters = new LinkedList<>();
+		List<CallOperation.Parameter> parameters = new LinkedList<>();
 		for (int i = 2; i < predCount; i++) {
 			Node parameter = node.getPred(i);
-			parameters.add(new Parameter(storageManagement.getStorage(parameter), StorageManagement.getMode(parameter)));
+			parameters.add(new CallOperation.Parameter(storageManagement.getStorage(parameter), StorageManagement.getMode(parameter)));
 		}
 
-		Register[] callerSavedRegisters = callingConvention.callerSavedRegisters();
-
-		// Save all callerSavedRegisters to stack
-		// TODO: Save only necessary registers
-		for (Register saveRegister : callerSavedRegisters) {
-			addOperation(new PushOperation(Bit.BIT64, saveRegister));
-		}
-
-		// The following is before filling registers to have no problem with register allocation.
-		Register[] callingRegisters = callingConvention.getParameterRegisters();
-		int numberOfstackParameters = parameters.size() - callingRegisters.length;
-		Constant stackAllocationSize = new Constant(STACK_ITEM_SIZE * numberOfstackParameters);
-
-		if (numberOfstackParameters > 0) {
-			addOperation(new SubOperation(Bit.BIT64, stackAllocationSize, Register._SP));
-
-			Register temporaryRegister = Register._10D;
-
-			// Copy parameters to stack
-			for (int i = 0; i < numberOfstackParameters; i++) {
-				Parameter source = parameters.get(i + callingRegisters.length);
-				// Copy parameter
-				MemoryPointer destinationPointer = new MemoryPointer(i * STACK_ITEM_SIZE, Register._SP);
-				addOperation(new MovOperation(source.mode, source.storage, temporaryRegister));
-				addOperation(new MovOperation(source.mode, temporaryRegister, destinationPointer));
-			}
-		}
-
-		// Copy parameters in calling registers
-		for (int i = 0; i < parameters.size() && i < callingRegisters.length; i++) {
-			Parameter source = parameters.get(i);
-			addOperation(new MovOperation(source.mode, source.storage, callingRegisters[i]));
-		}
-
-		addOperation(new CallOperation(methodName, callingConvention));
-
-		if (numberOfstackParameters > 0) {
-			addOperation(new AddOperation(Bit.BIT64, stackAllocationSize, Register._SP));
-		}
-
-		for (int i = callerSavedRegisters.length - 1; i >= 0; i--) {
-			addOperation(new PopOperation(Bit.BIT64, callerSavedRegisters[i]));
-		}
+		addOperation(new CallOperation(methodName, parameters, callingConvention));
 
 		for (Edge edge : BackEdges.getOuts(node)) {
 			if (edge.node.getMode().equals(Mode.getT())) {
