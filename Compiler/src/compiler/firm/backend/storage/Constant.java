@@ -45,4 +45,8 @@ public class Constant extends Storage {
 	public boolean isSpilled() {
 		return false;
 	}
+
+	public int getConstant() {
+		return constant;
+	}
 }
