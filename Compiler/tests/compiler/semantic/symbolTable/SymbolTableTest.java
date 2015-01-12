@@ -17,7 +17,7 @@ import compiler.ast.type.Type;
 import compiler.lexer.TokenType;
 
 public class SymbolTableTest {
-	private SymbolTable symbolTable = new SymbolTable();
+	private SymbolTable symbolTable = new SymbolTable(1);
 	private StringTable stringTable = new StringTable();
 
 	@Test
