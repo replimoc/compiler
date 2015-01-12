@@ -34,9 +34,10 @@ public class LinearScanRegisterAllocation {
 
 	private LinkedList<Register> freeRegisters = new LinkedList<Register>(
 			Arrays.asList(Register._BX, Register._CX, Register._DX,
-					Register._8D, Register._9D, Register._12D, Register._13D,
-					Register._14D, Register._15D)
+					Register._8D, Register._9D, Register._10D, Register._11D,
+					Register._12D, Register._13D)
 			);
+
 	private HashMap<Register, LinkedList<VirtualRegister>> partialAllocatedRegisters = new HashMap<>();
 
 	private HashMap<VirtualRegister, Register> usedRegisters = new HashMap<>();
@@ -47,9 +48,10 @@ public class LinearScanRegisterAllocation {
 
 	public void allocateRegisters() {
 		calculateRegisterLivetime();
-		sortRegisterListByStart(virtualRegisters);
-		readPartialAllocatedRegisters();
+
+		detectPartiallyAllocatedRegisters();
 		assignRegisters();
+
 		setStackSize(currentStackOffset);
 		// for (VirtualRegister register : virtualRegisters) {
 		// System.out.println(register);
@@ -66,19 +68,23 @@ public class LinearScanRegisterAllocation {
 	}
 
 	private void assignRegisters() {
-		for (VirtualRegister register : virtualRegisters) {
-			removeOutdatedRegistersForLine(register.getFirstOccurrence());
+		sortRegisterListByStart(virtualRegisters);
 
-			if (register.getRegister() == null) {
-				Register systemRegister = allocateRegister(register);
-				if (systemRegister != null) {
-					usedRegisters.put(register, systemRegister);
-				}
+		for (VirtualRegister register : virtualRegisters) {
+			if (register.getRegister() != null) {
+				continue; // register already defined => nothing to do here
+			}
+
+			freeOutdatedRegistersForLine(register.getFirstOccurrence());
+
+			Register systemRegister = allocateRegister(register);
+			if (systemRegister != null) {
+				usedRegisters.put(register, systemRegister);
 			}
 		}
 	}
 
-	private void removeOutdatedRegistersForLine(int line) {
+	private void freeOutdatedRegistersForLine(int line) {
 		Iterator<Entry<VirtualRegister, Register>> entriesIterator = usedRegisters.entrySet().iterator();
 		while (entriesIterator.hasNext()) {
 			Entry<VirtualRegister, Register> register = entriesIterator.next();
@@ -113,8 +119,7 @@ public class LinearScanRegisterAllocation {
 		for (Entry<Register, LinkedList<VirtualRegister>> registerInfo : partialAllocatedRegisters.entrySet()) {
 			boolean isValid = true;
 			for (VirtualRegister register : registerInfo.getValue()) {
-				isValid &= (register.getFirstOccurrence() > end ||
-						register.getLastOccurrence() < start);
+				isValid &= (register.getFirstOccurrence() > end || register.getLastOccurrence() < start);
 			}
 			if (isValid) {
 				virtualRegister.setForceRegister(true);
@@ -199,7 +204,7 @@ public class LinearScanRegisterAllocation {
 		}
 	}
 
-	private void readPartialAllocatedRegisters() {
+	private void detectPartiallyAllocatedRegisters() {
 		for (VirtualRegister virtualRegister : virtualRegisters) {
 			if (virtualRegister.getRegister() != null && virtualRegister.getRegister().getClass() == Register.class) {
 				Register register = (Register) virtualRegister.getRegister();
@@ -211,7 +216,7 @@ public class LinearScanRegisterAllocation {
 					partialAllocatedRegisters.put(register, new LinkedList<VirtualRegister>());
 
 				}
-				partialAllocatedRegisters.get(virtualRegister.getRegister()).add(virtualRegister);
+				partialAllocatedRegisters.get(register).add(virtualRegister);
 			}
 		}
 	}

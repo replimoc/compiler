@@ -14,7 +14,7 @@ import compiler.firm.backend.storage.Storage;
 import compiler.firm.backend.storage.VirtualRegister;
 
 public abstract class AssemblerBitOperation extends AssemblerOperation {
-	private static final Register[] accumulatorRegisters = { Register._10D, Register._11D };
+	private static final Register[] accumulatorRegisters = { Register._14D, Register._15D };
 
 	protected final Bit mode;
 	private int accumulatorRegister = 0;

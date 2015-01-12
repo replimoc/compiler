@@ -69,8 +69,9 @@ public class SingleRegister extends RegisterBased {
 
 	private final String registerName;
 	private final Bit mode;
+	private Register registerBundle;
 
-	SingleRegister(Bit mode, String registerName) {
+	private SingleRegister(Bit mode, String registerName) {
 		this.mode = mode;
 		this.registerName = registerName;
 	}
@@ -94,5 +95,13 @@ public class SingleRegister extends RegisterBased {
 
 	public Bit getMode() {
 		return mode;
+	}
+
+	public Register getRegisterBundle() {
+		return registerBundle;
+	}
+
+	void setRegisterBundle(Register registerBundle) {
+		this.registerBundle = registerBundle;
 	}
 }
