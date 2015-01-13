@@ -14,10 +14,8 @@ import compiler.firm.backend.storage.Storage;
 import compiler.firm.backend.storage.VirtualRegister;
 
 public abstract class AssemblerBitOperation extends AssemblerOperation {
-	private static final Register[] accumulatorRegisters = { Register._10D, Register._11D };
 
 	protected final Bit mode;
-	private int accumulatorRegister = 0;
 
 	public AssemblerBitOperation(String comment, Bit mode) {
 		super(comment);
@@ -86,12 +84,5 @@ public abstract class AssemblerBitOperation extends AssemblerOperation {
 		virtualRegister.setStorage(temporaryRegister);
 
 		return stackPointer;
-	}
-
-	protected Register getTemporaryRegister() {
-		if (accumulatorRegister >= accumulatorRegisters.length) {
-			throw new RuntimeException("Running out of accumulator registers");
-		}
-		return accumulatorRegisters[accumulatorRegister++];
 	}
 }

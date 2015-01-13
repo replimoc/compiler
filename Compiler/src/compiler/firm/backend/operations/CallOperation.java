@@ -69,15 +69,20 @@ public class CallOperation extends AssemblerOperation {
 		if (numberOfstackParameters > 0) {
 			result.add(new SubOperation(Bit.BIT64, stackAllocationSize, Register._SP).toString());
 
-			Register temporaryRegister = Register._10D;
+			Register temporaryRegister = getTemporaryRegister();
 
 			// Copy parameters to stack
 			for (int i = 0; i < numberOfstackParameters; i++) {
 				Parameter source = parameters.get(i + callingRegisters.length);
 				// Copy parameter
 				MemoryPointer destinationPointer = new MemoryPointer(i * STACK_ITEM_SIZE, Register._SP);
-				result.add(new MovOperation(source.mode, source.storage, temporaryRegister).toString());
-				result.add(new MovOperation(source.mode, temporaryRegister, destinationPointer).toString());
+				if (source.storage.getClass() == MemoryPointer.class
+						|| (source.storage.getClass() == VirtualRegister.class && source.storage.isSpilled())) {
+					result.add(new MovOperation(source.mode, source.storage, temporaryRegister).toString());
+					result.add(new MovOperation(source.mode, temporaryRegister, destinationPointer).toString());
+				} else {
+					result.add(new MovOperation(source.mode, source.storage, destinationPointer).toString());
+				}
 			}
 		}
 
