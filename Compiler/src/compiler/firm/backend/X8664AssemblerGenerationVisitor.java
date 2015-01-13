@@ -232,6 +232,16 @@ public class X8664AssemblerGenerationVisitor implements BulkPhiNodeVisitor {
 
 			addOperation(new ReserveStackOperation());
 
+			Node args = node.getGraph().getArgs();
+			for (Edge edge : BackEdges.getOuts(args)) {
+				if (edge.node instanceof Proj) {
+					Proj proj = (Proj) edge.node;
+					storageManagement.addStorage(proj,
+							new MemoryPointer(STACK_ITEM_SIZE * (proj.getNum() + 2), Register._BP));
+					// + 2 for dynamic link
+				}
+			}
+
 			storageManagement.reserveMemoryForPhis(phis);
 		}
 
@@ -411,20 +421,6 @@ public class X8664AssemblerGenerationVisitor implements BulkPhiNodeVisitor {
 	@Override
 	public void visit(Mul node) {
 		visitTwoOperandsNode(ImulOperation.getFactory("mul operation", StorageManagement.getMode(node)), node, node.getRight(), node.getLeft());
-	}
-
-	@Override
-	public void visit(Proj node) {
-		if (node.getPredCount() == 1 && node.getPred(0) instanceof Start && node.getMode().equals(Mode.getT())) {
-			for (Edge edge : BackEdges.getOuts(node)) {
-				if (edge.node instanceof Proj) {
-					Proj proj = (Proj) edge.node;
-					storageManagement.addStorage(proj,
-							new MemoryPointer(STACK_ITEM_SIZE * (proj.getNum() + 2), Register._BP));
-					// + 2 for dynamic link
-				}
-			}
-		}
 	}
 
 	@Override
@@ -653,6 +649,10 @@ public class X8664AssemblerGenerationVisitor implements BulkPhiNodeVisitor {
 	@Override
 	public void visit(Pin node) {
 		throw new RuntimeException(node + " is not implemented yet!");
+	}
+
+	@Override
+	public void visit(Proj node) {
 	}
 
 	@Override
