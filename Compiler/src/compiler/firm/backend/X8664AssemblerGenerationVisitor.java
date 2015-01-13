@@ -9,6 +9,7 @@ import java.util.List;
 import compiler.firm.FirmUtils;
 import compiler.firm.backend.calling.CallingConvention;
 import compiler.firm.backend.operations.AddOperation;
+import compiler.firm.backend.operations.AndOperation;
 import compiler.firm.backend.operations.CallOperation;
 import compiler.firm.backend.operations.CltdOperation;
 import compiler.firm.backend.operations.CmpOperation;
@@ -116,6 +117,7 @@ public class X8664AssemblerGenerationVisitor implements BulkPhiNodeVisitor {
 	private List<Phi> phis;
 
 	private final StorageManagement storageManagement;
+	private final CallingConvention defaultCallingConvention = CallingConvention.SYSTEMV_ABI;
 
 	public X8664AssemblerGenerationVisitor(HashMap<String, CallingConvention> callingConventions) {
 		this.callingConventions = callingConventions;
@@ -221,28 +223,12 @@ public class X8664AssemblerGenerationVisitor implements BulkPhiNodeVisitor {
 		currentBlock = node;
 
 		Graph graph = node.getGraph();
-		String methodName = graph.getEntity().getLdName();
+		String methodName = getMethodName(node);
 
 		// we are in start block: initialize stack (RBP)
 		if (node.equals(graph.getStartBlock())) {
 			addOperation(new LabelOperation(methodName));
-
-			addOperation(new PushOperation(Bit.BIT64, Register._BP)); // Dynamic Link
-			addOperation(new MovOperation(Bit.BIT64, Register._SP, Register._BP));
-
-			addOperation(new ReserveStackOperation());
-
-			Node args = node.getGraph().getArgs();
-			for (Edge edge : BackEdges.getOuts(args)) {
-				if (edge.node instanceof Proj) {
-					Proj proj = (Proj) edge.node;
-					storageManagement.addStorage(proj,
-							new MemoryPointer(STACK_ITEM_SIZE * (proj.getNum() + 2), Register._BP));
-					// + 2 for dynamic link
-				}
-			}
-
-			storageManagement.reserveMemoryForPhis(phis);
+			methodStart(node);
 		}
 
 		if (node.equals(graph.getEndBlock())) {
@@ -262,16 +248,13 @@ public class X8664AssemblerGenerationVisitor implements BulkPhiNodeVisitor {
 
 		String methodName = ((Address) node.getPred(1)).getEntity().getLdName();
 
-		CallingConvention callingConvention = CallingConvention.SYSTEMV_ABI;
-		if (callingConventions.containsKey(methodName)) {
-			callingConvention = callingConventions.get(methodName);
-		}
-
 		List<CallOperation.Parameter> parameters = new LinkedList<>();
 		for (int i = 2; i < predCount; i++) {
 			Node parameter = node.getPred(i);
 			parameters.add(new CallOperation.Parameter(storageManagement.getStorage(parameter), StorageManagement.getMode(parameter)));
 		}
+
+		CallingConvention callingConvention = getCallingConvention(methodName);
 
 		addOperation(new CallOperation(methodName, parameters, callingConvention));
 
@@ -425,18 +408,12 @@ public class X8664AssemblerGenerationVisitor implements BulkPhiNodeVisitor {
 
 	@Override
 	public void visit(Return node) {
-		addOperation(new Comment("restore stack size"));
 		if (node.getPredCount() > 1) {
 			// Store return value in EAX register
 			storageManagement.getValue(node.getPred(1), Register._AX);
 		}
-
-		// addOperation(node.getBlock(), new AddqOperation(new Constant(-currentStackOffset), Register.RSP));
-		// better move rbp to rsp
-		addOperation(new FreeStackOperation());
-		addOperation(new MovOperation(Bit.BIT64, Register._BP, Register._SP));
-		addOperation(new PopOperation(Bit.BIT64, Register._BP));
-		addOperation(new RetOperation());
+		methodEnd(node);
+		addOperation(new RetOperation(getMethodName(node)));
 	}
 
 	@Override
@@ -504,6 +481,74 @@ public class X8664AssemblerGenerationVisitor implements BulkPhiNodeVisitor {
 			}
 		}
 		return null;
+	}
+
+	private CallingConvention getCallingConvention(String methodName) {
+		CallingConvention callingConvention = this.defaultCallingConvention;
+		if (callingConventions.containsKey(methodName)) {
+			callingConvention = callingConventions.get(methodName);
+		}
+		return callingConvention;
+	}
+
+	private String getMethodName(Node node) {
+		return node.getGraph().getEntity().getLdName();
+	}
+
+	private void methodStart(Node node) {
+		addOperation(new PushOperation(Bit.BIT64, Register._BP)); // Dynamic Link
+		addOperation(new MovOperation(Bit.BIT64, Register._SP, Register._BP));
+
+		CallingConvention callingConvention = getCallingConvention(getMethodName(node));
+		for (Register register : callingConvention.calleeSavedRegisters()) {
+			addOperation(new PushOperation(Bit.BIT64, register));
+		}
+
+		addOperation(new ReserveStackOperation());
+
+		Node args = node.getGraph().getArgs();
+		Register[] parameterRegisters = callingConvention.getParameterRegisters();
+		for (Edge edge : BackEdges.getOuts(args)) {
+			if (edge.node instanceof Proj) {
+				Proj proj = (Proj) edge.node;
+				Bit mode = StorageManagement.getMode(proj);
+				Storage location = new VirtualRegister(mode);
+
+				if (proj.getNum() < parameterRegisters.length) {
+					Register register = parameterRegisters[proj.getNum()];
+					VirtualRegister storage = new VirtualRegister(mode, register);
+					if (register.toString(mode) == null) {
+						addOperation(new MovOperation(Bit.BIT64, storage, location));
+						// TODO: the mask should be saved in the mode
+						addOperation(new AndOperation(Bit.BIT64, new Constant(0xFF), (VirtualRegister) location));
+					} else {
+						addOperation(new MovOperation(mode, storage, location));
+					}
+				} else {
+					// TODO: Do this only, if more than one usage is available
+					// + 2 for dynamic link
+					MemoryPointer storage = new MemoryPointer(STACK_ITEM_SIZE * (proj.getNum() + 2 - parameterRegisters.length), Register._BP);
+					addOperation(new MovOperation(mode, storage, location));
+				}
+				storageManagement.addStorage(proj, location);
+			}
+		}
+
+		storageManagement.reserveMemoryForPhis(phis);
+	}
+
+	private void methodEnd(Node node) {
+		addOperation(new FreeStackOperation());
+
+		CallingConvention callingConvention = getCallingConvention(getMethodName(node));
+
+		Register[] registers = callingConvention.calleeSavedRegisters();
+		for (int i = registers.length - 1; i >= 0; i--) {
+			addOperation(new PopOperation(Bit.BIT64, registers[i]));
+		}
+
+		addOperation(new MovOperation(Bit.BIT64, Register._BP, Register._SP));
+		addOperation(new PopOperation(Bit.BIT64, Register._BP));
 	}
 
 	@Override

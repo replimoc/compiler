@@ -25,7 +25,7 @@ public class SystemVAbiCallingConvention extends CallingConvention {
 
 	@Override
 	public Register[] calleeSavedRegisters() {
-		return new Register[] { Register._BX, Register._SP, Register._BP, Register._12D,
+		return new Register[] { Register._BX, Register._12D,
 				Register._13D, Register._14D, Register._15D };
 	}
 

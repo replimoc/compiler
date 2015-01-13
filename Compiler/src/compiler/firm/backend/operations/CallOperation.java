@@ -102,7 +102,13 @@ public class CallOperation extends AssemblerOperation {
 		// Copy parameters in calling registers
 		for (int i = 0; i < parameters.size() && i < callingRegisters.length; i++) {
 			Parameter source = parameters.get(i);
-			result.add(new MovOperation(source.mode, source.storage, callingRegisters[i]).toString());
+			Register register = callingRegisters[i];
+			if (register.toString(source.mode) == null) {
+				result.add(new MovOperation(Bit.BIT64, source.storage, register).toString());
+				result.add(new AndOperation(Bit.BIT64, new Constant(0xFF), register).toString()); // TODO: the mask should be saved in the mode
+			} else {
+				result.add(new MovOperation(source.mode, source.storage, register).toString());
+			}
 		}
 
 		result.add(toString());
