@@ -30,7 +30,7 @@ public final class FirmUtils {
 	private static final String LIB_FIRM_FOLDER = "lib/firm/";
 	private static final String ISA_AMD64 = "isa=amd64";
 	private static final String GCC = "gcc";
-	private static final String GCC_DEBUG = "-g3";
+	private static final String GCC_DEBUG = "-g";
 
 	public static final int TRUE = 1;
 	public static final int FALSE = 0;
@@ -93,10 +93,12 @@ public final class FirmUtils {
 	 * 
 	 * @param outputFileName
 	 *            File for the binary executable.
+	 * @param debuggingLevel
 	 * @throws IOException
 	 * @throws ExecutionFailedException
 	 */
-	public static void createBinary(String outputFileName, String assemblerFile, AssemblerCreator assemblerCreator, String cInclude, String cLibrary)
+	public static void createBinary(String outputFileName, String assemblerFile, AssemblerCreator assemblerCreator, String cInclude, String cLibrary,
+			String debuggingLevel)
 			throws IOException,
 			ExecutionFailedException {
 		String base = Utils.getJarLocation() + File.separator;
@@ -107,12 +109,15 @@ public final class FirmUtils {
 		assemblerCreator.create(assemblerFile);
 
 		List<String> execOptions = new LinkedList<String>();
-		execOptions.addAll(Arrays.asList(GCC, GCC_DEBUG, "-o", outputFileName));
-		execOptions.add(compileToO(assemblerFile, "build"));
-		execOptions.add(compileToO(base + "resources/standardlib.c", "standardlib"));
+		execOptions.addAll(Arrays.asList(GCC, "-o", outputFileName));
+		if (debuggingLevel != null) {
+			execOptions.add(GCC_DEBUG + debuggingLevel);
+		}
+		execOptions.add(compileToO(assemblerFile, "build", debuggingLevel));
+		execOptions.add(compileToO(base + "resources/standardlib.c", "standardlib", debuggingLevel));
 
 		if (cInclude != null)
-			execOptions.add(compileToO(cInclude, "cInclude"));
+			execOptions.add(compileToO(cInclude, "cInclude", debuggingLevel));
 
 		if (cLibrary != null)
 			execOptions.add("-l" + cLibrary);
@@ -120,9 +125,14 @@ public final class FirmUtils {
 		printOutput(Utils.systemExec(execOptions));
 	}
 
-	private static String compileToO(String inputFile, String outputFileName) throws IOException, ExecutionFailedException {
+	private static String compileToO(String inputFile, String outputFileName, String debuggingLevel) throws IOException, ExecutionFailedException {
 		String oName = Utils.createAutoDeleteTempFile(outputFileName, ".o");
-		printOutput(Utils.systemExec(GCC, GCC_DEBUG, "-c", inputFile, "-o", oName));
+		List<String> execOptions = new LinkedList<String>();
+		execOptions.addAll(Arrays.asList(GCC, "-c", inputFile, "-o", oName));
+		if (debuggingLevel != null) {
+			execOptions.add(GCC_DEBUG + debuggingLevel);
+		}
+		printOutput(Utils.systemExec(execOptions));
 		return oName;
 	}
 
