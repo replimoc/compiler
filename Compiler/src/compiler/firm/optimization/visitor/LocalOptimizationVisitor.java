@@ -104,9 +104,9 @@ public class LocalOptimizationVisitor extends OptimizationVisitor<Node> {
 	}
 
 	@Override
-	public void visit(Sub subtraction) {
-		Node right = subtraction.getRight();
-		Node left = subtraction.getLeft();
+	public void visit(Sub sub) {
+		Node right = sub.getRight();
+		Node left = sub.getLeft();
 
 		if (left instanceof Conv) {
 			left = ((Conv) left).getOp();
@@ -117,11 +117,18 @@ public class LocalOptimizationVisitor extends OptimizationVisitor<Node> {
 
 		// reduce x = y - 0 if possible
 		if (isConstant(right) && getTargetValue(right).isNull()) {
-			addReplacement(subtraction, subtraction.getLeft());
+			addReplacement(sub, sub.getLeft());
 		} else if (getTargetValue(left).isNull()) {
 			// replace x = 0 - y with x = -y
-			Node minus = subtraction.getGraph().newMinus(subtraction.getBlock(), subtraction.getRight(), subtraction.getRight().getMode());
-			addReplacement(subtraction, minus);
+			Node minus = sub.getGraph().newMinus(sub.getBlock(), sub.getRight(), sub.getRight().getMode());
+			addReplacement(sub, minus);
+		} else if (isConstant(right)) {
+			// replace y = x - constant with y = - constant + x
+			Const rightConst = (Const) right;
+			int value = 0 - rightConst.getTarval().asInt();
+			Node constant = right.getGraph().newConst(value, sub.getMode());
+			Node add = sub.getGraph().newAdd(sub.getBlock(), constant, left, sub.getMode());
+			addReplacement(sub, add);
 		}
 	}
 
