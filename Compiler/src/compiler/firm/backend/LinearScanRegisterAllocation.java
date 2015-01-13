@@ -11,6 +11,7 @@ import java.util.List;
 import java.util.Map.Entry;
 
 import compiler.firm.backend.operations.AddOperation;
+import compiler.firm.backend.operations.CallOperation;
 import compiler.firm.backend.operations.Comment;
 import compiler.firm.backend.operations.LabelOperation;
 import compiler.firm.backend.operations.SubOperation;
@@ -53,6 +54,13 @@ public class LinearScanRegisterAllocation {
 		// for (VirtualRegister register : virtualRegisters) {
 		// System.out.println(register);
 		// }
+		int i = 0;
+		for (AssemblerOperation operation : operations) {
+			if (operation instanceof CallOperation) {
+				setOperationAliveRegisters(i, (CallOperation) operation);
+			}
+			i++;
+		}
 	}
 
 	private void sortRegisterListByStart(List<VirtualRegister> registers) {
@@ -233,5 +241,15 @@ public class LinearScanRegisterAllocation {
 				freeStackOperation.setOperation(freeOperation);
 			}
 		}
+	}
+
+	private void setOperationAliveRegisters(int num, CallOperation operation) {
+		List<VirtualRegister> registers = new LinkedList<VirtualRegister>();
+		for (VirtualRegister register : virtualRegisters) {
+			if (register.isAliveAt(num)) {
+				registers.add(register);
+			}
+		}
+		operation.addUsedRegisters(registers);
 	}
 }

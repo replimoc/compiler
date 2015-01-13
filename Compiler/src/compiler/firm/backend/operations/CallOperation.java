@@ -1,5 +1,6 @@
 package compiler.firm.backend.operations;
 
+import java.util.ArrayList;
 import java.util.LinkedList;
 import java.util.List;
 
@@ -20,11 +21,14 @@ public class CallOperation extends AssemblerOperation {
 	private String name;
 	private final List<Parameter> parameters;
 	private final CallingConvention callingConvention;
+	private List<Register> usedRegisters = new LinkedList<>();
 
 	public CallOperation(String name, List<Parameter> parameters, CallingConvention callingConvention) {
 		this.name = name;
 		this.parameters = parameters;
 		this.callingConvention = callingConvention;
+		this.usedRegisters.add(Register._SP);
+		this.usedRegisters.add(Register._BP);
 	}
 
 	@Override
@@ -49,14 +53,23 @@ public class CallOperation extends AssemblerOperation {
 		return new RegisterBased[] { new VirtualRegister(Bit.BIT64, callingConvention.getReturnRegister()) };
 	}
 
+	private List<Register> getSaveRegisters() {
+		List<Register> saveRegisters = new ArrayList<>();
+		for (Register register : callingConvention.callerSavedRegisters()) {
+			if (this.usedRegisters.contains(register)) {
+				saveRegisters.add(register);
+			}
+		}
+		return saveRegisters;
+	}
+
 	@Override
 	public String[] toStringWithSpillcode() {
 		List<String> result = new LinkedList<String>();
 
-		Register[] callerSavedRegisters = callingConvention.callerSavedRegisters();
+		List<Register> callerSavedRegisters = getSaveRegisters();
 
 		// Save all callerSavedRegisters to stack
-		// TODO: Save only necessary registers
 		for (Register saveRegister : callerSavedRegisters) {
 			result.add(new PushOperation(Bit.BIT64, saveRegister).toString());
 		}
@@ -98,13 +111,23 @@ public class CallOperation extends AssemblerOperation {
 			result.add(new AddOperation(Bit.BIT64, stackAllocationSize, Register._SP).toString());
 		}
 
-		for (int i = callerSavedRegisters.length - 1; i >= 0; i--) {
-			result.add(new PopOperation(Bit.BIT64, callerSavedRegisters[i]).toString());
+		for (int i = callerSavedRegisters.size() - 1; i >= 0; i--) {
+			result.add(new PopOperation(Bit.BIT64, callerSavedRegisters.get(i)).toString());
 		}
 
 		String[] resultStrings = new String[result.size()];
 		result.toArray(resultStrings);
 		return resultStrings;
+	}
+
+	public void addUsedRegisters(List<VirtualRegister> registers) {
+		for (VirtualRegister registerBased : registers) {
+			Storage storage = registerBased.getRegister();
+			if (!(storage instanceof Register)) {
+				continue;
+			}
+			this.usedRegisters.add((Register) storage);
+		}
 	}
 
 	public static class Parameter {
