@@ -250,10 +250,7 @@ public class X8664AssemblerGenerationVisitor implements BulkPhiNodeVisitor {
 		int predCount = node.getPredCount();
 		assert predCount >= 2 && node.getPred(1) instanceof Address : "Minimum for all calls";
 
-		Address callAddress = (Address) node.getPred(1);
-		String methodName = callAddress.getEntity().getLdName();
-
-		addOperation(new Comment("Call " + methodName + " " + node.getNr()));
+		String methodName = ((Address) node.getPred(1)).getEntity().getLdName();
 
 		CallingConvention callingConvention = CallingConvention.SYSTEMV_ABI;
 		if (callingConventions.containsKey(methodName)) {
