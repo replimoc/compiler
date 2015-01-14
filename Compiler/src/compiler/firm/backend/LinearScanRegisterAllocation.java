@@ -132,10 +132,6 @@ public class LinearScanRegisterAllocation {
 
 				spillRegister(register);
 				freeRegister = getFreeRegister(mode);
-
-				if (freeRegister.getMode() != virtualRegister.getMode()) {
-					System.err.println("ups");
-				}
 			}
 		}
 
