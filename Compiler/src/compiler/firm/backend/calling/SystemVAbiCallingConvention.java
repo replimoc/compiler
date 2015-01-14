@@ -25,7 +25,7 @@ public class SystemVAbiCallingConvention extends CallingConvention {
 
 	@Override
 	public RegisterBundle[] calleeSavedRegisters() {
-		return new RegisterBundle[] { RegisterBundle._BX, RegisterBundle._SP, RegisterBundle._BP, RegisterBundle._12D,
+		return new RegisterBundle[] { RegisterBundle._BX, RegisterBundle._12D,
 				RegisterBundle._13D, RegisterBundle._14D, RegisterBundle._15D };
 	}
 

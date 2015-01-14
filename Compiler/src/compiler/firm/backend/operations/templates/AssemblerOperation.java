@@ -1,10 +1,14 @@
 package compiler.firm.backend.operations.templates;
 
 import compiler.firm.backend.storage.RegisterBased;
+import compiler.firm.backend.storage.RegisterBundle;
 
 public abstract class AssemblerOperation {
 
+	private static final RegisterBundle[] ACCUMULATOR_REGISTERS = { RegisterBundle._14D, RegisterBundle._15D };
+
 	private final String comment;
+	private int accumulatorRegister = 0;
 
 	public AssemblerOperation() {
 		this.comment = null;
@@ -50,5 +54,12 @@ public abstract class AssemblerOperation {
 			}
 		}
 		return false;
+	}
+
+	protected RegisterBundle getTemporaryRegister() {
+		if (accumulatorRegister >= ACCUMULATOR_REGISTERS.length) {
+			throw new RuntimeException("Running out of accumulator registers");
+		}
+		return ACCUMULATOR_REGISTERS[accumulatorRegister++];
 	}
 }

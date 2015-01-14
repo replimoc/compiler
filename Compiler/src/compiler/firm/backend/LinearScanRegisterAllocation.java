@@ -11,6 +11,7 @@ import java.util.List;
 import java.util.Map.Entry;
 
 import compiler.firm.backend.operations.AddOperation;
+import compiler.firm.backend.operations.CallOperation;
 import compiler.firm.backend.operations.Comment;
 import compiler.firm.backend.operations.LabelOperation;
 import compiler.firm.backend.operations.SubOperation;
@@ -34,7 +35,7 @@ public class LinearScanRegisterAllocation {
 	private int currentStackOffset = 0;
 
 	@SuppressWarnings("unchecked")
-	private LinkedList<SingleRegister> freeRegisters[] = new LinkedList[] {
+	private LinkedList<SingleRegister> allowedRegisters[] = new LinkedList[] {
 			// 64bit registers
 			getList(SingleRegister.RBX, SingleRegister.RCX, SingleRegister.RDX,
 					SingleRegister.R8, SingleRegister.R9, SingleRegister.R10, SingleRegister.R11, SingleRegister.R12, SingleRegister.R13),
@@ -71,6 +72,13 @@ public class LinearScanRegisterAllocation {
 		// for (VirtualRegister register : virtualRegisters) {
 		// System.out.println(register);
 		// }
+		int i = 0;
+		for (AssemblerOperation operation : operations) {
+			if (operation instanceof CallOperation) {
+				setOperationAliveRegisters(i, (CallOperation) operation);
+			}
+			i++;
+		}
 	}
 
 	private void sortRegisterListByStart(List<VirtualRegister> registers) {
@@ -133,17 +141,13 @@ public class LinearScanRegisterAllocation {
 			}
 		}
 
-		if (freeRegister.getMode() != virtualRegister.getMode()) {
-			System.err.println("ups");
-		}
-
 		virtualRegister.setStorage(freeRegister);
 		usedRegisters.put(virtualRegister, freeRegister);
 		return freeRegister;
 	}
 
 	private SingleRegister getFreeRegister(Bit mode) {
-		LinkedList<SingleRegister> registers = freeRegisters[mode.ordinal()];
+		LinkedList<SingleRegister> registers = allowedRegisters[mode.ordinal()];
 
 		for (SingleRegister register : registers) {
 			if ((registerUsage[register.getRegisterBundle().getRegisterId()] & register.getMask()) == 0) {
@@ -255,6 +259,7 @@ public class LinearScanRegisterAllocation {
 
 				if (!partialAllocatedRegisters.containsKey(registerBundle)) {
 					partialAllocatedRegisters.put(registerBundle, new LinkedList<VirtualRegister>());
+					registerUsage[registerBundle.getRegisterId()] = SingleRegister.BLOCKED_REGISTER;
 				}
 				partialAllocatedRegisters.get(registerBundle).add(virtualRegister);
 			}
@@ -279,5 +284,15 @@ public class LinearScanRegisterAllocation {
 				freeStackOperation.setOperation(freeOperation);
 			}
 		}
+	}
+
+	private void setOperationAliveRegisters(int num, CallOperation operation) {
+		List<VirtualRegister> registers = new LinkedList<VirtualRegister>();
+		for (VirtualRegister register : virtualRegisters) {
+			if (register.isAliveAt(num)) {
+				registers.add(register);
+			}
+		}
+		operation.addUsedRegisters(registers);
 	}
 }

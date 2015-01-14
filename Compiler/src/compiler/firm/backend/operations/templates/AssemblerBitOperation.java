@@ -8,17 +8,15 @@ import java.util.Map.Entry;
 import compiler.firm.backend.Bit;
 import compiler.firm.backend.operations.Comment;
 import compiler.firm.backend.operations.MovOperation;
-import compiler.firm.backend.storage.RegisterBundle;
 import compiler.firm.backend.storage.RegisterBased;
+import compiler.firm.backend.storage.RegisterBundle;
 import compiler.firm.backend.storage.SingleRegister;
 import compiler.firm.backend.storage.Storage;
 import compiler.firm.backend.storage.VirtualRegister;
 
 public abstract class AssemblerBitOperation extends AssemblerOperation {
-	private static final RegisterBundle[] accumulatorRegisters = { RegisterBundle._14D, RegisterBundle._15D };
 
 	protected final Bit mode;
-	private int accumulatorRegister = 0;
 
 	public AssemblerBitOperation(String comment, Bit mode) {
 		super(comment);
@@ -89,12 +87,5 @@ public abstract class AssemblerBitOperation extends AssemblerOperation {
 		virtualRegister.setStorage(temporaryRegister);
 
 		return stackPointer;
-	}
-
-	protected RegisterBundle getTemporaryRegister() {
-		if (accumulatorRegister >= accumulatorRegisters.length) {
-			throw new RuntimeException("Running out of accumulator registers");
-		}
-		return accumulatorRegisters[accumulatorRegister++];
 	}
 }
