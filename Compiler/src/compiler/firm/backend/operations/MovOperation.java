@@ -16,6 +16,14 @@ public class MovOperation extends SourceDestinationOperation {
 
 	@Override
 	public String getOperationString() {
-		return String.format("\tmov%s %s, %s", getMode(), getSource().toString(getMode()), getDestination().toString(getMode()));
+
+		Bit sourceMode = source.getMode();
+		Bit destinationMode = destination.getMode();
+		if (sourceMode != null && destinationMode != null && sourceMode != destinationMode) {
+			return String
+					.format("\tmovs%s%s %s, %s", sourceMode, destinationMode, source.toString(sourceMode), destination.toString(destinationMode));
+		} else {
+			return String.format("\tmov%s %s, %s", mode, source.toString(mode), destination.toString(mode));
+		}
 	}
 }

@@ -9,6 +9,10 @@ public class CmpOperation extends StorageRegisterOperation {
 
 	public CmpOperation(String comment, Bit mode, Storage input, RegisterBased destinationRegister) {
 		super(comment, mode, input, destinationRegister);
+
+		if (input.getMode() != null && input.getMode() != destinationRegister.getMode() || destinationRegister.getMode() != mode) {
+			System.err.println("FUCK YOU");
+		}
 	}
 
 	@Override

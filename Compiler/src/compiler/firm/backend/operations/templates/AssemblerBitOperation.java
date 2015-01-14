@@ -8,13 +8,14 @@ import java.util.Map.Entry;
 import compiler.firm.backend.Bit;
 import compiler.firm.backend.operations.Comment;
 import compiler.firm.backend.operations.MovOperation;
-import compiler.firm.backend.storage.Register;
+import compiler.firm.backend.storage.RegisterBundle;
 import compiler.firm.backend.storage.RegisterBased;
+import compiler.firm.backend.storage.SingleRegister;
 import compiler.firm.backend.storage.Storage;
 import compiler.firm.backend.storage.VirtualRegister;
 
 public abstract class AssemblerBitOperation extends AssemblerOperation {
-	private static final Register[] accumulatorRegisters = { Register._14D, Register._15D };
+	private static final RegisterBundle[] accumulatorRegisters = { RegisterBundle._14D, RegisterBundle._15D };
 
 	protected final Bit mode;
 	private int accumulatorRegister = 0;
@@ -76,8 +77,10 @@ public abstract class AssemblerBitOperation extends AssemblerOperation {
 	}
 
 	private Storage insertSpillcode(VirtualRegister virtualRegister, List<String> result, boolean restore) {
-		Register temporaryRegister = getTemporaryRegister();
 		Storage stackPointer = virtualRegister.getRegister();
+
+		RegisterBundle temporaryRegisterBundle = getTemporaryRegister();
+		SingleRegister temporaryRegister = temporaryRegisterBundle.getRegister(virtualRegister.getMode());
 
 		if (restore) {
 			MovOperation spillOperation = new MovOperation(virtualRegister.getMode(), stackPointer, temporaryRegister);
@@ -88,7 +91,7 @@ public abstract class AssemblerBitOperation extends AssemblerOperation {
 		return stackPointer;
 	}
 
-	protected Register getTemporaryRegister() {
+	protected RegisterBundle getTemporaryRegister() {
 		if (accumulatorRegister >= accumulatorRegisters.length) {
 			throw new RuntimeException("Running out of accumulator registers");
 		}

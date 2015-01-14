@@ -18,6 +18,10 @@ public class MemoryPointer extends Storage {
 		this.register = register;
 		this.factorRegister = factorRegister;
 		this.factor = factor;
+
+		if (register.getMode() != Bit.BIT64 || (factorRegister != null && factorRegister.getMode() != Bit.BIT64)) {
+			System.err.println("FUCK");
+		}
 	}
 
 	@Override
@@ -64,5 +68,10 @@ public class MemoryPointer extends Storage {
 	@Override
 	public boolean isSpilled() {
 		return true;
+	}
+
+	@Override
+	public Bit getMode() {
+		return null; // TODO implement this correctly
 	}
 }

@@ -29,7 +29,7 @@ public class VirtualRegister extends RegisterBased {
 
 	@Override
 	public String toString() {
-		return "VirtualRegister" + num + "[" + register + "," + firstOccurrence + "," + lastOccurrence + "]";
+		return "VirtualRegister" + num + "[" + mode + "," + register + "," + firstOccurrence + "," + lastOccurrence + "]";
 	}
 
 	@Override
@@ -79,6 +79,7 @@ public class VirtualRegister extends RegisterBased {
 		}
 	}
 
+	@Override
 	public Bit getMode() {
 		return mode;
 	}

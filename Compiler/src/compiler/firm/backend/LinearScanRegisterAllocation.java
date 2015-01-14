@@ -20,8 +20,9 @@ import compiler.firm.backend.operations.templates.AssemblerOperation;
 import compiler.firm.backend.operations.templates.JumpOperation;
 import compiler.firm.backend.storage.Constant;
 import compiler.firm.backend.storage.MemoryPointer;
-import compiler.firm.backend.storage.Register;
 import compiler.firm.backend.storage.RegisterBased;
+import compiler.firm.backend.storage.RegisterBundle;
+import compiler.firm.backend.storage.SingleRegister;
 import compiler.firm.backend.storage.VirtualRegister;
 
 public class LinearScanRegisterAllocation {
@@ -32,18 +33,32 @@ public class LinearScanRegisterAllocation {
 
 	private int currentStackOffset = 0;
 
-	private LinkedList<Register> freeRegisters = new LinkedList<Register>(
-			Arrays.asList(Register._BX, Register._CX, Register._DX,
-					Register._8D, Register._9D, Register._10D, Register._11D,
-					Register._12D, Register._13D)
-			);
+	@SuppressWarnings("unchecked")
+	private LinkedList<SingleRegister> freeRegisters[] = new LinkedList[] {
+			// 64bit registers
+			getList(SingleRegister.RBX, SingleRegister.RCX, SingleRegister.RDX,
+					SingleRegister.R8, SingleRegister.R9, SingleRegister.R10, SingleRegister.R11, SingleRegister.R12, SingleRegister.R13),
+			// 32 bit registers
+			getList(SingleRegister.EBX, SingleRegister.ECX, SingleRegister.EDX,
+					SingleRegister.R8D, SingleRegister.R9D, SingleRegister.R10D, SingleRegister.R11D, SingleRegister.R12D, SingleRegister.R13D),
+			// 8 bit registers
+			// getList(SingleRegister.BH, SingleRegister.BL, SingleRegister.CH, SingleRegister.CL, SingleRegister.DH, SingleRegister.DL,
+			// SingleRegister.R8B, SingleRegister.R9B, SingleRegister.R10B, SingleRegister.R11B, SingleRegister.R12B, SingleRegister.R13B)
+			getList(SingleRegister.BL, SingleRegister.CL, SingleRegister.DL,
+					SingleRegister.R8B, SingleRegister.R9B, SingleRegister.R10B, SingleRegister.R11B, SingleRegister.R12B, SingleRegister.R13B)
+	};
 
-	private HashMap<Register, LinkedList<VirtualRegister>> partialAllocatedRegisters = new HashMap<>();
+	private final byte[] registerUsage = new byte[RegisterBundle.REGISTER_COUNTER];
+	private final HashMap<VirtualRegister, SingleRegister> usedRegisters = new HashMap<>();
 
-	private HashMap<VirtualRegister, Register> usedRegisters = new HashMap<>();
+	private HashMap<RegisterBundle, LinkedList<VirtualRegister>> partialAllocatedRegisters = new HashMap<>();
 
 	public LinearScanRegisterAllocation(List<AssemblerOperation> operations) {
 		this.operations = operations;
+	}
+
+	private LinkedList<SingleRegister> getList(SingleRegister... registers) {
+		return new LinkedList<>(Arrays.asList(registers));
 	}
 
 	public void allocateRegisters() {
@@ -70,24 +85,24 @@ public class LinearScanRegisterAllocation {
 	private void assignRegisters() {
 		sortRegisterListByStart(virtualRegisters);
 
-		for (VirtualRegister register : virtualRegisters) {
-			if (register.getRegister() != null) {
+		for (VirtualRegister virtualRegister : virtualRegisters) {
+			if (virtualRegister.getRegister() != null) {
 				continue; // register already defined => nothing to do here
 			}
 
-			freeOutdatedRegistersForLine(register.getFirstOccurrence());
+			freeOutdatedRegistersForLine(virtualRegister.getFirstOccurrence());
 
-			Register systemRegister = allocateRegister(register);
+			SingleRegister systemRegister = allocateRegister(virtualRegister);
 			if (systemRegister != null) {
-				usedRegisters.put(register, systemRegister);
+				registerUsage[systemRegister.getRegisterBundle().getRegisterId()] |= systemRegister.getMask();
 			}
 		}
 	}
 
 	private void freeOutdatedRegistersForLine(int line) {
-		Iterator<Entry<VirtualRegister, Register>> entriesIterator = usedRegisters.entrySet().iterator();
+		Iterator<Entry<VirtualRegister, SingleRegister>> entriesIterator = usedRegisters.entrySet().iterator();
 		while (entriesIterator.hasNext()) {
-			Entry<VirtualRegister, Register> register = entriesIterator.next();
+			Entry<VirtualRegister, SingleRegister> register = entriesIterator.next();
 			if (register.getKey().getLastOccurrence() < line) {
 				freeRegister(register.getValue());
 				entriesIterator.remove();
@@ -95,28 +110,54 @@ public class LinearScanRegisterAllocation {
 		}
 	}
 
-	private Register allocateRegister(VirtualRegister virtualRegister) {
-		Register freeRegister = getFreeRegisterForLifetime(virtualRegister);
+	private SingleRegister allocateRegister(VirtualRegister virtualRegister) {
+		SingleRegister freeRegister = getFreePartiallyAllocatedRegisterForLifetime(virtualRegister);
 		if (freeRegister == null) {
-			if (this.freeRegisters.isEmpty()) {
-				VirtualRegister register = getRegisterWithLongestLifetime();
+			Bit mode = virtualRegister.getMode();
+
+			freeRegister = getFreeRegister(mode);
+
+			if (freeRegister == null) {
+				VirtualRegister register = getRegisterWithLongestLifetime(mode);
 				if (register == null) {
 					spillRegister(virtualRegister);
 					return null;
 				}
 
 				spillRegister(register);
+				freeRegister = getFreeRegister(mode);
+
+				if (freeRegister.getMode() != virtualRegister.getMode()) {
+					System.err.println("ups");
+				}
 			}
-			freeRegister = this.freeRegisters.pop();
 		}
+
+		if (freeRegister.getMode() != virtualRegister.getMode()) {
+			System.err.println("ups");
+		}
+
 		virtualRegister.setStorage(freeRegister);
+		usedRegisters.put(virtualRegister, freeRegister);
 		return freeRegister;
 	}
 
-	private Register getFreeRegisterForLifetime(VirtualRegister virtualRegister) {
+	private SingleRegister getFreeRegister(Bit mode) {
+		LinkedList<SingleRegister> registers = freeRegisters[mode.ordinal()];
+
+		for (SingleRegister register : registers) {
+			if ((registerUsage[register.getRegisterBundle().getRegisterId()] & register.getMask()) == 0) {
+				return register;
+			}
+		}
+
+		return null;
+	}
+
+	private SingleRegister getFreePartiallyAllocatedRegisterForLifetime(VirtualRegister virtualRegister) {
 		int start = virtualRegister.getFirstOccurrence();
 		int end = virtualRegister.getLastOccurrence();
-		for (Entry<Register, LinkedList<VirtualRegister>> registerInfo : partialAllocatedRegisters.entrySet()) {
+		for (Entry<RegisterBundle, LinkedList<VirtualRegister>> registerInfo : partialAllocatedRegisters.entrySet()) {
 			boolean isValid = true;
 			for (VirtualRegister register : registerInfo.getValue()) {
 				isValid &= (register.getFirstOccurrence() > end || register.getLastOccurrence() < start);
@@ -124,33 +165,35 @@ public class LinearScanRegisterAllocation {
 			if (isValid) {
 				virtualRegister.setForceRegister(true);
 				registerInfo.getValue().add(virtualRegister);
-				return registerInfo.getKey();
+				return registerInfo.getKey().getRegister(virtualRegister.getMode());
 			}
 		}
 		return null;
 	}
 
-	private void freeRegister(Register register) {
-		if (!this.freeRegisters.contains(register) && !this.partialAllocatedRegisters.containsKey(register)) {
-			this.freeRegisters.push(register);
+	private void freeRegister(SingleRegister register) {
+		RegisterBundle registerBundle = register.getRegisterBundle();
+
+		if (!this.partialAllocatedRegisters.containsKey(registerBundle)) {
+			registerUsage[registerBundle.getRegisterId()] &= ~register.getMask();
 		}
 	}
 
 	private void spillRegister(VirtualRegister virtualRegister) {
-		Register freeRegister = usedRegisters.get(virtualRegister);
-		if (freeRegister != null) {
+		SingleRegister freedRegister = usedRegisters.get(virtualRegister);
+		if (freedRegister != null) {
 			usedRegisters.remove(virtualRegister);
-			this.freeRegisters.push(freeRegister);
+			freeRegister(freedRegister);
 		}
 		virtualRegister.setSpilled(true);
 		currentStackOffset += STACK_ITEM_SIZE;
-		virtualRegister.setStorage(new MemoryPointer(-currentStackOffset, Register._BP));
+		virtualRegister.setStorage(new MemoryPointer(-currentStackOffset, SingleRegister.RBP));
 	}
 
-	private VirtualRegister getRegisterWithLongestLifetime() {
+	private VirtualRegister getRegisterWithLongestLifetime(Bit mode) {
 		int lifetime = 0;
 		VirtualRegister register = null;
-		for (Entry<VirtualRegister, Register> testRegister : usedRegisters.entrySet()) {
+		for (Entry<VirtualRegister, SingleRegister> testRegister : usedRegisters.entrySet()) {
 			VirtualRegister virtualRegister = testRegister.getKey();
 			if (virtualRegister.getLastOccurrence() >= lifetime && !virtualRegister.isForceRegister()) {
 				lifetime = virtualRegister.getLastOccurrence();
@@ -206,17 +249,14 @@ public class LinearScanRegisterAllocation {
 
 	private void detectPartiallyAllocatedRegisters() {
 		for (VirtualRegister virtualRegister : virtualRegisters) {
-			if (virtualRegister.getRegister() != null && virtualRegister.getRegister().getClass() == Register.class) {
-				Register register = (Register) virtualRegister.getRegister();
-				if (!partialAllocatedRegisters.containsKey(register)) {
-					if (!freeRegisters.remove(register)) {
-						// Do not use this register. It is not marked as register allocation register.
-						continue;
-					}
-					partialAllocatedRegisters.put(register, new LinkedList<VirtualRegister>());
+			if (virtualRegister.getRegister() != null && virtualRegister.getRegister().getClass() == SingleRegister.class) {
+				SingleRegister register = (SingleRegister) virtualRegister.getRegister();
+				RegisterBundle registerBundle = register.getRegisterBundle();
 
+				if (!partialAllocatedRegisters.containsKey(registerBundle)) {
+					partialAllocatedRegisters.put(registerBundle, new LinkedList<VirtualRegister>());
 				}
-				partialAllocatedRegisters.get(register).add(virtualRegister);
+				partialAllocatedRegisters.get(registerBundle).add(virtualRegister);
 			}
 		}
 	}
@@ -224,8 +264,8 @@ public class LinearScanRegisterAllocation {
 	private void setStackSize(int size) {
 		size += 0x10;
 		size &= -0x10; // Align to 8-byte.
-		AssemblerOperation reserveOperation = new SubOperation("stack reservation", Bit.BIT64, new Constant(size), Register._SP);
-		AssemblerOperation freeOperation = new AddOperation("stack free", Bit.BIT64, new Constant(size), Register._SP);
+		AssemblerOperation reserveOperation = new SubOperation("stack reservation", Bit.BIT64, new Constant(size), SingleRegister.RSP);
+		AssemblerOperation freeOperation = new AddOperation("stack free", Bit.BIT64, new Constant(size), SingleRegister.RSP);
 		if (size <= 0) {
 			reserveOperation = new Comment("no items on stack, skip reservation");
 			freeOperation = new Comment("no items on stack, skip free");

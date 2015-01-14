@@ -1,12 +1,13 @@
 package compiler.firm.backend.operations;
 
+import compiler.firm.backend.Bit;
 import compiler.firm.backend.calling.CallingConvention;
 import compiler.firm.backend.operations.templates.AssemblerOperation;
 import compiler.firm.backend.storage.RegisterBased;
 
 public class CallOperation extends AssemblerOperation {
 
-	private String name;
+	private final String name;
 	private final CallingConvention callingConvention;
 
 	public CallOperation(String name, CallingConvention callingConvention) {
@@ -26,6 +27,6 @@ public class CallOperation extends AssemblerOperation {
 
 	@Override
 	public RegisterBased[] getWriteRegisters() {
-		return new RegisterBased[] { callingConvention.getReturnRegister() };
+		return new RegisterBased[] { callingConvention.getReturnRegister().getRegister(Bit.BIT64) };
 	}
 }

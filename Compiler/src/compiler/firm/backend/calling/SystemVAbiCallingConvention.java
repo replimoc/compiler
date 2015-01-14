@@ -1,32 +1,32 @@
 package compiler.firm.backend.calling;
 
-import compiler.firm.backend.storage.Register;
+import compiler.firm.backend.storage.RegisterBundle;
 
 // http://wiki.osdev.org/Calling_Conventions
 public class SystemVAbiCallingConvention extends CallingConvention {
 
 	@Override
-	public Register[] getParameterRegisters() {
-		return new Register[] { Register._DI, Register._SI, Register._DX, Register._CX, Register._8D, Register._9D };
+	public RegisterBundle[] getParameterRegisters() {
+		return new RegisterBundle[] { RegisterBundle._DI, RegisterBundle._SI, RegisterBundle._DX, RegisterBundle._CX, RegisterBundle._8D, RegisterBundle._9D };
 	}
 
 	@Override
-	public Register getReturnRegister() {
-		return Register._AX;
+	public RegisterBundle getReturnRegister() {
+		return RegisterBundle._AX;
 	}
 
 	@Override
-	public Register[] callerSavedRegisters() {
-		return new Register[] { // Not RAX - because restore is not possible - conflict with return type!
-		Register._SP, Register._DI, Register._SI, Register._DX, Register._CX,
-				Register._8D, Register._9D, Register._10D, Register._11D
+	public RegisterBundle[] callerSavedRegisters() {
+		return new RegisterBundle[] { // Not RAX - because restore is not possible - conflict with return type!
+		RegisterBundle._SP, RegisterBundle._DI, RegisterBundle._SI, RegisterBundle._DX, RegisterBundle._CX,
+				RegisterBundle._8D, RegisterBundle._9D, RegisterBundle._10D, RegisterBundle._11D
 		};
 	}
 
 	@Override
-	public Register[] calleeSavedRegisters() {
-		return new Register[] { Register._BX, Register._SP, Register._BP, Register._12D,
-				Register._13D, Register._14D, Register._15D };
+	public RegisterBundle[] calleeSavedRegisters() {
+		return new RegisterBundle[] { RegisterBundle._BX, RegisterBundle._SP, RegisterBundle._BP, RegisterBundle._12D,
+				RegisterBundle._13D, RegisterBundle._14D, RegisterBundle._15D };
 	}
 
 }
