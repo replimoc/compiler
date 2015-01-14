@@ -5,8 +5,8 @@ import compiler.firm.backend.Bit;
 // Map for registers: https://upload.wikimedia.org/wikipedia/commons/4/41/Table_of_x86_Registers.png
 public class SingleRegister extends RegisterBased {
 	private static final byte FULL = 0b11;
-	private static final byte HIGH = FULL;// 0b10;
-	private static final byte LOW = FULL;// 0b01;
+	private static final byte HIGH = 0b10;
+	private static final byte LOW = 0b01;
 
 	public static final byte BLOCKED_REGISTER = 0b1111111;
 
@@ -17,9 +17,11 @@ public class SingleRegister extends RegisterBased {
 	// registers with no 8 bit registers
 	public static final SingleRegister RDI = new SingleRegister(Bit.BIT64, "%rdi", FULL);
 	public static final SingleRegister EDI = new SingleRegister(Bit.BIT32, "%edi", FULL);
+	public static final SingleRegister DIL = new SingleRegister(Bit.BIT8, "%dil", LOW);
 
 	public static final SingleRegister RSI = new SingleRegister(Bit.BIT64, "%rsi", FULL);
 	public static final SingleRegister ESI = new SingleRegister(Bit.BIT32, "%esi", FULL);
+	public static final SingleRegister SIL = new SingleRegister(Bit.BIT8, "%sil", LOW);
 
 	// registers with two 8bit registers
 	public static final SingleRegister RAX = new SingleRegister(Bit.BIT64, "%rax", FULL); // accumulator

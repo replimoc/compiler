@@ -13,8 +13,8 @@ public class RegisterBundle {
 	public static final RegisterBundle _BP = new RegisterBundle(SingleRegister.RBP); // frame pointer
 
 	// free registers
-	public static final RegisterBundle _DI = new RegisterBundle(SingleRegister.RDI, SingleRegister.EDI);
-	public static final RegisterBundle _SI = new RegisterBundle(SingleRegister.RSI, SingleRegister.ESI);
+	public static final RegisterBundle _DI = new RegisterBundle(SingleRegister.RDI, SingleRegister.EDI, SingleRegister.DIL);
+	public static final RegisterBundle _SI = new RegisterBundle(SingleRegister.RSI, SingleRegister.ESI, SingleRegister.SIL);
 
 	// registers with 8bit regs
 	public static final RegisterBundle _AX = new RegisterBundle(SingleRegister.RAX, SingleRegister.EAX, SingleRegister.AH, SingleRegister.AL); // accumulator
