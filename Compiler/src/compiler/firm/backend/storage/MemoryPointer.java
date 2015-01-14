@@ -60,4 +60,9 @@ public class MemoryPointer extends Storage {
 		}
 		return new RegisterBased[] { register, factorRegister };
 	}
+
+	@Override
+	public boolean isSpilled() {
+		return true;
+	}
 }

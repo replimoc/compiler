@@ -41,6 +41,11 @@ public class Constant extends Storage {
 		return null;
 	}
 
+	@Override
+	public boolean isSpilled() {
+		return false;
+	}
+
 	public int getConstant() {
 		return constant;
 	}

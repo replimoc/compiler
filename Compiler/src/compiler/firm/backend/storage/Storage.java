@@ -8,4 +8,6 @@ public abstract class Storage {
 	public abstract RegisterBased[] getUsedRegister();
 
 	public abstract RegisterBased[] getReadOnRightSideRegister();
+
+	public abstract boolean isSpilled();
 }

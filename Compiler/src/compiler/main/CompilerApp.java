@@ -43,6 +43,7 @@ public final class CompilerApp {
 	private static final String COMPILE_FIRM = "compile-firm";
 	private static final String NO_OPT = "no-opt";
 	private static final String OUTPUT_FILE = "o";
+	private static final String DEBUGGING_LEVEL = "g";
 	private static final String C_INCLUDE = "c-include";
 	private static final String C_LIBRARY = "l";
 
@@ -82,6 +83,7 @@ public final class CompilerApp {
 		options.addOption(null, NO_OPT, false, "deactivate optimizations");
 		options.addOption(null, C_INCLUDE, true, "Compile the given file and use it for the mapping of native methods.");
 		options.addOption(C_LIBRARY, true, "Use the given library for linking the c file given with --" + C_INCLUDE + ".");
+		options.addOption(DEBUGGING_LEVEL, true, "Use debugging level, passed directly as -g to gcc.");
 
 		CommandLineParser commandLineParser = new PosixParser();
 		try {
@@ -184,7 +186,7 @@ public final class CompilerApp {
 
 					try {
 						FirmUtils.createBinary(outputFile, assemblerName, assemblerCreator, cmd.getOptionValue(C_INCLUDE),
-								cmd.getOptionValue(C_LIBRARY));
+								cmd.getOptionValue(C_LIBRARY), cmd.getOptionValue(DEBUGGING_LEVEL));
 					} catch (ExecutionFailedException ex) {
 						return ex.getStatusCode();
 					}
