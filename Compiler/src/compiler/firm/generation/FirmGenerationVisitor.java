@@ -689,7 +689,7 @@ public class FirmGenerationVisitor implements AstVisitor {
 		methodConstruction.setCurrentBlock(trueBlock);
 		ifStatement.getTrueCase().accept(this);
 		// prevent a second control flow instruction from being set for this block
-		if (!methodReturns.containsKey(methodConstruction.getCurrentBlock())) {
+		if (!methodReturns.containsKey(trueBlock)) {
 			Node trueJmp = methodConstruction.newJmp();
 			endifBlock.addPred(trueJmp);
 		}
@@ -731,7 +731,7 @@ public class FirmGenerationVisitor implements AstVisitor {
 		methodConstruction.getCurrentMem();
 
 		whileStatement.getBody().accept(this);
-		if (!methodReturns.containsKey(methodConstruction.getCurrentBlock())) {
+		if (!methodReturns.containsKey(loopBlock)) {
 			Node loopJump = methodConstruction.newJmp();
 			startBlock.addPred(loopJump);
 		}
