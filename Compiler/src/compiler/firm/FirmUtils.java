@@ -113,27 +113,16 @@ public final class FirmUtils {
 		if (debuggingLevel != null) {
 			execOptions.add(GCC_DEBUG + debuggingLevel);
 		}
-		execOptions.add(compileToO(assemblerFile, "build", debuggingLevel));
-		execOptions.add(compileToO(base + "resources/standardlib.c", "standardlib", debuggingLevel));
+		execOptions.add(assemblerFile);
+		execOptions.add(base + "resources/standardlib.c");
 
 		if (cInclude != null)
-			execOptions.add(compileToO(cInclude, "cInclude", debuggingLevel));
+			execOptions.add(cInclude);
 
 		if (cLibrary != null)
 			execOptions.add("-l" + cLibrary);
 
 		printOutput(Utils.systemExec(execOptions));
-	}
-
-	private static String compileToO(String inputFile, String outputFileName, String debuggingLevel) throws IOException, ExecutionFailedException {
-		String oName = Utils.createAutoDeleteTempFile(outputFileName, ".o");
-		List<String> execOptions = new LinkedList<String>();
-		execOptions.addAll(Arrays.asList(GCC, "-c", inputFile, "-o", oName));
-		if (debuggingLevel != null) {
-			execOptions.add(GCC_DEBUG + debuggingLevel);
-		}
-		printOutput(Utils.systemExec(execOptions));
-		return oName;
 	}
 
 	private static void printOutput(Pair<Integer, List<String>> executionState) throws ExecutionFailedException {
