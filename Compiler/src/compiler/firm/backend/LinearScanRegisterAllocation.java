@@ -37,15 +37,13 @@ public class LinearScanRegisterAllocation {
 	@SuppressWarnings("unchecked")
 	private LinkedList<SingleRegister> allowedRegisters[] = new LinkedList[] {
 			// 64bit registers
-			getList(SingleRegister.RBX, SingleRegister.RCX, SingleRegister.RDX,
+			getList(SingleRegister.RAX, SingleRegister.RBX, SingleRegister.RCX, SingleRegister.RDX,
 					SingleRegister.R8, SingleRegister.R9, SingleRegister.R10, SingleRegister.R11, SingleRegister.R12, SingleRegister.R13),
 			// 32 bit registers
-			getList(SingleRegister.EBX, SingleRegister.ECX, SingleRegister.EDX,
+			getList(SingleRegister.EAX, SingleRegister.EBX, SingleRegister.ECX, SingleRegister.EDX,
 					SingleRegister.R8D, SingleRegister.R9D, SingleRegister.R10D, SingleRegister.R11D, SingleRegister.R12D, SingleRegister.R13D),
 			// 8 bit registers
-			// getList(SingleRegister.BH, SingleRegister.BL, SingleRegister.CH, SingleRegister.CL, SingleRegister.DH, SingleRegister.DL,
-			// SingleRegister.R8B, SingleRegister.R9B, SingleRegister.R10B, SingleRegister.R11B, SingleRegister.R12B, SingleRegister.R13B)
-			getList(SingleRegister.BL, SingleRegister.CL, SingleRegister.DL,
+			getList(SingleRegister.AL, SingleRegister.BL, SingleRegister.CL, SingleRegister.DL,
 					SingleRegister.R8B, SingleRegister.R9B, SingleRegister.R10B, SingleRegister.R11B, SingleRegister.R12B, SingleRegister.R13B)
 	};
 
