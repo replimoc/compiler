@@ -8,8 +8,9 @@ import java.util.Map.Entry;
 import compiler.firm.backend.Bit;
 import compiler.firm.backend.operations.Comment;
 import compiler.firm.backend.operations.MovOperation;
-import compiler.firm.backend.storage.Register;
 import compiler.firm.backend.storage.RegisterBased;
+import compiler.firm.backend.storage.RegisterBundle;
+import compiler.firm.backend.storage.SingleRegister;
 import compiler.firm.backend.storage.Storage;
 import compiler.firm.backend.storage.VirtualRegister;
 
@@ -74,8 +75,10 @@ public abstract class AssemblerBitOperation extends AssemblerOperation {
 	}
 
 	private Storage insertSpillcode(VirtualRegister virtualRegister, List<String> result, boolean restore) {
-		Register temporaryRegister = getTemporaryRegister();
 		Storage stackPointer = virtualRegister.getRegister();
+
+		RegisterBundle temporaryRegisterBundle = getTemporaryRegister();
+		SingleRegister temporaryRegister = temporaryRegisterBundle.getRegister(virtualRegister.getMode());
 
 		if (restore) {
 			MovOperation spillOperation = new MovOperation(virtualRegister.getMode(), stackPointer, temporaryRegister);

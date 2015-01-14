@@ -65,4 +65,9 @@ public class MemoryPointer extends Storage {
 	public boolean isSpilled() {
 		return true;
 	}
+
+	@Override
+	public Bit getMode() {
+		return null; // TODO implement this correctly
+	}
 }

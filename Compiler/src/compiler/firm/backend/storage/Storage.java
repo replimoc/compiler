@@ -10,4 +10,6 @@ public abstract class Storage {
 	public abstract RegisterBased[] getReadOnRightSideRegister();
 
 	public abstract boolean isSpilled();
+
+	public abstract Bit getMode();
 }

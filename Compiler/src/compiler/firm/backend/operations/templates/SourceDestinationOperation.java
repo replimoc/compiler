@@ -11,8 +11,8 @@ import compiler.firm.backend.storage.VirtualRegister;
 
 public abstract class SourceDestinationOperation extends AssemblerBitOperation {
 
-	private Storage source;
-	private final Storage destination;
+	protected Storage source;
+	protected final Storage destination;
 
 	public SourceDestinationOperation(String comment, Bit mode, Storage source, Storage destination) {
 		super(comment, mode);
@@ -63,11 +63,10 @@ public abstract class SourceDestinationOperation extends AssemblerBitOperation {
 				Storage source = getSource();
 				Storage destination = getDestination();
 
-				if ((source.isSpilled() && !destination.isSpilled()) ||
-						(!source.isSpilled() && destination.isSpilled())) {
+				if ((source.isSpilled() && !destination.isSpilled()) || (!source.isSpilled() && destination.isSpilled())) {
 					return new String[] { toString() };
 				} else {
-					this.source = getTemporaryRegister();
+					this.source = getTemporaryRegister().getRegister(getMode());
 					String[] result = new String[] {
 							new MovOperation(getMode(), source, this.source).toString(),
 							toString()
