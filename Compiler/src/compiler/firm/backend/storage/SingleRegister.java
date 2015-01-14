@@ -91,14 +91,6 @@ public class SingleRegister extends RegisterBased {
 	}
 
 	@Override
-	public String toString(Bit mode) {
-		if (this.mode != mode) {
-			throw new RuntimeException("Used register with wrong mode: this is " + this.mode + " not " + mode);
-		}
-		return registerName;
-	}
-
-	@Override
 	public String toString() {
 		return registerName;
 	}

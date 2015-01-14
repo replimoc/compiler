@@ -33,12 +33,7 @@ public class VirtualRegister extends RegisterBased {
 
 	@Override
 	public String toString() {
-		return "VirtualRegister" + getNum() + "[" + mode + "," + register + "," + firstOccurrence + "," + lastOccurrence + "]";
-	}
-
-	@Override
-	public String toString(Bit bit) {
-		return register == null ? "VR_" + getNum() : register.toString(bit);
+		return register == null ? "VR_" + getNum() : register.toString();
 	}
 
 	public Storage getRegister() {

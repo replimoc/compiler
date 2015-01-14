@@ -12,7 +12,7 @@ public abstract class StorageOperation extends AssemblerBitOperation {
 	}
 
 	public StorageOperation(String comment, Bit mode, Storage storage) {
-		super(comment, mode);
+		super(comment);
 		this.storage = storage;
 	}
 

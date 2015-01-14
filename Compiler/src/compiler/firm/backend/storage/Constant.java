@@ -17,11 +17,6 @@ public class Constant extends Storage {
 
 	@Override
 	public String toString() {
-		return toString(null);
-	}
-
-	@Override
-	public String toString(Bit bit) {
 		String result;
 		if (constant < 0) {
 			result = String.format("$-0x%x", -constant);

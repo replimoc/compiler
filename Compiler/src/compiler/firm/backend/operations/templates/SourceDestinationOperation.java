@@ -2,7 +2,6 @@ package compiler.firm.backend.operations.templates;
 
 import java.util.Arrays;
 
-import compiler.firm.backend.Bit;
 import compiler.firm.backend.operations.MovOperation;
 import compiler.firm.backend.storage.Constant;
 import compiler.firm.backend.storage.RegisterBased;
@@ -14,8 +13,8 @@ public abstract class SourceDestinationOperation extends AssemblerBitOperation {
 	protected Storage source;
 	protected final Storage destination;
 
-	public SourceDestinationOperation(String comment, Bit mode, Storage source, Storage destination) {
-		super(comment, mode);
+	public SourceDestinationOperation(String comment, Storage source, Storage destination) {
+		super(comment);
 		this.source = source;
 		this.destination = destination;
 	}
@@ -58,20 +57,19 @@ public abstract class SourceDestinationOperation extends AssemblerBitOperation {
 	@Override
 	public String[] toStringWithSpillcode() {
 		if (hasSpilledRegisters()) {
-			if ((getSource().getClass() == VirtualRegister.class || getSource().getClass() == Constant.class)
-					&& (getDestination().getClass() == VirtualRegister.class || getDestination().getClass() == Constant.class)) {
-				Storage source = getSource();
-				Storage destination = getDestination();
+			if ((source.getClass() == VirtualRegister.class || source.getClass() == Constant.class)
+					&& (destination.getClass() == VirtualRegister.class || destination.getClass() == Constant.class)) {
 
 				if ((source.isSpilled() && !destination.isSpilled()) || (!source.isSpilled() && destination.isSpilled())) {
 					return new String[] { toString() };
 				} else {
-					this.source = getTemporaryRegister().getRegister(getMode());
+					Storage oldSource = this.source;
+					this.source = getTemporaryRegister().getRegister(destination.getMode());
 					String[] result = new String[] {
-							new MovOperation(getMode(), source, this.source).toString(),
+							new MovOperation(oldSource, this.source).toString(),
 							toString()
 					};
-					this.source = source;
+					this.source = oldSource;
 					return result;
 				}
 			}

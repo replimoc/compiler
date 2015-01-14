@@ -77,7 +77,7 @@ public class StorageManagement {
 		Bit mode = getMode(node);
 		resultRegister = new VirtualRegister(mode, resultRegister);
 
-		addOperation(new MovOperation("Load address " + node.toString(), mode, originalStorage, resultRegister));
+		addOperation(new MovOperation("Load address " + node.toString(), originalStorage, resultRegister));
 		return resultRegister;
 	}
 
@@ -109,7 +109,7 @@ public class StorageManagement {
 
 	public void storeValue(Node node, Storage storage, Storage destination) {
 		if (storage != destination) {
-			addOperation(new MovOperation("Store node " + node, getMode(node), storage, destination));
+			addOperation(new MovOperation("Store node " + node, storage, destination));
 		}
 	}
 

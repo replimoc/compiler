@@ -13,6 +13,6 @@ public class ShlOperation extends RegisterConstantOperation {
 
 	@Override
 	public String getOperationString() {
-		return String.format("\tshl%s %s, %s", getMode(), getConstant().toString(getMode()), getRegister().toString(getMode()));
+		return String.format("\tshl %s, %s", getConstant().toString(), getRegister().toString());
 	}
 }

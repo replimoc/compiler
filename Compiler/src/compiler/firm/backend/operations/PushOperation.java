@@ -16,7 +16,6 @@ public class PushOperation extends StorageOperation {
 
 	@Override
 	public String getOperationString() {
-		return String.format("\tpush%s %s", getMode(), getStorage().toString(getMode()));
+		return String.format("\tpush %s", getStorage().toString());
 	}
-
 }

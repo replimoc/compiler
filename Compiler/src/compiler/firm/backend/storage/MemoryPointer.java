@@ -22,24 +22,19 @@ public class MemoryPointer extends Storage {
 
 	@Override
 	public String toString() {
-		return toString(null);
-	}
-
-	@Override
-	public String toString(Bit bit) {
 		// Always use 64 bit register, this are stack addresses.
 		String secondRegister = "";
 		if (factorRegister != null) {
-			secondRegister = String.format(",%s,%d", factorRegister.toString(Bit.BIT64), factor);
+			secondRegister = String.format(",%s,%d", factorRegister.toString(), factor);
 		}
 
 		String result;
 		if (offset == 0) {
-			result = String.format("(%s%s)", register.toString(Bit.BIT64), secondRegister);
+			result = String.format("(%s%s)", register.toString(), secondRegister);
 		} else if (offset < 0) {
-			result = String.format("-0x%x(%s%s)", -offset, register.toString(Bit.BIT64), secondRegister);
+			result = String.format("-0x%x(%s%s)", -offset, register.toString(), secondRegister);
 		} else {
-			result = String.format("0x%x(%s%s)", offset, register.toString(Bit.BIT64), secondRegister);
+			result = String.format("0x%x(%s%s)", offset, register.toString(), secondRegister);
 		}
 		return result;
 	}

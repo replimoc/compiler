@@ -80,7 +80,7 @@ public class CallOperation extends AssemblerOperation {
 		Constant stackAllocationSize = new Constant(STACK_ITEM_SIZE * numberOfstackParameters);
 
 		if (numberOfstackParameters > 0) {
-			result.add(new SubOperation(Bit.BIT64, stackAllocationSize, SingleRegister.RSP).toString());
+			result.add(new SubOperation(stackAllocationSize, SingleRegister.RSP).toString());
 
 			RegisterBundle temporaryRegister = getTemporaryRegister();
 
@@ -91,10 +91,10 @@ public class CallOperation extends AssemblerOperation {
 				MemoryPointer destinationPointer = new MemoryPointer(i * STACK_ITEM_SIZE, SingleRegister.RSP);
 				if (source.storage.getClass() == MemoryPointer.class
 						|| (source.storage.getClass() == VirtualRegister.class && source.storage.isSpilled())) {
-					result.add(new MovOperation(source.mode, source.storage, temporaryRegister.getRegister(source.mode)).toString());
-					result.add(new MovOperation(source.mode, temporaryRegister.getRegister(source.mode), destinationPointer).toString());
+					result.add(new MovOperation(source.storage, temporaryRegister.getRegister(source.mode)).toString());
+					result.add(new MovOperation(temporaryRegister.getRegister(source.mode), destinationPointer).toString());
 				} else {
-					result.add(new MovOperation(source.mode, source.storage, destinationPointer).toString());
+					result.add(new MovOperation(source.storage, destinationPointer).toString());
 				}
 			}
 		}
@@ -104,22 +104,22 @@ public class CallOperation extends AssemblerOperation {
 			Parameter source = parameters.get(i);
 			RegisterBundle register = callingRegisters[i];
 			if (register.getRegister(source.mode) == null) {
-				result.add(new MovOperation(Bit.BIT64, source.storage, register.getRegister(Bit.BIT64)).toString());
+				result.add(new MovOperation(source.storage, register.getRegister(Bit.BIT64)).toString());
 				// TODO: the mask should be saved in the mode
-				result.add(new AndOperation(Bit.BIT64, new Constant(0xFF), register.getRegister(Bit.BIT64)).toString());
+				result.add(new AndOperation(new Constant(0xFF), register.getRegister(Bit.BIT64)).toString());
 			} else {
-				result.add(new MovOperation(source.mode, source.storage, register.getRegister(source.mode)).toString());
+				result.add(new MovOperation(source.storage, register.getRegister(source.mode)).toString());
 			}
 		}
 
 		result.add(toString());
 
 		if (numberOfstackParameters > 0) {
-			result.add(new AddOperation(Bit.BIT64, stackAllocationSize, SingleRegister.RSP).toString());
+			result.add(new AddOperation(stackAllocationSize, SingleRegister.RSP).toString());
 		}
 
 		for (int i = callerSavedRegisters.size() - 1; i >= 0; i--) {
-			result.add(new PopOperation(Bit.BIT64, callerSavedRegisters.get(i).getRegister(Bit.BIT64)).toString());
+			result.add(new PopOperation(callerSavedRegisters.get(i).getRegister(Bit.BIT64)).toString());
 		}
 
 		String[] resultStrings = new String[result.size()];

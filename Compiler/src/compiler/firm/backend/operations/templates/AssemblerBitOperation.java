@@ -5,7 +5,6 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map.Entry;
 
-import compiler.firm.backend.Bit;
 import compiler.firm.backend.operations.Comment;
 import compiler.firm.backend.operations.MovOperation;
 import compiler.firm.backend.storage.RegisterBased;
@@ -16,15 +15,8 @@ import compiler.firm.backend.storage.VirtualRegister;
 
 public abstract class AssemblerBitOperation extends AssemblerOperation {
 
-	protected final Bit mode;
-
-	public AssemblerBitOperation(String comment, Bit mode) {
+	public AssemblerBitOperation(String comment) {
 		super(comment);
-		this.mode = mode;
-	}
-
-	public Bit getMode() {
-		return mode;
 	}
 
 	@Override
@@ -60,7 +52,7 @@ public abstract class AssemblerBitOperation extends AssemblerOperation {
 				VirtualRegister virtualRegister = storageMap.getKey();
 				Storage stackPointer = storageMap.getValue();
 				if (storageMappingWrite.contains(virtualRegister)) {
-					MovOperation spillOperation = new MovOperation(virtualRegister.getMode(), virtualRegister, stackPointer);
+					MovOperation spillOperation = new MovOperation(virtualRegister, stackPointer);
 					result.add(spillOperation.toString());
 				}
 				virtualRegister.setStorage(stackPointer);
@@ -81,7 +73,7 @@ public abstract class AssemblerBitOperation extends AssemblerOperation {
 		SingleRegister temporaryRegister = temporaryRegisterBundle.getRegister(virtualRegister.getMode());
 
 		if (restore) {
-			MovOperation spillOperation = new MovOperation(virtualRegister.getMode(), stackPointer, temporaryRegister);
+			MovOperation spillOperation = new MovOperation(stackPointer, temporaryRegister);
 			result.add(spillOperation.toString());
 		}
 		virtualRegister.setStorage(temporaryRegister);
