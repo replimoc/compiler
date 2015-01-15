@@ -17,4 +17,6 @@ public abstract class JumpOperation extends AssemblerOperation {
 	public String getLabelName() {
 		return label.getName();
 	}
+
+	public abstract JumpOperation invert(LabelOperation label);
 }

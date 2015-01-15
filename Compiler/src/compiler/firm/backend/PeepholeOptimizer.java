@@ -40,16 +40,36 @@ public class PeepholeOptimizer {
 
 	public void optimize() {
 		while (currentOperation != null) {
-			if (currentOperation instanceof JmpOperation) {
+			if (currentOperation instanceof JumpOperation) {
 				JumpOperation jump = (JumpOperation) currentOperation;
 				nextOperation();
-				if (currentOperation instanceof LabelOperation) {
+				if (jump instanceof JmpOperation && currentOperation instanceof LabelOperation) {
 					LabelOperation label = (LabelOperation) currentOperation;
 
 					if (jump.getLabel().equals(label)) {
 						writeOperation(new Comment(jump));
 					} else {
 						writeOperation(jump);
+					}
+				} else if (currentOperation instanceof JmpOperation) {
+					JumpOperation jump2 = (JumpOperation) currentOperation;
+					nextOperation();
+					if (currentOperation instanceof LabelOperation) {
+						LabelOperation label = (LabelOperation) currentOperation;
+
+						if (jump2.getLabel().equals(label)) {
+							writeOperation(jump);
+							writeOperation(new Comment(jump2));
+						} else if (jump.getLabel().equals(label) && !(jump instanceof JmpOperation)) {
+							writeOperation(jump.invert(jump2.getLabel()));
+							writeOperation(new Comment("Fallthrough to " + jump.getLabel()));
+						} else {
+							writeOperation(jump);
+							writeOperation(jump2);
+						}
+					} else {
+						writeOperation(jump);
+						writeOperation(jump2);
 					}
 				} else {
 					writeOperation(jump);
