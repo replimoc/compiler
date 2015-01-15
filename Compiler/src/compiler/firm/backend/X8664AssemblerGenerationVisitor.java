@@ -571,16 +571,12 @@ public class X8664AssemblerGenerationVisitor implements BulkPhiNodeVisitor {
 				node2phiMapping.put(predecessor, phi);
 			}
 		}
-		System.out.println();
 
 		HashMap<Phi, Storage> phiTempStackMapping = new HashMap<>();
 		for (Phi phi : conflictNodes) {
 			Node predecessor = getRelevantPredecessor(phi);
 			Storage register = storageManagement.getValueAvoidNewRegister(predecessor);
 			Storage temporaryStorage = new VirtualRegister(StorageManagement.getMode(predecessor));
-			if (register.getClass() == Constant.class) {
-				temporaryStorage = register;
-			}
 			storageManagement.storeValue(predecessor, register, temporaryStorage);
 			phiTempStackMapping.put(phi, temporaryStorage);
 		}
