@@ -255,16 +255,26 @@ public class X8664AssemblerGenerationVisitor implements BulkPhiNodeVisitor {
 			parameters.add(new CallOperation.Parameter(storageManagement.getStorage(parameter), StorageManagement.getMode(parameter)));
 		}
 
-		addOperation(new CallOperation(methodName, parameters, callingConvention));
+		Node resultNode = null;
 
 		for (Edge edge : BackEdges.getOuts(node)) {
 			if (edge.node.getMode().equals(Mode.getT())) {
 				for (Edge innerEdge : BackEdges.getOuts(edge.node)) {
-					Node innerNode = innerEdge.node;
-					Bit mode = StorageManagement.getMode(innerNode);
-					storageManagement.storeValueAndCreateNewStorage(innerNode, callingConvention.getReturnRegister().getRegister(mode), true);
+					resultNode = innerEdge.node;
 				}
 			}
+		}
+
+		Bit mode = Bit.BIT64;
+		if (resultNode != null) {
+			mode = StorageManagement.getMode(resultNode);
+		}
+
+		CallOperation callOperation = new CallOperation(mode, methodName, parameters, callingConvention);
+		addOperation(callOperation);
+
+		if (resultNode != null) {
+			storageManagement.storeValueAndCreateNewStorage(resultNode, callOperation.getResult(), true);
 		}
 	}
 

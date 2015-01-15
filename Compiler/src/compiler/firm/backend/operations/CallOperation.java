@@ -23,13 +23,15 @@ public class CallOperation extends AssemblerOperation {
 	private final List<Parameter> parameters;
 	private final CallingConvention callingConvention;
 	private List<RegisterBundle> usedRegisters = new LinkedList<>();
+	private final VirtualRegister result;
 
-	public CallOperation(String name, List<Parameter> parameters, CallingConvention callingConvention) {
+	public CallOperation(Bit mode, String name, List<Parameter> parameters, CallingConvention callingConvention) {
 		this.name = name;
 		this.parameters = parameters;
 		this.callingConvention = callingConvention;
 		this.usedRegisters.add(RegisterBundle._SP);
 		this.usedRegisters.add(RegisterBundle._BP);
+		this.result = new VirtualRegister(mode, callingConvention.getReturnRegister());
 	}
 
 	@Override
@@ -51,7 +53,11 @@ public class CallOperation extends AssemblerOperation {
 
 	@Override
 	public RegisterBased[] getWriteRegisters() {
-		return new RegisterBased[] { new VirtualRegister(Bit.BIT64, callingConvention.getReturnRegister()) };
+		return new RegisterBased[] { result };
+	}
+
+	public VirtualRegister getResult() {
+		return result;
 	}
 
 	private List<RegisterBundle> getSaveRegisters() {

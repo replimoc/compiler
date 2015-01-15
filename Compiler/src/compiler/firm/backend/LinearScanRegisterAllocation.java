@@ -106,6 +106,10 @@ public class LinearScanRegisterAllocation {
 			if (registerFreedInCurrLine != null
 					&& isNormalRegisterOrPartiallyAllocatable(registerFreedInCurrLine, firstOccurrence, virtualRegister.getLastOccurrence())) {
 				freeRegister = registerFreedInCurrLine.getRegister(virtualRegister.getMode());
+
+				if (partialAllocatedRegisters.containsKey(registerFreedInCurrLine)) {
+					virtualRegister.setForceRegister(true);
+				}
 			} else {
 				freeRegister = getAllocatableRegister(virtualRegister);
 			}
@@ -114,6 +118,7 @@ public class LinearScanRegisterAllocation {
 				virtualRegister.setStorage(freeRegister);
 				usedRegisters.put(virtualRegister, freeRegister);
 				registerUsages[freeRegister.getRegisterBundle().getRegisterId()] |= freeRegister.getMask();
+
 			}
 		}
 	}
@@ -203,7 +208,7 @@ public class LinearScanRegisterAllocation {
 	private boolean isPartiallyAllocatableRegisterFree(int start, int end, LinkedList<VirtualRegister> interferringRegisters) {
 		boolean isValid = true;
 		for (VirtualRegister register : interferringRegisters) {
-			isValid &= (register.getFirstOccurrence() > end || register.getLastOccurrence() < start);
+			isValid &= (register.getFirstOccurrence() >= end || register.getLastOccurrence() <= start);
 		}
 		return isValid;
 	}
