@@ -5,6 +5,7 @@ import java.util.HashMap;
 import java.util.Iterator;
 import java.util.LinkedList;
 import java.util.List;
+import java.util.Map.Entry;
 
 import compiler.firm.FirmUtils;
 import compiler.firm.backend.calling.CallingConvention;
@@ -557,8 +558,23 @@ public class X8664AssemblerGenerationVisitor implements BulkPhiNodeVisitor {
 	@Override
 	public void visit(List<Phi> phis) {
 		addOperation(new Comment("Handle phis of current block"));
-		HashMap<Phi, Storage> phiTempStackMapping = new HashMap<>();
+
+		HashMap<Node, Phi> node2phiMapping = new HashMap<>();
+		List<Phi> conflictNodes = new ArrayList<>();
+
 		for (Phi phi : phis) {
+			Node predecessor = getRelevantPredecessor(phi);
+
+			if (phis.contains(predecessor)) {
+				conflictNodes.add(phi);
+			} else {
+				node2phiMapping.put(predecessor, phi);
+			}
+		}
+		System.out.println();
+
+		HashMap<Phi, Storage> phiTempStackMapping = new HashMap<>();
+		for (Phi phi : conflictNodes) {
 			Node predecessor = getRelevantPredecessor(phi);
 			Storage register = storageManagement.getValueAvoidNewRegister(predecessor);
 			Storage temporaryStorage = new VirtualRegister(StorageManagement.getMode(predecessor));
@@ -569,7 +585,13 @@ public class X8664AssemblerGenerationVisitor implements BulkPhiNodeVisitor {
 			phiTempStackMapping.put(phi, temporaryStorage);
 		}
 
-		for (Phi phi : phis) {
+		for (Entry<Node, Phi> mapping : node2phiMapping.entrySet()) {
+			Storage register = storageManagement.getValueAvoidNewRegister(mapping.getKey());
+			Storage destination = storageManagement.getStorage(mapping.getValue());
+			addOperation(new MovOperation("Phi: " + mapping.getKey() + " -> " + mapping.getValue(), register, destination));
+		}
+
+		for (Phi phi : conflictNodes) {
 			storageManagement.storeValue(phi, phiTempStackMapping.get(phi));
 		}
 	}
