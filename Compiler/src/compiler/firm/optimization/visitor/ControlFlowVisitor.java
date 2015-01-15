@@ -13,6 +13,7 @@ import firm.nodes.Cond;
 import firm.nodes.Const;
 import firm.nodes.Jmp;
 import firm.nodes.Node;
+import firm.nodes.Phi;
 import firm.nodes.Proj;
 
 /**
@@ -22,14 +23,12 @@ import firm.nodes.Proj;
  */
 public class ControlFlowVisitor extends OptimizationVisitor<Node> {
 
-	public static OptimizationVisitorFactory<Node> getFactory() {
-		return new OptimizationVisitorFactory<Node>() {
-			@Override
-			public OptimizationVisitor<Node> create() {
-				return new ControlFlowVisitor();
-			}
-		};
-	}
+	public static final OptimizationVisitorFactory<Node> FACTORY = new OptimizationVisitorFactory<Node>() {
+		@Override
+		public OptimizationVisitor<Node> create() {
+			return new ControlFlowVisitor();
+		}
+	};
 
 	@Override
 	public HashMap<Node, Node> getLatticeValues() {
@@ -116,4 +115,24 @@ public class ControlFlowVisitor extends OptimizationVisitor<Node> {
 		}
 	}
 
+	@Override
+	public void visit(Phi phi) {
+		boolean isTrivial = false;
+		Node otherNode = null;
+		for (Node predecessor : phi.getPreds()) {
+			if (predecessor.equals(phi)) {
+				isTrivial = true;
+			} else {
+				otherNode = predecessor;
+			}
+		}
+		if (phi.getPredCount() == 2 && phi.getPred(0).equals(phi.getPred(1))) {
+			isTrivial = true;
+			otherNode = phi.getPred(0);
+		}
+
+		if (isTrivial && phi.getLoop() == 0) {
+			addReplacement(phi, otherNode);
+		}
+	}
 }

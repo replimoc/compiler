@@ -30,16 +30,14 @@ import firm.nodes.Sub;
 
 public class ConstantFoldingVisitor extends OptimizationVisitor<TargetValue> {
 
-	protected HashMap<Node, TargetValue> targets = new HashMap<>();
+	public static final OptimizationVisitorFactory<TargetValue> FACTORY = new OptimizationVisitorFactory<TargetValue>() {
+		@Override
+		public OptimizationVisitor<TargetValue> create() {
+			return new ConstantFoldingVisitor();
+		}
+	};
 
-	public static OptimizationVisitorFactory<TargetValue> getFactory() {
-		return new OptimizationVisitorFactory<TargetValue>() {
-			@Override
-			public OptimizationVisitor<TargetValue> create() {
-				return new ConstantFoldingVisitor();
-			}
-		};
-	}
+	protected HashMap<Node, TargetValue> targets = new HashMap<>();
 
 	@Override
 	public HashMap<Node, TargetValue> getLatticeValues() {
