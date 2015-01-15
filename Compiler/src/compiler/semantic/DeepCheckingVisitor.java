@@ -705,7 +705,7 @@ public class DeepCheckingVisitor implements AstVisitor {
 
 		methodDeclaration.getType().accept(this);
 
-		symbolTable = new SymbolTable();
+		symbolTable = new SymbolTable(methodDeclaration.isStatic() ? 0 : 1);
 		symbolTable.enterScope();
 		symbolTable.enterScope();
 

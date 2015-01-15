@@ -4,11 +4,12 @@ import java.util.HashMap;
 import java.util.LinkedList;
 import java.util.Map.Entry;
 
-import compiler.firm.optimization.visitor.ArithmeticVisitor;
+import compiler.firm.optimization.visitor.LocalOptimizationVisitor;
 import compiler.firm.optimization.visitor.CommonSubexpressionEliminationVisitor;
 import compiler.firm.optimization.visitor.ConstantFoldingVisitor;
 import compiler.firm.optimization.visitor.ControlFlowVisitor;
 import compiler.firm.optimization.visitor.LoopInvariantVisitor;
+import compiler.firm.optimization.visitor.NormalizationVisitor;
 import compiler.firm.optimization.visitor.OptimizationVisitor;
 import compiler.firm.optimization.visitor.OptimizationVisitorFactory;
 
@@ -31,8 +32,9 @@ public final class FirmOptimizer {
 		boolean finished = true;
 		do {
 			finished = true;
+			finished &= optimize(NormalizationVisitor.FACTORY);
 			finished &= optimize(ConstantFoldingVisitor.FACTORY);
-			finished &= optimize(ArithmeticVisitor.FACTORY);
+			finished &= optimize(LocalOptimizationVisitor.FACTORY);
 			finished &= optimize(ControlFlowVisitor.FACTORY);
 			finished &= optimize(CommonSubexpressionEliminationVisitor.FACTORY);
 			finished &= optimize(LoopInvariantVisitor.FACTORY);

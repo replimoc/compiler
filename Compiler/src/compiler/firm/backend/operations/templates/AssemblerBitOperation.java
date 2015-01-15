@@ -5,31 +5,22 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map.Entry;
 
-import compiler.firm.backend.Bit;
 import compiler.firm.backend.operations.Comment;
 import compiler.firm.backend.operations.MovOperation;
-import compiler.firm.backend.storage.Register;
 import compiler.firm.backend.storage.RegisterBased;
+import compiler.firm.backend.storage.RegisterBundle;
+import compiler.firm.backend.storage.SingleRegister;
 import compiler.firm.backend.storage.Storage;
 import compiler.firm.backend.storage.VirtualRegister;
 
 public abstract class AssemblerBitOperation extends AssemblerOperation {
-	private static final Register[] accumulatorRegisters = { Register._10D, Register._11D };
 
-	protected final Bit mode;
-	private int accumulatorRegister = 0;
-
-	public AssemblerBitOperation(String comment, Bit mode) {
+	public AssemblerBitOperation(String comment) {
 		super(comment);
-		this.mode = mode;
-	}
-
-	public Bit getMode() {
-		return mode;
 	}
 
 	@Override
-	public final String[] toStringWithSpillcode() {
+	public String[] toStringWithSpillcode() {
 		if (hasSpilledRegisters()) {
 			List<String> result = new ArrayList<>();
 			result.add(new Comment("Operation with spill code").toString());
@@ -61,7 +52,7 @@ public abstract class AssemblerBitOperation extends AssemblerOperation {
 				VirtualRegister virtualRegister = storageMap.getKey();
 				Storage stackPointer = storageMap.getValue();
 				if (storageMappingWrite.contains(virtualRegister)) {
-					MovOperation spillOperation = new MovOperation(virtualRegister.getMode(), virtualRegister, stackPointer);
+					MovOperation spillOperation = new MovOperation(virtualRegister, stackPointer);
 					result.add(spillOperation.toString());
 				}
 				virtualRegister.setStorage(stackPointer);
@@ -76,22 +67,17 @@ public abstract class AssemblerBitOperation extends AssemblerOperation {
 	}
 
 	private Storage insertSpillcode(VirtualRegister virtualRegister, List<String> result, boolean restore) {
-		Register temporaryRegister = getTemporaryRegister();
 		Storage stackPointer = virtualRegister.getRegister();
 
+		RegisterBundle temporaryRegisterBundle = getTemporaryRegister();
+		SingleRegister temporaryRegister = temporaryRegisterBundle.getRegister(virtualRegister.getMode());
+
 		if (restore) {
-			MovOperation spillOperation = new MovOperation(virtualRegister.getMode(), stackPointer, temporaryRegister);
+			MovOperation spillOperation = new MovOperation(stackPointer, temporaryRegister);
 			result.add(spillOperation.toString());
 		}
 		virtualRegister.setStorage(temporaryRegister);
 
 		return stackPointer;
-	}
-
-	private Register getTemporaryRegister() {
-		if (accumulatorRegister >= accumulatorRegisters.length) {
-			throw new RuntimeException("Running out of accumulator registers");
-		}
-		return accumulatorRegisters[accumulatorRegister++];
 	}
 }

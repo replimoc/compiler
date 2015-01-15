@@ -1,13 +1,16 @@
 package compiler.firm.backend;
 
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.LinkedList;
 import java.util.List;
+import java.util.Map.Entry;
 
 import compiler.firm.FirmUtils;
 import compiler.firm.backend.calling.CallingConvention;
 import compiler.firm.backend.operations.AddOperation;
+import compiler.firm.backend.operations.AndOperation;
 import compiler.firm.backend.operations.CallOperation;
 import compiler.firm.backend.operations.CltdOperation;
 import compiler.firm.backend.operations.CmpOperation;
@@ -15,6 +18,7 @@ import compiler.firm.backend.operations.Comment;
 import compiler.firm.backend.operations.IdivOperation;
 import compiler.firm.backend.operations.ImulOperation;
 import compiler.firm.backend.operations.LabelOperation;
+import compiler.firm.backend.operations.LeaOperation;
 import compiler.firm.backend.operations.MovOperation;
 import compiler.firm.backend.operations.NegOperation;
 import compiler.firm.backend.operations.PopOperation;
@@ -36,8 +40,9 @@ import compiler.firm.backend.operations.templates.StorageRegisterOperation;
 import compiler.firm.backend.operations.templates.StorageRegisterOperationFactory;
 import compiler.firm.backend.storage.Constant;
 import compiler.firm.backend.storage.MemoryPointer;
-import compiler.firm.backend.storage.Register;
 import compiler.firm.backend.storage.RegisterBased;
+import compiler.firm.backend.storage.RegisterBundle;
+import compiler.firm.backend.storage.SingleRegister;
 import compiler.firm.backend.storage.Storage;
 import compiler.firm.backend.storage.VirtualRegister;
 import compiler.utils.Utils;
@@ -106,7 +111,7 @@ public class X8664AssemblerGenerationVisitor implements BulkPhiNodeVisitor {
 
 	private static final int STACK_ITEM_SIZE = 8;
 
-	private final List<AssemblerOperation> operations = new LinkedList<>();
+	private final ArrayList<AssemblerOperation> operations = new ArrayList<>();
 	private final HashMap<String, CallingConvention> callingConventions;
 	private final HashMap<Block, LabelOperation> blockLabels = new HashMap<>();
 
@@ -114,13 +119,14 @@ public class X8664AssemblerGenerationVisitor implements BulkPhiNodeVisitor {
 	private List<Phi> phis;
 
 	private final StorageManagement storageManagement;
+	private final CallingConvention defaultCallingConvention = CallingConvention.SYSTEMV_ABI;
 
 	public X8664AssemblerGenerationVisitor(HashMap<String, CallingConvention> callingConventions) {
 		this.callingConventions = callingConventions;
 		this.storageManagement = new StorageManagement(operations);
 	}
 
-	public List<AssemblerOperation> getOperations() {
+	public ArrayList<AssemblerOperation> getOperations() {
 		return operations;
 	}
 
@@ -131,7 +137,7 @@ public class X8664AssemblerGenerationVisitor implements BulkPhiNodeVisitor {
 	private <T extends StorageRegisterOperation> void visitTwoOperandsNode(StorageRegisterOperationFactory operationFactory, Node parent,
 			Node left, Node right) {
 		// get left node
-		Storage registerLeft = storageManagement.getValueAvoidNewRegister(left, false);
+		Storage registerLeft = storageManagement.getValueAvoidNewRegister(left);
 		// get right node
 		RegisterBased registerRight = storageManagement.getValue(right, true);
 		// create operation object
@@ -159,34 +165,75 @@ public class X8664AssemblerGenerationVisitor implements BulkPhiNodeVisitor {
 
 	// ----------------------------------------------- NodeVisitor ---------------------------------------------------
 
+	private boolean leaIsPossible(Add node) {
+		if (node.getMode().equals(FirmUtils.getModeReference()) && node.getPred(1).getClass() == Shl.class) {
+			Shl shift = (Shl) node.getPred(1);
+			if (leaIsPossible(shift)) {
+				return true;
+			}
+		}
+		return false;
+	}
+
+	private boolean leaIsPossible(Shl shift) {
+		return BackEdges.getNOuts(shift) == 1
+				&& FirmUtils.getFirstSuccessor(shift).getClass() == Add.class
+				&& FirmUtils.getFirstSuccessor(shift).getMode().equals(FirmUtils.getModeReference())
+				&& leaFactor(shift) >= 0;
+	}
+
+	private int leaFactor(Shl shift) {
+		if (shift.getPred(1).getClass() == Const.class) {
+			Const constant = (Const) shift.getPred(1);
+			int factor = (int) Math.pow(2, constant.getTarval().asInt());
+			if (factor == 1 || factor == 2 || factor == 4 || factor == 8) {
+				return factor;
+			}
+		}
+		return -1;
+	}
+
+	private MemoryPointer calculateMemoryPointer(Add add) {
+		Shl shift = (Shl) add.getPred(1);
+		RegisterBased baseRegister = storageManagement.getValue(add.getPred(0), false);
+		RegisterBased factorRegister = storageManagement.getValue(shift.getPred(0), false);
+		int factor = leaFactor(shift);
+		return new MemoryPointer(0, baseRegister, factorRegister, factor);
+	}
+
 	@Override
 	public void visit(Add node) {
-		visitTwoOperandsNode(AddOperation.getFactory("add operation", StorageManagement.getMode(node)), node, node.getLeft(), node.getRight());
+		if (leaIsPossible(node)) {
+			if (BackEdges.getNOuts(node) == 1 && (
+					FirmUtils.getFirstSuccessor(node).getClass() == Store.class ||
+					FirmUtils.getFirstSuccessor(node).getClass() == Load.class
+					)) {
+				return;
+			}
+			Storage address = calculateMemoryPointer(node);
+
+			VirtualRegister resultRegister = new VirtualRegister(Bit.BIT64);
+			addOperation(new LeaOperation(address, resultRegister));
+			storageManagement.addStorage(node, resultRegister);
+			return;
+		}
+		visitTwoOperandsNode(AddOperation.getFactory("add operation"), node, node.getLeft(), node.getRight());
 	}
 
 	@Override
 	public void visit(Block node) {
 		currentBlock = node;
-		addOperation(new Comment(node.toString()));
 
 		Graph graph = node.getGraph();
-		String methodName = graph.getEntity().getLdName();
+		String methodName = getMethodName(node);
 
 		// we are in start block: initialize stack (RBP)
 		if (node.equals(graph.getStartBlock())) {
 			addOperation(new LabelOperation(methodName));
-
-			addOperation(new PushOperation(Bit.BIT64, Register._BP)); // Dynamic Link
-			addOperation(new MovOperation(Bit.BIT64, Register._SP, Register._BP));
-
-			addOperation(new ReserveStackOperation());
-
-			storageManagement.reserveMemoryForPhis(phis);
+			methodStart(node);
 		}
 
 		if (node.equals(graph.getEndBlock())) {
-			addOperation(new FreeStackOperation());
-
 			if (!Utils.isWindows()) {
 				addOperation(new SizeOperation(methodName));
 			}
@@ -201,77 +248,24 @@ public class X8664AssemblerGenerationVisitor implements BulkPhiNodeVisitor {
 		int predCount = node.getPredCount();
 		assert predCount >= 2 && node.getPred(1) instanceof Address : "Minimum for all calls";
 
-		int firmOffset = 2;
-		int parametersCount = (predCount - firmOffset);
-		Address callAddress = (Address) node.getPred(1);
-		String methodName = callAddress.getEntity().getLdName();
+		String methodName = ((Address) node.getPred(1)).getEntity().getLdName();
 
-		addOperation(new Comment("Call " + methodName + " " + node.getNr()));
-
-		CallingConvention callingConvention = CallingConvention.SYSTEMV_ABI;
-		if (callingConventions.containsKey(methodName)) {
-			callingConvention = callingConventions.get(methodName);
+		List<CallOperation.Parameter> parameters = new LinkedList<>();
+		for (int i = 2; i < predCount; i++) {
+			Node parameter = node.getPred(i);
+			parameters.add(new CallOperation.Parameter(storageManagement.getStorage(parameter), StorageManagement.getMode(parameter)));
 		}
 
-		for (AssemblerOperation operation : callingConvention.getPrefixOperations()) {
-			addOperation(operation);
-		}
+		CallingConvention callingConvention = getCallingConvention(methodName);
 
-		Register[] callerSavedRegisters = callingConvention.callerSavedRegisters();
-
-		// Save all callerSavedRegisters to stack
-		// TODO: Save only necessary registers
-		for (Register saveRegister : callerSavedRegisters) {
-			addOperation(new PushOperation(Bit.BIT64, saveRegister));
-		}
-
-		// The following is before filling registers to have no problem with register allocation.
-		Register[] callingRegisters = callingConvention.getParameterRegisters();
-		int numberOfstackParameters = parametersCount - callingRegisters.length;
-		Constant stackAllocationSize = new Constant(STACK_ITEM_SIZE * numberOfstackParameters);
-
-		if (numberOfstackParameters > 0) {
-			firmOffset += callingRegisters.length;
-
-			addOperation(new SubOperation(Bit.BIT64, stackAllocationSize, Register._SP));
-
-			// Copy parameters to stack
-			for (int i = 0; i < numberOfstackParameters; i++) {
-				Storage sourcePointer = storageManagement.getStorage(node.getPred(i + firmOffset));
-				// Copy parameter
-				Bit mode = StorageManagement.getMode(node.getPred(i + firmOffset));
-				VirtualRegister temporaryRegister = new VirtualRegister(mode);
-				MemoryPointer destinationPointer = new MemoryPointer(i * STACK_ITEM_SIZE, Register._SP);
-				addOperation(new MovOperation(mode, sourcePointer, temporaryRegister));
-				addOperation(new MovOperation(mode, temporaryRegister, destinationPointer));
-			}
-			firmOffset -= callingRegisters.length;
-		}
-
-		// Copy parameters in calling registers
-		for (int i = 0; i < parametersCount && i < callingRegisters.length; i++) {
-			Node parameterNode = node.getPred(i + firmOffset);
-			storageManagement.getValue(parameterNode, true, callingRegisters[i]);
-		}
-
-		addOperation(new CallOperation(methodName, callingConvention));
-
-		if (numberOfstackParameters > 0) {
-			addOperation(new AddOperation(Bit.BIT64, stackAllocationSize, Register._SP));
-		}
-
-		for (int i = callerSavedRegisters.length - 1; i >= 0; i--) {
-			addOperation(new PopOperation(Bit.BIT64, callerSavedRegisters[i]));
-		}
-
-		for (AssemblerOperation operation : callingConvention.getSuffixOperations()) {
-			addOperation(operation);
-		}
+		addOperation(new CallOperation(methodName, parameters, callingConvention));
 
 		for (Edge edge : BackEdges.getOuts(node)) {
 			if (edge.node.getMode().equals(Mode.getT())) {
 				for (Edge innerEdge : BackEdges.getOuts(edge.node)) {
-					storageManagement.storeValue(innerEdge.node, callingConvention.getReturnRegister());
+					Node innerNode = innerEdge.node;
+					Bit mode = StorageManagement.getMode(innerNode);
+					storageManagement.storeValueAndCreateNewStorage(innerNode, callingConvention.getReturnRegister().getRegister(mode), true);
 				}
 			}
 		}
@@ -350,9 +344,9 @@ public class X8664AssemblerGenerationVisitor implements BulkPhiNodeVisitor {
 	}
 
 	private void visitCmpNode(Cmp node) {
-		RegisterBased register1 = storageManagement.getValue(node.getRight(), false);
+		Storage register1 = storageManagement.getValueAvoidNewRegister(node.getRight());
 		RegisterBased register2 = storageManagement.getValue(node.getLeft(), false);
-		addOperation(new CmpOperation("cmp operation", StorageManagement.getMode(node.getLeft()), register1, register2));
+		addOperation(new CmpOperation("cmp operation", register1, register2));
 	}
 
 	@Override
@@ -363,30 +357,30 @@ public class X8664AssemblerGenerationVisitor implements BulkPhiNodeVisitor {
 
 	@Override
 	public void visit(Conv node) {
-		assert node.getPredCount() >= 1 : "Conv nodes should have a predecessor";
+		assert node.getPredCount() >= 1 : "Conv nodes must have a predecessor";
 
-		Storage register = storageManagement.getValueAvoidNewRegister(node.getPred(0), false);
+		Storage register = storageManagement.getValueAvoidNewRegister(node.getPred(0));
 		storageManagement.addStorage(node, register);
 	}
 
-	private void visitDivMod(Node node, Node left, Node right, Register storeRegister) {
+	private void visitDivMod(Node node, Node left, Node right, SingleRegister storeRegister) {
 		addOperation(new Comment("div operation"));
 		// move left node to EAX
-		storageManagement.getValue(left, true, Register._AX);
+		storageManagement.getValue(left, RegisterBundle._AX);
 		// move right node to RSI
 		RegisterBased registerRight = storageManagement.getValue(right, false);
 		addOperation(new CltdOperation());
 		// idivl (eax / esi)
-		addOperation(new IdivOperation(StorageManagement.getMode(right), registerRight));
+		addOperation(new IdivOperation(registerRight));
 		// store on stack
 		for (Edge edge : BackEdges.getOuts(node)) {
-			storageManagement.storeValue(edge.node, storeRegister);
+			storageManagement.storeValueAndCreateNewStorage(edge.node, storeRegister, true);
 		}
 	}
 
 	@Override
 	public void visit(Div node) {
-		visitDivMod(node, node.getLeft(), node.getRight(), Register._AX);
+		visitDivMod(node, node.getLeft(), node.getRight(), SingleRegister.EAX);
 	}
 
 	@Override
@@ -402,51 +396,35 @@ public class X8664AssemblerGenerationVisitor implements BulkPhiNodeVisitor {
 	@Override
 	public void visit(Minus node) {
 		RegisterBased register = storageManagement.getValue(node.getPred(0), true);
-		addOperation(new NegOperation(StorageManagement.getMode(node), register));
+		addOperation(new NegOperation(register));
 		storageManagement.storeValue(node, register);
 	}
 
 	@Override
 	public void visit(Mod node) {
-		visitDivMod(node, node.getLeft(), node.getRight(), Register._DX);
+		visitDivMod(node, node.getLeft(), node.getRight(), SingleRegister.EDX);
 	}
 
 	@Override
 	public void visit(Mul node) {
-		visitTwoOperandsNode(ImulOperation.getFactory("mul operation", StorageManagement.getMode(node)), node, node.getRight(), node.getLeft());
-	}
-
-	@Override
-	public void visit(Proj node) {
-		if (node.getPredCount() == 1 && node.getPred(0) instanceof Start && node.getMode().equals(Mode.getT())) {
-			for (Edge edge : BackEdges.getOuts(node)) {
-				if (edge.node instanceof Proj) {
-					Proj proj = (Proj) edge.node;
-					storageManagement.addStorage(proj,
-							new MemoryPointer(STACK_ITEM_SIZE * (proj.getNum() + 2), Register._BP));
-					// + 2 for dynamic link
-				}
-			}
-		}
+		visitTwoOperandsNode(ImulOperation.getFactory("mul operation"), node, node.getRight(), node.getLeft());
 	}
 
 	@Override
 	public void visit(Return node) {
-		addOperation(new Comment("restore stack size"));
 		if (node.getPredCount() > 1) {
 			// Store return value in EAX register
-			storageManagement.getValue(node.getPred(1), true, Register._AX);
+			storageManagement.getValue(node.getPred(1), RegisterBundle._AX);
 		}
-
-		// addOperation(node.getBlock(), new AddqOperation(new Constant(-currentStackOffset), Register.RSP));
-		// better move rbp to rsp
-		addOperation(new MovOperation(Bit.BIT64, Register._BP, Register._SP));
-		addOperation(new PopOperation(Bit.BIT64, Register._BP));
-		addOperation(new RetOperation());
+		methodEnd(node);
+		addOperation(new RetOperation(getMethodName(node)));
 	}
 
 	@Override
 	public void visit(Shl node) {
+		if (leaIsPossible(node)) {
+			return; // This case is handled in visit(Add)
+		}
 		// move left node to a register
 		RegisterBased register = storageManagement.getValue(node.getLeft(), true);
 
@@ -458,13 +436,23 @@ public class X8664AssemblerGenerationVisitor implements BulkPhiNodeVisitor {
 		storageManagement.storeValue(node, register);
 	}
 
+	public MemoryPointer getMemoryPointerForNode(Node addressNode) {
+		MemoryPointer memory = null;
+		if (addressNode.getClass() == Add.class && leaIsPossible((Add) addressNode) && BackEdges.getNOuts(addressNode) == 1) {
+			memory = calculateMemoryPointer((Add) addressNode);
+		} else {
+			RegisterBased registerAddress = storageManagement.getValue(addressNode, false);
+			memory = new MemoryPointer(0, registerAddress);
+		}
+		return memory;
+	}
+
 	@Override
 	public void visit(Load node) {
 		addOperation(new Comment("load operation " + node));
-		Node referenceNode = node.getPred(1);
-		RegisterBased register = storageManagement.getValue(referenceNode, false);
-		VirtualRegister registerStore = new VirtualRegister(StorageManagement.getMode(node));
-		addOperation(new MovOperation(Bit.BIT64, new MemoryPointer(0, register), registerStore));
+		MemoryPointer memory = getMemoryPointerForNode(node.getPred(1));
+		VirtualRegister registerStore = new VirtualRegister(StorageManagement.getMode(node.getLoadMode()));
+		addOperation(new MovOperation(memory, registerStore));
 		for (Edge edge : BackEdges.getOuts(node)) {
 			Node edgeNode = edge.node;
 			if (!edgeNode.getMode().equals(Mode.getM())) {
@@ -476,16 +464,15 @@ public class X8664AssemblerGenerationVisitor implements BulkPhiNodeVisitor {
 	@Override
 	public void visit(Store node) {
 		addOperation(new Comment("Store operation " + node));
-		Node addressNode = node.getPred(1);
-		RegisterBased registerAddress = storageManagement.getValue(addressNode, false);
+		MemoryPointer memory = getMemoryPointerForNode(node.getPred(1));
 		Node valueNode = node.getPred(2);
 		RegisterBased registerOffset = storageManagement.getValue(valueNode, false);
-		addOperation(new MovOperation(StorageManagement.getMode(valueNode), registerOffset, new MemoryPointer(0, registerAddress)));
+		addOperation(new MovOperation(registerOffset, memory));
 	}
 
 	@Override
 	public void visit(Sub node) { // we subtract the right node from the left, not the otherway around
-		visitTwoOperandsNode(SubOperation.getFactory("sub operation", StorageManagement.getMode(node)), node, node.getRight(), node.getLeft());
+		visitTwoOperandsNode(SubOperation.getFactory("sub operation"), node, node.getRight(), node.getLeft());
 	}
 
 	private Node getRelevantPredecessor(Phi phi) {
@@ -500,21 +487,112 @@ public class X8664AssemblerGenerationVisitor implements BulkPhiNodeVisitor {
 		return null;
 	}
 
+	private CallingConvention getCallingConvention(String methodName) {
+		CallingConvention callingConvention = this.defaultCallingConvention;
+		if (callingConventions.containsKey(methodName)) {
+			callingConvention = callingConventions.get(methodName);
+		}
+		return callingConvention;
+	}
+
+	private String getMethodName(Node node) {
+		return node.getGraph().getEntity().getLdName();
+	}
+
+	private void methodStart(Node node) {
+		addOperation(new PushOperation(Bit.BIT64, SingleRegister.RBP)); // Dynamic Link
+		addOperation(new MovOperation(SingleRegister.RSP, SingleRegister.RBP));
+
+		CallingConvention callingConvention = getCallingConvention(getMethodName(node));
+		for (RegisterBundle register : callingConvention.calleeSavedRegisters()) {
+			addOperation(new PushOperation(Bit.BIT64, register.getRegister(Bit.BIT64)));
+		}
+
+		addOperation(new ReserveStackOperation());
+
+		Node args = node.getGraph().getArgs();
+		RegisterBundle[] parameterRegisters = callingConvention.getParameterRegisters();
+		for (Edge edge : BackEdges.getOuts(args)) {
+			if (edge.node instanceof Proj) {
+				Proj proj = (Proj) edge.node;
+				Bit mode = StorageManagement.getMode(proj);
+				Storage location = new VirtualRegister(mode);
+
+				if (proj.getNum() < parameterRegisters.length) {
+					RegisterBundle registerBundle = parameterRegisters[proj.getNum()];
+					VirtualRegister storage = new VirtualRegister(mode, registerBundle);
+					if (registerBundle.getRegister(mode) == null) {
+						addOperation(new MovOperation(storage, location));
+						// TODO: the mask should be saved in the mode
+						addOperation(new AndOperation(new Constant(0xFF), (VirtualRegister) location));
+					} else {
+						addOperation(new MovOperation(storage, location));
+					}
+				} else {
+					// TODO: Do this only, if more than one usage is available
+					// + 2 for dynamic link
+					MemoryPointer storage = new MemoryPointer(STACK_ITEM_SIZE * (proj.getNum() + 2 - parameterRegisters.length), SingleRegister.RBP);
+					addOperation(new MovOperation(storage, location));
+				}
+				storageManagement.addStorage(proj, location);
+			}
+		}
+
+		storageManagement.reserveMemoryForPhis(phis);
+	}
+
+	private void methodEnd(Node node) {
+		addOperation(new FreeStackOperation());
+
+		CallingConvention callingConvention = getCallingConvention(getMethodName(node));
+
+		RegisterBundle[] registers = callingConvention.calleeSavedRegisters();
+		for (int i = registers.length - 1; i >= 0; i--) {
+			addOperation(new PopOperation(registers[i].getRegister(Bit.BIT64)));
+		}
+
+		addOperation(new MovOperation(SingleRegister.RBP, SingleRegister.RSP));
+		addOperation(new PopOperation(SingleRegister.RBP));
+	}
+
 	@Override
 	public void visit(List<Phi> phis) {
 		addOperation(new Comment("Handle phis of current block"));
-		HashMap<Phi, Storage> phiTempStackMapping = new HashMap<>();
+
+		HashMap<Node, Phi> node2phiMapping = new HashMap<>();
+		List<Phi> conflictNodes = new ArrayList<>();
+
 		for (Phi phi : phis) {
 			Node predecessor = getRelevantPredecessor(phi);
-			Storage register = storageManagement.getValueAvoidNewRegister(predecessor, false);
+
+			if (phis.contains(predecessor)) {
+				conflictNodes.add(phi);
+			} else {
+				node2phiMapping.put(predecessor, phi);
+			}
+		}
+		System.out.println();
+
+		HashMap<Phi, Storage> phiTempStackMapping = new HashMap<>();
+		for (Phi phi : conflictNodes) {
+			Node predecessor = getRelevantPredecessor(phi);
+			Storage register = storageManagement.getValueAvoidNewRegister(predecessor);
 			Storage temporaryStorage = new VirtualRegister(StorageManagement.getMode(predecessor));
+			if (register.getClass() == Constant.class) {
+				temporaryStorage = register;
+			}
 			storageManagement.storeValue(predecessor, register, temporaryStorage);
 			phiTempStackMapping.put(phi, temporaryStorage);
 		}
 
-		for (Phi phi : phis) {
-			RegisterBased register = storageManagement.getValue(phi, false, phiTempStackMapping.get(phi));
-			storageManagement.storeValue(phi, register);
+		for (Entry<Node, Phi> mapping : node2phiMapping.entrySet()) {
+			Storage register = storageManagement.getValueAvoidNewRegister(mapping.getKey());
+			Storage destination = storageManagement.getStorage(mapping.getValue());
+			addOperation(new MovOperation("Phi: " + mapping.getKey() + " -> " + mapping.getValue(), register, destination));
+		}
+
+		for (Phi phi : conflictNodes) {
+			storageManagement.storeValue(phi, phiTempStackMapping.get(phi));
 		}
 	}
 
@@ -641,6 +719,10 @@ public class X8664AssemblerGenerationVisitor implements BulkPhiNodeVisitor {
 	@Override
 	public void visit(Pin node) {
 		throw new RuntimeException(node + " is not implemented yet!");
+	}
+
+	@Override
+	public void visit(Proj node) {
 	}
 
 	@Override

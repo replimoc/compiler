@@ -17,11 +17,6 @@ public class Constant extends Storage {
 
 	@Override
 	public String toString() {
-		return toString(null);
-	}
-
-	@Override
-	public String toString(Bit bit) {
 		String result;
 		if (constant < 0) {
 			result = String.format("$-0x%x", -constant);
@@ -32,12 +27,26 @@ public class Constant extends Storage {
 	}
 
 	@Override
-	public RegisterBased getReadOnRightSideRegister() {
+	public RegisterBased[] getReadOnRightSideRegister() {
 		return null;
 	}
 
 	@Override
-	public RegisterBased getUsedRegister() {
+	public RegisterBased[] getUsedRegister() {
 		return null;
+	}
+
+	@Override
+	public boolean isSpilled() {
+		return false;
+	}
+
+	public int getConstant() {
+		return constant;
+	}
+
+	@Override
+	public Bit getMode() {
+		return null; // TODO implement this correctly
 	}
 }

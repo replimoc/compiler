@@ -14,4 +14,9 @@ public class JmpOperation extends JumpOperation {
 		return "\tjmp " + getLabelName();
 	}
 
+	@Override
+	public JumpOperation invert(LabelOperation label) {
+		return null;
+	}
+
 }
