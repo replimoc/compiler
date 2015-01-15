@@ -1,6 +1,7 @@
 package compiler.firm.backend.operations;
 
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.LinkedList;
 import java.util.List;
 
@@ -69,14 +70,21 @@ public class CallOperation extends AssemblerOperation {
 
 		List<RegisterBundle> callerSavedRegisters = getSaveRegisters();
 
-		// Save all callerSavedRegisters to stack
-		for (RegisterBundle saveRegister : callerSavedRegisters) {
-			result.add(new PushOperation(Bit.BIT64, saveRegister.getRegister(Bit.BIT64)).toString());
-		}
-
 		// The following is before filling registers to have no problem with register allocation.
 		RegisterBundle[] callingRegisters = callingConvention.getParameterRegisters();
 		int numberOfstackParameters = parameters.size() - callingRegisters.length;
+
+		HashMap<RegisterBundle, MemoryPointer> registerStackLocations = new HashMap<>();
+		int stackPosition = STACK_ITEM_SIZE * (callerSavedRegisters.size() + Math.max(0, numberOfstackParameters) - 1);
+
+		// Save all callerSavedRegisters to stack
+		for (RegisterBundle saveRegister : callerSavedRegisters) {
+			result.add(new PushOperation(Bit.BIT64, saveRegister.getRegister(Bit.BIT64)).toString());
+			registerStackLocations.put(saveRegister, new MemoryPointer(stackPosition, SingleRegister.RSP));
+
+			stackPosition -= STACK_ITEM_SIZE;
+		}
+
 		Constant stackAllocationSize = new Constant(STACK_ITEM_SIZE * numberOfstackParameters);
 
 		if (numberOfstackParameters > 0) {
@@ -103,12 +111,18 @@ public class CallOperation extends AssemblerOperation {
 		for (int i = 0; i < parameters.size() && i < callingRegisters.length; i++) {
 			Parameter source = parameters.get(i);
 			RegisterBundle register = callingRegisters[i];
+			Storage storage = source.storage;
+
+			if (registerStackLocations.containsKey(storage.getRegisterBundle())) {
+				storage = registerStackLocations.get(storage.getRegisterBundle());
+			}
+
 			if (register.getRegister(source.mode) == null) {
-				result.add(new MovOperation(source.storage, register.getRegister(Bit.BIT64)).toString());
+				result.add(new MovOperation(storage, register.getRegister(Bit.BIT64)).toString());
 				// TODO: the mask should be saved in the mode
 				result.add(new AndOperation(new Constant(0xFF), register.getRegister(Bit.BIT64)).toString());
 			} else {
-				result.add(new MovOperation(source.storage, register.getRegister(source.mode)).toString());
+				result.add(new MovOperation(storage, register.getRegister(source.mode)).toString());
 			}
 		}
 

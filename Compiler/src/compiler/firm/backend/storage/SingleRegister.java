@@ -102,6 +102,7 @@ public class SingleRegister extends RegisterBased {
 		return mode;
 	}
 
+	@Override
 	public RegisterBundle getRegisterBundle() {
 		return registerBundle;
 	}
@@ -112,5 +113,10 @@ public class SingleRegister extends RegisterBased {
 
 	public byte getMask() {
 		return mask;
+	}
+
+	@Override
+	public SingleRegister getSingleRegister() {
+		return null;
 	}
 }

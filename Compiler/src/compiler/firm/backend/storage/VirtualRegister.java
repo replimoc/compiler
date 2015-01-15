@@ -90,4 +90,14 @@ public class VirtualRegister extends RegisterBased {
 	public int getNum() {
 		return num;
 	}
+
+	@Override
+	public SingleRegister getSingleRegister() {
+		return register.getSingleRegister();
+	}
+
+	@Override
+	public RegisterBundle getRegisterBundle() {
+		return register.getRegisterBundle();
+	}
 }
