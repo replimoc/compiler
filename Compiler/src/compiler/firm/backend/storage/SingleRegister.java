@@ -117,6 +117,6 @@ public class SingleRegister extends RegisterBased {
 
 	@Override
 	public SingleRegister getSingleRegister() {
-		return null;
+		return this;
 	}
 }
