@@ -13,4 +13,8 @@ public abstract class Storage {
 	public abstract boolean isSpilled();
 
 	public abstract Bit getMode();
+
+	public abstract SingleRegister getSingleRegister();
+
+	public abstract RegisterBundle getRegisterBundle();
 }

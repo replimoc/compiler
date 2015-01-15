@@ -65,4 +65,14 @@ public class MemoryPointer extends Storage {
 	public Bit getMode() {
 		return null; // TODO implement this correctly
 	}
+
+	@Override
+	public SingleRegister getSingleRegister() {
+		return null;
+	}
+
+	@Override
+	public RegisterBundle getRegisterBundle() {
+		return null;
+	}
 }
