@@ -363,24 +363,21 @@ public class X8664AssemblerGenerationVisitor implements BulkPhiNodeVisitor {
 		storageManagement.addStorage(node, register);
 	}
 
-	private void visitDivMod(Node node, Node left, Node right, SingleRegister storeRegister) {
-		addOperation(new Comment("div operation"));
+	private IdivOperation visitDivMod(Node left, Node right) {
 		// move left node to EAX
 		storageManagement.getValue(left, RegisterBundle._AX);
 		// move right node to RSI
 		RegisterBased registerRight = storageManagement.getValue(right, false);
 		addOperation(new CltdOperation());
 		// idivl (eax / esi)
-		addOperation(new IdivOperation(registerRight));
-		// store on stack
-		for (Edge edge : BackEdges.getOuts(node)) {
-			storageManagement.storeValueAndCreateNewStorage(edge.node, storeRegister, true);
-		}
+		IdivOperation operation = new IdivOperation(registerRight);
+		addOperation(operation);
+		return operation;
 	}
 
 	@Override
 	public void visit(Div node) {
-		visitDivMod(node, node.getLeft(), node.getRight(), SingleRegister.EAX);
+		storageManagement.storeToBackEdges(node, visitDivMod(node.getLeft(), node.getRight()).getResult());
 	}
 
 	@Override
@@ -402,7 +399,7 @@ public class X8664AssemblerGenerationVisitor implements BulkPhiNodeVisitor {
 
 	@Override
 	public void visit(Mod node) {
-		visitDivMod(node, node.getLeft(), node.getRight(), SingleRegister.EDX);
+		storageManagement.storeToBackEdges(node, visitDivMod(node.getLeft(), node.getRight()).getRemainder());
 	}
 
 	@Override
@@ -453,12 +450,7 @@ public class X8664AssemblerGenerationVisitor implements BulkPhiNodeVisitor {
 		MemoryPointer memory = getMemoryPointerForNode(node.getPred(1));
 		VirtualRegister registerStore = new VirtualRegister(StorageManagement.getMode(node.getLoadMode()));
 		addOperation(new MovOperation(memory, registerStore));
-		for (Edge edge : BackEdges.getOuts(node)) {
-			Node edgeNode = edge.node;
-			if (!edgeNode.getMode().equals(Mode.getM())) {
-				storageManagement.storeValue(edgeNode, registerStore);
-			}
-		}
+		storageManagement.storeToBackEdges(node, registerStore);
 	}
 
 	@Override
