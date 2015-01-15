@@ -69,8 +69,7 @@ public class StorageManagement {
 		}
 		Storage originalStorage = nodeStorages.get(node);
 
-		if ((countSuccessors(node) <= 1 || !overwrite) && resultRegister == null && originalStorage.getClass() == VirtualRegister.class
-				&& !(node instanceof Conv)) {
+		if (!overwrite && resultRegister == null && originalStorage.getClass() == VirtualRegister.class && !(node instanceof Conv)) {
 			return (VirtualRegister) originalStorage;
 		}
 

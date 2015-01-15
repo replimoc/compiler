@@ -8,8 +8,6 @@ public class SingleRegister extends RegisterBased {
 	private static final byte HIGH = 0b10;
 	private static final byte LOW = 0b01;
 
-	public static final byte BLOCKED_REGISTER = 0b1111111;
-
 	// reserved for special usage
 	public static final SingleRegister RSP = new SingleRegister(Bit.BIT64, "%rsp", FULL); // stack pointer
 	public static final SingleRegister RBP = new SingleRegister(Bit.BIT64, "%rbp", FULL); // frame pointer

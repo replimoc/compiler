@@ -34,6 +34,7 @@ public class VirtualRegister extends RegisterBased {
 	@Override
 	public String toString() {
 		return register == null ? "VR_" + getNum() : register.toString();
+		// return "VR_" + getNum();
 	}
 
 	public Storage getRegister() {

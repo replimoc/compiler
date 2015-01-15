@@ -50,7 +50,7 @@ public class LinearScanRegisterAllocation {
 					SingleRegister.DIL, SingleRegister.SIL)
 	};
 
-	private final byte[] registerUsage = new byte[RegisterBundle.REGISTER_COUNTER];
+	private final byte[] registerUsages = new byte[RegisterBundle.REGISTER_COUNTER];
 	private final HashMap<VirtualRegister, SingleRegister> usedRegisters = new HashMap<>();
 
 	private HashMap<RegisterBundle, LinkedList<VirtualRegister>> partialAllocatedRegisters = new HashMap<>();
@@ -99,32 +99,57 @@ public class LinearScanRegisterAllocation {
 				continue; // register already defined => nothing to do here
 			}
 
-			freeOutdatedRegistersForLine(virtualRegister.getFirstOccurrence());
+			int firstOccurrence = virtualRegister.getFirstOccurrence();
+			RegisterBundle registerFreedInCurrLine = freeOutdatedRegistersForLine(firstOccurrence);
 
-			SingleRegister systemRegister = allocateRegister(virtualRegister);
-			if (systemRegister != null) {
-				registerUsage[systemRegister.getRegisterBundle().getRegisterId()] |= systemRegister.getMask();
+			SingleRegister freeRegister = null;
+			if (registerFreedInCurrLine != null
+					&& isNormalRegisterOrPartiallyAllocatable(registerFreedInCurrLine, firstOccurrence, virtualRegister.getLastOccurrence())) {
+				freeRegister = registerFreedInCurrLine.getRegister(virtualRegister.getMode());
+			} else {
+				freeRegister = getAllocatableRegister(virtualRegister);
+			}
+
+			if (freeRegister != null) {
+				virtualRegister.setStorage(freeRegister);
+				usedRegisters.put(virtualRegister, freeRegister);
+				registerUsages[freeRegister.getRegisterBundle().getRegisterId()] |= freeRegister.getMask();
 			}
 		}
 	}
 
-	private void freeOutdatedRegistersForLine(int line) {
+	private boolean isNormalRegisterOrPartiallyAllocatable(RegisterBundle registerFreedInCurrLine, int firstOccurrence, int lastOccurrence) {
+		LinkedList<VirtualRegister> interferringRegisters = partialAllocatedRegisters.get(registerFreedInCurrLine);
+		return interferringRegisters == null || isPartiallyAllocatableRegisterFree(firstOccurrence, lastOccurrence, interferringRegisters);
+	}
+
+	private RegisterBundle freeOutdatedRegistersForLine(int line) {
+		RegisterBundle registerFreedInCurrLine = null;
+
 		Iterator<Entry<VirtualRegister, SingleRegister>> entriesIterator = usedRegisters.entrySet().iterator();
 		while (entriesIterator.hasNext()) {
-			Entry<VirtualRegister, SingleRegister> register = entriesIterator.next();
-			if (register.getKey().getLastOccurrence() < line) {
-				freeRegister(register.getValue());
+			Entry<VirtualRegister, SingleRegister> registerEntry = entriesIterator.next();
+			int lastOccurrence = registerEntry.getKey().getLastOccurrence();
+			if (lastOccurrence <= line) {
+				SingleRegister register = registerEntry.getValue();
+				freeRegister(register);
 				entriesIterator.remove();
+
+				if (lastOccurrence == line) {
+					registerFreedInCurrLine = register.getRegisterBundle();
+				}
 			}
 		}
+
+		return registerFreedInCurrLine;
 	}
 
-	private SingleRegister allocateRegister(VirtualRegister virtualRegister) {
+	private SingleRegister getAllocatableRegister(VirtualRegister virtualRegister) {
 		SingleRegister freeRegister = getFreePartiallyAllocatedRegisterForLifetime(virtualRegister);
 		if (freeRegister == null) {
 			Bit mode = virtualRegister.getMode();
 
-			freeRegister = getFreeRegister(mode);
+			freeRegister = getFreeNormalRegister(mode);
 
 			if (freeRegister == null) {
 				VirtualRegister register = getRegisterWithLongestLifetime(mode);
@@ -134,20 +159,20 @@ public class LinearScanRegisterAllocation {
 				}
 
 				spillRegister(register);
-				freeRegister = getFreeRegister(mode);
+				freeRegister = getFreeNormalRegister(mode);
 			}
+		} else {
+			System.out.println("partially allocated reg found");
 		}
 
-		virtualRegister.setStorage(freeRegister);
-		usedRegisters.put(virtualRegister, freeRegister);
 		return freeRegister;
 	}
 
-	private SingleRegister getFreeRegister(Bit mode) {
+	private SingleRegister getFreeNormalRegister(Bit mode) {
 		LinkedList<SingleRegister> registers = allowedRegisters[mode.ordinal()];
 
 		for (SingleRegister register : registers) {
-			if ((registerUsage[register.getRegisterBundle().getRegisterId()] & register.getMask()) == 0) {
+			if (isRegisterFree(register, false)) {
 				return register;
 			}
 		}
@@ -155,29 +180,39 @@ public class LinearScanRegisterAllocation {
 		return null;
 	}
 
+	private boolean isRegisterFree(SingleRegister register, boolean allowPartiallyAllocated) {
+		byte registerUsage = this.registerUsages[register.getRegisterBundle().getRegisterId()];
+		return (allowPartiallyAllocated || registerUsage >= 0) && (registerUsage & register.getMask()) == 0;
+	}
+
 	private SingleRegister getFreePartiallyAllocatedRegisterForLifetime(VirtualRegister virtualRegister) {
+		Bit mode = virtualRegister.getMode();
 		int start = virtualRegister.getFirstOccurrence();
 		int end = virtualRegister.getLastOccurrence();
+
 		for (Entry<RegisterBundle, LinkedList<VirtualRegister>> registerInfo : partialAllocatedRegisters.entrySet()) {
-			boolean isValid = true;
-			for (VirtualRegister register : registerInfo.getValue()) {
-				isValid &= (register.getFirstOccurrence() > end || register.getLastOccurrence() < start);
-			}
-			if (isValid) {
+			RegisterBundle registerBundle = registerInfo.getKey();
+
+			if (isRegisterFree(registerBundle.getRegister(mode), true)
+					&& isPartiallyAllocatableRegisterFree(start, end, registerInfo.getValue())) {
 				virtualRegister.setForceRegister(true);
-				registerInfo.getValue().add(virtualRegister);
-				return registerInfo.getKey().getRegister(virtualRegister.getMode());
+				return registerBundle.getRegister(mode);
 			}
 		}
 		return null;
 	}
 
+	private boolean isPartiallyAllocatableRegisterFree(int start, int end, LinkedList<VirtualRegister> interferringRegisters) {
+		boolean isValid = true;
+		for (VirtualRegister register : interferringRegisters) {
+			isValid &= (register.getFirstOccurrence() > end || register.getLastOccurrence() < start);
+		}
+		return isValid;
+	}
+
 	private void freeRegister(SingleRegister register) {
 		RegisterBundle registerBundle = register.getRegisterBundle();
-
-		if (!this.partialAllocatedRegisters.containsKey(registerBundle)) {
-			registerUsage[registerBundle.getRegisterId()] &= ~register.getMask();
-		}
+		registerUsages[registerBundle.getRegisterId()] &= ~register.getMask();
 	}
 
 	private void spillRegister(VirtualRegister virtualRegister) {
@@ -256,7 +291,7 @@ public class LinearScanRegisterAllocation {
 
 				if (!partialAllocatedRegisters.containsKey(registerBundle)) {
 					partialAllocatedRegisters.put(registerBundle, new LinkedList<VirtualRegister>());
-					registerUsage[registerBundle.getRegisterId()] = SingleRegister.BLOCKED_REGISTER;
+					registerUsages[registerBundle.getRegisterId()] = (byte) 0x80;
 				}
 				partialAllocatedRegisters.get(registerBundle).add(virtualRegister);
 			}
