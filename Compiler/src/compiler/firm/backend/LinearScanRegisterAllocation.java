@@ -161,8 +161,6 @@ public class LinearScanRegisterAllocation {
 				spillRegister(register);
 				freeRegister = getFreeNormalRegister(mode);
 			}
-		} else {
-			System.out.println("partially allocated reg found");
 		}
 
 		return freeRegister;
