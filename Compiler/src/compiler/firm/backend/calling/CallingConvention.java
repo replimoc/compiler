@@ -4,7 +4,6 @@ import compiler.firm.backend.storage.RegisterBundle;
 
 public abstract class CallingConvention {
 	public static final CallingConvention SYSTEMV_ABI = new SystemVAbiCallingConvention();
-	public static final CallingConvention OWN = new StackCallingConvention();
 
 	public abstract RegisterBundle[] getParameterRegisters();
 

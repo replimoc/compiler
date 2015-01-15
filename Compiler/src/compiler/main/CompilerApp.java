@@ -18,6 +18,7 @@ import compiler.ast.AstNode;
 import compiler.firm.FirmUtils;
 import compiler.firm.FirmUtils.AssemblerCreator;
 import compiler.firm.backend.AssemblerGenerator;
+import compiler.firm.backend.calling.CallingConvention;
 import compiler.firm.generation.FirmGraphGenerator;
 import compiler.firm.optimization.FirmOptimizer;
 import compiler.lexer.Lexer;
@@ -179,7 +180,7 @@ public final class CompilerApp {
 						assemblerCreator = new AssemblerCreator() {
 							@Override
 							public void create(String fileName) throws IOException {
-								AssemblerGenerator.createAssemblerX8664(Paths.get(fileName), semanticResult.getCallingConventions(), !noOpt);
+								AssemblerGenerator.createAssemblerX8664(Paths.get(fileName), CallingConvention.SYSTEMV_ABI, !noOpt);
 							}
 						};
 					}
