@@ -70,10 +70,13 @@ public class LoopInvariantVisitor extends OptimizationVisitor<Node> {
 			Set<Block> doms = dominators.get(node.getBlock());
 			if (doms.contains(left) && doms.contains(right)) {
 				Node pred = getInnerMostLoopHeader((Block) node.getBlock());
+				if (pred == null)
+					return;
+				Node preLoopBlock = pred.getPred(0).getBlock();
 				// do not move nodes over dominator borders
-				Set<Block> domBorder = dominators.get(pred);
-				if (pred != null && domBorder.contains(left) && domBorder.contains(right)) {
-					Node copy = node.getGraph().newAdd(pred, node.getLeft(), node.getRight(), node.getMode());
+				Set<Block> domBorder = dominators.get(preLoopBlock);
+				if (domBorder.contains(left) && domBorder.contains(right)) {
+					Node copy = node.getGraph().newAdd(preLoopBlock, node.getLeft(), node.getRight(), node.getMode());
 					addReplacement(node, copy);
 				}
 			}
@@ -90,10 +93,13 @@ public class LoopInvariantVisitor extends OptimizationVisitor<Node> {
 			Set<Block> doms = dominators.get(node.getBlock());
 			if (doms.contains(left) && doms.contains(right)) {
 				Node pred = getInnerMostLoopHeader((Block) node.getBlock());
+				if (pred == null)
+					return;
+				Node preLoopBlock = pred.getPred(0).getBlock();
 				// do not move nodes over dominator borders
-				Set<Block> domBorder = dominators.get(pred);
-				if (pred != null && domBorder.contains(left) && domBorder.contains(right)) {
-					Node copy = node.getGraph().newSub(pred, node.getLeft(), node.getRight(), node.getMode());
+				Set<Block> domBorder = dominators.get(preLoopBlock);
+				if (domBorder.contains(left) && domBorder.contains(right)) {
+					Node copy = node.getGraph().newSub(preLoopBlock, node.getLeft(), node.getRight(), node.getMode());
 					addReplacement(node, copy);
 				}
 			}
@@ -109,10 +115,13 @@ public class LoopInvariantVisitor extends OptimizationVisitor<Node> {
 			Set<Block> doms = dominators.get(node.getBlock());
 			if (doms.contains(operand)) {
 				Node pred = getInnerMostLoopHeader((Block) node.getBlock());
+				if (pred == null)
+					return;
+				Node preLoopBlock = pred.getPred(0).getBlock();
 				// do not move nodes over dominator borders
-				Set<Block> domBorder = dominators.get(pred);
-				if (pred != null && domBorder.contains(operand)) {
-					Node copy = node.getGraph().newConv(pred, node.getOp(), node.getMode());
+				Set<Block> domBorder = dominators.get(preLoopBlock);
+				if (domBorder.contains(operand)) {
+					Node copy = node.getGraph().newConv(preLoopBlock, node.getOp(), node.getMode());
 					addReplacement(node, copy);
 				}
 			}
@@ -129,10 +138,13 @@ public class LoopInvariantVisitor extends OptimizationVisitor<Node> {
 			Set<Block> doms = dominators.get(node.getBlock());
 			if (doms.contains(left) && doms.contains(right)) {
 				Node pred = getInnerMostLoopHeader((Block) node.getBlock());
+				if (pred == null)
+					return;
+				Node preLoopBlock = pred.getPred(0).getBlock();
 				// do not move nodes over dominator borders
-				Set<Block> domBorder = dominators.get(pred);
-				if (pred != null && domBorder.contains(left) && domBorder.contains(right)) {
-					Node copy = node.getGraph().newShl(pred, node.getLeft(), node.getRight(), node.getMode());
+				Set<Block> domBorder = dominators.get(preLoopBlock);
+				if (domBorder.contains(left) && domBorder.contains(right)) {
+					Node copy = node.getGraph().newShl(preLoopBlock, node.getLeft(), node.getRight(), node.getMode());
 					addReplacement(node, copy);
 				}
 			}
@@ -149,10 +161,13 @@ public class LoopInvariantVisitor extends OptimizationVisitor<Node> {
 			Set<Block> doms = dominators.get(node.getBlock());
 			if (doms.contains(left) && doms.contains(right)) {
 				Node pred = getInnerMostLoopHeader((Block) node.getBlock());
+				if (pred == null)
+					return;
+				Node preLoopBlock = pred.getPred(0).getBlock();
 				// do not move nodes over dominator borders
-				Set<Block> domBorder = dominators.get(pred);
-				if (pred != null && domBorder.contains(left) && domBorder.contains(right)) {
-					Node copy = node.getGraph().newShr(pred, node.getLeft(), node.getRight(), node.getMode());
+				Set<Block> domBorder = dominators.get(preLoopBlock);
+				if (domBorder.contains(left) && domBorder.contains(right)) {
+					Node copy = node.getGraph().newShr(preLoopBlock, node.getLeft(), node.getRight(), node.getMode());
 					addReplacement(node, copy);
 				}
 			}
@@ -169,10 +184,13 @@ public class LoopInvariantVisitor extends OptimizationVisitor<Node> {
 			Set<Block> doms = dominators.get(node.getBlock());
 			if (doms.contains(left) && doms.contains(right)) {
 				Node pred = getInnerMostLoopHeader((Block) node.getBlock());
+				if (pred == null)
+					return;
+				Node preLoopBlock = pred.getPred(0).getBlock();
 				// do not move nodes over dominator borders
-				Set<Block> domBorder = dominators.get(pred);
-				if (pred != null && domBorder.contains(left) && domBorder.contains(right)) {
-					Node copy = node.getGraph().newShrs(pred, node.getLeft(), node.getRight(), node.getMode());
+				Set<Block> domBorder = dominators.get(preLoopBlock);
+				if (domBorder.contains(left) && domBorder.contains(right)) {
+					Node copy = node.getGraph().newShrs(preLoopBlock, node.getLeft(), node.getRight(), node.getMode());
 					addReplacement(node, copy);
 				}
 			}
@@ -189,10 +207,13 @@ public class LoopInvariantVisitor extends OptimizationVisitor<Node> {
 			Set<Block> doms = dominators.get(node.getBlock());
 			if (doms.contains(left) && doms.contains(right)) {
 				Node pred = getInnerMostLoopHeader((Block) node.getBlock());
+				if (pred == null)
+					return;
+				Node preLoopBlock = pred.getPred(0).getBlock();
 				// do not move nodes over dominator borders
-				Set<Block> domBorder = dominators.get(pred);
-				if (pred != null && domBorder.contains(left) && domBorder.contains(right)) {
-					Node copy = node.getGraph().newMul(pred, node.getLeft(), node.getRight(), node.getMode());
+				Set<Block> domBorder = dominators.get(preLoopBlock);
+				if (domBorder.contains(left) && domBorder.contains(right)) {
+					Node copy = node.getGraph().newMul(preLoopBlock, node.getLeft(), node.getRight(), node.getMode());
 					addReplacement(node, copy);
 				}
 			}
@@ -208,10 +229,13 @@ public class LoopInvariantVisitor extends OptimizationVisitor<Node> {
 			Set<Block> doms = dominators.get(node.getBlock());
 			if (doms.contains(operand)) {
 				Node pred = getInnerMostLoopHeader((Block) node.getBlock());
+				if (pred == null)
+					return;
+				Node preLoopBlock = pred.getPred(0).getBlock();
 				// do not move nodes over dominator borders
-				Set<Block> domBorder = dominators.get(pred);
-				if (pred != null && domBorder.contains(operand)) {
-					Node copy = node.getGraph().newMinus(pred, node.getOp(), node.getMode());
+				Set<Block> domBorder = dominators.get(preLoopBlock);
+				if (domBorder.contains(operand)) {
+					Node copy = node.getGraph().newMinus(preLoopBlock, node.getOp(), node.getMode());
 					addReplacement(node, copy);
 				}
 			}
@@ -227,10 +251,13 @@ public class LoopInvariantVisitor extends OptimizationVisitor<Node> {
 			Set<Block> doms = dominators.get(node.getBlock());
 			if (doms.contains(operand)) {
 				Node pred = getInnerMostLoopHeader((Block) node.getBlock());
+				if (pred == null)
+					return;
+				Node preLoopBlock = pred.getPred(0).getBlock();
 				// do not move nodes over dominator borders
-				Set<Block> domBorder = dominators.get(pred);
-				if (pred != null && domBorder.contains(operand)) {
-					Node copy = node.getGraph().newNot(pred, node.getOp(), node.getMode());
+				Set<Block> domBorder = dominators.get(preLoopBlock);
+				if (domBorder.contains(operand)) {
+					Node copy = node.getGraph().newNot(preLoopBlock, node.getOp(), node.getMode());
 					addReplacement(node, copy);
 				}
 			}
