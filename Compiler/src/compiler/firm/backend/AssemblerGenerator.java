@@ -29,7 +29,7 @@ public final class AssemblerGenerator {
 	private AssemblerGenerator() {
 	}
 
-	public static void createAssemblerX8664(Path outputFile, HashMap<String, CallingConvention> callingConvention, boolean doPeephole)
+	public static void createAssemblerX8664(Path outputFile, CallingConvention callingConvention, boolean doPeephole)
 			throws IOException {
 		final ArrayList<AssemblerOperation> assembler = new ArrayList<>();
 

@@ -6,7 +6,6 @@ import compiler.Symbol;
 import compiler.ast.Block;
 import compiler.ast.type.Type;
 import compiler.ast.visitor.AstVisitor;
-import compiler.firm.backend.calling.CallingConvention;
 import compiler.lexer.Position;
 
 public class MethodDeclaration extends MethodMemberDeclaration {
@@ -33,11 +32,6 @@ public class MethodDeclaration extends MethodMemberDeclaration {
 
 	public void setNumberOfLocalVariables(int numberOfLocalVariables) {
 		this.numberOfLocalVariables = numberOfLocalVariables;
-	}
-
-	@Override
-	public CallingConvention getCallingConvention() {
-		return CallingConvention.OWN;
 	}
 
 	@Override

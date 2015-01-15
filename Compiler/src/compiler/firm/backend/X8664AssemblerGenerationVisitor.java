@@ -111,17 +111,16 @@ public class X8664AssemblerGenerationVisitor implements BulkPhiNodeVisitor {
 	private static final int STACK_ITEM_SIZE = 8;
 
 	private final ArrayList<AssemblerOperation> operations = new ArrayList<>();
-	private final HashMap<String, CallingConvention> callingConventions;
 	private final HashMap<Block, LabelOperation> blockLabels = new HashMap<>();
 
 	private Block currentBlock;
 	private List<Phi> phis;
 
 	private final StorageManagement storageManagement;
-	private final CallingConvention defaultCallingConvention = CallingConvention.SYSTEMV_ABI;
+	private final CallingConvention callingConvention;
 
-	public X8664AssemblerGenerationVisitor(HashMap<String, CallingConvention> callingConventions) {
-		this.callingConventions = callingConventions;
+	public X8664AssemblerGenerationVisitor(CallingConvention callingConvention) {
+		this.callingConvention = callingConvention;
 		this.storageManagement = new StorageManagement(operations);
 	}
 
@@ -254,8 +253,6 @@ public class X8664AssemblerGenerationVisitor implements BulkPhiNodeVisitor {
 			Node parameter = node.getPred(i);
 			parameters.add(new CallOperation.Parameter(storageManagement.getStorage(parameter), StorageManagement.getMode(parameter)));
 		}
-
-		CallingConvention callingConvention = getCallingConvention(methodName);
 
 		addOperation(new CallOperation(methodName, parameters, callingConvention));
 
@@ -486,14 +483,6 @@ public class X8664AssemblerGenerationVisitor implements BulkPhiNodeVisitor {
 		return null;
 	}
 
-	private CallingConvention getCallingConvention(String methodName) {
-		CallingConvention callingConvention = this.defaultCallingConvention;
-		if (callingConventions.containsKey(methodName)) {
-			callingConvention = callingConventions.get(methodName);
-		}
-		return callingConvention;
-	}
-
 	private String getMethodName(Node node) {
 		return node.getGraph().getEntity().getLdName();
 	}
@@ -502,7 +491,6 @@ public class X8664AssemblerGenerationVisitor implements BulkPhiNodeVisitor {
 		addOperation(new PushOperation(Bit.BIT64, SingleRegister.RBP)); // Dynamic Link
 		addOperation(new MovOperation(SingleRegister.RSP, SingleRegister.RBP));
 
-		CallingConvention callingConvention = getCallingConvention(getMethodName(node));
 		for (RegisterBundle register : callingConvention.calleeSavedRegisters()) {
 			addOperation(new PushOperation(Bit.BIT64, register.getRegister(Bit.BIT64)));
 		}
@@ -542,8 +530,6 @@ public class X8664AssemblerGenerationVisitor implements BulkPhiNodeVisitor {
 
 	private void methodEnd(Node node) {
 		addOperation(new FreeStackOperation());
-
-		CallingConvention callingConvention = getCallingConvention(getMethodName(node));
 
 		RegisterBundle[] registers = callingConvention.calleeSavedRegisters();
 		for (int i = registers.length - 1; i >= 0; i--) {
