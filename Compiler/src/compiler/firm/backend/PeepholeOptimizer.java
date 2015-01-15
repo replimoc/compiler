@@ -9,11 +9,13 @@ import compiler.firm.backend.operations.Comment;
 import compiler.firm.backend.operations.DecOperation;
 import compiler.firm.backend.operations.IncOperation;
 import compiler.firm.backend.operations.LabelOperation;
+import compiler.firm.backend.operations.MovOperation;
 import compiler.firm.backend.operations.SubOperation;
 import compiler.firm.backend.operations.jump.JmpOperation;
 import compiler.firm.backend.operations.templates.AssemblerOperation;
 import compiler.firm.backend.operations.templates.JumpOperation;
 import compiler.firm.backend.storage.Constant;
+import compiler.firm.backend.storage.SingleRegister;
 import compiler.firm.backend.storage.Storage;
 
 public class PeepholeOptimizer {
@@ -90,6 +92,18 @@ public class PeepholeOptimizer {
 				Storage storage = add.getStorage();
 				if (storage instanceof Constant && ((Constant) storage).getConstant() == 1) {
 					writeOperation(new IncOperation(add.toString(), add.getDestination()));
+				} else {
+					writeOperation();
+				}
+				nextOperation();
+
+			} else if (currentOperation instanceof MovOperation) {
+				MovOperation move = (MovOperation) currentOperation;
+				SingleRegister sourceRegister = move.getSource().getSingleRegister();
+				SingleRegister destinationRegister = move.getDestination().getSingleRegister();
+
+				if (sourceRegister != null && sourceRegister == destinationRegister) {
+					writeOperation(new Comment(currentOperation)); // discard move between the same register
 				} else {
 					writeOperation();
 				}
