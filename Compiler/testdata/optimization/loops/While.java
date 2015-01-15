@@ -1,10 +1,9 @@
 class Test {
 	public static void main(String[] args) {
-		Test t = new Test();
-		t.method(5, 6);
+		method(5, 6);
 	}
 	
-	public void method(int x, int y) {
+	public static void method(int x, int y) {
 		int z = 0;
 		
 		while(z < 3) {
