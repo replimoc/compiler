@@ -9,12 +9,15 @@ import compiler.firm.backend.operations.Comment;
 import compiler.firm.backend.operations.DecOperation;
 import compiler.firm.backend.operations.IncOperation;
 import compiler.firm.backend.operations.LabelOperation;
+import compiler.firm.backend.operations.LeaOperation;
 import compiler.firm.backend.operations.MovOperation;
 import compiler.firm.backend.operations.SubOperation;
 import compiler.firm.backend.operations.jump.JmpOperation;
 import compiler.firm.backend.operations.templates.AssemblerOperation;
 import compiler.firm.backend.operations.templates.JumpOperation;
 import compiler.firm.backend.storage.Constant;
+import compiler.firm.backend.storage.MemoryPointer;
+import compiler.firm.backend.storage.RegisterBased;
 import compiler.firm.backend.storage.SingleRegister;
 import compiler.firm.backend.storage.Storage;
 
@@ -90,12 +93,22 @@ public class PeepholeOptimizer {
 			} else if (currentOperation instanceof AddOperation) {
 				AddOperation add = (AddOperation) currentOperation;
 				Storage storage = add.getStorage();
+				nextOperation();
 				if (storage instanceof Constant && ((Constant) storage).getConstant() == 1) {
 					writeOperation(new IncOperation(add.toString(), add.getDestination()));
+				} else if (currentOperation instanceof MovOperation && add.getSource() instanceof RegisterBased) {
+					MovOperation move = (MovOperation) currentOperation;
+					if (move.getSource() == add.getDestination() && move.getDestination() instanceof RegisterBased
+							&& !move.getDestination().isSpilled()) {
+						writeOperation(new LeaOperation(new MemoryPointer((RegisterBased) add.getSource(), add.getDestination()),
+								(RegisterBased) move.getDestination()));
+						nextOperation();
+					} else {
+						writeOperation(add);
+					}
 				} else {
-					writeOperation();
+					writeOperation(add);
 				}
-				nextOperation();
 
 			} else if (currentOperation instanceof MovOperation) {
 				MovOperation move = (MovOperation) currentOperation;

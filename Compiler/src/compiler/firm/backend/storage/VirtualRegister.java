@@ -12,6 +12,7 @@ public class VirtualRegister extends RegisterBased {
 	private Storage register;
 	private boolean forceRegister;
 	private boolean isSpilled;
+	private SingleRegister preferedRegister;
 
 	private int firstOccurrence = Integer.MAX_VALUE;
 	private int lastOccurrence = 0;
@@ -100,5 +101,13 @@ public class VirtualRegister extends RegisterBased {
 	@Override
 	public RegisterBundle getRegisterBundle() {
 		return register.getRegisterBundle();
+	}
+
+	public void setPreferedRegister(SingleRegister preferedRegister) {
+		this.preferedRegister = preferedRegister;
+	}
+
+	public SingleRegister getPreferedRegister() {
+		return preferedRegister;
 	}
 }
