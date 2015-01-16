@@ -220,7 +220,10 @@ public class FirmGenerationVisitor implements AstVisitor {
 	}
 
 	private Node createBooleanNodeFromBinaryExpression(Expression expression) {
-		if (expression instanceof BooleanConstantExpression) {
+		if (expression instanceof BooleanConstantExpression
+				|| expression instanceof VariableAccessExpression
+				|| expression instanceof MethodInvocationExpression
+				|| expression instanceof LogicalNotExpression) { // TODO: Add more for direct pass
 			expression.accept(this);
 			return expression.getFirmNode();
 		} else {
@@ -232,14 +235,14 @@ public class FirmGenerationVisitor implements AstVisitor {
 			// create true block assigning true to temp variable
 			trueBlock.mature();
 			methodConstruction.setCurrentBlock(trueBlock);
-			Node trueConst = methodConstruction.newConst(1, FirmUtils.getModeBoolean());
+			Node trueConst = createBooleanConstantNode(true);
 			Node trueJump = methodConstruction.newJmp();
 			afterBlock.addPred(trueJump);
 
 			// create false block assigning false to temp variable
 			falseBlock.mature();
 			methodConstruction.setCurrentBlock(falseBlock);
-			Node falseConst = methodConstruction.newConst(0, FirmUtils.getModeBoolean());
+			Node falseConst = createBooleanConstantNode(false);
 			Node falseJump = methodConstruction.newJmp();
 			afterBlock.addPred(falseJump);
 
@@ -356,7 +359,7 @@ public class FirmGenerationVisitor implements AstVisitor {
 	}
 
 	private Node createBooleanConstantNode(boolean boolValue) {
-		int boolIntValue = boolValue ? 1 : 0;
+		int boolIntValue = boolValue ? 0xFF : 0;
 		return methodConstruction.newConst(boolIntValue, FirmUtils.getModeBoolean());
 	}
 
@@ -551,7 +554,14 @@ public class FirmGenerationVisitor implements AstVisitor {
 
 	@Override
 	public void visit(LogicalNotExpression logicalNotExpression) {
-		evaluateBooleanExpression(logicalNotExpression.getOperand(), falseDestination, trueDestination);
+		if (trueDestination == null || falseDestination == null) {
+			Expression operand = logicalNotExpression.getOperand();
+			operand.accept(this);
+			Node firmNode = operand.getFirmNode();
+			logicalNotExpression.setFirmNode(methodConstruction.newNot(firmNode, firmNode.getMode()));
+		} else {
+			evaluateBooleanExpression(logicalNotExpression.getOperand(), falseDestination, trueDestination);
+		}
 	}
 
 	@Override
@@ -623,7 +633,7 @@ public class FirmGenerationVisitor implements AstVisitor {
 		Node conditionNode;
 		if (expression.getFirmNode() != null && !expression.getFirmNode().getMode().equals(Mode.getT())) {
 			// booleans and boolean constants
-			Node trueConst = methodConstruction.newConst(1, FirmUtils.getModeBoolean());
+			Node trueConst = createBooleanConstantNode(true);
 			Node cmp = methodConstruction.newCmp(expression.getFirmNode(), trueConst, Relation.Equal);
 			conditionNode = methodConstruction.newCond(cmp);
 		} else {
@@ -651,7 +661,7 @@ public class FirmGenerationVisitor implements AstVisitor {
 			// TODO: find a more elegant way to do this!
 			// we reference a condition node that is not in the current block, get the last set phi node instead
 			// create a new condition node for that phi node
-			Node trueConst = methodConstruction.newConst(1, FirmUtils.getModeBoolean());
+			Node trueConst = createBooleanConstantNode(true);
 			Node cmp = methodConstruction.newCmp(activePhiNode, trueConst, Relation.Equal);
 			conditionNode = methodConstruction.newCond(cmp);
 			Node condTrue = methodConstruction.newProj(conditionNode, mode, 1);

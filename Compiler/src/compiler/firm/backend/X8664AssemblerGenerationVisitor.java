@@ -21,6 +21,7 @@ import compiler.firm.backend.operations.LabelOperation;
 import compiler.firm.backend.operations.LeaOperation;
 import compiler.firm.backend.operations.MovOperation;
 import compiler.firm.backend.operations.NegOperation;
+import compiler.firm.backend.operations.NotOperation;
 import compiler.firm.backend.operations.PopOperation;
 import compiler.firm.backend.operations.PushOperation;
 import compiler.firm.backend.operations.RetOperation;
@@ -415,6 +416,13 @@ public class X8664AssemblerGenerationVisitor implements BulkPhiNodeVisitor {
 	}
 
 	@Override
+	public void visit(Not node) {
+		RegisterBased value = storageManagement.getValue(node.getPred(0), true);
+		addOperation(new NotOperation(value));
+		storageManagement.storeValue(node, value);
+	}
+
+	@Override
 	public void visit(Return node) {
 		if (node.getPredCount() > 1) {
 			// Store return value in EAX register
@@ -677,11 +685,6 @@ public class X8664AssemblerGenerationVisitor implements BulkPhiNodeVisitor {
 
 	@Override
 	public void visit(NoMem node) {
-		throw new RuntimeException(node + " is not implemented yet!");
-	}
-
-	@Override
-	public void visit(Not node) {
 		throw new RuntimeException(node + " is not implemented yet!");
 	}
 
