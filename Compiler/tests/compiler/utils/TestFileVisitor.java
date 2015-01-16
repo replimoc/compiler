@@ -29,7 +29,7 @@ import org.junit.Ignore;
 @Ignore
 public class TestFileVisitor extends SimpleFileVisitor<Path> {
 
-	private static final int NUMBER_OF_THREADS = 1;
+	private static final int NUMBER_OF_THREADS = 12;
 
 	public interface FileTester {
 		void testSourceFile(Path sourceFilePath, Path expectedResultFilePath, Path cIncludeFilePath) throws Exception;
@@ -107,10 +107,10 @@ public class TestFileVisitor extends SimpleFileVisitor<Path> {
 				@Override
 				public void run() {
 					try {
-						// currentlyWorkedFiles.add(file);
+						currentlyWorkedFiles.add(file);
 						testFile(file, name.toString());
 					} finally {
-						// currentlyWorkedFiles.remove(file);
+						currentlyWorkedFiles.remove(file);
 					}
 				}
 			};
@@ -146,7 +146,7 @@ public class TestFileVisitor extends SimpleFileVisitor<Path> {
 	public void checkForFailedTests() {
 		try {
 			threadPool.shutdown();
-			threadPool.awaitTermination(30, TimeUnit.SECONDS);
+			threadPool.awaitTermination(100, TimeUnit.SECONDS);
 		} catch (InterruptedException e) {
 			e.printStackTrace();
 		}
