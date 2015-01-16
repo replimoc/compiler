@@ -6,20 +6,15 @@ import java.util.List;
 
 import compiler.firm.backend.operations.AddOperation;
 import compiler.firm.backend.operations.Comment;
-import compiler.firm.backend.operations.DecOperation;
-import compiler.firm.backend.operations.IncOperation;
 import compiler.firm.backend.operations.LabelOperation;
 import compiler.firm.backend.operations.LeaOperation;
 import compiler.firm.backend.operations.MovOperation;
-import compiler.firm.backend.operations.SubOperation;
 import compiler.firm.backend.operations.jump.JmpOperation;
 import compiler.firm.backend.operations.templates.AssemblerOperation;
 import compiler.firm.backend.operations.templates.JumpOperation;
-import compiler.firm.backend.storage.Constant;
 import compiler.firm.backend.storage.MemoryPointer;
 import compiler.firm.backend.storage.RegisterBased;
 import compiler.firm.backend.storage.SingleRegister;
-import compiler.firm.backend.storage.Storage;
 
 public class PeepholeOptimizer {
 
@@ -79,24 +74,10 @@ public class PeepholeOptimizer {
 				} else {
 					writeOperation(jump);
 				}
-
-			} else if (currentOperation instanceof SubOperation) {
-				SubOperation sub = (SubOperation) currentOperation;
-				Storage storage = sub.getStorage();
-				if (storage instanceof Constant && ((Constant) storage).getConstant() == 1) {
-					writeOperation(new DecOperation(sub.toString(), sub.getDestination()));
-				} else {
-					writeOperation();
-				}
-				nextOperation();
-
 			} else if (currentOperation instanceof AddOperation) {
 				AddOperation add = (AddOperation) currentOperation;
-				Storage storage = add.getStorage();
 				nextOperation();
-				if (storage instanceof Constant && ((Constant) storage).getConstant() == 1) {
-					writeOperation(new IncOperation(add.toString(), add.getDestination()));
-				} else if (currentOperation instanceof MovOperation && add.getSource() instanceof RegisterBased) {
+				if (currentOperation instanceof MovOperation && add.getSource() instanceof RegisterBased) {
 					MovOperation move = (MovOperation) currentOperation;
 					if (move.getSource() == add.getDestination() && move.getDestination() instanceof RegisterBased
 							&& !move.getDestination().isSpilled()) {
