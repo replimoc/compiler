@@ -117,4 +117,9 @@ public class SingleRegister extends RegisterBased {
 	public SingleRegister getSingleRegister() {
 		return this;
 	}
+
+	@Override
+	public MemoryPointer getMemoryPointer() {
+		return null;
+	}
 }

@@ -110,4 +110,9 @@ public class VirtualRegister extends RegisterBased {
 	public SingleRegister getPreferedRegister() {
 		return preferedRegister;
 	}
+
+	@Override
+	public MemoryPointer getMemoryPointer() {
+		return register.getMemoryPointer();
+	}
 }

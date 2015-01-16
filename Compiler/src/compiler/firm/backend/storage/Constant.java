@@ -59,4 +59,9 @@ public class Constant extends Storage {
 	public RegisterBundle getRegisterBundle() {
 		return null;
 	}
+
+	@Override
+	public MemoryPointer getMemoryPointer() {
+		return null;
+	}
 }

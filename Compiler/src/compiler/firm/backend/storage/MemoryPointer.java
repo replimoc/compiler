@@ -83,4 +83,9 @@ public class MemoryPointer extends Storage {
 	public RegisterBundle getRegisterBundle() {
 		return null;
 	}
+
+	@Override
+	public MemoryPointer getMemoryPointer() {
+		return this;
+	}
 }

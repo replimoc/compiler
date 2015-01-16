@@ -38,6 +38,10 @@ public class StorageManagement {
 		nodeStorages.put(node, storage);
 	}
 
+	public Storage getStorage(Node node) {
+		return nodeStorages.get(node);
+	}
+
 	public void addConstant(Const node) {
 		addStorage(node, new Constant(node));
 	}
@@ -58,7 +62,7 @@ public class StorageManagement {
 		return getValue(node, resultRegisterBundle.getRegister(getMode(node)), true);
 	}
 
-	private RegisterBased getValue(Node node, RegisterBased resultRegister, boolean overwrite) {
+	public RegisterBased getValue(Node node, RegisterBased resultRegister, boolean overwrite) {
 		if (!nodeStorages.containsKey(node)) {
 			addStorage(node, new VirtualRegister(getMode(node)));
 		}

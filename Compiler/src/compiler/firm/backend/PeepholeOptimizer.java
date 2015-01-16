@@ -95,8 +95,11 @@ public class PeepholeOptimizer {
 				MovOperation move = (MovOperation) currentOperation;
 				SingleRegister sourceRegister = move.getSource().getSingleRegister();
 				SingleRegister destinationRegister = move.getDestination().getSingleRegister();
+				MemoryPointer sourceMemoryPointer = move.getSource().getMemoryPointer();
+				MemoryPointer destinationMemoryPointer = move.getDestination().getMemoryPointer();
 
-				if (sourceRegister != null && sourceRegister == destinationRegister) {
+				if ((sourceRegister != null && sourceRegister == destinationRegister) ||
+						(sourceMemoryPointer != null && sourceMemoryPointer == destinationMemoryPointer)) {
 					writeOperation(new Comment(currentOperation)); // discard move between the same register
 				} else {
 					writeOperation();

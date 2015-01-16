@@ -17,4 +17,6 @@ public abstract class Storage {
 	public abstract SingleRegister getSingleRegister();
 
 	public abstract RegisterBundle getRegisterBundle();
+
+	public abstract MemoryPointer getMemoryPointer();
 }

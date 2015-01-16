@@ -157,7 +157,23 @@ public class X8664AssemblerGenerationVisitor implements BulkPhiNodeVisitor {
 		// get left node
 		Storage registerLeft = storageManagement.getValueAvoidNewRegister(left);
 		// get right node
-		RegisterBased registerRight = storageManagement.getValue(right, true);
+		RegisterBased resultRegister = null;
+		if (BackEdges.getNOuts(parent) == 1) {
+			Node successor = FirmUtils.getFirstSuccessor(parent);
+
+			boolean moreUsages = false;
+			for (Edge edge : BackEdges.getOuts(successor)) {
+				if (!edge.node.equals(parent) && parent.getBlock().equals(edge.node.getBlock())) {
+					moreUsages = true;
+				}
+			}
+
+			Storage storage = storageManagement.getStorage(successor);
+			if (successor.equals(right) && storage instanceof RegisterBased && !moreUsages && !right.getBlock().equals(parent.getBlock())) {
+				resultRegister = (RegisterBased) storage;
+			}
+		}
+		RegisterBased registerRight = storageManagement.getValue(right, resultRegister, true);
 		// create operation object
 		StorageRegisterOperation operation = operationFactory.instantiate(registerLeft, registerRight);
 		// execute operation
@@ -231,7 +247,7 @@ public class X8664AssemblerGenerationVisitor implements BulkPhiNodeVisitor {
 			storageManagement.addStorage(node, resultRegister);
 			return;
 		}
-		visitTwoOperandsNode(AddOperation.getFactory("add operation"), node, node.getLeft(), node.getRight());
+		visitTwoOperandsNode(AddOperation.getFactory(node.toString()), node, node.getLeft(), node.getRight());
 	}
 
 	@Override
