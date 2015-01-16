@@ -66,6 +66,11 @@ public class LocalOptimizationVisitor extends OptimizationVisitor<Node> {
 		// reduce x = y / 1 if possible
 		if (isConstant(right) && getTargetValue(right).isOne()) {
 			addReplacement(FirmUtils.getFirstSuccessor(division), division.getLeft());
+		} else if (isConstant(right) && getTargetValue(right).isConstant() && getTargetValue(right).asInt() == -1) {
+			// reduce x = y / -1 to x = -y
+			Node suc = FirmUtils.getFirstSuccessor(division);
+			Node minus = division.getGraph().newMinus(suc.getBlock(), division.getLeft(), suc.getMode());
+			addReplacement(FirmUtils.getFirstSuccessor(division), minus);
 		}
 	}
 
