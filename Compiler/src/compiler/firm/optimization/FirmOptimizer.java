@@ -38,7 +38,7 @@ public final class FirmOptimizer {
 			finished &= optimize(LocalOptimizationVisitor.FACTORY);
 			finished &= optimize(ControlFlowVisitor.FACTORY);
 			finished &= optimize(CommonSubexpressionEliminationVisitor.FACTORY);
-			finished &= optimize(LoopInvariantVisitor.FACTORY); /* slows the compiled program */
+			finished &= optimize(LoopInvariantVisitor.FACTORY);
 			finished &= optimize(StrengthReductionVisitor.FACTORY);
 		} while (!finished);
 	}
