@@ -34,6 +34,8 @@ import compiler.firm.backend.operations.TestOperation;
 import compiler.firm.backend.operations.cmov.CmovSignOperation;
 import compiler.firm.backend.operations.dummy.FreeStackOperation;
 import compiler.firm.backend.operations.dummy.ReserveStackOperation;
+import compiler.firm.backend.operations.dummy.RestoreCalleeSavedRegistersOperation;
+import compiler.firm.backend.operations.dummy.SaveCalleeSavedRegistersOperation;
 import compiler.firm.backend.operations.jump.JgOperation;
 import compiler.firm.backend.operations.jump.JgeOperation;
 import compiler.firm.backend.operations.jump.JlOperation;
@@ -641,11 +643,7 @@ public class X8664AssemblerGenerationVisitor implements BulkPhiNodeVisitor {
 	private void methodStart(Node node) {
 		addOperation(new PushOperation(Bit.BIT64, SingleRegister.RBP)); // Dynamic Link
 		addOperation(new MovOperation(SingleRegister.RSP, SingleRegister.RBP));
-
-		for (RegisterBundle register : callingConvention.calleeSavedRegisters()) {
-			addOperation(new PushOperation(Bit.BIT64, register.getRegister(Bit.BIT64)));
-		}
-
+		addOperation(new SaveCalleeSavedRegistersOperation(callingConvention));
 		addOperation(new ReserveStackOperation());
 
 		Node args = node.getGraph().getArgs();
@@ -679,12 +677,7 @@ public class X8664AssemblerGenerationVisitor implements BulkPhiNodeVisitor {
 
 	private void methodEnd(Node node) {
 		addOperation(new FreeStackOperation());
-
-		RegisterBundle[] registers = callingConvention.calleeSavedRegisters();
-		for (int i = registers.length - 1; i >= 0; i--) {
-			addOperation(new PopOperation(registers[i].getRegister(Bit.BIT64)));
-		}
-
+		addOperation(new RestoreCalleeSavedRegistersOperation(callingConvention));
 		addOperation(new MovOperation(SingleRegister.RBP, SingleRegister.RSP));
 		addOperation(new PopOperation(SingleRegister.RBP));
 	}
