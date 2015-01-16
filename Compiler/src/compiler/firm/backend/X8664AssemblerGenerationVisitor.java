@@ -417,9 +417,12 @@ public class X8664AssemblerGenerationVisitor implements BulkPhiNodeVisitor {
 
 	@Override
 	public void visit(Not node) {
-		RegisterBased value = storageManagement.getValue(node.getPred(0), true);
+		Node predecessor = node.getPred(0);
+		RegisterBased value = storageManagement.getValue(predecessor,
+				BackEdges.getNOuts(node) != 1 || !FirmUtils.getFirstSuccessor(node).equals(predecessor));
 		addOperation(new NotOperation(value));
 		storageManagement.storeValue(node, value);
+
 	}
 
 	@Override
