@@ -11,8 +11,11 @@ import java.nio.file.SimpleFileVisitor;
 import java.nio.file.attribute.BasicFileAttributes;
 import java.util.AbstractMap.SimpleEntry;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 import java.util.Map.Entry;
+import java.util.Set;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
@@ -25,6 +28,8 @@ import org.junit.Ignore;
  */
 @Ignore
 public class TestFileVisitor extends SimpleFileVisitor<Path> {
+
+	private static final int NUMBER_OF_THREADS = 12;
 
 	public interface FileTester {
 		void testSourceFile(Path sourceFilePath, Path expectedResultFilePath, Path cIncludeFilePath) throws Exception;
@@ -42,7 +47,8 @@ public class TestFileVisitor extends SimpleFileVisitor<Path> {
 	private final FileTester fileTester;
 	private final List<Entry<Path, Throwable>> failedTestsList = new ArrayList<>();
 
-	private final ExecutorService threadPool = Executors.newFixedThreadPool(12, Utils.getThreadFactory(Utils.DEFAULT_STACK_SIZE_MB));
+	private final ExecutorService threadPool = Executors.newFixedThreadPool(NUMBER_OF_THREADS, Utils.getThreadFactory(Utils.DEFAULT_STACK_SIZE_MB));
+	private final Set<Path> currentlyWorkedFiles = Collections.newSetFromMap(new ConcurrentHashMap<Path, Boolean>());
 
 	private int numberOfTests = 0;
 
@@ -121,7 +127,9 @@ public class TestFileVisitor extends SimpleFileVisitor<Path> {
 				Assert.fail("cannot find program to output " + sourceFilePath);
 			}
 
+			currentlyWorkedFiles.add(sourceFilePath);
 			fileTester.testSourceFile(sourceFilePath, file, cFilePath);
+			currentlyWorkedFiles.remove(sourceFilePath);
 		} catch (Throwable e) {
 			testFailed(sourceFilePath, e);
 		}
@@ -138,6 +146,10 @@ public class TestFileVisitor extends SimpleFileVisitor<Path> {
 			threadPool.awaitTermination(100, TimeUnit.SECONDS);
 		} catch (InterruptedException e) {
 			e.printStackTrace();
+		}
+
+		for (Path notFinishedFile : currentlyWorkedFiles) {
+			failedTestsList.add(new SimpleEntry<Path, Throwable>(notFinishedFile, new RuntimeException("Testfile did not terminate!")));
 		}
 
 		printFailedTestsMessages();
