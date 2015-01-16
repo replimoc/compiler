@@ -18,7 +18,6 @@ import firm.Mode;
 import firm.nodes.Const;
 import firm.nodes.Conv;
 import firm.nodes.Node;
-import firm.nodes.Phi;
 
 public class StorageManagement {
 
@@ -37,10 +36,6 @@ public class StorageManagement {
 
 	public void addStorage(Node node, Storage storage) {
 		nodeStorages.put(node, storage);
-	}
-
-	public Storage getStorage(Node node) {
-		return nodeStorages.get(node);
 	}
 
 	public void addConstant(Const node) {
@@ -123,12 +118,6 @@ public class StorageManagement {
 			return Bit.BIT8;
 		} else {
 			return Bit.BIT32;
-		}
-	}
-
-	public void reserveMemoryForPhis(List<Phi> phis) {
-		for (Phi phi : phis) {
-			addStorage(phi, new VirtualRegister(getMode(phi)));
 		}
 	}
 

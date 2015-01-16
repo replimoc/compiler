@@ -113,21 +113,39 @@ public class X8664AssemblerGenerationVisitor implements BulkPhiNodeVisitor {
 	private static final int STACK_ITEM_SIZE = 8;
 
 	private final ArrayList<AssemblerOperation> operations = new ArrayList<>();
-	private final HashMap<Block, LabelOperation> blockLabels = new HashMap<>();
+	private final ArrayList<AssemblerOperation> allOperations = new ArrayList<>();
+	private final HashMap<Block, ArrayList<AssemblerOperation>> operationsOfBlocks = new HashMap<>();
 
-	private Block currentBlock;
-	private List<Phi> phis;
+	private final HashMap<Block, LabelOperation> blockLabels = new HashMap<>();
 
 	private final StorageManagement storageManagement;
 	private final CallingConvention callingConvention;
+
+	private Block currentBlock;
 
 	public X8664AssemblerGenerationVisitor(CallingConvention callingConvention) {
 		this.callingConvention = callingConvention;
 		this.storageManagement = new StorageManagement(operations);
 	}
 
-	public ArrayList<AssemblerOperation> getOperations() {
-		return operations;
+	public void finishOperationsList() {
+		finishOperationsListOfBlock(currentBlock);
+	}
+
+	private void finishOperationsListOfBlock(Block block) {
+		if (currentBlock != null) {
+			operationsOfBlocks.put(block, new ArrayList<>(operations));
+			allOperations.addAll(operations);
+			operations.clear();
+		}
+	}
+
+	public ArrayList<AssemblerOperation> getAllOperations() {
+		return allOperations;
+	}
+
+	public HashMap<Block, ArrayList<AssemblerOperation>> getOperationsOfBlocks() {
+		return operationsOfBlocks;
 	}
 
 	private void addOperation(AssemblerOperation assemblerOption) {
@@ -157,10 +175,6 @@ public class X8664AssemblerGenerationVisitor implements BulkPhiNodeVisitor {
 			blockLabels.put(node, blockLabel);
 		}
 		return blockLabel;
-	}
-
-	public void addListOfAllPhis(List<Phi> phis) {
-		this.phis = phis;
 	}
 
 	// ----------------------------------------------- NodeVisitor ---------------------------------------------------
@@ -222,6 +236,7 @@ public class X8664AssemblerGenerationVisitor implements BulkPhiNodeVisitor {
 
 	@Override
 	public void visit(Block node) {
+		finishOperationsListOfBlock(currentBlock); // finish operations list for old block
 		currentBlock = node;
 
 		Graph graph = node.getGraph();
@@ -253,7 +268,7 @@ public class X8664AssemblerGenerationVisitor implements BulkPhiNodeVisitor {
 		List<CallOperation.Parameter> parameters = new LinkedList<>();
 		for (int i = 2; i < predCount; i++) {
 			Node parameter = node.getPred(i);
-			parameters.add(new CallOperation.Parameter(storageManagement.getStorage(parameter), StorageManagement.getMode(parameter)));
+			parameters.add(new CallOperation.Parameter(storageManagement.getValueAvoidNewRegister(parameter), StorageManagement.getMode(parameter)));
 		}
 
 		Node resultNode = null;
@@ -538,8 +553,6 @@ public class X8664AssemblerGenerationVisitor implements BulkPhiNodeVisitor {
 				storageManagement.addStorage(proj, location);
 			}
 		}
-
-		storageManagement.reserveMemoryForPhis(phis);
 	}
 
 	private void methodEnd(Node node) {
@@ -558,7 +571,7 @@ public class X8664AssemblerGenerationVisitor implements BulkPhiNodeVisitor {
 	public void visit(List<Phi> phis) {
 		addOperation(new Comment("Handle phis of current block"));
 
-		HashMap<Node, Phi> node2phiMapping = new HashMap<>();
+		HashMap<Phi, Node> node2phiMapping = new HashMap<>();
 		List<Phi> conflictNodes = new ArrayList<>();
 
 		for (Phi phi : phis) {
@@ -567,7 +580,7 @@ public class X8664AssemblerGenerationVisitor implements BulkPhiNodeVisitor {
 			if (phis.contains(predecessor)) {
 				conflictNodes.add(phi);
 			} else {
-				node2phiMapping.put(predecessor, phi);
+				node2phiMapping.put(phi, predecessor);
 			}
 		}
 
@@ -580,10 +593,10 @@ public class X8664AssemblerGenerationVisitor implements BulkPhiNodeVisitor {
 			phiTempStackMapping.put(phi, temporaryStorage);
 		}
 
-		for (Entry<Node, Phi> mapping : node2phiMapping.entrySet()) {
-			Storage register = storageManagement.getValueAvoidNewRegister(mapping.getKey());
-			Storage destination = storageManagement.getStorage(mapping.getValue());
-			addOperation(new MovOperation("Phi: " + mapping.getKey() + " -> " + mapping.getValue(), register, destination));
+		for (Entry<Phi, Node> mapping : node2phiMapping.entrySet()) {
+			Storage register = storageManagement.getValueAvoidNewRegister(mapping.getValue());
+			Storage destination = storageManagement.getValueAvoidNewRegister(mapping.getKey());
+			addOperation(new MovOperation("Phi: " + mapping.getValue() + " -> " + mapping.getKey(), register, destination));
 		}
 
 		for (Phi phi : conflictNodes) {

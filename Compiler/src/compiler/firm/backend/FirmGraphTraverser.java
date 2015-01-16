@@ -1,8 +1,9 @@
 package compiler.firm.backend;
 
 import java.util.HashMap;
+import java.util.HashSet;
+import java.util.Iterator;
 import java.util.LinkedList;
-import java.util.List;
 
 import firm.BlockWalker;
 import firm.Graph;
@@ -15,8 +16,19 @@ public final class FirmGraphTraverser {
 	private FirmGraphTraverser() {
 	}
 
-	public static void walkBlocksPostOrder(Graph graph, BlockWalker walker) {
-		HashMap<Block, ? extends List<Block>> blockFollowers = calculateBlockFollowers(graph);
+	public static HashMap<Block, BlockInfo> walkBlocksPostOrder(Graph graph, BlockWalker walker) {
+		HashMap<Block, BlockInfo> blockFollowers = calculateBlockFollowers(graph);
+
+		incrementBlockVisited(graph);
+		traverseBlocksDepthFirst(graph.getStartBlock(), blockFollowers, walker);
+
+		return blockFollowers;
+	}
+
+	public static void walkLoopOptimizedPostorder(Graph graph, HashMap<Block, BlockInfo> blockFollowers, BlockWalker walker) {
+		incrementBlockVisited(graph);
+		detectLoopHeads(graph.getStartBlock(), blockFollowers, new HashSet<Integer>());
+
 		incrementBlockVisited(graph);
 		traverseBlocksDepthFirst(graph.getStartBlock(), blockFollowers, walker);
 	}
@@ -25,8 +37,8 @@ public final class FirmGraphTraverser {
 		binding_irgraph.inc_irg_block_visited(graph.ptr);
 	}
 
-	private static HashMap<Block, ? extends List<Block>> calculateBlockFollowers(Graph graph) {
-		final HashMap<Block, LinkedList<Block>> blockFollowers = new HashMap<>();
+	private static HashMap<Block, BlockInfo> calculateBlockFollowers(Graph graph) {
+		final HashMap<Block, BlockInfo> blockInfos = new HashMap<>();
 
 		graph.walkBlocks(new BlockWalker() {
 			@Override
@@ -34,33 +46,76 @@ public final class FirmGraphTraverser {
 				for (Node pred : block.getPreds()) {
 					Block predBlock = (Block) pred.getBlock();
 
-					LinkedList<Block> predsNextBlocks = blockFollowers.get(predBlock);
-					if (predsNextBlocks == null) {
-						predsNextBlocks = new LinkedList<Block>();
-						blockFollowers.put(predBlock, predsNextBlocks);
+					BlockInfo predBlockInfo = blockInfos.get(predBlock);
+					if (predBlockInfo == null) {
+						predBlockInfo = new BlockInfo();
+						blockInfos.put(predBlock, predBlockInfo);
 					}
 
 					// adding the block at the beginning ensures that the loop body comes after the head
 					// adding the block to the end of the list makes depth first to the end block and then the loop body
-					predsNextBlocks.addFirst(block);
+					predBlockInfo.followers.addFirst(block);
 				}
 			}
 		});
-		return blockFollowers;
+		return blockInfos;
 	}
 
-	private static void traverseBlocksDepthFirst(Block block, HashMap<Block, ? extends List<Block>> nextBlocks, BlockWalker walker) {
-		block.markBlockVisited();
-		walker.visitBlock(block);
+	private static void detectLoopHeads(Block block, HashMap<Block, BlockInfo> blockInfos, HashSet<Integer> blockSet) {
+		BlockInfo blockInfo = blockInfos.get(block);
 
-		List<Block> followers = nextBlocks.get(block);
-
-		if (followers == null)
+		if (blockInfo == null || blockInfo.isLoopHead) {
 			return;
+		}
 
-		for (Block followerBlock : followers) {
-			if (!followerBlock.blockVisited())
-				traverseBlocksDepthFirst(followerBlock, nextBlocks, walker);
+		if (block.blockVisited()) {
+			if (blockSet.contains(block.getNr())) {
+				blockInfo.isLoopHead = true;
+			}
+			return;
+		}
+		block.markBlockVisited();
+
+		blockSet.add(block.getNr());
+		for (Block followerBlock : blockInfo.followers) {
+			detectLoopHeads(followerBlock, blockInfos, blockSet);
+		}
+		blockSet.remove(block.getNr());
+	}
+
+	private static void traverseBlocksDepthFirst(Block block, HashMap<Block, BlockInfo> blockInfos, BlockWalker walker) {
+		if (block.blockVisited())
+			return;
+		block.markBlockVisited();
+
+		BlockInfo blockInfo = blockInfos.get(block);
+		if (blockInfo == null) {
+			walker.visitBlock(block);
+			return;
+		}
+
+		if (blockInfo.isLoopHead) {
+			Iterator<Block> iter = blockInfo.followers.iterator();
+			traverseBlocksDepthFirst(iter.next(), blockInfos, walker);
+			walker.visitBlock(block);
+			while (iter.hasNext()) {
+				traverseBlocksDepthFirst(iter.next(), blockInfos, walker);
+			}
+		} else {
+			walker.visitBlock(block);
+			for (Block followerBlock : blockInfo.followers) {
+				traverseBlocksDepthFirst(followerBlock, blockInfos, walker);
+			}
+		}
+	}
+
+	public static class BlockInfo {
+		LinkedList<Block> followers = new LinkedList<>();
+		boolean isLoopHead;
+
+		@Override
+		public String toString() {
+			return followers.toString();
 		}
 	}
 }

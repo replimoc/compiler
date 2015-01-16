@@ -70,9 +70,11 @@ public class LinearScanRegisterAllocation {
 		assignRegisters();
 
 		setStackSize(currentStackOffset);
+
 		// for (VirtualRegister register : virtualRegisters) {
-		// System.out.println(register);
+		// System.out.println("VR" + register.getNum() + " from " + register.getFirstOccurrence() + " to " + register.getLastOccurrence());
 		// }
+
 		int i = 0;
 		for (AssemblerOperation operation : operations) {
 			if (operation instanceof CallOperation) {

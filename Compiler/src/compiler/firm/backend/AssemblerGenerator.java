@@ -9,6 +9,7 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 
+import compiler.firm.backend.FirmGraphTraverser.BlockInfo;
 import compiler.firm.backend.calling.CallingConvention;
 import compiler.firm.backend.operations.FunctionSpecificationOperation;
 import compiler.firm.backend.operations.P2AlignOperation;
@@ -26,7 +27,7 @@ public final class AssemblerGenerator {
 	private AssemblerGenerator() {
 	}
 
-	public static void createAssemblerX8664(Path outputFile, CallingConvention callingConvention, boolean doPeephole)
+	public static void createAssemblerX8664(Path outputFile, final CallingConvention callingConvention, boolean doPeephole)
 			throws IOException {
 		final ArrayList<AssemblerOperation> assembler = new ArrayList<>();
 
@@ -43,37 +44,49 @@ public final class AssemblerGenerator {
 			BlockNodesCollectingVisitor collectorVisitor = new BlockNodesCollectingVisitor();
 			graph.walkTopological(collectorVisitor);
 
-			final X8664AssemblerGenerationVisitor visitor = new X8664AssemblerGenerationVisitor(callingConvention);
 			// final NodeNumberPrintingVisitor printer = new NodeNumberPrintingVisitor();
 
-			visitor.addListOfAllPhis(collectorVisitor.getAllPhis());
-
+			HashMap<Block, BlockNodes> nodesPerBlockMap = collectorVisitor.getNodesPerBlockMap();
+			X8664AssemblerGenerationVisitor visitor = new X8664AssemblerGenerationVisitor(callingConvention);
 			BackEdges.enable(graph);
-
-			final HashMap<Block, BlockNodes> nodesPerBlockMap = collectorVisitor.getNodesPerBlockMap();
-			FirmGraphTraverser.walkBlocksPostOrder(graph, new BlockWalker() {
-				@Override
-				public void visitBlock(Block block) {
-					nodesPerBlockMap.get(block).visitNodes(visitor, nodesPerBlockMap);
-				}
-			});
+			HashMap<Block, BlockInfo> blockInfos = FirmGraphTraverser.walkBlocksPostOrder(graph, new BlockNodesWalker(visitor, nodesPerBlockMap));
 			BackEdges.disable(graph);
 
-			ArrayList<AssemblerOperation> operations = visitor.getOperations();
+			visitor.finishOperationsList();
+			ArrayList<AssemblerOperation> operationsBlocksPostOrder = visitor.getAllOperations();
+			final HashMap<Block, ArrayList<AssemblerOperation>> operationsOfBlocks = visitor.getOperationsOfBlocks();
 
 			// TODO remove next line when it's not needed any more
-			// generatePlainAssemblerFile(Paths.get(graph.getEntity().getLdName() + ".plain"), operations);
+			// generatePlainAssemblerFile(Paths.get(graph.getEntity().getLdName() + ".plain"), operationsBlocksPostOrder);
 
-			allocateRegisters(operations);
+			allocateRegisters(operationsBlocksPostOrder);
+			operationsBlocksPostOrder.clear(); // free some memory
+
+			ArrayList<AssemblerOperation> operationsList = generateOperationsList(graph, blockInfos, operationsOfBlocks);
+
 			if (doPeephole) {
-				PeepholeOptimizer peepholeOptimizer = new PeepholeOptimizer(operations, assembler);
+				PeepholeOptimizer peepholeOptimizer = new PeepholeOptimizer(operationsList, assembler);
 				peepholeOptimizer.optimize();
 			} else {
-				assembler.addAll(operations);
+				assembler.addAll(operationsList);
 			}
 		}
 
 		generateAssemblerFile(outputFile, assembler);
+	}
+
+	private static ArrayList<AssemblerOperation> generateOperationsList(Graph graph, HashMap<Block, BlockInfo> blockInfos,
+			final HashMap<Block, ArrayList<AssemblerOperation>> operationsOfBlocks) {
+		final ArrayList<AssemblerOperation> operationsList = new ArrayList<>();
+
+		FirmGraphTraverser.walkLoopOptimizedPostorder(graph, blockInfos, new BlockWalker() {
+			@Override
+			public void visitBlock(Block block) {
+				operationsList.addAll(operationsOfBlocks.get(block));
+			}
+		});
+
+		return operationsList;
 	}
 
 	private static void allocateRegisters(List<AssemblerOperation> assembler) {
@@ -103,6 +116,21 @@ public final class AssemblerGenerator {
 			writer.close();
 		} catch (IOException e) {
 			e.printStackTrace();
+		}
+	}
+
+	private static class BlockNodesWalker implements BlockWalker {
+		private final BulkPhiNodeVisitor visitor;
+		private final HashMap<Block, BlockNodes> nodesPerBlockMap;
+
+		public BlockNodesWalker(BulkPhiNodeVisitor visitor, HashMap<Block, BlockNodes> nodesPerBlockMap) {
+			this.visitor = visitor;
+			this.nodesPerBlockMap = nodesPerBlockMap;
+		}
+
+		@Override
+		public void visitBlock(Block block) {
+			nodesPerBlockMap.get(block).visitNodes(visitor, nodesPerBlockMap);
 		}
 	}
 }
