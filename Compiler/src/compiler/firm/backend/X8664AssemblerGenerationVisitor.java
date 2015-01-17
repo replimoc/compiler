@@ -9,25 +9,8 @@ import java.util.Map.Entry;
 
 import compiler.firm.FirmUtils;
 import compiler.firm.backend.calling.CallingConvention;
-import compiler.firm.backend.operations.AddOperation;
-import compiler.firm.backend.operations.AndOperation;
-import compiler.firm.backend.operations.CallOperation;
-import compiler.firm.backend.operations.CltdOperation;
-import compiler.firm.backend.operations.CmpOperation;
-import compiler.firm.backend.operations.Comment;
-import compiler.firm.backend.operations.IdivOperation;
-import compiler.firm.backend.operations.ImulOperation;
-import compiler.firm.backend.operations.LabelOperation;
-import compiler.firm.backend.operations.LeaOperation;
-import compiler.firm.backend.operations.MovOperation;
-import compiler.firm.backend.operations.NegOperation;
-import compiler.firm.backend.operations.NotOperation;
-import compiler.firm.backend.operations.PopOperation;
-import compiler.firm.backend.operations.PushOperation;
-import compiler.firm.backend.operations.RetOperation;
-import compiler.firm.backend.operations.ShlOperation;
-import compiler.firm.backend.operations.SizeOperation;
-import compiler.firm.backend.operations.SubOperation;
+import compiler.firm.backend.operations.*;
+import compiler.firm.backend.operations.cmov.CmovSignOperation;
 import compiler.firm.backend.operations.dummy.FreeStackOperation;
 import compiler.firm.backend.operations.dummy.ReserveStackOperation;
 import compiler.firm.backend.operations.jump.JgOperation;
@@ -193,7 +176,62 @@ public class X8664AssemblerGenerationVisitor implements BulkPhiNodeVisitor {
 		return blockLabel;
 	}
 
-	// ----------------------------------------------- NodeVisitor ---------------------------------------------------
+	// ----------------------------------------------- Div by 2^n ---------------------------------------------------
+    /**
+     * create shift operations for dividing by power of two
+     *
+     * This code is copied from gcc-created assembly
+     * # load first operand in eax
+     * leal		2^n-1(%rax), %edx
+     * testl	%eax, %eax
+     * cmovs	%edx, %eax
+     * sarl		$4, %eax
+     * # if constant is negative
+     * negl		%eax
+     */
+    private void divByPow2(Div parent, Node left, int absDivisor, boolean isPositive)
+    {
+        System.out.println("X8664AssemblerGenerationVisitor.divByPow2");
+        // get left node
+        RegisterBased leftArgument = storageManagement.getValue(left, true);
+        RegisterBased temporaryRegister = new VirtualRegister(StorageManagement.getMode(parent));
+
+        // get right node
+//        RegisterBased resultRegister = null;
+//        if (BackEdges.getNOuts(parent) == 1) {
+//            Node successor = FirmUtils.getFirstSuccessor(parent);
+//
+//            boolean moreUsages = false;
+//            for (Edge edge : BackEdges.getOuts(successor)) {
+//                if (!edge.node.equals(parent) && parent.getBlock().equals(edge.node.getBlock())) {
+//                    moreUsages = true;
+//                }
+//            }
+//
+//            Storage storage = storageManagement.getStorage(successor);
+//            if (successor.equals(right) && storage instanceof RegisterBased && !moreUsages && !right.getBlock().equals(parent.getBlock())) {
+//                resultRegister = (RegisterBased) storage;
+//            }
+//        }
+
+        MemoryPointer memoryPointer = new MemoryPointer(absDivisor-1, leftArgument);
+        addOperation(new LeaOperation(parent.toString(), memoryPointer, temporaryRegister));
+        addOperation(new TestOperation(parent.toString(), leftArgument, leftArgument));
+        addOperation(new CmovSignOperation(parent.toString(), temporaryRegister, leftArgument));
+        int pow = 31 - Integer.numberOfLeadingZeros( absDivisor );
+        assert pow > 0;
+        addOperation(new SarOperation(StorageManagement.getMode(left), leftArgument, new Constant(pow)));
+
+        if(!isPositive){
+            addOperation(new NegOperation(leftArgument));
+        }
+
+        storageManagement.storeValue(parent, leftArgument);
+    }
+
+
+
+	// ----------------------------------------------- Lea and Co ---------------------------------------------------
 
 	private boolean leaIsPossible(Add node) {
 		if (node.getMode().equals(FirmUtils.getModeReference()) && node.getPred(1).getClass() == Shl.class) {
@@ -230,6 +268,8 @@ public class X8664AssemblerGenerationVisitor implements BulkPhiNodeVisitor {
 		int factor = leaFactor(shift);
 		return new MemoryPointer(0, baseRegister, factorRegister, factor);
 	}
+
+    // ----------------------------------------------- NodeVisitor ---------------------------------------------------
 
 	@Override
 	public void visit(Add node) {
@@ -416,7 +456,22 @@ public class X8664AssemblerGenerationVisitor implements BulkPhiNodeVisitor {
 
 	@Override
 	public void visit(Div node) {
-		storageManagement.storeToBackEdges(node, visitDivMod(node.getLeft(), node.getRight()).getResult());
+        Node right = node.getRight();
+
+        if(right instanceof Const)
+        {
+            int divisor = ((Const) right).getTarval().asInt();
+            int absDivisor = Math.abs(divisor);
+
+            // TODO there was a "is power of two" method somewhere
+            if( (absDivisor & (absDivisor - 1)) == 0){
+                divByPow2(node, node.getLeft(), absDivisor, (divisor>0));
+                return;
+            }
+
+        }
+
+		storageManagement.storeToBackEdges(node, visitDivMod(node.getLeft(), right).getResult());
 	}
 
 	@Override
