@@ -15,6 +15,13 @@ public class LeaOperation extends AssemblerBitOperation {
 		this.resultRegister = resultRegister;
 	}
 
+    public LeaOperation(String comment, Storage addressStorage, RegisterBased resultRegister) {
+		super(comment);
+
+		this.addressStorage = addressStorage;
+		this.resultRegister = resultRegister;
+	}
+
 	@Override
 	public String getOperationString() {
 		return String.format("\tlea %s, %s", addressStorage.toString(), resultRegister.toString());
