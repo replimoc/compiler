@@ -73,6 +73,44 @@ public class ControlFlowVisitor extends OptimizationVisitor<Node> {
 				target = result ? TargetValue.getBTrue() : TargetValue.getBFalse();
 			}
 			return target;
+		} else if (left.equals(right)) {
+			boolean result = false;
+			boolean success = true;
+
+			switch (compare.getRelation()) {
+			case Equal:
+				result = true;
+				break;
+			case LessEqual:
+			case GreaterEqual:
+				if (left.getMode().equals(FirmUtils.getModeInteger()) && right.getMode().equals(FirmUtils.getModeInteger())) {
+					result = true;
+					break;
+				} else {
+					success = false;
+					break;
+				}
+			case LessGreater:
+				result = false;
+				break;
+			case Less:
+			case Greater:
+				if (left.getMode().equals(FirmUtils.getModeInteger()) && right.getMode().equals(FirmUtils.getModeInteger())) {
+					result = false;
+					break;
+				} else {
+					success = false;
+					break;
+				}
+			default:
+				success = false;
+				break;
+			}
+			TargetValue target = TargetValue.getBad();
+			if (success) {
+				target = result ? TargetValue.getBTrue() : TargetValue.getBFalse();
+			}
+			return target;
 		} else {
 			return TargetValue.getBad();
 		}
