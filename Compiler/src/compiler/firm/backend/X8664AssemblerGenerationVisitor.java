@@ -29,6 +29,7 @@ import compiler.firm.backend.storage.RegisterBundle;
 import compiler.firm.backend.storage.SingleRegister;
 import compiler.firm.backend.storage.Storage;
 import compiler.firm.backend.storage.VirtualRegister;
+import compiler.utils.MathUtils;
 import compiler.utils.Utils;
 
 import firm.BackEdges;
@@ -233,7 +234,7 @@ public class X8664AssemblerGenerationVisitor implements BulkPhiNodeVisitor {
     private void divByConst(Div parent, Node left, int absDivisor, boolean isPositive)
     {
         int l = Math.max(1, 32 - Integer.numberOfLeadingZeros(absDivisor));
-        long m1 = Math.floorDiv(0x100000000L * (1L << (l-1)) ,  absDivisor) + 1L;
+        long m1 = MathUtils.floorDiv(0x100000000L * (1L << (l - 1)), absDivisor) + 1L;
         int m = (int) (m1-0x100000000L);
 
         RegisterBased leftArgument = storageManagement.getValue(left, true);
