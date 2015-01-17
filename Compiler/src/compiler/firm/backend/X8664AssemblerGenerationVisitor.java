@@ -191,7 +191,7 @@ public class X8664AssemblerGenerationVisitor implements BulkPhiNodeVisitor {
      */
     private void divByPow2(Div parent, Node left, int absDivisor, boolean isPositive)
     {
-        System.out.println("X8664AssemblerGenerationVisitor.divByPow2");
+        //System.out.println("X8664AssemblerGenerationVisitor.divByPow2");
         // get left node
         RegisterBased leftArgument = storageManagement.getValue(left, true);
         RegisterBased temporaryRegister = new VirtualRegister(StorageManagement.getMode(parent));
@@ -227,9 +227,40 @@ public class X8664AssemblerGenerationVisitor implements BulkPhiNodeVisitor {
         }
 
         storageManagement.storeValue(parent, leftArgument);
+
     }
 
+    private void divByConst(Div parent, Node left, int absDivisor, boolean isPositive)
+    {
+        int l = Math.max(1, 32 - Integer.numberOfLeadingZeros(absDivisor));
+        long m1 = Math.floorDiv(0x100000000L * (1L << (l-1)) ,  absDivisor) + 1L;
+        int m = (int) (m1-0x100000000L);
 
+        RegisterBased leftArgument = storageManagement.getValue(left, true);
+        RegisterBased eax = new VirtualRegister(StorageManagement.getMode(parent), RegisterBundle._AX);
+        RegisterBased tmp = new VirtualRegister(StorageManagement.getMode(parent));
+
+        addOperation(new MovOperation(parent.toString(), new Constant(m), tmp));
+        addOperation(new MovOperation(parent.toString(), leftArgument, eax));
+
+        OneOperandImulOperation imull = new OneOperandImulOperation(parent.toString(), tmp);
+        addOperation(imull);
+        RegisterBased edx = imull.getResultHigh();
+
+        addOperation(new AddOperation(parent.toString(), leftArgument, edx)); // todo replace with lea?
+        addOperation(new SarOperation(parent.toString(), null, edx, new Constant(l-1)));
+
+        RegisterBased leftArgument2 = storageManagement.getValue(left, true);
+
+        addOperation(new SarOperation(parent.toString(), null, leftArgument2, new Constant(31)));
+        addOperation(new SubOperation(parent.toString(), leftArgument2, edx));
+
+        if(!isPositive){
+            addOperation(new NegOperation(edx));
+        }
+
+        storageManagement.storeValue(parent, edx);
+    }
 
 	// ----------------------------------------------- Lea and Co ---------------------------------------------------
 
@@ -461,6 +492,8 @@ public class X8664AssemblerGenerationVisitor implements BulkPhiNodeVisitor {
         if(right instanceof Const)
         {
             int divisor = ((Const) right).getTarval().asInt();
+            // TODO is this true?
+            assert divisor != 0;
             int absDivisor = Math.abs(divisor);
 
             // TODO there was a "is power of two" method somewhere
@@ -469,6 +502,8 @@ public class X8664AssemblerGenerationVisitor implements BulkPhiNodeVisitor {
                 return;
             }
 
+            divByConst(node, node.getLeft(), absDivisor, (divisor>0));
+            return;
         }
 
 		storageManagement.storeToBackEdges(node, visitDivMod(node.getLeft(), right).getResult());
