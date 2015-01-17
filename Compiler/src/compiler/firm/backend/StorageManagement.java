@@ -139,11 +139,11 @@ public class StorageManagement {
 		return !node.getMode().equals(Mode.getM());
 	}
 
-	void storeToBackEdges(Node node, VirtualRegister virtualRegister) {
+	void storeToBackEdges(Node node, RegisterBased register) {
 		for (Edge edge : BackEdges.getOuts(node)) {
 			Node edgeNode = edge.node;
 			if (!edgeNode.getMode().equals(Mode.getM())) {
-				storeValueAndCreateNewStorage(edgeNode, virtualRegister, true);
+				storeValueAndCreateNewStorage(edgeNode, register, true);
 			}
 		}
 	}

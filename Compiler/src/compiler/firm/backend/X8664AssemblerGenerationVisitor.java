@@ -242,7 +242,7 @@ public class X8664AssemblerGenerationVisitor implements BulkPhiNodeVisitor {
 			addOperation(new NegOperation(leftArgument));
 		}
 
-		storageManagement.storeValue(parent, leftArgument);
+		storageManagement.storeToBackEdges(parent, leftArgument);
 
 	}
 
@@ -275,7 +275,7 @@ public class X8664AssemblerGenerationVisitor implements BulkPhiNodeVisitor {
 			addOperation(new NegOperation(edx));
 		}
 
-		storageManagement.storeValue(parent, edx);
+		storageManagement.storeToBackEdges(parent, edx);
 	}
 
 	// ----------------------------------------------- Lea and Co ---------------------------------------------------
