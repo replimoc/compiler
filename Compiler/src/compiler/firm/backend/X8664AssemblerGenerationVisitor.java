@@ -9,7 +9,28 @@ import java.util.Map.Entry;
 
 import compiler.firm.FirmUtils;
 import compiler.firm.backend.calling.CallingConvention;
-import compiler.firm.backend.operations.*;
+import compiler.firm.backend.operations.AddOperation;
+import compiler.firm.backend.operations.AndOperation;
+import compiler.firm.backend.operations.CallOperation;
+import compiler.firm.backend.operations.CltdOperation;
+import compiler.firm.backend.operations.CmpOperation;
+import compiler.firm.backend.operations.Comment;
+import compiler.firm.backend.operations.IdivOperation;
+import compiler.firm.backend.operations.ImulOperation;
+import compiler.firm.backend.operations.LabelOperation;
+import compiler.firm.backend.operations.LeaOperation;
+import compiler.firm.backend.operations.MovOperation;
+import compiler.firm.backend.operations.NegOperation;
+import compiler.firm.backend.operations.NotOperation;
+import compiler.firm.backend.operations.OneOperandImulOperation;
+import compiler.firm.backend.operations.PopOperation;
+import compiler.firm.backend.operations.PushOperation;
+import compiler.firm.backend.operations.RetOperation;
+import compiler.firm.backend.operations.SarOperation;
+import compiler.firm.backend.operations.ShlOperation;
+import compiler.firm.backend.operations.SizeOperation;
+import compiler.firm.backend.operations.SubOperation;
+import compiler.firm.backend.operations.TestOperation;
 import compiler.firm.backend.operations.cmov.CmovSignOperation;
 import compiler.firm.backend.operations.dummy.FreeStackOperation;
 import compiler.firm.backend.operations.dummy.ReserveStackOperation;
@@ -178,90 +199,84 @@ public class X8664AssemblerGenerationVisitor implements BulkPhiNodeVisitor {
 	}
 
 	// ----------------------------------------------- Div by 2^n ---------------------------------------------------
-    /**
-     * create shift operations for dividing by power of two
-     *
-     * This code is copied from gcc-created assembly
-     * # load first operand in eax
-     * leal		2^n-1(%rax), %edx
-     * testl	%eax, %eax
-     * cmovs	%edx, %eax
-     * sarl		$4, %eax
-     * # if constant is negative
-     * negl		%eax
-     */
-    private void divByPow2(Div parent, Node left, int absDivisor, boolean isPositive)
-    {
-        //System.out.println("X8664AssemblerGenerationVisitor.divByPow2");
-        // get left node
-        RegisterBased leftArgument = storageManagement.getValue(left, true);
-        RegisterBased temporaryRegister = new VirtualRegister(StorageManagement.getMode(parent));
+	/**
+	 * create shift operations for dividing by power of two
+	 *
+	 * This code is copied from gcc-created assembly # load first operand in eax leal 2^n-1(%rax), %edx testl %eax, %eax cmovs %edx, %eax sarl $4,
+	 * %eax # if constant is negative negl %eax
+	 */
+	private void divByPow2(Div parent, Node left, int absDivisor, boolean isPositive)
+	{
+		// System.out.println("X8664AssemblerGenerationVisitor.divByPow2");
+		// get left node
+		RegisterBased leftArgument = storageManagement.getValue(left, true);
+		RegisterBased temporaryRegister = new VirtualRegister(StorageManagement.getMode(parent));
 
-        // get right node
-//        RegisterBased resultRegister = null;
-//        if (BackEdges.getNOuts(parent) == 1) {
-//            Node successor = FirmUtils.getFirstSuccessor(parent);
-//
-//            boolean moreUsages = false;
-//            for (Edge edge : BackEdges.getOuts(successor)) {
-//                if (!edge.node.equals(parent) && parent.getBlock().equals(edge.node.getBlock())) {
-//                    moreUsages = true;
-//                }
-//            }
-//
-//            Storage storage = storageManagement.getStorage(successor);
-//            if (successor.equals(right) && storage instanceof RegisterBased && !moreUsages && !right.getBlock().equals(parent.getBlock())) {
-//                resultRegister = (RegisterBased) storage;
-//            }
-//        }
+		// get right node
+		// RegisterBased resultRegister = null;
+		// if (BackEdges.getNOuts(parent) == 1) {
+		// Node successor = FirmUtils.getFirstSuccessor(parent);
+		//
+		// boolean moreUsages = false;
+		// for (Edge edge : BackEdges.getOuts(successor)) {
+		// if (!edge.node.equals(parent) && parent.getBlock().equals(edge.node.getBlock())) {
+		// moreUsages = true;
+		// }
+		// }
+		//
+		// Storage storage = storageManagement.getStorage(successor);
+		// if (successor.equals(right) && storage instanceof RegisterBased && !moreUsages && !right.getBlock().equals(parent.getBlock())) {
+		// resultRegister = (RegisterBased) storage;
+		// }
+		// }
 
-        MemoryPointer memoryPointer = new MemoryPointer(absDivisor-1, leftArgument);
-        addOperation(new LeaOperation(parent.toString(), memoryPointer, temporaryRegister));
-        addOperation(new TestOperation(parent.toString(), leftArgument, leftArgument));
-        addOperation(new CmovSignOperation(parent.toString(), temporaryRegister, leftArgument));
-        int pow = 31 - Integer.numberOfLeadingZeros( absDivisor );
-        assert pow > 0;
-        addOperation(new SarOperation(StorageManagement.getMode(left), leftArgument, new Constant(pow)));
+		MemoryPointer memoryPointer = new MemoryPointer(absDivisor - 1, leftArgument);
+		addOperation(new LeaOperation(parent.toString(), memoryPointer, temporaryRegister));
+		addOperation(new TestOperation(parent.toString(), leftArgument, leftArgument));
+		addOperation(new CmovSignOperation(parent.toString(), temporaryRegister, leftArgument));
+		int pow = 31 - Integer.numberOfLeadingZeros(absDivisor);
+		assert pow > 0;
+		addOperation(new SarOperation(StorageManagement.getMode(left), leftArgument, new Constant(pow)));
 
-        if(!isPositive){
-            addOperation(new NegOperation(leftArgument));
-        }
+		if (!isPositive) {
+			addOperation(new NegOperation(leftArgument));
+		}
 
-        storageManagement.storeValue(parent, leftArgument);
+		storageManagement.storeValue(parent, leftArgument);
 
-    }
+	}
 
-    private void divByConst(Div parent, Node left, int absDivisor, boolean isPositive)
-    {
-        int l = Math.max(1, 32 - Integer.numberOfLeadingZeros(absDivisor));
-        long m1 = MathUtils.floorDiv(0x100000000L * (1L << (l - 1)), absDivisor) + 1L;
-        int m = (int) (m1-0x100000000L);
+	private void divByConst(Div parent, Node left, int absDivisor, boolean isPositive)
+	{
+		int l = Math.max(1, 32 - Integer.numberOfLeadingZeros(absDivisor));
+		long m1 = MathUtils.floorDiv(0x100000000L * (1L << (l - 1)), absDivisor) + 1L;
+		int m = (int) (m1 - 0x100000000L);
 
-        RegisterBased leftArgument = storageManagement.getValue(left, true);
-        RegisterBased eax = new VirtualRegister(StorageManagement.getMode(parent), RegisterBundle._AX);
-        RegisterBased tmp = new VirtualRegister(StorageManagement.getMode(parent));
+		RegisterBased leftArgument = storageManagement.getValue(left, true);
+		RegisterBased eax = new VirtualRegister(StorageManagement.getMode(parent), RegisterBundle._AX);
+		RegisterBased tmp = new VirtualRegister(StorageManagement.getMode(parent));
 
-        addOperation(new MovOperation(parent.toString(), new Constant(m), tmp));
-        addOperation(new MovOperation(parent.toString(), leftArgument, eax));
+		addOperation(new MovOperation(parent.toString(), new Constant(m), tmp));
+		addOperation(new MovOperation(parent.toString(), leftArgument, eax));
 
-        OneOperandImulOperation imull = new OneOperandImulOperation(parent.toString(), tmp);
-        addOperation(imull);
-        RegisterBased edx = imull.getResultHigh();
+		OneOperandImulOperation imull = new OneOperandImulOperation(parent.toString(), tmp);
+		addOperation(imull);
+		RegisterBased edx = imull.getResultHigh();
 
-        addOperation(new AddOperation(parent.toString(), leftArgument, edx)); // todo replace with lea?
-        addOperation(new SarOperation(parent.toString(), null, edx, new Constant(l-1)));
+		addOperation(new AddOperation(parent.toString(), leftArgument, edx)); // todo replace with lea?
+		addOperation(new SarOperation(parent.toString(), null, edx, new Constant(l - 1)));
 
-        RegisterBased leftArgument2 = storageManagement.getValue(left, true);
+		RegisterBased leftArgument2 = storageManagement.getValue(left, true);
 
-        addOperation(new SarOperation(parent.toString(), null, leftArgument2, new Constant(31)));
-        addOperation(new SubOperation(parent.toString(), leftArgument2, edx));
+		addOperation(new SarOperation(parent.toString(), null, leftArgument2, new Constant(31)));
+		addOperation(new SubOperation(parent.toString(), leftArgument2, edx));
 
-        if(!isPositive){
-            addOperation(new NegOperation(edx));
-        }
+		if (!isPositive) {
+			addOperation(new NegOperation(edx));
+		}
 
-        storageManagement.storeValue(parent, edx);
-    }
+		storageManagement.storeValue(parent, edx);
+	}
 
 	// ----------------------------------------------- Lea and Co ---------------------------------------------------
 
@@ -301,7 +316,7 @@ public class X8664AssemblerGenerationVisitor implements BulkPhiNodeVisitor {
 		return new MemoryPointer(0, baseRegister, factorRegister, factor);
 	}
 
-    // ----------------------------------------------- NodeVisitor ---------------------------------------------------
+	// ----------------------------------------------- NodeVisitor ---------------------------------------------------
 
 	@Override
 	public void visit(Add node) {
@@ -488,24 +503,24 @@ public class X8664AssemblerGenerationVisitor implements BulkPhiNodeVisitor {
 
 	@Override
 	public void visit(Div node) {
-        Node right = node.getRight();
+		Node right = node.getRight();
 
-        if(right instanceof Const)
-        {
-            int divisor = ((Const) right).getTarval().asInt();
-            // TODO is this true?
-            assert divisor != 0;
-            int absDivisor = Math.abs(divisor);
+		if (right instanceof Const)
+		{
+			int divisor = ((Const) right).getTarval().asInt();
+			// TODO is this true?
+			assert divisor != 0;
+			int absDivisor = Math.abs(divisor);
 
-            // TODO there was a "is power of two" method somewhere
-            if( (absDivisor & (absDivisor - 1)) == 0){
-                divByPow2(node, node.getLeft(), absDivisor, (divisor>0));
-                return;
-            }
+			// TODO there was a "is power of two" method somewhere
+			if ((absDivisor & (absDivisor - 1)) == 0) {
+				divByPow2(node, node.getLeft(), absDivisor, (divisor > 0));
+				return;
+			}
 
-            divByConst(node, node.getLeft(), absDivisor, (divisor>0));
-            return;
-        }
+			divByConst(node, node.getLeft(), absDivisor, (divisor > 0));
+			return;
+		}
 
 		storageManagement.storeToBackEdges(node, visitDivMod(node.getLeft(), right).getResult());
 	}
