@@ -1,4 +1,4 @@
-package compiler.firm.backend;
+package compiler.firm.backend.registerallocation;
 
 import java.util.Arrays;
 import java.util.LinkedList;

@@ -16,7 +16,8 @@ import compiler.firm.backend.operations.FunctionSpecificationOperation;
 import compiler.firm.backend.operations.P2AlignOperation;
 import compiler.firm.backend.operations.TextOperation;
 import compiler.firm.backend.operations.templates.AssemblerOperation;
-
+import compiler.firm.backend.registerallocation.LinearScanRegisterAllocation;
+import compiler.firm.backend.registerallocation.RegisterAllocationPolicy;
 import firm.BackEdges;
 import firm.BlockWalker;
 import firm.Graph;

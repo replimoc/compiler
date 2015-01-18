@@ -1,4 +1,4 @@
-package compiler.firm.backend;
+package compiler.firm.backend.registerallocation;
 
 import java.util.ArrayList;
 import java.util.Collections;
@@ -9,6 +9,7 @@ import java.util.LinkedList;
 import java.util.List;
 import java.util.Map.Entry;
 
+import compiler.firm.backend.Bit;
 import compiler.firm.backend.operations.CallOperation;
 import compiler.firm.backend.operations.LabelOperation;
 import compiler.firm.backend.operations.dummy.MethodStartEndOperation;
