@@ -147,7 +147,7 @@ public class CallOperation extends AssemblerOperation {
 		return resultStrings;
 	}
 
-	public void addUsedRegisters(List<VirtualRegister> registers) {
+	public void addAliveRegisters(List<VirtualRegister> registers) {
 		for (VirtualRegister registerBased : registers) {
 			Storage storage = registerBased.getRegister();
 			if (!(storage instanceof SingleRegister)) {

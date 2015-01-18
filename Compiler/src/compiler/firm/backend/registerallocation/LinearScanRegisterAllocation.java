@@ -50,28 +50,11 @@ public class LinearScanRegisterAllocation {
 		detectPartiallyAllocatedRegisters();
 		assignRegisters();
 
-		setStackSize(currentStackOffset);
-
 		// for (VirtualRegister register : virtualRegisters) {
 		// System.out.println("VR" + register.getNum() + " from " + register.getFirstOccurrence() + " to " + register.getLastOccurrence());
 		// }
 
-		int line = 0;
-		for (AssemblerOperation operation : operations) {
-			if (operation instanceof CallOperation) {
-				setOperationAliveRegisters(line, (CallOperation) operation);
-			}
-			if (operation instanceof MethodStartEndOperation) {
-				MethodStartEndOperation methodStartEndOperation = (MethodStartEndOperation) operation;
-
-				if (isMainMethod) { // if it is the main, no registers need to be saved
-					methodStartEndOperation.setUsedRegisters(new HashSet<RegisterBundle>());
-				} else {
-					methodStartEndOperation.setUsedRegisters(usedRegisters);
-				}
-			}
-			line++;
-		}
+		setDummyOperationsInformation();
 	}
 
 	private void sortRegisterListByStart(List<VirtualRegister> registers) {
@@ -242,28 +225,6 @@ public class LinearScanRegisterAllocation {
 		}
 	}
 
-	private void setStackSize(int size) {
-		size += 0x10;
-		size &= -0x10; // Align to 8-byte.
-
-		for (AssemblerOperation operation : operations) {
-			if (operation instanceof MethodStartEndOperation) {
-				MethodStartEndOperation reserveStackOperation = (MethodStartEndOperation) operation;
-				reserveStackOperation.setStackOperationSize(size);
-			}
-		}
-	}
-
-	private void setOperationAliveRegisters(int num, CallOperation callOperation) {
-		List<VirtualRegister> registers = new LinkedList<VirtualRegister>();
-		for (VirtualRegister register : virtualRegisters) {
-			if (register.isAliveAt(num)) {
-				registers.add(register);
-			}
-		}
-		callOperation.addUsedRegisters(registers);
-	}
-
 	// ---------------------- calculate register livetime -------------------
 
 	private void calculateRegisterLivetime() {
@@ -308,5 +269,45 @@ public class LinearScanRegisterAllocation {
 				virtualRegisters.add(virtualRegister);
 			}
 		}
+	}
+
+	// ------------------------------ setting information to dummy operations -----------------
+
+	private void setDummyOperationsInformation() {
+		int stackSize = currentStackOffset;
+		if (stackSize > 0) {
+			stackSize += 0x10;
+			stackSize &= -0x10; // Align to 8-byte.
+		}
+
+		int line = 0;
+		for (AssemblerOperation operation : operations) {
+			if (operation instanceof CallOperation) {
+				List<VirtualRegister> aliveRegisters = getRegistersAliveAt(line);
+				((CallOperation) operation).addAliveRegisters(aliveRegisters);
+			}
+
+			if (operation instanceof MethodStartEndOperation) {
+				MethodStartEndOperation methodStartEndOperation = (MethodStartEndOperation) operation;
+				methodStartEndOperation.setStackOperationSize(stackSize);
+
+				if (isMainMethod) { // if it is the main, no registers need to be saved
+					methodStartEndOperation.setUsedRegisters(new HashSet<RegisterBundle>());
+				} else {
+					methodStartEndOperation.setUsedRegisters(usedRegisters);
+				}
+			}
+			line++;
+		}
+	}
+
+	private List<VirtualRegister> getRegistersAliveAt(int num) {
+		List<VirtualRegister> registers = new LinkedList<VirtualRegister>();
+		for (VirtualRegister register : this.virtualRegisters) {
+			if (register.isAliveAt(num)) {
+				registers.add(register);
+			}
+		}
+		return registers;
 	}
 }
