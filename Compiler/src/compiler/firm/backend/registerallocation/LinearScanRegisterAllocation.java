@@ -120,7 +120,7 @@ public class LinearScanRegisterAllocation {
 	private SingleRegister getAllocatableRegister(VirtualRegister virtualRegister, RegisterBundle justFreedRegister) {
 		Bit mode = virtualRegister.getMode();
 
-		SingleRegister preferedRegister = virtualRegister.getPreferedRegister();
+		SingleRegister preferedRegister = virtualRegister.getPreferedSingleRegister();
 		if (preferedRegister != null && isRegisterFree(preferedRegister, virtualRegister)) {
 			return preferedRegister;
 		} else if (justFreedRegister != null && isRegisterFree(justFreedRegister.getRegister(mode), virtualRegister)) {

@@ -683,6 +683,10 @@ public class X8664AssemblerGenerationVisitor implements BulkPhiNodeVisitor {
 		for (Entry<Phi, Node> mapping : node2phiMapping.entrySet()) {
 			Storage register = storageManagement.getValueAvoidNewRegister(mapping.getValue());
 			Storage destination = storageManagement.getValueAvoidNewRegister(mapping.getKey());
+			if (register instanceof VirtualRegister && destination instanceof VirtualRegister) {
+				((VirtualRegister) register).setPreferedRegister((VirtualRegister) destination);
+				((VirtualRegister) destination).setPreferedRegister((VirtualRegister) register);
+			}
 			addOperation(new MovOperation("Phi: " + mapping.getValue() + " -> " + mapping.getKey(), register, destination));
 		}
 
