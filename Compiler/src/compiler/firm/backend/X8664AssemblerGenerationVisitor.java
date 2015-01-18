@@ -23,8 +23,6 @@ import compiler.firm.backend.operations.MovOperation;
 import compiler.firm.backend.operations.NegOperation;
 import compiler.firm.backend.operations.NotOperation;
 import compiler.firm.backend.operations.OneOperandImulOperation;
-import compiler.firm.backend.operations.PopOperation;
-import compiler.firm.backend.operations.PushOperation;
 import compiler.firm.backend.operations.RetOperation;
 import compiler.firm.backend.operations.SarOperation;
 import compiler.firm.backend.operations.ShlOperation;
@@ -32,10 +30,8 @@ import compiler.firm.backend.operations.SizeOperation;
 import compiler.firm.backend.operations.SubOperation;
 import compiler.firm.backend.operations.TestOperation;
 import compiler.firm.backend.operations.cmov.CmovSignOperation;
-import compiler.firm.backend.operations.dummy.FreeStackOperation;
-import compiler.firm.backend.operations.dummy.ReserveStackOperation;
-import compiler.firm.backend.operations.dummy.RestoreCalleeSavedRegistersOperation;
-import compiler.firm.backend.operations.dummy.SaveCalleeSavedRegistersOperation;
+import compiler.firm.backend.operations.dummy.MethodEndOperation;
+import compiler.firm.backend.operations.dummy.MethodStartOperation;
 import compiler.firm.backend.operations.jump.JgOperation;
 import compiler.firm.backend.operations.jump.JgeOperation;
 import compiler.firm.backend.operations.jump.JlOperation;
@@ -518,7 +514,7 @@ public class X8664AssemblerGenerationVisitor implements BulkPhiNodeVisitor {
 			if ((absDivisor & (absDivisor - 1)) == 0) {
 				divByPow2(node, node.getLeft(), absDivisor, (divisor > 0));
 				return;
-			}
+	}
 
 			divByConst(node, node.getLeft(), absDivisor, (divisor > 0));
 			return;
@@ -570,7 +566,7 @@ public class X8664AssemblerGenerationVisitor implements BulkPhiNodeVisitor {
 			// Store return value in EAX register
 			storageManagement.getValue(node.getPred(1), RegisterBundle._AX);
 		}
-		methodEnd(node);
+		addOperation(new MethodEndOperation(callingConvention));
 		addOperation(new RetOperation(getMethodName(node)));
 	}
 
@@ -641,10 +637,7 @@ public class X8664AssemblerGenerationVisitor implements BulkPhiNodeVisitor {
 	}
 
 	private void methodStart(Node node) {
-		addOperation(new PushOperation(Bit.BIT64, SingleRegister.RBP)); // Dynamic Link
-		addOperation(new MovOperation(SingleRegister.RSP, SingleRegister.RBP));
-		addOperation(new SaveCalleeSavedRegistersOperation(callingConvention));
-		addOperation(new ReserveStackOperation());
+		addOperation(new MethodStartOperation(callingConvention));
 
 		Node args = node.getGraph().getArgs();
 		RegisterBundle[] parameterRegisters = callingConvention.getParameterRegisters();
@@ -673,13 +666,6 @@ public class X8664AssemblerGenerationVisitor implements BulkPhiNodeVisitor {
 				storageManagement.addStorage(proj, location);
 			}
 		}
-	}
-
-	private void methodEnd(Node node) {
-		addOperation(new FreeStackOperation());
-		addOperation(new RestoreCalleeSavedRegistersOperation(callingConvention));
-		addOperation(new MovOperation(SingleRegister.RBP, SingleRegister.RSP));
-		addOperation(new PopOperation(SingleRegister.RBP));
 	}
 
 	@Override

@@ -9,6 +9,7 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 
+import compiler.ast.declaration.MainMethodDeclaration;
 import compiler.firm.backend.FirmGraphTraverser.BlockInfo;
 import compiler.firm.backend.calling.CallingConvention;
 import compiler.firm.backend.operations.FunctionSpecificationOperation;
@@ -59,7 +60,8 @@ public final class AssemblerGenerator {
 			// TODO remove next line when it's not needed any more
 			// generatePlainAssemblerFile(Paths.get(graph.getEntity().getLdName() + ".plain"), operationsBlocksPostOrder);
 
-			allocateRegisters(operationsBlocksPostOrder);
+			allocateRegisters(graph, operationsBlocksPostOrder);
+
 			operationsBlocksPostOrder.clear(); // free some memory
 
 			ArrayList<AssemblerOperation> operationsList = generateOperationsList(graph, blockInfos, operationsOfBlocks);
@@ -75,6 +77,11 @@ public final class AssemblerGenerator {
 		generateAssemblerFile(outputFile, assembler);
 	}
 
+	private static void allocateRegisters(Graph graph, ArrayList<AssemblerOperation> operationsBlocksPostOrder) {
+		boolean isMain = MainMethodDeclaration.MAIN_METHOD_NAME.equals(graph.getEntity().getLdName());
+		new LinearScanRegisterAllocation(operationsBlocksPostOrder, isMain).allocateRegisters();
+	}
+
 	private static ArrayList<AssemblerOperation> generateOperationsList(Graph graph, HashMap<Block, BlockInfo> blockInfos,
 			final HashMap<Block, ArrayList<AssemblerOperation>> operationsOfBlocks) {
 		final ArrayList<AssemblerOperation> operationsList = new ArrayList<>();
@@ -87,11 +94,6 @@ public final class AssemblerGenerator {
 		});
 
 		return operationsList;
-	}
-
-	private static void allocateRegisters(List<AssemblerOperation> assembler) {
-		LinearScanRegisterAllocation registerAllocation = new LinearScanRegisterAllocation(assembler);
-		registerAllocation.allocateRegisters();
 	}
 
 	private static void generateAssemblerFile(Path outputFile, List<AssemblerOperation> assembler) throws IOException {

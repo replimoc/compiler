@@ -10,16 +10,11 @@ import java.util.LinkedList;
 import java.util.List;
 import java.util.Map.Entry;
 
-import compiler.firm.backend.operations.AddOperation;
 import compiler.firm.backend.operations.CallOperation;
-import compiler.firm.backend.operations.Comment;
 import compiler.firm.backend.operations.LabelOperation;
-import compiler.firm.backend.operations.SubOperation;
-import compiler.firm.backend.operations.dummy.FreeStackOperation;
-import compiler.firm.backend.operations.dummy.ReserveStackOperation;
+import compiler.firm.backend.operations.dummy.MethodStartEndOperation;
 import compiler.firm.backend.operations.templates.AssemblerOperation;
 import compiler.firm.backend.operations.templates.JumpOperation;
-import compiler.firm.backend.storage.Constant;
 import compiler.firm.backend.storage.MemoryPointer;
 import compiler.firm.backend.storage.RegisterBased;
 import compiler.firm.backend.storage.RegisterBundle;
@@ -29,13 +24,8 @@ import compiler.firm.backend.storage.VirtualRegister;
 public class LinearScanRegisterAllocation {
 	private static final int STACK_ITEM_SIZE = 8;
 
-	private final List<AssemblerOperation> operations;
-	private final ArrayList<VirtualRegister> virtualRegisters = new ArrayList<VirtualRegister>();
-
-	private int currentStackOffset = 0;
-
 	@SuppressWarnings("unchecked")
-	private LinkedList<SingleRegister> allowedRegisters[] = new LinkedList[] {
+	private static final LinkedList<SingleRegister> allowedRegisters[] = new LinkedList[] {
 			// 64bit registers
 			getList(SingleRegister.RAX, SingleRegister.RBX, SingleRegister.RCX, SingleRegister.RDX,
 					SingleRegister.R8, SingleRegister.R9, SingleRegister.R10, SingleRegister.R11, SingleRegister.R12, SingleRegister.R13,
@@ -50,17 +40,20 @@ public class LinearScanRegisterAllocation {
 					SingleRegister.DIL, SingleRegister.SIL)
 	};
 
+	private final List<AssemblerOperation> operations;
+
+	private final ArrayList<VirtualRegister> virtualRegisters = new ArrayList<VirtualRegister>();
 	private final byte[] registerUsages = new byte[RegisterBundle.REGISTER_COUNTER];
 	private final HashMap<VirtualRegister, SingleRegister> usedRegisters = new HashMap<>();
+	private final HashMap<RegisterBundle, LinkedList<VirtualRegister>> partialAllocatedRegisters = new HashMap<>();
 
-	private HashMap<RegisterBundle, LinkedList<VirtualRegister>> partialAllocatedRegisters = new HashMap<>();
+	private final boolean isMain;
 
-	public LinearScanRegisterAllocation(List<AssemblerOperation> operations) {
+	private int currentStackOffset = 0;
+
+	public LinearScanRegisterAllocation(List<AssemblerOperation> operations, boolean isMain) {
 		this.operations = operations;
-	}
-
-	private LinkedList<SingleRegister> getList(SingleRegister... registers) {
-		return new LinkedList<>(Arrays.asList(registers));
+		this.isMain = isMain;
 	}
 
 	public void allocateRegisters() {
@@ -75,12 +68,15 @@ public class LinearScanRegisterAllocation {
 		// System.out.println("VR" + register.getNum() + " from " + register.getFirstOccurrence() + " to " + register.getLastOccurrence());
 		// }
 
-		int i = 0;
+		int line = 0;
 		for (AssemblerOperation operation : operations) {
 			if (operation instanceof CallOperation) {
-				setOperationAliveRegisters(i, (CallOperation) operation);
+				setOperationAliveRegisters(line, (CallOperation) operation);
 			}
-			i++;
+			if (operation instanceof MethodStartEndOperation) {
+				((MethodStartEndOperation) operation).setMain(isMain);
+			}
+			line++;
 		}
 	}
 
@@ -306,19 +302,11 @@ public class LinearScanRegisterAllocation {
 	private void setStackSize(int size) {
 		size += 0x10;
 		size &= -0x10; // Align to 8-byte.
-		AssemblerOperation reserveOperation = new SubOperation("stack reservation", new Constant(size), SingleRegister.RSP);
-		AssemblerOperation freeOperation = new AddOperation("stack free", new Constant(size), SingleRegister.RSP);
-		if (size <= 0) {
-			reserveOperation = new Comment("no items on stack, skip reservation");
-			freeOperation = new Comment("no items on stack, skip free");
-		}
+
 		for (AssemblerOperation operation : operations) {
-			if (operation.getClass() == ReserveStackOperation.class) {
-				ReserveStackOperation reserveStackOperation = (ReserveStackOperation) operation;
-				reserveStackOperation.setOperation(reserveOperation);
-			} else if (operation.getClass() == FreeStackOperation.class) {
-				FreeStackOperation freeStackOperation = (FreeStackOperation) operation;
-				freeStackOperation.setOperation(freeOperation);
+			if (operation instanceof MethodStartEndOperation) {
+				MethodStartEndOperation reserveStackOperation = (MethodStartEndOperation) operation;
+				reserveStackOperation.setStackOperationSize(size);
 			}
 		}
 	}
@@ -331,5 +319,9 @@ public class LinearScanRegisterAllocation {
 			}
 		}
 		operation.addUsedRegisters(registers);
+	}
+
+	private static LinkedList<SingleRegister> getList(SingleRegister... registers) {
+		return new LinkedList<>(Arrays.asList(registers));
 	}
 }
