@@ -74,20 +74,9 @@ public class LinearScanRegisterAllocation {
 				continue; // register already defined => nothing to do here
 			}
 
-			int firstOccurrence = virtualRegister.getFirstOccurrence();
-			RegisterBundle registerFreedInCurrLine = freeOutdatedRegistersForLine(firstOccurrence);
+			RegisterBundle registerFreedInCurrLine = freeOutdatedRegistersForLine(virtualRegister.getFirstOccurrence());
 
-			SingleRegister allocatableRegister = null;
-			if (registerFreedInCurrLine != null) {
-				SingleRegister freedRegister = registerFreedInCurrLine.getRegister(virtualRegister.getMode());
-
-				if (isRegisterFree(freedRegister, firstOccurrence, virtualRegister.getLastOccurrence())) {
-					allocatableRegister = freedRegister;
-				}
-			}
-			if (allocatableRegister == null) {
-				allocatableRegister = getAllocatableRegister(virtualRegister);
-			}
+			SingleRegister allocatableRegister = getAllocatableRegister(virtualRegister, registerFreedInCurrLine);
 
 			if (allocatableRegister != null) {
 				allocateRegister(virtualRegister, allocatableRegister);
@@ -128,8 +117,17 @@ public class LinearScanRegisterAllocation {
 		return registerFreedInCurrLine;
 	}
 
-	private SingleRegister getAllocatableRegister(VirtualRegister virtualRegister) {
+	private SingleRegister getAllocatableRegister(VirtualRegister virtualRegister, RegisterBundle justFreedRegister) {
 		Bit mode = virtualRegister.getMode();
+
+		SingleRegister preferedRegister = virtualRegister.getPreferedRegister();
+		if (preferedRegister != null && isRegisterFree(preferedRegister, virtualRegister)) {
+			return preferedRegister;
+		} else if (justFreedRegister != null && isRegisterFree(justFreedRegister.getRegister(mode), virtualRegister)) {
+			return justFreedRegister.getRegister(mode);
+		}
+
+		// no preferred one found => do normal search
 		SingleRegister freeRegister = getFreeRegister(virtualRegister);
 
 		if (freeRegister == null) {
@@ -150,7 +148,7 @@ public class LinearScanRegisterAllocation {
 		SingleRegister[] registers = allowedRegisters[virtualRegister.getMode().ordinal()];
 
 		for (SingleRegister register : registers) {
-			if (isRegisterFree(register, virtualRegister.getFirstOccurrence(), virtualRegister.getLastOccurrence())) {
+			if (isRegisterFree(register, virtualRegister)) {
 				return register;
 			}
 		}
@@ -158,7 +156,10 @@ public class LinearScanRegisterAllocation {
 		return null;
 	}
 
-	private boolean isRegisterFree(SingleRegister register, int start, int end) {
+	private boolean isRegisterFree(SingleRegister register, VirtualRegister virtualRegister) {
+		int start = virtualRegister.getFirstOccurrence();
+		int end = virtualRegister.getLastOccurrence();
+
 		byte registerUsage = this.registerUsages[register.getRegisterBundle().getRegisterId()];
 
 		boolean currentlyUsed = (registerUsage & register.getMask()) != 0;
