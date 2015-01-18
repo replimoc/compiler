@@ -80,7 +80,8 @@ public class PeepholeOptimizer {
 				if (currentOperation instanceof MovOperation && add.getSource() instanceof RegisterBased) {
 					MovOperation move = (MovOperation) currentOperation;
 					if (move.getSource() == add.getDestination() && move.getDestination() instanceof RegisterBased
-							&& !move.getDestination().isSpilled()) {
+							&& !move.getDestination().isSpilled()
+							&& move.getDestination().getSingleRegister() != add.getDestination().getSingleRegister()) {
 						writeOperation(new LeaOperation(new MemoryPointer((RegisterBased) add.getSource(), add.getDestination()),
 								(RegisterBased) move.getDestination()));
 						nextOperation();
