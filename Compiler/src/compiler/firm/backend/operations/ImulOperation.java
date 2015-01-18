@@ -22,7 +22,6 @@ public class ImulOperation extends StorageRegisterOperation {
 
 	@Override
 	public String getOperationString() {
-		return String.format("\timul %s, %s", getStorage().toString(), getDestination().toString());
+		return String.format("\timul %s, %s", source.toString(), destination.toString());
 	}
-
 }
