@@ -1,9 +1,7 @@
 package compiler.firm.backend.operations.cmov;
 
-import compiler.firm.backend.Bit;
 import compiler.firm.backend.operations.templates.AssemblerBitOperation;
 import compiler.firm.backend.storage.RegisterBased;
-import compiler.firm.backend.storage.Storage;
 
 public class CmovSignOperation extends AssemblerBitOperation {
 
@@ -17,9 +15,8 @@ public class CmovSignOperation extends AssemblerBitOperation {
 		this.destination = destination;
 	}
 
-	@Override public String getOperationString() {
+	@Override
+	public String getOperationString() {
 		return String.format("\tcmovs %s, %s", source, destination);
 	}
-
-
 }

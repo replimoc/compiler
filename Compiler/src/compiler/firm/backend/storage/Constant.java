@@ -47,7 +47,7 @@ public class Constant extends Storage {
 
 	@Override
 	public Bit getMode() {
-		return null; // TODO implement this correctly
+		return null;
 	}
 
 	@Override

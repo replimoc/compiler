@@ -1,7 +1,6 @@
 package compiler.firm.backend;
 
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.Collections;
 import java.util.Comparator;
 import java.util.HashMap;
@@ -24,21 +23,8 @@ import compiler.firm.backend.storage.VirtualRegister;
 public class LinearScanRegisterAllocation {
 	private static final int STACK_ITEM_SIZE = 8;
 
-	@SuppressWarnings("unchecked")
-	private static final LinkedList<SingleRegister> allowedRegisters[] = new LinkedList[] {
-			// 64bit registers
-			getList(SingleRegister.RAX, SingleRegister.RBX, SingleRegister.RCX, SingleRegister.RDX,
-					SingleRegister.R8, SingleRegister.R9, SingleRegister.R10, SingleRegister.R11, SingleRegister.R12,
-					SingleRegister.RDI, SingleRegister.RSI),
-			// 32 bit registers
-			getList(SingleRegister.EAX, SingleRegister.EBX, SingleRegister.ECX, SingleRegister.EDX,
-					SingleRegister.R8D, SingleRegister.R9D, SingleRegister.R10D, SingleRegister.R11D, SingleRegister.R12D,
-					SingleRegister.EDI, SingleRegister.ESI),
-			// 8 bit registers
-			getList(SingleRegister.AL, SingleRegister.BL, SingleRegister.CL, SingleRegister.DL,
-					SingleRegister.R8B, SingleRegister.R9B, SingleRegister.R10B, SingleRegister.R11B, SingleRegister.R12B,
-					SingleRegister.DIL, SingleRegister.SIL)
-	};
+	private final LinkedList<SingleRegister>[] allowedRegisters;
+	private final boolean isMainMethod;
 
 	private final List<AssemblerOperation> operations;
 
@@ -47,13 +33,12 @@ public class LinearScanRegisterAllocation {
 	private final HashMap<VirtualRegister, SingleRegister> usedRegisters = new HashMap<>();
 	private final HashMap<RegisterBundle, LinkedList<VirtualRegister>> partialAllocatedRegisters = new HashMap<>();
 
-	private final boolean isMain;
-
 	private int currentStackOffset = 0;
 
-	public LinearScanRegisterAllocation(List<AssemblerOperation> operations, boolean isMain) {
+	public LinearScanRegisterAllocation(RegisterAllocationPolicy registerPolicy, boolean isMain, List<AssemblerOperation> operations) {
 		this.operations = operations;
-		this.isMain = isMain;
+		this.isMainMethod = isMain;
+		this.allowedRegisters = registerPolicy.getAllowedRegisters();
 	}
 
 	public void allocateRegisters() {
@@ -74,7 +59,7 @@ public class LinearScanRegisterAllocation {
 				setOperationAliveRegisters(line, (CallOperation) operation);
 			}
 			if (operation instanceof MethodStartEndOperation) {
-				((MethodStartEndOperation) operation).setMain(isMain);
+				((MethodStartEndOperation) operation).setMain(isMainMethod);
 			}
 			line++;
 		}
@@ -321,7 +306,4 @@ public class LinearScanRegisterAllocation {
 		operation.addUsedRegisters(registers);
 	}
 
-	private static LinkedList<SingleRegister> getList(SingleRegister... registers) {
-		return new LinkedList<>(Arrays.asList(registers));
-	}
 }

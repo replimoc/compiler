@@ -28,7 +28,7 @@ public final class AssemblerGenerator {
 	private AssemblerGenerator() {
 	}
 
-	public static void createAssemblerX8664(Path outputFile, final CallingConvention callingConvention, boolean doPeephole)
+	public static void createAssemblerX8664(Path outputFile, final CallingConvention callingConvention, boolean doPeephole, boolean noRegisters)
 			throws IOException {
 		final ArrayList<AssemblerOperation> assembler = new ArrayList<>();
 
@@ -60,7 +60,7 @@ public final class AssemblerGenerator {
 			// TODO remove next line when it's not needed any more
 			// generatePlainAssemblerFile(Paths.get(graph.getEntity().getLdName() + ".plain"), operationsBlocksPostOrder);
 
-			allocateRegisters(graph, operationsBlocksPostOrder);
+			allocateRegisters(graph, operationsBlocksPostOrder, noRegisters);
 
 			operationsBlocksPostOrder.clear(); // free some memory
 
@@ -77,9 +77,11 @@ public final class AssemblerGenerator {
 		generateAssemblerFile(outputFile, assembler);
 	}
 
-	private static void allocateRegisters(Graph graph, ArrayList<AssemblerOperation> operationsBlocksPostOrder) {
+	private static void allocateRegisters(Graph graph, ArrayList<AssemblerOperation> operationsBlocksPostOrder, boolean noRegisters) {
 		boolean isMain = MainMethodDeclaration.MAIN_METHOD_NAME.equals(graph.getEntity().getLdName());
-		new LinearScanRegisterAllocation(operationsBlocksPostOrder, isMain).allocateRegisters();
+		RegisterAllocationPolicy regsiterPolicy = noRegisters ? RegisterAllocationPolicy.NO_REGISTERS
+				: RegisterAllocationPolicy.ALL_A_B_C_D_8_9_10_11_12_DI_SI;
+		new LinearScanRegisterAllocation(regsiterPolicy, isMain, operationsBlocksPostOrder).allocateRegisters();
 	}
 
 	private static ArrayList<AssemblerOperation> generateOperationsList(Graph graph, HashMap<Block, BlockInfo> blockInfos,

@@ -43,6 +43,7 @@ public final class CompilerApp {
 	private static final String OUTPUT_ASSEMBLER = "assembler";
 	private static final String COMPILE_FIRM = "compile-firm";
 	private static final String NO_OPT = "no-opt";
+	private static final String NO_REGISTERS = "no-registers";
 	private static final String OUTPUT_FILE = "o";
 	private static final String DEBUGGING_LEVEL = "g";
 	private static final String C_INCLUDE = "c-include";
@@ -82,6 +83,8 @@ public final class CompilerApp {
 		options.addOption(OUTPUT_FILE, true, "Used to define the filename/path of the generated executable. (Only to be used with --"
 				+ COMPILE_FIRM + ")");
 		options.addOption(null, NO_OPT, false, "deactivate optimizations");
+		options.addOption(null, NO_REGISTERS, false, "Don't do register allocation. All virtual registers will be spilled. (Not working with --"
+				+ COMPILE_FIRM + ")");
 		options.addOption(null, C_INCLUDE, true, "Compile the given file and use it for the mapping of native methods.");
 		options.addOption(C_LIBRARY, true, "Use the given library for linking the c file given with --" + C_INCLUDE + ".");
 		options.addOption(DEBUGGING_LEVEL, true, "Use debugging level, passed directly as -g to gcc.");
@@ -177,10 +180,12 @@ public final class CompilerApp {
 							}
 						};
 					} else { // Default case: use our own assembler
+						final boolean noRegisters = cmd.hasOption(NO_REGISTERS);
 						assemblerCreator = new AssemblerCreator() {
 							@Override
 							public void create(String fileName) throws IOException {
-								AssemblerGenerator.createAssemblerX8664(Paths.get(fileName), CallingConvention.SYSTEMV_ABI, !noOpt);
+								AssemblerGenerator.createAssemblerX8664(Paths.get(fileName), CallingConvention.SYSTEMV_ABI, !noOpt,
+										noRegisters);
 							}
 						};
 					}
