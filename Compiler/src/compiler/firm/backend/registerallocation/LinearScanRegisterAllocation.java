@@ -4,6 +4,7 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Comparator;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.Iterator;
 import java.util.LinkedList;
 import java.util.List;
@@ -31,8 +32,9 @@ public class LinearScanRegisterAllocation {
 
 	private final ArrayList<VirtualRegister> virtualRegisters = new ArrayList<VirtualRegister>();
 	private final byte[] registerUsages = new byte[RegisterBundle.REGISTER_COUNTER];
-	private final HashMap<VirtualRegister, SingleRegister> usedRegisters = new HashMap<>();
+	private final HashMap<VirtualRegister, SingleRegister> currentlyUsedRegisters = new HashMap<>();
 	private final HashMap<RegisterBundle, LinkedList<VirtualRegister>> partialAllocatedRegisters = new HashMap<>();
+	private final HashSet<RegisterBundle> usedRegisters = new HashSet<>();
 
 	private int currentStackOffset = 0;
 
@@ -60,7 +62,13 @@ public class LinearScanRegisterAllocation {
 				setOperationAliveRegisters(line, (CallOperation) operation);
 			}
 			if (operation instanceof MethodStartEndOperation) {
-				((MethodStartEndOperation) operation).setMain(isMainMethod);
+				MethodStartEndOperation methodStartEndOperation = (MethodStartEndOperation) operation;
+
+				if (isMainMethod) { // if it is the main, no registers need to be saved
+					methodStartEndOperation.setUsedRegisters(new HashSet<RegisterBundle>());
+				} else {
+					methodStartEndOperation.setUsedRegisters(usedRegisters);
+				}
 			}
 			line++;
 		}
@@ -106,18 +114,20 @@ public class LinearScanRegisterAllocation {
 
 	private void allocateRegister(VirtualRegister virtualRegister, SingleRegister allocatableRegister) {
 		virtualRegister.setStorage(allocatableRegister);
-		usedRegisters.put(virtualRegister, allocatableRegister);
-		registerUsages[allocatableRegister.getRegisterBundle().getRegisterId()] |= allocatableRegister.getMask();
+		currentlyUsedRegisters.put(virtualRegister, allocatableRegister);
+		RegisterBundle registerBundle = allocatableRegister.getRegisterBundle();
+		registerUsages[registerBundle.getRegisterId()] |= allocatableRegister.getMask();
 
-		if (partialAllocatedRegisters.containsKey(allocatableRegister.getRegisterBundle())) {
+		if (partialAllocatedRegisters.containsKey(registerBundle)) {
 			virtualRegister.setForceRegister(true);
 		}
+		usedRegisters.add(registerBundle);
 	}
 
 	private RegisterBundle freeOutdatedRegistersForLine(int line) {
 		RegisterBundle registerFreedInCurrLine = null;
 
-		Iterator<Entry<VirtualRegister, SingleRegister>> entriesIterator = usedRegisters.entrySet().iterator();
+		Iterator<Entry<VirtualRegister, SingleRegister>> entriesIterator = currentlyUsedRegisters.entrySet().iterator();
 		while (entriesIterator.hasNext()) {
 			Entry<VirtualRegister, SingleRegister> registerEntry = entriesIterator.next();
 			int lastOccurrence = registerEntry.getKey().getLastOccurrence();
@@ -194,9 +204,9 @@ public class LinearScanRegisterAllocation {
 	}
 
 	private void spillRegister(VirtualRegister virtualRegister) {
-		SingleRegister freedRegister = usedRegisters.get(virtualRegister);
+		SingleRegister freedRegister = currentlyUsedRegisters.get(virtualRegister);
 		if (freedRegister != null) {
-			usedRegisters.remove(virtualRegister);
+			currentlyUsedRegisters.remove(virtualRegister);
 			freeRegister(freedRegister);
 		}
 		virtualRegister.setSpilled(true);
@@ -207,7 +217,7 @@ public class LinearScanRegisterAllocation {
 	private VirtualRegister getRegisterWithLongestLifetime(Bit mode) {
 		int lifetime = 0;
 		VirtualRegister register = null;
-		for (Entry<VirtualRegister, SingleRegister> testRegister : usedRegisters.entrySet()) {
+		for (Entry<VirtualRegister, SingleRegister> testRegister : currentlyUsedRegisters.entrySet()) {
 			VirtualRegister virtualRegister = testRegister.getKey();
 			if (!virtualRegister.isForceRegister() && virtualRegister.getLastOccurrence() >= lifetime) {
 				lifetime = virtualRegister.getLastOccurrence();
@@ -244,14 +254,14 @@ public class LinearScanRegisterAllocation {
 		}
 	}
 
-	private void setOperationAliveRegisters(int num, CallOperation operation) {
+	private void setOperationAliveRegisters(int num, CallOperation callOperation) {
 		List<VirtualRegister> registers = new LinkedList<VirtualRegister>();
 		for (VirtualRegister register : virtualRegisters) {
 			if (register.isAliveAt(num)) {
 				registers.add(register);
 			}
 		}
-		operation.addUsedRegisters(registers);
+		callOperation.addUsedRegisters(registers);
 	}
 
 	// ---------------------- calculate register livetime -------------------

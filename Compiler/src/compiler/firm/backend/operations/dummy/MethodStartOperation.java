@@ -27,9 +27,9 @@ public class MethodStartOperation extends MethodStartEndOperation {
 		result.add(new PushOperation(Bit.BIT64, SingleRegister.RBP).toString()); // Dynamic Link
 		result.add(new MovOperation(SingleRegister.RSP, SingleRegister.RBP).toString());
 
-		if (!isMain) { // no need to save the callee registers
-			RegisterBundle[] registers = callingConvention.calleeSavedRegisters();
-			for (int i = 0; i < registers.length; i++) {
+		RegisterBundle[] registers = callingConvention.calleeSavedRegisters();
+		for (int i = 0; i < registers.length; i++) {
+			if (super.isRegisterSaveNeeded(registers[i])) {
 				result.add(new PushOperation(Bit.BIT64, registers[i].getRegister(Bit.BIT64)).toString());
 			}
 		}

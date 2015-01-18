@@ -30,9 +30,9 @@ public class MethodEndOperation extends MethodStartEndOperation {
 			result.add(new Comment("no items on stack, skip freeing").toString());
 		}
 
-		if (!isMain) { // no need to restore the callee registers, they haven't been stored anyway.
-			RegisterBundle[] registers = callingConvention.calleeSavedRegisters();
-			for (int i = registers.length - 1; i >= 0; i--) {
+		RegisterBundle[] registers = callingConvention.calleeSavedRegisters();
+		for (int i = registers.length - 1; i >= 0; i--) {
+			if (super.isRegisterSaveNeeded(registers[i])) {
 				result.add(new PopOperation(registers[i].getRegister(Bit.BIT64)).toString());
 			}
 		}

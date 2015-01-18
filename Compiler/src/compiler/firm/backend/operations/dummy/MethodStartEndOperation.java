@@ -1,13 +1,16 @@
 package compiler.firm.backend.operations.dummy;
 
+import java.util.HashSet;
+
 import compiler.firm.backend.calling.CallingConvention;
 import compiler.firm.backend.operations.templates.AssemblerOperation;
+import compiler.firm.backend.storage.RegisterBundle;
 
 public abstract class MethodStartEndOperation extends AssemblerOperation {
 
 	protected final CallingConvention callingConvention;
-	protected boolean isMain;
 	protected int stackOperationSize;
+	private HashSet<RegisterBundle> usedRegisters;
 
 	public MethodStartEndOperation(CallingConvention callingConvention) {
 		this.callingConvention = callingConvention;
@@ -24,12 +27,15 @@ public abstract class MethodStartEndOperation extends AssemblerOperation {
 		throw new RuntimeException("this should never be called.");
 	}
 
-	public void setMain(boolean isMain) {
-		this.isMain = isMain;
-	}
-
 	public void setStackOperationSize(int stackOperationSize) {
 		this.stackOperationSize = stackOperationSize;
 	}
 
+	public void setUsedRegisters(HashSet<RegisterBundle> usedRegisters) {
+		this.usedRegisters = usedRegisters;
+	}
+
+	protected final boolean isRegisterSaveNeeded(RegisterBundle registerBundle) {
+		return usedRegisters.contains(registerBundle);
+	}
 }
