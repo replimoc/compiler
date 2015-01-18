@@ -13,6 +13,7 @@ import compiler.firm.backend.operations.AddOperation;
 import compiler.firm.backend.operations.AndOperation;
 import compiler.firm.backend.operations.CallOperation;
 import compiler.firm.backend.operations.CltdOperation;
+import compiler.firm.backend.operations.CmovSignOperation;
 import compiler.firm.backend.operations.CmpOperation;
 import compiler.firm.backend.operations.Comment;
 import compiler.firm.backend.operations.IdivOperation;
@@ -29,7 +30,6 @@ import compiler.firm.backend.operations.ShlOperation;
 import compiler.firm.backend.operations.SizeOperation;
 import compiler.firm.backend.operations.SubOperation;
 import compiler.firm.backend.operations.TestOperation;
-import compiler.firm.backend.operations.cmov.CmovSignOperation;
 import compiler.firm.backend.operations.dummy.MethodEndOperation;
 import compiler.firm.backend.operations.dummy.MethodStartOperation;
 import compiler.firm.backend.operations.jump.JgOperation;
@@ -200,33 +200,19 @@ public class X8664AssemblerGenerationVisitor implements BulkPhiNodeVisitor {
 	/**
 	 * create shift operations for dividing by power of two
 	 *
-	 * This code is copied from gcc-created assembly # load first operand in eax leal 2^n-1(%rax), %edx testl %eax, %eax cmovs %edx, %eax sarl $4,
-	 * %eax # if constant is negative negl %eax
+	 * This code is copied from gcc-created assembly <br>
+	 * # load first operand in eax <br>
+	 * leal 2^n-1(%rax), %edx <br>
+	 * testl %eax, %eax <br>
+	 * cmovs %edx, %eax <br>
+	 * sarl $4, %eax <br>
+	 * # if constant is negative negl %eax
 	 */
-	private void divByPow2(Div parent, Node left, int absDivisor, boolean isPositive)
-	{
-		// System.out.println("X8664AssemblerGenerationVisitor.divByPow2");
-		// get left node
+	private void divByPow2(Div parent, Node left, int absDivisor, boolean isPositive) {
+		addOperation(new Comment("divByPow2: " + parent));
+
 		RegisterBased leftArgument = storageManagement.getValue(left, true);
 		RegisterBased temporaryRegister = new VirtualRegister(StorageManagement.getMode(parent));
-
-		// get right node
-		// RegisterBased resultRegister = null;
-		// if (BackEdges.getNOuts(parent) == 1) {
-		// Node successor = FirmUtils.getFirstSuccessor(parent);
-		//
-		// boolean moreUsages = false;
-		// for (Edge edge : BackEdges.getOuts(successor)) {
-		// if (!edge.node.equals(parent) && parent.getBlock().equals(edge.node.getBlock())) {
-		// moreUsages = true;
-		// }
-		// }
-		//
-		// Storage storage = storageManagement.getStorage(successor);
-		// if (successor.equals(right) && storage instanceof RegisterBased && !moreUsages && !right.getBlock().equals(parent.getBlock())) {
-		// resultRegister = (RegisterBased) storage;
-		// }
-		// }
 
 		MemoryPointer memoryPointer = new MemoryPointer(absDivisor - 1, leftArgument);
 		addOperation(new LeaOperation(parent.toString(), memoryPointer, temporaryRegister));
@@ -241,11 +227,11 @@ public class X8664AssemblerGenerationVisitor implements BulkPhiNodeVisitor {
 		}
 
 		storageManagement.storeToBackEdges(parent, leftArgument);
-
 	}
 
-	private void divByConst(Div parent, Node left, int absDivisor, boolean isPositive)
-	{
+	private void divByConst(Div parent, Node left, int absDivisor, boolean isPositive) {
+		addOperation(new Comment("divByConst: " + parent));
+
 		int l = Math.max(1, 32 - Integer.numberOfLeadingZeros(absDivisor));
 		long m1 = MathUtils.floorDiv(0x100000000L * (1L << (l - 1)), absDivisor) + 1L;
 		int m = (int) (m1 - 0x100000000L);
@@ -506,21 +492,18 @@ public class X8664AssemblerGenerationVisitor implements BulkPhiNodeVisitor {
 		if (right instanceof Const)
 		{
 			int divisor = ((Const) right).getTarval().asInt();
-			// TODO is this true?
-			assert divisor != 0;
 			int absDivisor = Math.abs(divisor);
 
 			// TODO there was a "is power of two" method somewhere
 			if ((absDivisor & (absDivisor - 1)) == 0) {
 				divByPow2(node, node.getLeft(), absDivisor, (divisor > 0));
-				return;
-	}
-
-			divByConst(node, node.getLeft(), absDivisor, (divisor > 0));
-			return;
+			} else {
+				divByConst(node, node.getLeft(), absDivisor, (divisor > 0));
+			}
+		} else {
+			IdivOperation divMod = visitDivMod(node.getLeft(), right);
+			storageManagement.storeToBackEdges(node, divMod.getResult());
 		}
-
-		storageManagement.storeToBackEdges(node, visitDivMod(node.getLeft(), right).getResult());
 	}
 
 	@Override
