@@ -41,6 +41,8 @@ public final class AssemblerGenerator {
 		}
 
 		for (Graph graph : Program.getGraphs()) {
+			// System.out.println(graph.getEntity().getLdName());
+
 			BlockNodesCollectingVisitor collectorVisitor = new BlockNodesCollectingVisitor();
 			graph.walkTopological(collectorVisitor);
 

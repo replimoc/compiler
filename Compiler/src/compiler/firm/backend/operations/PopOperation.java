@@ -1,24 +1,23 @@
 package compiler.firm.backend.operations;
 
-import compiler.firm.backend.Bit;
 import compiler.firm.backend.operations.templates.AssemblerBitOperation;
 import compiler.firm.backend.storage.RegisterBased;
 
 public class PopOperation extends AssemblerBitOperation {
 	private final RegisterBased register;
 
-	public PopOperation(Bit mode, RegisterBased register) {
-		this(null, mode, register);
+	public PopOperation(RegisterBased register) {
+		this(null, register);
 	}
 
-	public PopOperation(String comment, Bit mode, RegisterBased register) {
-		super(comment, mode);
+	public PopOperation(String comment, RegisterBased register) {
+		super(comment);
 		this.register = register;
 	}
 
 	@Override
 	public String getOperationString() {
-		return String.format("\tpop%s %s", getMode(), register.toString(getMode()));
+		return String.format("\tpop %s", register.toString());
 	}
 
 	@Override

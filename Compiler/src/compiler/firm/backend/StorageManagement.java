@@ -7,8 +7,8 @@ import compiler.firm.FirmUtils;
 import compiler.firm.backend.operations.MovOperation;
 import compiler.firm.backend.operations.templates.AssemblerOperation;
 import compiler.firm.backend.storage.Constant;
-import compiler.firm.backend.storage.Register;
 import compiler.firm.backend.storage.RegisterBased;
+import compiler.firm.backend.storage.RegisterBundle;
 import compiler.firm.backend.storage.Storage;
 import compiler.firm.backend.storage.VirtualRegister;
 
@@ -59,8 +59,8 @@ public class StorageManagement {
 		return getValue(node, null, overwrite);
 	}
 
-	public RegisterBased getValue(Node node, Register resultRegister) {
-		return getValue(node, resultRegister, true);
+	public RegisterBased getValue(Node node, RegisterBundle resultRegisterBundle) {
+		return getValue(node, resultRegisterBundle.getRegister(getMode(node)), true);
 	}
 
 	private RegisterBased getValue(Node node, RegisterBased resultRegister, boolean overwrite) {
@@ -77,7 +77,7 @@ public class StorageManagement {
 		Bit mode = getMode(node);
 		resultRegister = new VirtualRegister(mode, resultRegister);
 
-		addOperation(new MovOperation("Load address " + node.toString(), mode, originalStorage, resultRegister));
+		addOperation(new MovOperation("Load address " + node.toString(), originalStorage, resultRegister));
 		return resultRegister;
 	}
 
@@ -109,14 +109,18 @@ public class StorageManagement {
 
 	public void storeValue(Node node, Storage storage, Storage destination) {
 		if (storage != destination) {
-			addOperation(new MovOperation("Store node " + node, getMode(node), storage, destination));
+			addOperation(new MovOperation("Store node " + node, storage, destination));
 		}
 	}
 
 	public static Bit getMode(Node node) {
-		if (node.getMode().equals(FirmUtils.getModeReference())) {
+		return getMode(node.getMode());
+	}
+
+	public static Bit getMode(Mode mode) {
+		if (mode.equals(FirmUtils.getModeReference()) || mode.equals(Mode.getLu())) {
 			return Bit.BIT64;
-		} else if (node.getMode().equals(FirmUtils.getModeBoolean())) {
+		} else if (mode.equals(FirmUtils.getModeBoolean())) {
 			return Bit.BIT8;
 		} else {
 			return Bit.BIT32;

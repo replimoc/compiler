@@ -2,20 +2,16 @@ package compiler.firm.backend.operations.templates;
 
 import java.util.Arrays;
 
-import compiler.firm.backend.Bit;
-import compiler.firm.backend.operations.MovOperation;
-import compiler.firm.backend.storage.Constant;
 import compiler.firm.backend.storage.RegisterBased;
 import compiler.firm.backend.storage.Storage;
-import compiler.firm.backend.storage.VirtualRegister;
 
 public abstract class SourceDestinationOperation extends AssemblerBitOperation {
 
-	private Storage source;
-	private final Storage destination;
+	protected Storage source;
+	protected final Storage destination;
 
-	public SourceDestinationOperation(String comment, Bit mode, Storage source, Storage destination) {
-		super(comment, mode);
+	public SourceDestinationOperation(String comment, Storage source, Storage destination) {
+		super(comment);
 		this.source = source;
 		this.destination = destination;
 	}
@@ -53,30 +49,5 @@ public abstract class SourceDestinationOperation extends AssemblerBitOperation {
 		} else {
 			return new RegisterBased[] {};
 		}
-	}
-
-	@Override
-	public String[] toStringWithSpillcode() {
-		if (hasSpilledRegisters()) {
-			if ((getSource().getClass() == VirtualRegister.class || getSource().getClass() == Constant.class)
-					&& (getDestination().getClass() == VirtualRegister.class || getDestination().getClass() == Constant.class)) {
-				Storage source = getSource();
-				Storage destination = getDestination();
-
-				if ((source.isSpilled() && !destination.isSpilled()) ||
-						(!source.isSpilled() && destination.isSpilled())) {
-					return new String[] { toString() };
-				} else {
-					this.source = getTemporaryRegister();
-					String[] result = new String[] {
-							new MovOperation(getMode(), source, this.source).toString(),
-							toString()
-					};
-					this.source = source;
-					return result;
-				}
-			}
-		}
-		return super.toStringWithSpillcode();
 	}
 }

@@ -14,7 +14,7 @@ public abstract class RegisterConstantOperation extends AssemblerBitOperation {
 	}
 
 	public RegisterConstantOperation(String comment, Bit mode, RegisterBased register, Constant constant) {
-		super(comment, mode);
+		super(comment);
 		this.register = register;
 		this.constant = constant;
 	}

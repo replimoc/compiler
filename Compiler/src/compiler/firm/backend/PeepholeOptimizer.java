@@ -59,7 +59,7 @@ public class PeepholeOptimizer {
 				SubOperation sub = (SubOperation) currentOperation;
 				Storage storage = sub.getStorage();
 				if (storage instanceof Constant && ((Constant) storage).getConstant() == 1) {
-					writeOperation(new DecOperation(sub.toString(), sub.getMode(), sub.getDestination()));
+					writeOperation(new DecOperation(sub.toString(), sub.getDestination()));
 				} else {
 					writeOperation();
 				}
@@ -69,7 +69,7 @@ public class PeepholeOptimizer {
 				AddOperation add = (AddOperation) currentOperation;
 				Storage storage = add.getStorage();
 				if (storage instanceof Constant && ((Constant) storage).getConstant() == 1) {
-					writeOperation(new IncOperation(add.toString(), add.getMode(), add.getDestination()));
+					writeOperation(new IncOperation(add.toString(), add.getDestination()));
 				} else {
 					writeOperation();
 				}

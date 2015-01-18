@@ -17,7 +17,7 @@ public class VirtualRegister extends RegisterBased {
 	private int lastOccurrence = 0;
 
 	public VirtualRegister(Bit mode) {
-		this(mode, null);
+		this(mode, (RegisterBased) null);
 	}
 
 	public VirtualRegister(Bit mode, RegisterBased register) {
@@ -27,14 +27,13 @@ public class VirtualRegister extends RegisterBased {
 		this.num = I++;
 	}
 
-	@Override
-	public String toString() {
-		return "VirtualRegister" + num + "[" + register + "," + firstOccurrence + "," + lastOccurrence + "]";
+	public VirtualRegister(Bit mode, RegisterBundle registerBundle) {
+		this(mode, registerBundle.getRegister(mode));
 	}
 
 	@Override
-	public String toString(Bit bit) {
-		return register == null ? "VR" + num : register.toString(bit);
+	public String toString() {
+		return register == null ? "VR_" + getNum() : register.toString();
 	}
 
 	public Storage getRegister() {
@@ -79,11 +78,16 @@ public class VirtualRegister extends RegisterBased {
 		}
 	}
 
+	@Override
 	public Bit getMode() {
 		return mode;
 	}
 
 	public boolean isAliveAt(int line) {
 		return firstOccurrence <= line && line <= lastOccurrence;
+	}
+
+	public int getNum() {
+		return num;
 	}
 }

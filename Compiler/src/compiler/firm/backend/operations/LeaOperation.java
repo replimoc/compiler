@@ -1,6 +1,5 @@
 package compiler.firm.backend.operations;
 
-import compiler.firm.backend.Bit;
 import compiler.firm.backend.operations.templates.AssemblerBitOperation;
 import compiler.firm.backend.storage.RegisterBased;
 import compiler.firm.backend.storage.Storage;
@@ -10,7 +9,7 @@ public class LeaOperation extends AssemblerBitOperation {
 	private final RegisterBased resultRegister;
 
 	public LeaOperation(Storage addressStorage, RegisterBased resultRegister) {
-		super(null, Bit.BIT64);
+		super(null);
 
 		this.addressStorage = addressStorage;
 		this.resultRegister = resultRegister;
@@ -18,7 +17,7 @@ public class LeaOperation extends AssemblerBitOperation {
 
 	@Override
 	public String getOperationString() {
-		return String.format("\tlea%s %s, %s", Bit.BIT64, addressStorage.toString(Bit.BIT64), resultRegister.toString(Bit.BIT64));
+		return String.format("\tlea %s, %s", addressStorage.toString(), resultRegister.toString());
 	}
 
 	@Override
