@@ -1,6 +1,6 @@
 package compiler.firm;
 
-public class AutomatedOutputBackendNoOptComparisonTest extends AbstractAutomatedOutputComparisonTest {
+public class AutomatedOutputBackendNoOptRegComparisonTest extends AbstractAutomatedOutputComparisonTest {
 
 	@Override
 	protected String[] getAdditionalOptions() {
