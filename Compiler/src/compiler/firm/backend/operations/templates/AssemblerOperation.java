@@ -5,7 +5,7 @@ import compiler.firm.backend.storage.RegisterBundle;
 
 public abstract class AssemblerOperation {
 
-	private static final RegisterBundle[] ACCUMULATOR_REGISTERS = { RegisterBundle._14D, RegisterBundle._15D };
+	private static final RegisterBundle[] ACCUMULATOR_REGISTERS = { RegisterBundle._13D, RegisterBundle._14D, RegisterBundle._15D };
 
 	private final String comment;
 	private int accumulatorRegister = 0;
