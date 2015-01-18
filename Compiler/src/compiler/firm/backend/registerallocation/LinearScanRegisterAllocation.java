@@ -86,30 +86,32 @@ public class LinearScanRegisterAllocation {
 			int firstOccurrence = virtualRegister.getFirstOccurrence();
 			RegisterBundle registerFreedInCurrLine = freeOutdatedRegistersForLine(firstOccurrence);
 
-			SingleRegister freeRegister = null;
-			if (registerFreedInCurrLine != null
-					&& isNormalRegisterOrPartiallyAllocatable(registerFreedInCurrLine, firstOccurrence, virtualRegister.getLastOccurrence())) {
-				freeRegister = registerFreedInCurrLine.getRegister(virtualRegister.getMode());
+			SingleRegister allocatableRegister = null;
+			if (registerFreedInCurrLine != null) {
+				SingleRegister freedRegister = registerFreedInCurrLine.getRegister(virtualRegister.getMode());
 
-				if (partialAllocatedRegisters.containsKey(registerFreedInCurrLine)) {
-					virtualRegister.setForceRegister(true);
+				if (isRegisterFree(freedRegister, firstOccurrence, virtualRegister.getLastOccurrence())) {
+					allocatableRegister = freedRegister;
 				}
-			} else {
-				freeRegister = getAllocatableRegister(virtualRegister);
+			}
+			if (allocatableRegister == null) {
+				allocatableRegister = getAllocatableRegister(virtualRegister);
 			}
 
-			if (freeRegister != null) {
-				virtualRegister.setStorage(freeRegister);
-				usedRegisters.put(virtualRegister, freeRegister);
-				registerUsages[freeRegister.getRegisterBundle().getRegisterId()] |= freeRegister.getMask();
-
+			if (allocatableRegister != null) {
+				allocateRegister(virtualRegister, allocatableRegister);
 			}
 		}
 	}
 
-	private boolean isNormalRegisterOrPartiallyAllocatable(RegisterBundle registerFreedInCurrLine, int firstOccurrence, int lastOccurrence) {
-		LinkedList<VirtualRegister> interferringRegisters = partialAllocatedRegisters.get(registerFreedInCurrLine);
-		return interferringRegisters == null || isPartiallyAllocatableRegisterFree(firstOccurrence, lastOccurrence, interferringRegisters);
+	private void allocateRegister(VirtualRegister virtualRegister, SingleRegister allocatableRegister) {
+		virtualRegister.setStorage(allocatableRegister);
+		usedRegisters.put(virtualRegister, allocatableRegister);
+		registerUsages[allocatableRegister.getRegisterBundle().getRegisterId()] |= allocatableRegister.getMask();
+
+		if (partialAllocatedRegisters.containsKey(allocatableRegister.getRegisterBundle())) {
+			virtualRegister.setForceRegister(true);
+		}
 	}
 
 	private RegisterBundle freeOutdatedRegistersForLine(int line) {
@@ -134,32 +136,28 @@ public class LinearScanRegisterAllocation {
 	}
 
 	private SingleRegister getAllocatableRegister(VirtualRegister virtualRegister) {
-		SingleRegister freeRegister = getFreePartiallyAllocatedRegisterForLifetime(virtualRegister);
+		Bit mode = virtualRegister.getMode();
+		SingleRegister freeRegister = getFreeRegister(virtualRegister);
+
 		if (freeRegister == null) {
-			Bit mode = virtualRegister.getMode();
-
-			freeRegister = getFreeNormalRegister(mode);
-
-			if (freeRegister == null) {
-				VirtualRegister register = getRegisterWithLongestLifetime(mode);
-				if (register == null) {
-					spillRegister(virtualRegister);
-					return null;
-				}
-
-				spillRegister(register);
-				freeRegister = getFreeNormalRegister(mode);
+			VirtualRegister register = getRegisterWithLongestLifetime(mode);
+			if (register == null) {
+				spillRegister(virtualRegister);
+				return null;
 			}
+
+			spillRegister(register);
+			freeRegister = getFreeRegister(virtualRegister);
 		}
 
 		return freeRegister;
 	}
 
-	private SingleRegister getFreeNormalRegister(Bit mode) {
-		SingleRegister[] registers = allowedRegisters[mode.ordinal()];
+	private SingleRegister getFreeRegister(VirtualRegister virtualRegister) {
+		SingleRegister[] registers = allowedRegisters[virtualRegister.getMode().ordinal()];
 
 		for (SingleRegister register : registers) {
-			if (isRegisterFree(register, false)) {
+			if (isRegisterFree(register, virtualRegister.getFirstOccurrence(), virtualRegister.getLastOccurrence())) {
 				return register;
 			}
 		}
@@ -167,34 +165,27 @@ public class LinearScanRegisterAllocation {
 		return null;
 	}
 
-	private boolean isRegisterFree(SingleRegister register, boolean allowPartiallyAllocated) {
+	private boolean isRegisterFree(SingleRegister register, int start, int end) {
 		byte registerUsage = this.registerUsages[register.getRegisterBundle().getRegisterId()];
-		return (allowPartiallyAllocated || registerUsage >= 0) && (registerUsage & register.getMask()) == 0;
-	}
 
-	private SingleRegister getFreePartiallyAllocatedRegisterForLifetime(VirtualRegister virtualRegister) {
-		Bit mode = virtualRegister.getMode();
-		int start = virtualRegister.getFirstOccurrence();
-		int end = virtualRegister.getLastOccurrence();
-
-		for (Entry<RegisterBundle, LinkedList<VirtualRegister>> registerInfo : partialAllocatedRegisters.entrySet()) {
-			RegisterBundle registerBundle = registerInfo.getKey();
-
-			if (isRegisterFree(registerBundle.getRegister(mode), true)
-					&& isPartiallyAllocatableRegisterFree(start, end, registerInfo.getValue())) {
-				virtualRegister.setForceRegister(true);
-				return registerBundle.getRegister(mode);
-			}
+		boolean currentlyUsed = (registerUsage & register.getMask()) != 0;
+		if (currentlyUsed) {
+			return false;
 		}
-		return null;
+
+		if (registerUsage < 0) { // partially allocated register
+			return isPartiallyAllocatableRegisterFree(start, end, partialAllocatedRegisters.get(register.getRegisterBundle()));
+		} else {
+			return true;
+		}
 	}
 
 	private boolean isPartiallyAllocatableRegisterFree(int start, int end, LinkedList<VirtualRegister> interferringRegisters) {
-		boolean isValid = true;
+		boolean isFree = true;
 		for (VirtualRegister register : interferringRegisters) {
-			isValid &= (register.getFirstOccurrence() >= end || register.getLastOccurrence() <= start);
+			isFree &= (register.getFirstOccurrence() >= end || register.getLastOccurrence() <= start);
 		}
-		return isValid;
+		return isFree;
 	}
 
 	private void freeRegister(SingleRegister register) {
@@ -218,13 +209,52 @@ public class LinearScanRegisterAllocation {
 		VirtualRegister register = null;
 		for (Entry<VirtualRegister, SingleRegister> testRegister : usedRegisters.entrySet()) {
 			VirtualRegister virtualRegister = testRegister.getKey();
-			if (virtualRegister.getLastOccurrence() >= lifetime && !virtualRegister.isForceRegister()) {
+			if (!virtualRegister.isForceRegister() && virtualRegister.getLastOccurrence() >= lifetime) {
 				lifetime = virtualRegister.getLastOccurrence();
 				register = virtualRegister;
 			}
 		}
 		return register;
 	}
+
+	private void detectPartiallyAllocatedRegisters() {
+		for (VirtualRegister virtualRegister : virtualRegisters) {
+			if (virtualRegister.getRegister() != null && virtualRegister.getRegister().getClass() == SingleRegister.class) {
+				SingleRegister register = (SingleRegister) virtualRegister.getRegister();
+				RegisterBundle registerBundle = register.getRegisterBundle();
+
+				if (!partialAllocatedRegisters.containsKey(registerBundle)) {
+					partialAllocatedRegisters.put(registerBundle, new LinkedList<VirtualRegister>());
+					registerUsages[registerBundle.getRegisterId()] = (byte) 0x80;
+				}
+				partialAllocatedRegisters.get(registerBundle).add(virtualRegister);
+			}
+		}
+	}
+
+	private void setStackSize(int size) {
+		size += 0x10;
+		size &= -0x10; // Align to 8-byte.
+
+		for (AssemblerOperation operation : operations) {
+			if (operation instanceof MethodStartEndOperation) {
+				MethodStartEndOperation reserveStackOperation = (MethodStartEndOperation) operation;
+				reserveStackOperation.setStackOperationSize(size);
+			}
+		}
+	}
+
+	private void setOperationAliveRegisters(int num, CallOperation operation) {
+		List<VirtualRegister> registers = new LinkedList<VirtualRegister>();
+		for (VirtualRegister register : virtualRegisters) {
+			if (register.isAliveAt(num)) {
+				registers.add(register);
+			}
+		}
+		operation.addUsedRegisters(registers);
+	}
+
+	// ---------------------- calculate register livetime -------------------
 
 	private void calculateRegisterLivetime() {
 		int line = 0;
@@ -269,42 +299,4 @@ public class LinearScanRegisterAllocation {
 			}
 		}
 	}
-
-	private void detectPartiallyAllocatedRegisters() {
-		for (VirtualRegister virtualRegister : virtualRegisters) {
-			if (virtualRegister.getRegister() != null && virtualRegister.getRegister().getClass() == SingleRegister.class) {
-				SingleRegister register = (SingleRegister) virtualRegister.getRegister();
-				RegisterBundle registerBundle = register.getRegisterBundle();
-
-				if (!partialAllocatedRegisters.containsKey(registerBundle)) {
-					partialAllocatedRegisters.put(registerBundle, new LinkedList<VirtualRegister>());
-					registerUsages[registerBundle.getRegisterId()] = (byte) 0x80;
-				}
-				partialAllocatedRegisters.get(registerBundle).add(virtualRegister);
-			}
-		}
-	}
-
-	private void setStackSize(int size) {
-		size += 0x10;
-		size &= -0x10; // Align to 8-byte.
-
-		for (AssemblerOperation operation : operations) {
-			if (operation instanceof MethodStartEndOperation) {
-				MethodStartEndOperation reserveStackOperation = (MethodStartEndOperation) operation;
-				reserveStackOperation.setStackOperationSize(size);
-			}
-		}
-	}
-
-	private void setOperationAliveRegisters(int num, CallOperation operation) {
-		List<VirtualRegister> registers = new LinkedList<VirtualRegister>();
-		for (VirtualRegister register : virtualRegisters) {
-			if (register.isAliveAt(num)) {
-				registers.add(register);
-			}
-		}
-		operation.addUsedRegisters(registers);
-	}
-
 }
