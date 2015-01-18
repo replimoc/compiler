@@ -24,7 +24,7 @@ import compiler.firm.backend.storage.VirtualRegister;
 public class LinearScanRegisterAllocation {
 	private static final int STACK_ITEM_SIZE = 8;
 
-	private final LinkedList<SingleRegister>[] allowedRegisters;
+	private final SingleRegister[][] allowedRegisters;
 	private final boolean isMainMethod;
 
 	private final List<AssemblerOperation> operations;
@@ -156,7 +156,7 @@ public class LinearScanRegisterAllocation {
 	}
 
 	private SingleRegister getFreeNormalRegister(Bit mode) {
-		LinkedList<SingleRegister> registers = allowedRegisters[mode.ordinal()];
+		SingleRegister[] registers = allowedRegisters[mode.ordinal()];
 
 		for (SingleRegister register : registers) {
 			if (isRegisterFree(register, false)) {
