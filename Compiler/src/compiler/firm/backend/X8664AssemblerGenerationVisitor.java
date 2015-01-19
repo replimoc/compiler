@@ -160,26 +160,24 @@ public class X8664AssemblerGenerationVisitor implements BulkPhiNodeVisitor {
 		// get left node
 		Storage registerLeft = storageManagement.getValueAvoidNewRegister(left);
 		// get right node
-		RegisterBased resultRegister = null;
+		RegisterBased registerRight = storageManagement.getValue(right, true);
 
-		// FIXME @Valentin Zickner: This code crashes Simon_104 with --no-opt --no-registers
-		// if (BackEdges.getNOuts(parent) == 1) {
-		// Node successor = FirmUtils.getFirstSuccessor(parent);
-		//
-		// boolean moreUsages = false;
-		// for (Edge edge : BackEdges.getOuts(successor)) {
-		// if (!edge.node.equals(parent) && parent.getBlock().equals(edge.node.getBlock())) {
-		// moreUsages = true;
-		// }
-		// }
-		//
-		// Storage storage = storageManagement.getStorage(successor);
-		// if (successor.equals(right) && storage instanceof RegisterBased && !moreUsages && !right.getBlock().equals(parent.getBlock())) {
-		// resultRegister = (RegisterBased) storage;
-		// }
-		// }
+		if (BackEdges.getNOuts(parent) == 1) {
+			Node successor = FirmUtils.getFirstSuccessor(parent);
 
-		RegisterBased registerRight = storageManagement.getValue(right, resultRegister, true);
+			boolean moreUsages = false;
+			for (Edge edge : BackEdges.getOuts(successor)) {
+				if (!edge.node.equals(parent) && parent.getBlock().equals(edge.node.getBlock())) {
+					moreUsages = true;
+				}
+			}
+
+			Storage storage = storageManagement.getStorage(successor);
+			if (successor.equals(right) && storage instanceof RegisterBased && !moreUsages && !right.getBlock().equals(parent.getBlock())) {
+				registerRight = (RegisterBased) storage;
+			}
+		}
+
 		// create operation object
 		StorageRegisterOperation operation = operationFactory.instantiate(registerLeft, registerRight);
 		// execute operation
