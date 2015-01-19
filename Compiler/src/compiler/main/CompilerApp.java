@@ -39,6 +39,7 @@ public final class CompilerApp {
 	private static final String PRETTY_PRINT_AST = "print-ast";
 	private static final String CHECK = "check";
 	private static final String DEBUG = "debug";
+	private static final String DEBUG_REGISTER_ALLOCATION = "debug-register-allocation";
 	private static final String GRAPH_FIRM = "graph-firm";
 	private static final String OUTPUT_ASSEMBLER = "assembler";
 	private static final String COMPILE_FIRM = "compile-firm";
@@ -75,6 +76,7 @@ public final class CompilerApp {
 		options.addOption(null, CHECK, false, "checks if the given source file is valid code.");
 
 		options.addOption(null, DEBUG, false, "prints more detailed error messages (only useful in case of a crash)");
+		options.addOption(null, DEBUG_REGISTER_ALLOCATION, false, "prints lifetime of virtual register and create assembler with virtual registers.");
 		options.addOption(null, GRAPH_FIRM, false, "dump a firm graph to the current directory.");
 		options.addOption("s", null, true, "Used to define the suffix of the dumped firm graph. (Only to be used with --"
 				+ GRAPH_FIRM + ")");
@@ -181,11 +183,12 @@ public final class CompilerApp {
 						};
 					} else { // Default case: use our own assembler
 						final boolean noRegisters = cmd.hasOption(NO_REGISTERS);
+						final boolean debugRegisterAllocation = cmd.hasOption(DEBUG_REGISTER_ALLOCATION);
 						assemblerCreator = new AssemblerCreator() {
 							@Override
 							public void create(String fileName) throws IOException {
 								AssemblerGenerator.createAssemblerX8664(Paths.get(fileName), CallingConvention.SYSTEMV_ABI, !noOpt,
-										noRegisters);
+										noRegisters, debugRegisterAllocation);
 							}
 						};
 					}

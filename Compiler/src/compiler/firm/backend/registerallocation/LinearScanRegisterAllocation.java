@@ -44,15 +44,18 @@ public class LinearScanRegisterAllocation {
 		this.allowedRegisters = registerPolicy.getAllowedRegisters();
 	}
 
-	public void allocateRegisters() {
+	public void allocateRegisters(boolean debugRegisterAllocation) {
 		calculateRegisterLivetime();
 
 		detectPartiallyAllocatedRegisters();
 		assignRegisters();
 
-		// for (VirtualRegister register : virtualRegisters) {
-		// System.out.println("VR" + register.getNum() + " from " + register.getFirstOccurrence() + " to " + register.getLastOccurrence());
-		// }
+		if (debugRegisterAllocation) {
+			for (VirtualRegister register : virtualRegisters) {
+				System.out.println("VR" + register.getNum() + " from " + register.getFirstOccurrence() + " to " + register.getLastOccurrence()
+						+ " with register " + register.toString());
+			}
+		}
 
 		setDummyOperationsInformation();
 	}
