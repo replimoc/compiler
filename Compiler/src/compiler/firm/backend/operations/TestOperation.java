@@ -9,8 +9,13 @@ public class TestOperation extends StorageRegisterOperation {
 		super(comment, source, destination);
 	}
 
-    @Override
-    public String getOperationString() {
-        return String.format("\ttest %s, %s", getStorage().toString(), getDestination().toString());
-    }
+	@Override
+	public String getOperationString() {
+		return String.format("\ttest %s, %s", getStorage().toString(), getDestination().toString());
+	}
+
+	@Override
+	public RegisterBased[] getWriteRegisters() {
+		return new RegisterBased[0];
+	}
 }
