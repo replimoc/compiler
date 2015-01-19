@@ -153,9 +153,16 @@ public class TestUtils {
 	}
 
 	public static void writeToFile(String filename, CharSequence buffer) throws IOException {
+		final int BUFFER_SIZE = 5000;
+
 		File file = new File(filename);
 		FileWriter output = new FileWriter(file, false);
-		output.append(buffer);
+
+		int length = buffer.length();
+		for (int index = 0; index < length; index += BUFFER_SIZE) {
+			output.append(buffer, index, Math.min(index + BUFFER_SIZE, length));
+		}
+
 		output.close();
 		output = null;
 		file = null;

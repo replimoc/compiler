@@ -66,15 +66,15 @@ public class AutomatedAstComparisionTest implements TestFileVisitor.FileTester {
 
 		try {
 			Iterator<String> expectedOutputIterator = expectedOutput.iterator();
-			String printedAst = runParser(sourceFile);
+			StringBuilder printedAst = runParser(sourceFile);
 			if (isFixpoint) { // Run parser again
 				sourceFile = TestUtils.writeToTemporaryFile(printedAst).toPath();
-				expectedOutputIterator = new Scanner(printedAst);
+				expectedOutputIterator = new Scanner(new StringBuilderReader(printedAst));
 				((Scanner) expectedOutputIterator).useDelimiter("\n");
 				printedAst = runParser(sourceFile);
 			}
 
-			Scanner s = new Scanner(printedAst);
+			Scanner s = new Scanner(new StringBuilderReader(printedAst));
 			s.useDelimiter("\n"); // separate at new lines
 
 			TestUtils.assertLinesEqual(sourceFile, expectedOutputIterator, s);
@@ -103,7 +103,7 @@ public class AutomatedAstComparisionTest implements TestFileVisitor.FileTester {
 		fail();
 	}
 
-	private String runParser(Path sourceFile) throws IOException, ParsingFailedException {
+	private StringBuilder runParser(Path sourceFile) throws IOException, ParsingFailedException {
 		Parser parser = TestUtils.initParser(sourceFile);
 		AstNode ast = parser.parse();
 		return PrettyPrinter.prettyPrint(ast);

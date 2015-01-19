@@ -121,7 +121,7 @@ public class ParseNewExpressionTest {
 	}
 
 	private String callNewArrayExpression(Parser parser) {
-		return PrettyPrinter.prettyPrint((NewArrayExpression) caller.call("parseNewExpression", parser, parameterTypes, args));
+		return PrettyPrinter.prettyPrint((NewArrayExpression) caller.call("parseNewExpression", parser, parameterTypes, args)).toString();
 	}
 
 }
