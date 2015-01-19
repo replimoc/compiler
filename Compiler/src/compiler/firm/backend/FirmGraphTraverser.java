@@ -2,33 +2,32 @@ package compiler.firm.backend;
 
 import java.util.HashMap;
 import java.util.HashSet;
-import java.util.Iterator;
 import java.util.LinkedList;
+
+import compiler.firm.FirmUtils;
 
 import firm.BlockWalker;
 import firm.Graph;
 import firm.bindings.binding_irgraph;
 import firm.nodes.Block;
 import firm.nodes.Node;
+import firm.nodes.Proj;
 
 public final class FirmGraphTraverser {
 
 	private FirmGraphTraverser() {
 	}
 
-	public static void walkLoopOptimizedPostorder(Graph graph, HashMap<Block, BlockInfo> blockFollowers, BlockWalker walker) {
+	public static void walkLoopOptimizedPostorder(Graph graph, HashMap<Block, BlockInfo> blockInfos, BlockWalker walker) {
 		incrementBlockVisited(graph);
-		detectLoopHeads(graph.getStartBlock(), blockFollowers, new HashSet<Integer>());
-
-		incrementBlockVisited(graph);
-		traverseBlocksDepthFirst(graph.getStartBlock(), blockFollowers, walker);
+		traverseBlocksGenerationFriendly(graph.getStartBlock(), blockInfos, walker, true);
 	}
 
 	private static void incrementBlockVisited(Graph graph) {
 		binding_irgraph.inc_irg_block_visited(graph.ptr);
 	}
 
-	public static HashMap<Block, BlockInfo> calculateBlockFollowers(Graph graph) {
+	public static HashMap<Block, BlockInfo> calculateBlockInfos(Graph graph) {
 		final HashMap<Block, BlockInfo> blockInfos = new HashMap<>();
 
 		graph.walkBlocks(new BlockWalker() {
@@ -43,12 +42,18 @@ public final class FirmGraphTraverser {
 						blockInfos.put(predBlock, predBlockInfo);
 					}
 
-					// adding the block at the beginning ensures that the loop body comes after the head
-					// adding the block to the end of the list makes depth first to the end block and then the loop body
-					predBlockInfo.followers.addFirst(block);
+					if (pred instanceof Proj && ((Proj) pred).getNum() == FirmUtils.FALSE) {
+						predBlockInfo.followers.addLast(block);
+					} else {
+						predBlockInfo.followers.addFirst(block);
+					}
 				}
 			}
 		});
+
+		incrementBlockVisited(graph);
+		detectLoopHeads(graph.getStartBlock(), blockInfos, new HashSet<Integer>());
+
 		return blockInfos;
 	}
 
@@ -62,6 +67,9 @@ public final class FirmGraphTraverser {
 		if (block.blockVisited()) {
 			if (blockSet.contains(block.getNr())) {
 				blockInfo.isLoopHead = true;
+				if (blockSet.contains(blockInfo.followers.getLast().getNr())) { // if false case is loop case
+					blockInfo.followers.addFirst(blockInfo.followers.removeLast()); // reorder
+				}
 			}
 			return;
 		}
@@ -74,7 +82,7 @@ public final class FirmGraphTraverser {
 		blockSet.remove(block.getNr());
 	}
 
-	private static void traverseBlocksDepthFirst(Block block, HashMap<Block, BlockInfo> blockInfos, BlockWalker walker) {
+	private static void traverseBlocksGenerationFriendly(Block block, HashMap<Block, BlockInfo> blockInfos, BlockWalker walker, boolean orderLoops) {
 		if (block.blockVisited())
 			return;
 		block.markBlockVisited();
@@ -85,44 +93,48 @@ public final class FirmGraphTraverser {
 			return;
 		}
 
-		if (blockInfo.isLoopHead) {
-			Iterator<Block> iter = blockInfo.followers.iterator();
-			traverseBlocksDepthFirst(iter.next(), blockInfos, walker);
+		LinkedList<Block> followers = blockInfo.followers;
+		switch (followers.size()) {
+		case 1:
 			walker.visitBlock(block);
-			while (iter.hasNext()) {
-				traverseBlocksDepthFirst(iter.next(), blockInfos, walker);
+			Block follower = followers.getFirst();
+			if (follower.getPredCount() < 2 || allPredecessorsVisited(follower)
+					|| (blockInfos.get(follower) != null && blockInfos.get(follower).isLoopHead)) {
+				traverseBlocksGenerationFriendly(follower, blockInfos, walker, orderLoops);
 			}
-		} else {
-			walker.visitBlock(block);
-			for (Block followerBlock : blockInfo.followers) {
-				traverseBlocksDepthFirst(followerBlock, blockInfos, walker);
+			break;
+
+		case 2:
+			if (orderLoops && blockInfo.isLoopHead) {
+				traverseBlocksGenerationFriendly(followers.getFirst(), blockInfos, walker, orderLoops);
+				walker.visitBlock(block);
+				traverseBlocksGenerationFriendly(followers.getLast(), blockInfos, walker, orderLoops);
+			} else {
+				walker.visitBlock(block);
+				traverseBlocksGenerationFriendly(followers.getFirst(), blockInfos, walker, orderLoops);
+				traverseBlocksGenerationFriendly(followers.getLast(), blockInfos, walker, orderLoops);
 			}
+			break;
+
+		default:
+			throw new RuntimeException("More than 2 followers! " + followers.size());
 		}
+	}
+
+	private static boolean allPredecessorsVisited(Block block) {
+		boolean allPredecessorsVisited = true;
+
+		for (Node curr : block.getPreds()) {
+			Block predecessorBlock = (Block) curr.getBlock();
+			allPredecessorsVisited &= predecessorBlock.blockVisited();
+		}
+
+		return allPredecessorsVisited;
 	}
 
 	public static void walkBlocksAllocationFriendly(Graph graph, HashMap<Block, BlockInfo> blockInfos, BlockWalker walker) {
 		incrementBlockVisited(graph);
-		Block startBlock = graph.getStartBlock();
-
-		walker.visitBlock(startBlock);
-		startBlock.markBlockVisited();
-		LinkedList<Block> followers = blockInfos.get(startBlock).followers;
-
-		while (!followers.isEmpty()) {
-			LinkedList<Block> nextFollowers = new LinkedList<Block>();
-			for (Block followerBlock : followers) {
-				if (followerBlock.blockVisited())
-					continue;
-				followerBlock.markBlockVisited();
-				walker.visitBlock(followerBlock);
-
-				BlockInfo followerBlockInfo = blockInfos.get(followerBlock);
-				if (followerBlockInfo != null) {
-					nextFollowers.addAll(followerBlockInfo.followers);
-				}
-			}
-			followers = nextFollowers;
-		}
+		traverseBlocksGenerationFriendly(graph.getStartBlock(), blockInfos, walker, false);
 	}
 
 	public static class BlockInfo {

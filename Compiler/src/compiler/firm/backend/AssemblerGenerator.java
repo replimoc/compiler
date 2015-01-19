@@ -55,7 +55,7 @@ public final class AssemblerGenerator {
 			X8664AssemblerGenerationVisitor visitor = new X8664AssemblerGenerationVisitor(callingConvention);
 
 			BackEdges.enable(graph);
-			HashMap<Block, BlockInfo> blockInfos = FirmGraphTraverser.calculateBlockFollowers(graph);
+			HashMap<Block, BlockInfo> blockInfos = FirmGraphTraverser.calculateBlockInfos(graph);
 			FirmGraphTraverser.walkBlocksAllocationFriendly(graph, blockInfos, new BlockNodesWalker(visitor, nodesPerBlockMap));
 			BackEdges.disable(graph);
 
