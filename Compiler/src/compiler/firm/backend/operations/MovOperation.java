@@ -27,10 +27,9 @@ public class MovOperation extends SourceDestinationOperation {
 
 	@Override
 	public String getOperationString() {
-		new Constant(1);
 		Bit sourceMode = source.getMode();
 		Bit destinationMode = destination.getMode();
-		if (sourceMode != null && destinationMode != null && sourceMode != destinationMode) {
+		if (isMovslq(sourceMode, destinationMode)) {
 			return String.format("\tmovs%s%s %s, %s", sourceMode, destinationMode, source.toString(), destination.toString());
 		} else {
 			Bit mode;
@@ -48,27 +47,33 @@ public class MovOperation extends SourceDestinationOperation {
 
 	}
 
-	// TODO: Fix this for movslq and comment it in
-	// @Override
-	// public String[] toStringWithSpillcode() {
-	// if (hasSpilledRegisters()) {
-	// if ((source.getClass() == VirtualRegister.class || source.getClass() == Constant.class)
-	// && (destination.getClass() == VirtualRegister.class || destination.getClass() == Constant.class)) {
-	//
-	// if ((source.isSpilled() && !destination.isSpilled()) || (!source.isSpilled() && destination.isSpilled())) {
-	// return new String[] { toString() };
-	// } else {
-	// Storage oldSource = this.source;
-	// this.source = getTemporaryRegister().getRegister(destination.getMode());
-	// String[] result = new String[] {
-	// new MovOperation(oldSource, this.source).toString(),
-	// toString()
-	// };
-	// this.source = oldSource;
-	// return result;
-	// }
-	// }
-	// }
-	// return super.toStringWithSpillcode();
-	// }
+	private boolean isMovslq(Bit sourceMode, Bit destinationMode) {
+		return sourceMode != null && destinationMode != null && sourceMode != destinationMode;
+	}
+
+	@Override
+	public String[] toStringWithSpillcode() {
+		Bit sourceMode = source.getMode();
+		Bit destinationMode = destination.getMode();
+
+		if (hasSpilledRegisters() && !isMovslq(sourceMode, destinationMode)) {
+			if ((source.getClass() == VirtualRegister.class || source.getClass() == Constant.class)
+					&& (destination.getClass() == VirtualRegister.class || destination.getClass() == Constant.class)) {
+
+				if ((source.isSpilled() && !destination.isSpilled()) || (!source.isSpilled() && destination.isSpilled())) {
+					return new String[] { toString() };
+				} else {
+					Storage oldSource = this.source;
+					this.source = getTemporaryRegister().getRegister(destination.getMode());
+					String[] result = new String[] {
+							new MovOperation(oldSource, this.source).toString(),
+							toString()
+					};
+					this.source = oldSource;
+					return result;
+				}
+			}
+		}
+		return super.toStringWithSpillcode();
+	}
 }
