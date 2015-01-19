@@ -123,13 +123,7 @@ public class CallOperation extends AssemblerOperation {
 				storage = registerStackLocations.get(storage.getRegisterBundle());
 			}
 
-			if (register.getRegister(source.mode) == null) {
-				result.add(new MovOperation(storage, register.getRegister(Bit.BIT64)).toString());
-				// TODO: the mask should be saved in the mode
-				result.add(new AndOperation(new Constant(0xFF), register.getRegister(Bit.BIT64)).toString());
-			} else {
-				result.add(new MovOperation(storage, register.getRegister(source.mode)).toString());
-			}
+			result.add(new MovOperation(storage, register.getRegister(source.mode)).toString());
 		}
 
 		result.add(toString());

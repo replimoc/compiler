@@ -10,7 +10,6 @@ import java.util.Map.Entry;
 import compiler.firm.FirmUtils;
 import compiler.firm.backend.calling.CallingConvention;
 import compiler.firm.backend.operations.AddOperation;
-import compiler.firm.backend.operations.AndOperation;
 import compiler.firm.backend.operations.CallOperation;
 import compiler.firm.backend.operations.CltdOperation;
 import compiler.firm.backend.operations.CmovSignOperation;
@@ -495,7 +494,6 @@ public class X8664AssemblerGenerationVisitor implements BulkPhiNodeVisitor {
 			int divisor = ((Const) right).getTarval().asInt();
 			int absDivisor = Math.abs(divisor);
 
-			// TODO there was a "is power of two" method somewhere
 			if ((absDivisor & (absDivisor - 1)) == 0) {
 				divByPow2(node, node.getLeft(), absDivisor, (divisor > 0));
 			} else {
@@ -634,13 +632,8 @@ public class X8664AssemblerGenerationVisitor implements BulkPhiNodeVisitor {
 				if (proj.getNum() < parameterRegisters.length) {
 					RegisterBundle registerBundle = parameterRegisters[proj.getNum()];
 					VirtualRegister storage = new VirtualRegister(mode, registerBundle);
-					if (registerBundle.getRegister(mode) == null) {
-						addOperation(new MovOperation(storage, location));
-						// TODO: the mask should be saved in the mode
-						addOperation(new AndOperation(new Constant(0xFF), (VirtualRegister) location));
-					} else {
-						addOperation(new MovOperation(storage, location));
-					}
+
+					addOperation(new MovOperation(storage, location));
 				} else {
 					// TODO: Do this only, if more than one usage is available
 					// + 2 for dynamic link
