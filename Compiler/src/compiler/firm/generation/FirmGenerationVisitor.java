@@ -598,7 +598,6 @@ public class FirmGenerationVisitor implements AstVisitor {
 			}
 
 			methodReturns.put(methodConstruction.getCurrentBlock(), returnNode);
-			methodConstruction.setUnreachable();
 		}
 	}
 
@@ -618,15 +617,21 @@ public class FirmGenerationVisitor implements AstVisitor {
 	public void visit(Block block) {
 		if (!block.isEmpty()) {
 			for (Statement statement : block.getStatements()) {
-				// do not visit blocks which already have a return
-				if (!methodReturns.containsKey(methodConstruction.getCurrentBlock())) {
-					statement.accept(this);
+				statement.accept(this);
+
+				if (methodReturns.containsKey(methodConstruction.getCurrentBlock())) {
+					break; // stop visiting the rest, we already have a return
 				}
 			}
 
-			// get last statement and set block firmNode to this statement
-			Statement lastStatement = block.getStatements().get(block.getNumberOfStatements() - 1);
-			block.setFirmNode(lastStatement.getFirmNode());
+			Node returnNode = methodReturns.get(methodConstruction.getCurrentBlock());
+			if (returnNode != null) {
+				block.setFirmNode(returnNode);
+			} else {
+				// get last statement and set block firmNode to this statement
+				Statement lastStatement = block.getStatements().get(block.getNumberOfStatements() - 1);
+				block.setFirmNode(lastStatement.getFirmNode());
+			}
 		}
 	}
 
@@ -700,7 +705,7 @@ public class FirmGenerationVisitor implements AstVisitor {
 		methodConstruction.setCurrentBlock(trueBlock);
 		ifStatement.getTrueCase().accept(this);
 		// prevent a second control flow instruction from being set for this block
-		if (!methodReturns.containsKey(trueBlock)) {
+		if (!methodReturns.containsKey(methodConstruction.getCurrentBlock())) {
 			Node trueJmp = methodConstruction.newJmp();
 			endifBlock.addPred(trueJmp);
 		}
@@ -742,7 +747,7 @@ public class FirmGenerationVisitor implements AstVisitor {
 		methodConstruction.getCurrentMem();
 
 		whileStatement.getBody().accept(this);
-		if (!methodReturns.containsKey(loopBlock)) {
+		if (!methodReturns.containsKey(methodConstruction.getCurrentBlock())) {
 			Node loopJump = methodConstruction.newJmp();
 			startBlock.addPred(loopJump);
 		}
