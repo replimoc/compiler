@@ -1,6 +1,7 @@
 package compiler.firm.generation;
 
 import java.util.HashMap;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
@@ -75,7 +76,7 @@ public class FirmGenerationVisitor implements AstVisitor {
 
 	// current definitions
 	private Construction methodConstruction = null;
-	private final Map<firm.nodes.Block, Node> methodReturns = new HashMap<firm.nodes.Block, Node>();
+	private final Map<firm.nodes.Block, Node> methodReturns = new LinkedHashMap<firm.nodes.Block, Node>();
 
 	// create new map for param <-> variable number
 	private Node activePhiNode;
