@@ -224,7 +224,7 @@ public class FirmGenerationVisitor implements AstVisitor {
 		if (expression instanceof BooleanConstantExpression
 				|| expression instanceof VariableAccessExpression
 				|| expression instanceof MethodInvocationExpression
-				|| expression instanceof LogicalNotExpression) { // TODO: Add more for direct pass
+				|| expression instanceof LogicalNotExpression) {
 			expression.accept(this);
 			return expression.getFirmNode();
 		} else {

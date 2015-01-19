@@ -71,7 +71,7 @@ public class MemoryPointer extends Storage {
 
 	@Override
 	public Bit getMode() {
-		return null; // TODO implement this correctly
+		return null;
 	}
 
 	@Override
