@@ -635,10 +635,13 @@ public class X8664AssemblerGenerationVisitor implements BulkPhiNodeVisitor {
 
 					addOperation(new MovOperation(storage, location));
 				} else {
-					// TODO: Do this only, if more than one usage is available
 					// + 2 for dynamic link
 					MemoryPointer storage = new MemoryPointer(STACK_ITEM_SIZE * (proj.getNum() + 2 - parameterRegisters.length), SingleRegister.RBP);
-					addOperation(new MovOperation(storage, location));
+					if (BackEdges.getNOuts(proj) > 1) {
+						addOperation(new MovOperation(storage, location));
+					} else {
+						location = storage;
+					}
 				}
 				storageManagement.addStorage(proj, location);
 			}
