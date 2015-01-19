@@ -24,7 +24,7 @@ public abstract class MethodStartEndOperation extends AssemblerOperation {
 
 	@Override
 	public String getOperationString() {
-		throw new RuntimeException("this should never be called.");
+		return "";
 	}
 
 	public void setStackOperationSize(int stackOperationSize) {

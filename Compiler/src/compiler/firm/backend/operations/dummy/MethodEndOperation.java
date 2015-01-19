@@ -45,6 +45,6 @@ public class MethodEndOperation extends MethodStartEndOperation {
 
 	@Override
 	public String getComment() {
-		return "SaveCalleeRegistersOperation";
+		return "MethodEndOperation";
 	}
 }
