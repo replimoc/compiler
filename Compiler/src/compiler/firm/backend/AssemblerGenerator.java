@@ -18,6 +18,7 @@ import compiler.firm.backend.operations.TextOperation;
 import compiler.firm.backend.operations.templates.AssemblerOperation;
 import compiler.firm.backend.registerallocation.LinearScanRegisterAllocation;
 import compiler.firm.backend.registerallocation.RegisterAllocationPolicy;
+
 import firm.BackEdges;
 import firm.BlockWalker;
 import firm.Graph;
@@ -50,8 +51,10 @@ public final class AssemblerGenerator {
 
 			HashMap<Block, BlockNodes> nodesPerBlockMap = collectorVisitor.getNodesPerBlockMap();
 			X8664AssemblerGenerationVisitor visitor = new X8664AssemblerGenerationVisitor(callingConvention);
+
 			BackEdges.enable(graph);
-			HashMap<Block, BlockInfo> blockInfos = FirmGraphTraverser.walkBlocksPostOrder(graph, new BlockNodesWalker(visitor, nodesPerBlockMap));
+			HashMap<Block, BlockInfo> blockInfos = FirmGraphTraverser.calculateBlockFollowers(graph);
+			FirmGraphTraverser.walkBlocksAllocationFriendly(graph, blockInfos, new BlockNodesWalker(visitor, nodesPerBlockMap));
 			BackEdges.disable(graph);
 
 			visitor.finishOperationsList();

@@ -16,15 +16,6 @@ public final class FirmGraphTraverser {
 	private FirmGraphTraverser() {
 	}
 
-	public static HashMap<Block, BlockInfo> walkBlocksPostOrder(Graph graph, BlockWalker walker) {
-		HashMap<Block, BlockInfo> blockFollowers = calculateBlockFollowers(graph);
-
-		incrementBlockVisited(graph);
-		traverseBlocksDepthFirst(graph.getStartBlock(), blockFollowers, walker);
-
-		return blockFollowers;
-	}
-
 	public static void walkLoopOptimizedPostorder(Graph graph, HashMap<Block, BlockInfo> blockFollowers, BlockWalker walker) {
 		incrementBlockVisited(graph);
 		detectLoopHeads(graph.getStartBlock(), blockFollowers, new HashSet<Integer>());
@@ -37,7 +28,7 @@ public final class FirmGraphTraverser {
 		binding_irgraph.inc_irg_block_visited(graph.ptr);
 	}
 
-	private static HashMap<Block, BlockInfo> calculateBlockFollowers(Graph graph) {
+	public static HashMap<Block, BlockInfo> calculateBlockFollowers(Graph graph) {
 		final HashMap<Block, BlockInfo> blockInfos = new HashMap<>();
 
 		graph.walkBlocks(new BlockWalker() {
@@ -106,6 +97,31 @@ public final class FirmGraphTraverser {
 			for (Block followerBlock : blockInfo.followers) {
 				traverseBlocksDepthFirst(followerBlock, blockInfos, walker);
 			}
+		}
+	}
+
+	public static void walkBlocksAllocationFriendly(Graph graph, HashMap<Block, BlockInfo> blockInfos, BlockWalker walker) {
+		incrementBlockVisited(graph);
+		Block startBlock = graph.getStartBlock();
+
+		walker.visitBlock(startBlock);
+		startBlock.markBlockVisited();
+		LinkedList<Block> followers = blockInfos.get(startBlock).followers;
+
+		while (!followers.isEmpty()) {
+			LinkedList<Block> nextFollowers = new LinkedList<Block>();
+			for (Block followerBlock : followers) {
+				if (followerBlock.blockVisited())
+					continue;
+				followerBlock.markBlockVisited();
+				walker.visitBlock(followerBlock);
+
+				BlockInfo followerBlockInfo = blockInfos.get(followerBlock);
+				if (followerBlockInfo != null) {
+					nextFollowers.addAll(followerBlockInfo.followers);
+				}
+			}
+			followers = nextFollowers;
 		}
 	}
 
