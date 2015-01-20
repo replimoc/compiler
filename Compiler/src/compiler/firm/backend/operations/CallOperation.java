@@ -25,12 +25,12 @@ public class CallOperation extends AssemblerOperation {
 	private List<RegisterBundle> usedRegisters = new LinkedList<>();
 	private final VirtualRegister result;
 
-	public CallOperation(Bit mode, String name, List<Parameter> parameters, CallingConvention callingConvention) {
+	public CallOperation(Bit mode, String name, List<Parameter> parameters,
+			CallingConvention callingConvention) {
 		this.name = name;
 		this.parameters = parameters;
 		this.callingConvention = callingConvention;
 		this.usedRegisters.add(RegisterBundle._SP);
-		this.usedRegisters.add(RegisterBundle._BP);
 		this.result = new VirtualRegister(mode, callingConvention.getReturnRegister());
 	}
 
@@ -82,11 +82,13 @@ public class CallOperation extends AssemblerOperation {
 
 		HashMap<RegisterBundle, MemoryPointer> registerStackLocations = new HashMap<>();
 		int stackPosition = STACK_ITEM_SIZE * (callerSavedRegisters.size() + Math.max(0, numberOfstackParameters) - 1);
+		int maxStackOffset = stackPosition + STACK_ITEM_SIZE;
 
 		// Save all callerSavedRegisters to stack
 		for (RegisterBundle saveRegister : callerSavedRegisters) {
 			result.add(new PushOperation(Bit.BIT64, saveRegister.getRegister(Bit.BIT64)).toString());
-			registerStackLocations.put(saveRegister, new MemoryPointer(stackPosition, SingleRegister.RSP));
+			// maxStackOffset will be added by temporaryStackOffset
+			registerStackLocations.put(saveRegister, new MemoryPointer(stackPosition - maxStackOffset, SingleRegister.RSP));
 
 			stackPosition -= STACK_ITEM_SIZE;
 		}
@@ -103,13 +105,15 @@ public class CallOperation extends AssemblerOperation {
 				Parameter source = parameters.get(i + callingRegisters.length);
 				// Copy parameter
 				MemoryPointer destinationPointer = new MemoryPointer(i * STACK_ITEM_SIZE, SingleRegister.RSP);
-				if (source.storage.getClass() == MemoryPointer.class
+				source.storage.setTemporaryStackOffset(maxStackOffset);
+				if (source.storage instanceof MemoryPointer
 						|| (source.storage.getClass() == VirtualRegister.class && source.storage.isSpilled())) {
 					result.add(new MovOperation(source.storage, temporaryRegister.getRegister(source.mode)).toString());
 					result.add(new MovOperation(temporaryRegister.getRegister(source.mode), destinationPointer).toString());
 				} else {
 					result.add(new MovOperation(source.storage, destinationPointer).toString());
 				}
+				source.storage.setTemporaryStackOffset(0);
 			}
 		}
 
@@ -122,8 +126,11 @@ public class CallOperation extends AssemblerOperation {
 			if (registerStackLocations.containsKey(storage.getRegisterBundle())) {
 				storage = registerStackLocations.get(storage.getRegisterBundle());
 			}
+			storage.setTemporaryStackOffset(maxStackOffset);
 
 			result.add(new MovOperation(storage, register.getRegister(source.mode)).toString());
+
+			storage.setTemporaryStackOffset(0);
 		}
 
 		result.add(toString());

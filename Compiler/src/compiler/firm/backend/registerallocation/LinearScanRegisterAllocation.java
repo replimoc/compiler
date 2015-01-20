@@ -198,7 +198,7 @@ public class LinearScanRegisterAllocation {
 		}
 		virtualRegister.setSpilled(true);
 		currentStackOffset += STACK_ITEM_SIZE;
-		virtualRegister.setStorage(new MemoryPointer(-currentStackOffset, SingleRegister.RBP));
+		virtualRegister.setStorage(new MemoryPointer(currentStackOffset, SingleRegister.RSP));
 	}
 
 	private VirtualRegister getRegisterWithLongestLifetime(Bit mode) {

@@ -44,7 +44,7 @@ import compiler.firm.backend.storage.Constant;
 import compiler.firm.backend.storage.MemoryPointer;
 import compiler.firm.backend.storage.RegisterBased;
 import compiler.firm.backend.storage.RegisterBundle;
-import compiler.firm.backend.storage.SingleRegister;
+import compiler.firm.backend.storage.StackPointer;
 import compiler.firm.backend.storage.Storage;
 import compiler.firm.backend.storage.VirtualRegister;
 import compiler.utils.MathUtils;
@@ -329,7 +329,6 @@ public class X8664AssemblerGenerationVisitor implements BulkPhiNodeVisitor {
 		Graph graph = node.getGraph();
 		String methodName = getMethodName(node);
 
-		// we are in start block: initialize stack (RBP)
 		if (node.equals(graph.getStartBlock())) {
 			addOperation(new LabelOperation(methodName));
 			methodStart(node);
@@ -548,7 +547,7 @@ public class X8664AssemblerGenerationVisitor implements BulkPhiNodeVisitor {
 			// Store return value in EAX register
 			storageManagement.getValue(node.getPred(1), RegisterBundle._AX);
 		}
-		addOperation(new MethodEndOperation(callingConvention));
+		addOperation(new MethodEndOperation(callingConvention, STACK_ITEM_SIZE));
 		addOperation(new RetOperation(getMethodName(node)));
 	}
 
@@ -619,10 +618,12 @@ public class X8664AssemblerGenerationVisitor implements BulkPhiNodeVisitor {
 	}
 
 	private void methodStart(Node node) {
-		addOperation(new MethodStartOperation(callingConvention));
+		MethodStartOperation startOperation = new MethodStartOperation(callingConvention, STACK_ITEM_SIZE);
+		addOperation(startOperation);
 
 		Node args = node.getGraph().getArgs();
 		RegisterBundle[] parameterRegisters = callingConvention.getParameterRegisters();
+
 		for (Edge edge : BackEdges.getOuts(args)) {
 			if (edge.node instanceof Proj) {
 				Proj proj = (Proj) edge.node;
@@ -636,7 +637,7 @@ public class X8664AssemblerGenerationVisitor implements BulkPhiNodeVisitor {
 					addOperation(new MovOperation(storage, location));
 				} else {
 					// + 2 for dynamic link
-					MemoryPointer storage = new MemoryPointer(STACK_ITEM_SIZE * (proj.getNum() + 2 - parameterRegisters.length), SingleRegister.RBP);
+					MemoryPointer storage = new StackPointer(startOperation, STACK_ITEM_SIZE * (proj.getNum() - parameterRegisters.length));
 					if (BackEdges.getNOuts(proj) > 1) {
 						addOperation(new MovOperation(storage, location));
 					} else {

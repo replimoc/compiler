@@ -122,4 +122,9 @@ public class VirtualRegister extends RegisterBased {
 	public MemoryPointer getMemoryPointer() {
 		return register.getMemoryPointer();
 	}
+
+	@Override
+	public void setTemporaryStackOffset(int temporaryStackOffset) {
+		register.setTemporaryStackOffset(temporaryStackOffset);
+	}
 }

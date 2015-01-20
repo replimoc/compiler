@@ -8,12 +8,14 @@ import compiler.firm.backend.storage.RegisterBundle;
 
 public abstract class MethodStartEndOperation extends AssemblerOperation {
 
+	private int stackItemSize;
 	protected final CallingConvention callingConvention;
 	protected int stackOperationSize;
 	private HashSet<RegisterBundle> usedRegisters;
 
-	public MethodStartEndOperation(CallingConvention callingConvention) {
+	public MethodStartEndOperation(CallingConvention callingConvention, int stackItemSize) {
 		this.callingConvention = callingConvention;
+		this.stackItemSize = stackItemSize;
 	}
 
 	@Override
@@ -37,5 +39,16 @@ public abstract class MethodStartEndOperation extends AssemblerOperation {
 
 	protected final boolean isRegisterSaveNeeded(RegisterBundle registerBundle) {
 		return usedRegisters.contains(registerBundle);
+	}
+
+	public int getStackOffset() {
+		int offset = 1;
+		RegisterBundle[] registers = callingConvention.calleeSavedRegisters();
+		for (int i = 0; i < registers.length; i++) {
+			if (isRegisterSaveNeeded(registers[i])) {
+				offset += 1;
+			}
+		}
+		return offset * this.stackItemSize + stackOperationSize;
 	}
 }

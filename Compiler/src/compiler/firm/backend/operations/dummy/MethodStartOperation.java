@@ -6,7 +6,6 @@ import java.util.List;
 import compiler.firm.backend.Bit;
 import compiler.firm.backend.calling.CallingConvention;
 import compiler.firm.backend.operations.Comment;
-import compiler.firm.backend.operations.MovOperation;
 import compiler.firm.backend.operations.PushOperation;
 import compiler.firm.backend.operations.SubOperation;
 import compiler.firm.backend.storage.Constant;
@@ -15,17 +14,14 @@ import compiler.firm.backend.storage.SingleRegister;
 
 public class MethodStartOperation extends MethodStartEndOperation {
 
-	public MethodStartOperation(CallingConvention callingConvention) {
-		super(callingConvention);
+	public MethodStartOperation(CallingConvention callingConvention, int stackItemSize) {
+		super(callingConvention, stackItemSize);
 	}
 
 	@Override
 	public String[] toStringWithSpillcode() {
 
 		List<String> result = new LinkedList<String>();
-
-		result.add(new PushOperation(Bit.BIT64, SingleRegister.RBP).toString()); // Dynamic Link
-		result.add(new MovOperation(SingleRegister.RSP, SingleRegister.RBP).toString());
 
 		RegisterBundle[] registers = callingConvention.calleeSavedRegisters();
 		for (int i = 0; i < registers.length; i++) {

@@ -64,4 +64,8 @@ public class Constant extends Storage {
 	public MemoryPointer getMemoryPointer() {
 		return null;
 	}
+
+	@Override
+	public void setTemporaryStackOffset(int temporaryStackOffset) {
+	}
 }
