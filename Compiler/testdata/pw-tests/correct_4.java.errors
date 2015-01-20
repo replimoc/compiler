@@ -1,0 +1,16 @@
+error: Identifier println at position line 119, character 21 has already been defined.
+error: type error in token at position line  48, character 19: Can't create void arrays.
+error: type error in token at position line  51, character 13: Can't create void arrays.
+error: type error in token at position line  57, character 18
+error: type error in token at position line  57, character 14
+error: type error in token at position line  57, character 14: Left side of assignment expression should variable or array.
+error: type error in token at position line  97, character 12
+error: type error in token at position line  98, character 20
+error: type error in token at position line  99, character 20
+error: type error in token at position line 104, character 14
+error: type error in token at position line 105, character 15
+error: type error in token at position line 106, character 15
+error: type error in token at position line 107, character 15
+error: type error in token at position line 108, character 15
+error: type error in token at position line 109, character 14
+error: type error in token at position line 119, character 54
