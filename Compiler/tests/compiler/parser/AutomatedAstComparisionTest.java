@@ -25,7 +25,7 @@ import compiler.utils.TestUtils;
  */
 public class AutomatedAstComparisionTest implements TestFileVisitor.FileTester {
 
-	private static final String PRETTY_AST_EXTENSION = ".pretty";
+	public static final String PRETTY_AST_EXTENSION = ".pretty";
 
 	@Test
 	public void testParserFiles() throws Exception {
@@ -53,10 +53,10 @@ public class AutomatedAstComparisionTest implements TestFileVisitor.FileTester {
 	}
 
 	@Override
-	public void testSourceFile(Path sourceFile, Path expectedFile, Path cIncludeFilePath) throws Exception {
+	public void testSourceFile(TestFileVisitor visitor, Path sourceFile, Path expectedFile) throws Exception {
 		// read expected output
 		List<String> expectedOutput = Files.readAllLines(expectedFile, StandardCharsets.US_ASCII);
-		boolean failingExpected = (!expectedOutput.isEmpty() && "error".equals(expectedOutput.get(0)));
+		boolean failingExpected = isParserFailExpected(expectedOutput);
 		boolean isFixpoint = sourceFile.equals(expectedFile);
 		if (isFixpoint && failingExpected) { // this is the case if we do the fixpoint test
 			return; // do not test error files
@@ -96,6 +96,10 @@ public class AutomatedAstComparisionTest implements TestFileVisitor.FileTester {
 
 			failParsingException(e);
 		}
+	}
+
+	public static boolean isParserFailExpected(List<String> expectedOutput) {
+		return !expectedOutput.isEmpty() && "error".equals(expectedOutput.get(0));
 	}
 
 	private static void failParsingException(ParsingFailedException e) {
