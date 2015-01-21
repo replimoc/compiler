@@ -1,5 +1,6 @@
 package compiler.firm.optimization.visitor;
 
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Map.Entry;
@@ -49,8 +50,15 @@ public class StrengthReductionVisitor extends OptimizationVisitor<Node> {
 			}
 		}
 
+		ArrayList<Block> dominatedBlocks = new ArrayList<>();
 		for (Block b : loops) {
 			if (dominators.containsKey(b) && dominators.get(b).containsAll(loops)) {
+				dominatedBlocks.add(b);
+			}
+		}
+		loops.removeAll(dominatedBlocks);
+		if (loops.size() == 1) {
+			for (Block b : loops) {
 				return b;
 			}
 		}
@@ -188,10 +196,6 @@ public class StrengthReductionVisitor extends OptimizationVisitor<Node> {
 					for (Node node : phi.getPreds()) {
 						if (node.getBlock().equals(loopBlock)) {
 							// found operation inside loop
-							/*
-							 * for (Edge edge : BackEdges.getOuts(node)) { if (dominators.get(node.getBlock()).contains(edge.node.getBlock())) { //
-							 * backedge to loop header return; } }
-							 */
 							inductionVariables.put(phi, node);
 						}
 					}
