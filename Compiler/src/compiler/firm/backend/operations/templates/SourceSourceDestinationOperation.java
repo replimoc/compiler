@@ -51,6 +51,7 @@ public abstract class SourceSourceDestinationOperation extends AssemblerBitOpera
 		if (source2.getSingleRegister() == null
 				|| source2.getSingleRegister() != destination.getSingleRegister()) {
 			return new MovOperation(source2, destination);
+
 		}
 		return null;
 	}

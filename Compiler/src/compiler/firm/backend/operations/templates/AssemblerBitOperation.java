@@ -66,7 +66,12 @@ public abstract class AssemblerBitOperation extends AssemblerOperation {
 			result.toArray(resultArray);
 			return resultArray;
 		} else {
-			return new String[] { toString() };
+			AssemblerOperation preOperation = getPreOperation();
+			if (preOperation != null) {
+				return new String[] { preOperation.toString(), toString() };
+			} else {
+				return new String[] { toString() };
+			}
 		}
 	}
 
