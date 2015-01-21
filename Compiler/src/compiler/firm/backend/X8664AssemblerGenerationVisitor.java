@@ -195,56 +195,64 @@ public class X8664AssemblerGenerationVisitor implements BulkPhiNodeVisitor {
 	 * sarl $4, %eax <br>
 	 * # if constant is negative negl %eax
 	 */
-	private void divByPow2(Div parent, Node left, int absDivisor, boolean isPositive) {
-		addOperation(new Comment("divByPow2: " + parent));
+	private void divByPow2(Div divNode, Node left, int absDivisor, boolean isNegative) {
+		addOperation(new Comment("divByPow2: " + divNode));
 
 		RegisterBased leftArgument = storageManagement.getValue(left);
-		RegisterBased temporaryRegister = new VirtualRegister(StorageManagement.getMode(parent));
+		RegisterBased temporaryRegister = new VirtualRegister(StorageManagement.getMode(divNode));
 
 		MemoryPointer memoryPointer = new MemoryPointer(absDivisor - 1, leftArgument);
-		addOperation(new LeaOperation(parent.toString(), memoryPointer, temporaryRegister));
-		addOperation(new TestOperation(parent.toString(), leftArgument, leftArgument));
-		addOperation(new CmovSignOperation(parent.toString(), temporaryRegister, leftArgument, leftArgument));
+		addOperation(new LeaOperation(divNode.toString(), memoryPointer, temporaryRegister));
+		addOperation(new TestOperation(divNode.toString(), leftArgument, leftArgument));
+		addOperation(new CmovSignOperation(divNode.toString(), temporaryRegister, leftArgument, leftArgument));
 		int pow = 31 - Integer.numberOfLeadingZeros(absDivisor);
 		assert pow > 0;
 		addOperation(new SarOperation(new Constant(pow), leftArgument, leftArgument));
 
-		if (!isPositive) {
+		if (isNegative) {
 			addOperation(new NegOperation(leftArgument));
 		}
 
-		storageManagement.storeToBackEdges(parent, leftArgument);
+		storageManagement.storeToBackEdges(divNode, leftArgument);
 	}
 
-	private void divByConst(Div parent, Node left, int absDivisor, boolean isPositive) {
-		addOperation(new Comment("divByConst: " + parent));
+	/**
+	 * @see https://gmplib.org/~tege/divcnst-pldi94.pdf Figure 5.1
+	 * 
+	 * @param divNode
+	 * @param left
+	 * @param absDivisor
+	 * @param isNegative
+	 */
+	private void divByConst(Div divNode, Node left, int absDivisor, boolean isNegative) {
+		addOperation(new Comment("divByConst: " + divNode));
 
 		int l = Math.max(1, 32 - Integer.numberOfLeadingZeros(absDivisor));
 		long m1 = MathUtils.floorDiv(0x100000000L * (1L << (l - 1)), absDivisor) + 1L;
 		int m = (int) (m1 - 0x100000000L);
 
 		RegisterBased leftArgument = storageManagement.getValue(left);
-		RegisterBased eax = new VirtualRegister(StorageManagement.getMode(parent), RegisterBundle._AX);
-		RegisterBased tmp = new VirtualRegister(StorageManagement.getMode(parent));
+		RegisterBased eax = new VirtualRegister(StorageManagement.getMode(divNode), RegisterBundle._AX);
+		RegisterBased tmp = new VirtualRegister(StorageManagement.getMode(divNode));
 
-		addOperation(new MovOperation(parent.toString(), new Constant(m), tmp));
-		addOperation(new MovOperation(parent.toString(), leftArgument, eax));
+		addOperation(new MovOperation(divNode.toString(), new Constant(m), tmp));
+		addOperation(new MovOperation(divNode.toString(), leftArgument, eax));
 
-		OneOperandImulOperation imull = new OneOperandImulOperation(parent.toString(), tmp);
+		OneOperandImulOperation imull = new OneOperandImulOperation(divNode.toString(), tmp);
 		addOperation(imull);
 		RegisterBased edx = imull.getResultHigh();
 
-		addOperation(new AddOperation(parent.toString(), leftArgument, edx, edx)); // todo replace with lea?
-		addOperation(new SarOperation(parent.toString(), new Constant(l - 1), edx, edx));
+		addOperation(new AddOperation(divNode.toString(), leftArgument, edx, edx)); // todo replace with lea?
+		addOperation(new SarOperation(divNode.toString(), new Constant(l - 1), edx, edx));
 
-		addOperation(new SarOperation(parent.toString(), new Constant(31), leftArgument, leftArgument));
-		addOperation(new SubOperation(parent.toString(), leftArgument, edx, edx));
+		addOperation(new SarOperation(divNode.toString(), new Constant(31), leftArgument, leftArgument));
+		addOperation(new SubOperation(divNode.toString(), leftArgument, edx, edx));
 
-		if (!isPositive) {
+		if (isNegative) {
 			addOperation(new NegOperation(edx));
 		}
 
-		storageManagement.storeToBackEdges(parent, edx);
+		storageManagement.storeToBackEdges(divNode, edx);
 	}
 
 	// ----------------------------------------------- Lea and Co ---------------------------------------------------
@@ -477,24 +485,19 @@ public class X8664AssemblerGenerationVisitor implements BulkPhiNodeVisitor {
 	public void visit(Div node) {
 		Node right = node.getRight();
 
-		// TODO: Reenable div optimization
-		if (right instanceof Const)
-		{
+		if (right instanceof Const) {
 			int divisor = ((Const) right).getTarval().asInt();
 			int absDivisor = Math.abs(divisor);
 
 			if ((absDivisor & (absDivisor - 1)) == 0) {
-				divByPow2(node, node.getLeft(), absDivisor, (divisor > 0));
-				return;
+				divByPow2(node, node.getLeft(), absDivisor, (divisor < 0));
+			} else {
+				divByConst(node, node.getLeft(), absDivisor, (divisor < 0));
 			}
+		} else {
+			IdivOperation divMod = visitDivMod(node.getLeft(), right);
+			storageManagement.storeToBackEdges(node, divMod.getResult());
 		}
-		// } else {
-		// divByConst(node, node.getLeft(), absDivisor, (divisor > 0));
-		// }
-		// } else {
-		IdivOperation divMod = visitDivMod(node.getLeft(), right);
-		storageManagement.storeToBackEdges(node, divMod.getResult());
-		// }
 	}
 
 	@Override
