@@ -93,20 +93,6 @@ public class StorageManagement {
 		}
 	}
 
-	private int countSuccessors(Node node) {
-		int n = 0;
-		for (Edge successors : BackEdges.getOuts(node)) {
-			if (isNotModeM(successors.node)) {
-				n++;
-			}
-		}
-		return n;
-	}
-
-	private boolean isNotModeM(Node node) {
-		return !node.getMode().equals(Mode.getM());
-	}
-
 	void storeToBackEdges(Node node, RegisterBased register) {
 		for (Edge edge : BackEdges.getOuts(node)) {
 			Node edgeNode = edge.node;
