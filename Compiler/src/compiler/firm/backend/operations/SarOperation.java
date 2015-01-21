@@ -16,6 +16,6 @@ public class SarOperation extends ConstantRegisterRegisterOperation {
 
 	@Override
 	public String getOperationString() {
-		return String.format("\tsar %s, %s", getConstant(), getDestination());
+		return String.format("\tsar %s, %s", getConstant().toString(), destination.toString());
 	}
 }

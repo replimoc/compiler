@@ -5,6 +5,7 @@ import java.util.Set;
 
 import compiler.firm.backend.storage.RegisterBased;
 import compiler.firm.backend.storage.Storage;
+import compiler.utils.Utils;
 
 public abstract class SourceSourceOperation extends AssemblerBitOperation {
 
@@ -20,6 +21,11 @@ public abstract class SourceSourceOperation extends AssemblerBitOperation {
 	@Override
 	public Set<RegisterBased> getWriteRegisters() {
 		return Collections.emptySet();
+	}
+
+	@Override
+	public Set<RegisterBased> getReadRegisters() {
+		return Utils.<RegisterBased> unionSet(source1.getUsedRegister(), source2.getUsedRegister());
 	}
 
 }
