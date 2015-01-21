@@ -478,13 +478,16 @@ public class X8664AssemblerGenerationVisitor implements BulkPhiNodeVisitor {
 		Node right = node.getRight();
 
 		// TODO: Reenable div optimization
-		// if (right instanceof Const)
-		// {
-		// int divisor = ((Const) right).getTarval().asInt();
-		// int absDivisor = Math.abs(divisor);
-		//
-		// if ((absDivisor & (absDivisor - 1)) == 0) {
-		// divByPow2(node, node.getLeft(), absDivisor, (divisor > 0));
+		if (right instanceof Const)
+		{
+			int divisor = ((Const) right).getTarval().asInt();
+			int absDivisor = Math.abs(divisor);
+
+			if ((absDivisor & (absDivisor - 1)) == 0) {
+				divByPow2(node, node.getLeft(), absDivisor, (divisor > 0));
+				return;
+			}
+		}
 		// } else {
 		// divByConst(node, node.getLeft(), absDivisor, (divisor > 0));
 		// }
