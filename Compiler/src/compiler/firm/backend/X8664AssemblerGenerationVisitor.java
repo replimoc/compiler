@@ -469,8 +469,10 @@ public class X8664AssemblerGenerationVisitor implements BulkPhiNodeVisitor {
 	public void visit(Conv node) {
 		assert node.getPredCount() >= 1 : "Conv nodes must have a predecessor";
 
-		Storage register = storageManagement.getStorage(node.getPred(0));
-		storageManagement.addStorage(node, register);
+		RegisterBased newRegister = new VirtualRegister(StorageManagement.getMode(node));
+		Storage storage = storageManagement.getStorage(node.getPred(0));
+		addOperation(new MovOperation(storage, newRegister));
+		storageManagement.addStorage(node, newRegister);
 	}
 
 	private IdivOperation visitDivMod(Node left, Node right) {

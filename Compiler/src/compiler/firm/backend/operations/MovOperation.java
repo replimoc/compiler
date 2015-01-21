@@ -1,10 +1,14 @@
 package compiler.firm.backend.operations;
 
+import java.util.Set;
+
 import compiler.firm.backend.Bit;
 import compiler.firm.backend.operations.templates.AssemblerBitOperation;
 import compiler.firm.backend.storage.Constant;
+import compiler.firm.backend.storage.RegisterBased;
 import compiler.firm.backend.storage.Storage;
 import compiler.firm.backend.storage.VirtualRegister;
+import compiler.utils.Utils;
 
 public class MovOperation extends AssemblerBitOperation {
 
@@ -79,6 +83,16 @@ public class MovOperation extends AssemblerBitOperation {
 
 	public Storage getDestination() {
 		return destination;
+	}
+
+	@Override
+	public Set<RegisterBased> getReadRegisters() {
+		return Utils.unionSet(source.getUsedRegister(), destination.getReadOnRightSideRegister());
+	}
+
+	@Override
+	public Set<RegisterBased> getWriteRegisters() {
+		return Utils.unionSet(destination.getUsedRegister());
 	}
 
 }
