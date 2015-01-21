@@ -204,7 +204,6 @@ public class X8664AssemblerGenerationVisitor implements BulkPhiNodeVisitor {
 		RegisterBased temp2 = new VirtualRegister(mode);
 
 		addOperation(new MovOperation(leftArgument, temp1));
-
 		MemoryPointer memoryPointer = new MemoryPointer(absDivisor - 1, temp1);
 		addOperation(new LeaOperation(divNode.toString(), memoryPointer, temp2));
 		addOperation(new TestOperation(divNode.toString(), temp1, temp1));
@@ -235,22 +234,25 @@ public class X8664AssemblerGenerationVisitor implements BulkPhiNodeVisitor {
 		long m1 = MathUtils.floorDiv(0x100000000L * (1L << (l - 1)), absDivisor) + 1L;
 		int m = (int) (m1 - 0x100000000L);
 
+		Bit mode = StorageManagement.getMode(divNode);
 		RegisterBased leftArgument = storageManagement.getValue(left);
-		RegisterBased eax = new VirtualRegister(StorageManagement.getMode(divNode), RegisterBundle._AX);
-		RegisterBased tmp = new VirtualRegister(StorageManagement.getMode(divNode));
+		RegisterBased eax = new VirtualRegister(mode, RegisterBundle._AX);
+		RegisterBased temp1 = new VirtualRegister(mode);
+		RegisterBased temp2 = new VirtualRegister(mode);
 
-		addOperation(new MovOperation(divNode.toString(), new Constant(m), tmp));
-		addOperation(new MovOperation(divNode.toString(), leftArgument, eax));
+		addOperation(new MovOperation(leftArgument, temp1));
+		addOperation(new MovOperation(divNode.toString(), new Constant(m), temp2));
+		addOperation(new MovOperation(divNode.toString(), temp1, eax));
 
-		OneOperandImulOperation imull = new OneOperandImulOperation(divNode.toString(), tmp);
+		OneOperandImulOperation imull = new OneOperandImulOperation(divNode.toString(), temp2);
 		addOperation(imull);
 		RegisterBased edx = imull.getResultHigh();
 
-		addOperation(new AddOperation(divNode.toString(), leftArgument, edx, edx)); // todo replace with lea?
+		addOperation(new AddOperation(divNode.toString(), temp1, edx, edx)); // todo replace with lea?
 		addOperation(new SarOperation(divNode.toString(), new Constant(l - 1), edx, edx));
 
-		addOperation(new SarOperation(divNode.toString(), new Constant(31), leftArgument, leftArgument));
-		addOperation(new SubOperation(divNode.toString(), leftArgument, edx, edx));
+		addOperation(new SarOperation(divNode.toString(), new Constant(31), temp1, temp1));
+		addOperation(new SubOperation(divNode.toString(), temp1, edx, edx));
 
 		if (isNegative) {
 			addOperation(new NegOperation(edx));
