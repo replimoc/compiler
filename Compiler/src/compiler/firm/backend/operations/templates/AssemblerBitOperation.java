@@ -46,11 +46,7 @@ public abstract class AssemblerBitOperation extends AssemblerOperation {
 				}
 			}
 
-			AssemblerOperation preOperation = getPreOperation();
-			if (preOperation != null)
-				result.add(preOperation.toString());
-
-			result.add(toString());
+			addOperation(result);
 
 			for (Entry<VirtualRegister, Storage> storageMap : storageMapping.entrySet()) {
 				VirtualRegister virtualRegister = storageMap.getKey();
@@ -66,16 +62,32 @@ public abstract class AssemblerBitOperation extends AssemblerOperation {
 			result.toArray(resultArray);
 			return resultArray;
 		} else {
-			AssemblerOperation preOperation = getPreOperation();
-			if (preOperation != null) {
-				return new String[] { preOperation.toString(), toString() };
-			} else {
-				return new String[] { toString() };
-			}
+			List<String> result = new ArrayList<>();
+			addOperation(result);
+
+			String[] resultString = new String[result.size()];
+			result.toArray(resultString);
+			return resultString;
 		}
 	}
 
+	private void addOperation(List<String> result) {
+		AssemblerOperation preOperation = getPreOperation();
+		if (preOperation != null)
+			result.add(preOperation.toString());
+
+		result.add(toString());
+
+		AssemblerOperation postOperation = getPostOperation();
+		if (postOperation != null)
+			result.add(postOperation.toString());
+	}
+
 	protected MovOperation getPreOperation() {
+		return null;
+	}
+
+	protected AssemblerOperation getPostOperation() {
 		return null;
 	}
 

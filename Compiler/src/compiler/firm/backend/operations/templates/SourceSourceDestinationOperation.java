@@ -47,12 +47,8 @@ public abstract class SourceSourceDestinationOperation extends AssemblerBitOpera
 
 	@Override
 	protected MovOperation getPreOperation() {
-		// TODO: Detect equal StackPointers.
 		if (source.getSingleRegister() == destination.getSingleRegister()) {
-			// TODO: Fix this for not commutative operations (like sub!).
-			RegisterBased tempSource = source.getSingleRegister();
-			source = source2;
-			source2 = tempSource;
+			swapSources();
 		}
 
 		if (source2.getSingleRegister() == null
@@ -61,5 +57,11 @@ public abstract class SourceSourceDestinationOperation extends AssemblerBitOpera
 
 		}
 		return null;
+	}
+
+	protected void swapSources() {
+		RegisterBased tempSource = source.getSingleRegister();
+		source = source2;
+		source2 = tempSource;
 	}
 }
