@@ -6,13 +6,13 @@ import compiler.firm.backend.storage.RegisterBased;
 import compiler.firm.backend.storage.Storage;
 import compiler.utils.Utils;
 
-public abstract class StorageRegisterRegisterOperation extends AssemblerBitOperation {
+public abstract class SourceSourceDestinationOperation extends AssemblerBitOperation {
 
 	protected Storage source;
 	protected RegisterBased source2;
 	protected final RegisterBased destination;
 
-	public StorageRegisterRegisterOperation(String comment, Storage source, RegisterBased source2, RegisterBased destination) {
+	public SourceSourceDestinationOperation(String comment, Storage source, RegisterBased source2, RegisterBased destination) {
 		super(comment);
 		this.source = source;
 		this.source2 = source2;

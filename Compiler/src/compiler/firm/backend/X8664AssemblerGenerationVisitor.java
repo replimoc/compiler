@@ -38,7 +38,7 @@ import compiler.firm.backend.operations.jump.JleOperation;
 import compiler.firm.backend.operations.jump.JmpOperation;
 import compiler.firm.backend.operations.jump.JzOperation;
 import compiler.firm.backend.operations.templates.AssemblerOperation;
-import compiler.firm.backend.operations.templates.StorageRegisterRegisterOperation;
+import compiler.firm.backend.operations.templates.SourceSourceDestinationOperation;
 import compiler.firm.backend.operations.templates.StorageRegisterRegisterOperationFactory;
 import compiler.firm.backend.storage.Constant;
 import compiler.firm.backend.storage.MemoryPointer;
@@ -154,7 +154,7 @@ public class X8664AssemblerGenerationVisitor implements BulkPhiNodeVisitor {
 		operations.add(assemblerOption);
 	}
 
-	private <T extends StorageRegisterRegisterOperation> void visitTwoOperandsNode(StorageRegisterRegisterOperationFactory operationFactory,
+	private <T extends SourceSourceDestinationOperation> void visitTwoOperandsNode(StorageRegisterRegisterOperationFactory operationFactory,
 			Node parent,
 			Node left, Node right) {
 		// get left node
@@ -181,7 +181,7 @@ public class X8664AssemblerGenerationVisitor implements BulkPhiNodeVisitor {
 		RegisterBased result = new VirtualRegister(StorageManagement.getMode(parent));
 
 		// create operation object
-		StorageRegisterRegisterOperation operation = operationFactory.instantiate(registerLeft, registerRight, result);
+		SourceSourceDestinationOperation operation = operationFactory.instantiate(registerLeft, registerRight, result);
 		// execute operation
 		addOperation(operation);
 		// store on stack

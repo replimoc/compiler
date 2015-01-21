@@ -1,16 +1,16 @@
 package compiler.firm.backend.operations;
 
-import compiler.firm.backend.operations.templates.StorageRegisterRegisterOperation;
+import compiler.firm.backend.operations.templates.SourceSourceDestinationOperation;
 import compiler.firm.backend.operations.templates.StorageRegisterRegisterOperationFactory;
 import compiler.firm.backend.storage.RegisterBased;
 import compiler.firm.backend.storage.Storage;
 
-public class ImulOperation extends StorageRegisterRegisterOperation {
+public class ImulOperation extends SourceSourceDestinationOperation {
 
 	public static StorageRegisterRegisterOperationFactory getFactory(final String comment) {
 		return new StorageRegisterRegisterOperationFactory() {
 			@Override
-			public StorageRegisterRegisterOperation instantiate(Storage source1, RegisterBased source2, RegisterBased destination) {
+			public SourceSourceDestinationOperation instantiate(Storage source1, RegisterBased source2, RegisterBased destination) {
 				return new ImulOperation(comment, source1, source2, destination);
 			}
 		};
