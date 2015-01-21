@@ -162,22 +162,6 @@ public class X8664AssemblerGenerationVisitor implements BulkPhiNodeVisitor {
 		// get right node
 		RegisterBased registerRight = storageManagement.getValue(right);
 
-		if (BackEdges.getNOuts(parent) == 1) {
-			Node successor = FirmUtils.getFirstSuccessor(parent);
-
-			boolean moreUsages = false;
-			for (Edge edge : BackEdges.getOuts(successor)) {
-				if (!edge.node.equals(parent) && parent.getBlock().equals(edge.node.getBlock())) {
-					moreUsages = true;
-				}
-			}
-
-			Storage storage = storageManagement.getStorage(successor);
-			if (successor.equals(right) && storage instanceof RegisterBased && !moreUsages && !right.getBlock().equals(parent.getBlock())) {
-				registerRight = (RegisterBased) storage;
-			}
-		}
-
 		RegisterBased result = new VirtualRegister(StorageManagement.getMode(parent));
 
 		// create operation object
@@ -316,7 +300,7 @@ public class X8664AssemblerGenerationVisitor implements BulkPhiNodeVisitor {
 
 			VirtualRegister resultRegister = new VirtualRegister(Bit.BIT64);
 			addOperation(new LeaOperation(address, resultRegister));
-			storageManagement.addStorage(node, resultRegister);
+			storageManagement.storeValue(node, resultRegister);
 			return;
 		}
 		visitTwoOperandsNode(AddOperation.getFactory(node.toString()), node, node.getLeft(), node.getRight());
@@ -472,7 +456,7 @@ public class X8664AssemblerGenerationVisitor implements BulkPhiNodeVisitor {
 		RegisterBased newRegister = new VirtualRegister(StorageManagement.getMode(node));
 		Storage storage = storageManagement.getStorage(node.getPred(0));
 		addOperation(new MovOperation(storage, newRegister));
-		storageManagement.addStorage(node, newRegister);
+		storageManagement.storeValue(node, newRegister);
 	}
 
 	private IdivOperation visitDivMod(Node left, Node right) {
@@ -647,7 +631,7 @@ public class X8664AssemblerGenerationVisitor implements BulkPhiNodeVisitor {
 						location = storage;
 					}
 				}
-				storageManagement.addStorage(proj, location);
+				storageManagement.storeValue(proj, location);
 			}
 		}
 	}
@@ -674,7 +658,7 @@ public class X8664AssemblerGenerationVisitor implements BulkPhiNodeVisitor {
 			Node predecessor = getRelevantPredecessor(phi);
 			Storage register = storageManagement.getStorage(predecessor);
 			Storage temporaryStorage = new VirtualRegister(StorageManagement.getMode(predecessor));
-			storageManagement.storeValue(predecessor, register, temporaryStorage);
+			addOperation(new MovOperation(register, temporaryStorage));
 			phiTempStackMapping.put(phi, temporaryStorage);
 		}
 

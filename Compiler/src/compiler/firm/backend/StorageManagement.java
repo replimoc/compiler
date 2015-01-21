@@ -33,7 +33,7 @@ public class StorageManagement {
 		operations.add(assemblerOption);
 	}
 
-	public void addStorage(Node node, Storage storage) {
+	private void addStorage(Node node, Storage storage) {
 		nodeStorages.put(node, storage);
 	}
 
