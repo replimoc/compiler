@@ -196,7 +196,8 @@ public class X8664AssemblerGenerationVisitor implements BulkPhiNodeVisitor {
 	 * # if constant is negative negl %eax
 	 */
 	private void divByPow2(Div divNode, Node left, int absDivisor, boolean isNegative) {
-		addOperation(new Comment("divByPow2: " + divNode));
+		String nodeComment = divNode.toString();
+		addOperation(new Comment("divByPow2: " + nodeComment));
 
 		RegisterBased leftArgument = storageManagement.getValue(left);
 		Bit mode = StorageManagement.getMode(divNode);
@@ -205,9 +206,9 @@ public class X8664AssemblerGenerationVisitor implements BulkPhiNodeVisitor {
 
 		addOperation(new MovOperation(leftArgument, temp1));
 		MemoryPointer memoryPointer = new MemoryPointer(absDivisor - 1, temp1);
-		addOperation(new LeaOperation(divNode.toString(), memoryPointer, temp2));
-		addOperation(new TestOperation(divNode.toString(), temp1, temp1));
-		addOperation(new CmovSignOperation(divNode.toString(), temp2, temp1, temp1));
+		addOperation(new LeaOperation(nodeComment, memoryPointer, temp2));
+		addOperation(new TestOperation(nodeComment, temp1, temp1));
+		addOperation(new CmovSignOperation(nodeComment, temp2, temp1, temp1));
 		int pow = 31 - Integer.numberOfLeadingZeros(absDivisor);
 		assert pow > 0;
 		addOperation(new SarOperation(new Constant(pow), temp1, temp1));
@@ -228,7 +229,8 @@ public class X8664AssemblerGenerationVisitor implements BulkPhiNodeVisitor {
 	 * @param isNegative
 	 */
 	private void divByConst(Div divNode, Node left, int absDivisor, boolean isNegative) {
-		addOperation(new Comment("divByConst: " + divNode));
+		String nodeComment = divNode.toString();
+		addOperation(new Comment("divByConst: " + nodeComment));
 
 		int l = Math.max(1, 32 - Integer.numberOfLeadingZeros(absDivisor));
 		long m1 = MathUtils.floorDiv(0x100000000L * (1L << (l - 1)), absDivisor) + 1L;
@@ -241,18 +243,18 @@ public class X8664AssemblerGenerationVisitor implements BulkPhiNodeVisitor {
 		RegisterBased temp2 = new VirtualRegister(mode);
 
 		addOperation(new MovOperation(leftArgument, temp1));
-		addOperation(new MovOperation(divNode.toString(), new Constant(m), temp2));
-		addOperation(new MovOperation(divNode.toString(), temp1, eax));
+		addOperation(new MovOperation(nodeComment, new Constant(m), temp2));
+		addOperation(new MovOperation(nodeComment, temp1, eax));
 
-		OneOperandImulOperation imull = new OneOperandImulOperation(divNode.toString(), temp2);
+		OneOperandImulOperation imull = new OneOperandImulOperation(nodeComment, temp2);
 		addOperation(imull);
 		RegisterBased edx = imull.getResultHigh();
 
-		addOperation(new AddOperation(divNode.toString(), temp1, edx, edx)); // todo replace with lea?
-		addOperation(new SarOperation(divNode.toString(), new Constant(l - 1), edx, edx));
+		addOperation(new AddOperation(nodeComment, temp1, edx, edx));
+		addOperation(new SarOperation(nodeComment, new Constant(l - 1), edx, edx));
 
-		addOperation(new SarOperation(divNode.toString(), new Constant(31), temp1, temp1));
-		addOperation(new SubOperation(divNode.toString(), temp1, edx, edx));
+		addOperation(new SarOperation(nodeComment, new Constant(31), temp1, temp1));
+		addOperation(new SubOperation(nodeComment, temp1, edx, edx));
 
 		if (isNegative) {
 			addOperation(new NegOperation(edx));
