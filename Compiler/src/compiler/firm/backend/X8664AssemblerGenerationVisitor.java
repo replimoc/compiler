@@ -199,21 +199,25 @@ public class X8664AssemblerGenerationVisitor implements BulkPhiNodeVisitor {
 		addOperation(new Comment("divByPow2: " + divNode));
 
 		RegisterBased leftArgument = storageManagement.getValue(left);
-		RegisterBased temporaryRegister = new VirtualRegister(StorageManagement.getMode(divNode));
+		Bit mode = StorageManagement.getMode(divNode);
+		RegisterBased temp1 = new VirtualRegister(mode);
+		RegisterBased temp2 = new VirtualRegister(mode);
 
-		MemoryPointer memoryPointer = new MemoryPointer(absDivisor - 1, leftArgument);
-		addOperation(new LeaOperation(divNode.toString(), memoryPointer, temporaryRegister));
-		addOperation(new TestOperation(divNode.toString(), leftArgument, leftArgument));
-		addOperation(new CmovSignOperation(divNode.toString(), temporaryRegister, leftArgument, leftArgument));
+		addOperation(new MovOperation(leftArgument, temp1));
+
+		MemoryPointer memoryPointer = new MemoryPointer(absDivisor - 1, temp1);
+		addOperation(new LeaOperation(divNode.toString(), memoryPointer, temp2));
+		addOperation(new TestOperation(divNode.toString(), temp1, temp1));
+		addOperation(new CmovSignOperation(divNode.toString(), temp2, temp1, temp1));
 		int pow = 31 - Integer.numberOfLeadingZeros(absDivisor);
 		assert pow > 0;
-		addOperation(new SarOperation(new Constant(pow), leftArgument, leftArgument));
+		addOperation(new SarOperation(new Constant(pow), temp1, temp1));
 
 		if (isNegative) {
-			addOperation(new NegOperation(leftArgument));
+			addOperation(new NegOperation(temp1));
 		}
 
-		storageManagement.storeToBackEdges(divNode, leftArgument);
+		storageManagement.storeToBackEdges(divNode, temp1);
 	}
 
 	/**
