@@ -661,7 +661,7 @@ public class X8664AssemblerGenerationVisitor implements BulkPhiNodeVisitor {
 			Node predecessor = getRelevantPredecessor(phi);
 			Storage register = storageManagement.getStorage(predecessor);
 			Storage temporaryStorage = new VirtualRegister(StorageManagement.getMode(predecessor));
-			addOperation(new MovOperation(register, temporaryStorage));
+			addOperation(new MovOperation("Phi: " + phi.toString() + " -> temp", register, temporaryStorage));
 			phiTempStackMapping.put(phi, temporaryStorage);
 		}
 
@@ -676,7 +676,12 @@ public class X8664AssemblerGenerationVisitor implements BulkPhiNodeVisitor {
 		}
 
 		for (Phi phi : conflictNodes) {
-			storageManagement.storeValue(phi, phiTempStackMapping.get(phi));
+			Storage result = storageManagement.getStorage(phi);
+			if (result == null) {
+				result = new VirtualRegister(StorageManagement.getMode(phi));
+			}
+			addOperation(new MovOperation("Phi: temp -> " + phi.toString(), phiTempStackMapping.get(phi), result));
+			storageManagement.storeValue(phi, result);
 		}
 	}
 
