@@ -12,6 +12,6 @@ public class ShlOperation extends ConstantRegisterRegisterOperation {
 
 	@Override
 	public String getOperationString() {
-		return String.format("\tshl %s, %s", getConstant().toString(), getSource().toString());
+		return String.format("\tshl %s, %s", getConstant().toString(), getDestination().toString());
 	}
 }
