@@ -361,7 +361,9 @@ public class X8664AssemblerGenerationVisitor implements BulkPhiNodeVisitor {
 		addOperation(callOperation);
 
 		if (resultNode != null) {
-			storageManagement.storeValue(resultNode, callOperation.getResult());
+			RegisterBased resultRegister = new VirtualRegister(mode);
+			addOperation(new MovOperation(callOperation.getResult(), resultRegister));
+			storageManagement.storeValue(resultNode, resultRegister);
 		}
 	}
 
