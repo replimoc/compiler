@@ -2,6 +2,7 @@ package compiler.firm.backend.operations.templates;
 
 import java.util.Set;
 
+import compiler.firm.backend.operations.MovOperation;
 import compiler.firm.backend.storage.RegisterBased;
 import compiler.firm.backend.storage.Storage;
 import compiler.utils.Utils;
@@ -42,5 +43,15 @@ public abstract class SourceSourceDestinationOperation extends AssemblerBitOpera
 
 	public RegisterBased getDestination() {
 		return destination;
+	}
+
+	@Override
+	protected MovOperation getPreOperation() {
+		// TODO: Detect equal StackPointers.
+		if (source2.getSingleRegister() == null
+				|| source2.getSingleRegister() != destination.getSingleRegister()) {
+			return new MovOperation(source2, destination);
+		}
+		return null;
 	}
 }

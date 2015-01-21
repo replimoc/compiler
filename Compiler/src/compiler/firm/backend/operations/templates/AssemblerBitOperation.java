@@ -46,6 +46,10 @@ public abstract class AssemblerBitOperation extends AssemblerOperation {
 				}
 			}
 
+			AssemblerOperation preOperation = getPreOperation();
+			if (preOperation != null)
+				result.add(preOperation.toString());
+
 			result.add(toString());
 
 			for (Entry<VirtualRegister, Storage> storageMap : storageMapping.entrySet()) {
@@ -64,6 +68,10 @@ public abstract class AssemblerBitOperation extends AssemblerOperation {
 		} else {
 			return new String[] { toString() };
 		}
+	}
+
+	protected MovOperation getPreOperation() {
+		return null;
 	}
 
 	private Storage insertSpillcode(VirtualRegister virtualRegister, List<String> result, boolean restore) {
