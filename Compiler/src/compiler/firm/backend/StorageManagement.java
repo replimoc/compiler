@@ -64,35 +64,18 @@ public class StorageManagement {
 		return result;
 	}
 
-	public void storeValue(Node node, VirtualRegister storage) {
-		Storage destination = nodeStorages.get(node);
-		if (destination == null && storage.getRegister() == null) {
-			addStorage(node, storage);
-		} else {
-			storeValueAndCreateNewStorage(node, storage, false);
-		}
-	}
-
 	public void storeValue(Node node, Storage storage) {
-		storeValueAndCreateNewStorage(node, storage, false);
-	}
-
-	public void storeValueAndCreateNewStorage(Node node, Storage storage, boolean forceNew) {
 		Storage destination = nodeStorages.get(node);
 		if (destination == null) {
-			if (forceNew || countSuccessors(node) > 1) {
-				destination = new VirtualRegister(getMode(node));
-			} else {
-				destination = storage;
-			}
-			addStorage(node, destination);
+			destination = storage;
 		}
+		addStorage(node, storage);
 		storeValue(node, storage, destination);
 	}
 
 	public void storeValue(Node node, Storage storage, Storage destination) {
 		if (storage != destination) {
-			addOperation(new MovOperation("Store node " + node, storage, destination));
+			throw new RuntimeException("storeValue source != destination");
 		}
 	}
 
@@ -128,7 +111,7 @@ public class StorageManagement {
 		for (Edge edge : BackEdges.getOuts(node)) {
 			Node edgeNode = edge.node;
 			if (!edgeNode.getMode().equals(Mode.getM())) {
-				storeValueAndCreateNewStorage(edgeNode, register, true);
+				storeValue(edgeNode, register);
 			}
 		}
 	}
