@@ -500,7 +500,9 @@ public class X8664AssemblerGenerationVisitor implements BulkPhiNodeVisitor {
 			}
 		} else {
 			IdivOperation divMod = visitDivMod(node.getLeft(), right);
-			storageManagement.storeToBackEdges(node, divMod.getResult());
+			RegisterBased result = new VirtualRegister(StorageManagement.getMode(node));
+			addOperation(new MovOperation(divMod.getResult(), result));
+			storageManagement.storeToBackEdges(node, result);
 		}
 	}
 
@@ -523,7 +525,10 @@ public class X8664AssemblerGenerationVisitor implements BulkPhiNodeVisitor {
 
 	@Override
 	public void visit(Mod node) {
-		storageManagement.storeToBackEdges(node, visitDivMod(node.getLeft(), node.getRight()).getRemainder());
+		IdivOperation divMod = visitDivMod(node.getLeft(), node.getRight());
+		RegisterBased result = new VirtualRegister(StorageManagement.getMode(node));
+		addOperation(new MovOperation(divMod.getRemainder(), result));
+		storageManagement.storeToBackEdges(node, result);
 	}
 
 	@Override
