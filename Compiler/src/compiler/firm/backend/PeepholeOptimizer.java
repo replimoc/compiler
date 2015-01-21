@@ -4,16 +4,13 @@ import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
 
-import compiler.firm.backend.operations.AddOperation;
 import compiler.firm.backend.operations.Comment;
 import compiler.firm.backend.operations.LabelOperation;
-import compiler.firm.backend.operations.LeaOperation;
 import compiler.firm.backend.operations.MovOperation;
 import compiler.firm.backend.operations.jump.JmpOperation;
 import compiler.firm.backend.operations.templates.AssemblerOperation;
 import compiler.firm.backend.operations.templates.JumpOperation;
 import compiler.firm.backend.storage.MemoryPointer;
-import compiler.firm.backend.storage.RegisterBased;
 import compiler.firm.backend.storage.SingleRegister;
 
 public class PeepholeOptimizer {
@@ -74,24 +71,6 @@ public class PeepholeOptimizer {
 				} else {
 					writeOperation(jump);
 				}
-			} else if (currentOperation instanceof AddOperation) {
-				AddOperation add = (AddOperation) currentOperation;
-				nextOperation();
-				if (currentOperation instanceof MovOperation && add.getSource() instanceof RegisterBased) {
-					MovOperation move = (MovOperation) currentOperation;
-					if (move.getSource() == add.getDestination() && move.getDestination() instanceof RegisterBased
-							&& !move.getDestination().isSpilled()
-							&& move.getDestination().getSingleRegister() != add.getDestination().getSingleRegister()) {
-						writeOperation(new LeaOperation(new MemoryPointer((RegisterBased) add.getSource(), add.getDestination()),
-								(RegisterBased) move.getDestination()));
-						nextOperation();
-					} else {
-						writeOperation(add);
-					}
-				} else {
-					writeOperation(add);
-				}
-
 			} else if (currentOperation instanceof MovOperation) {
 				MovOperation move = (MovOperation) currentOperation;
 				SingleRegister sourceRegister = move.getSource().getSingleRegister();

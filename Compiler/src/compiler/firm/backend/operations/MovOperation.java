@@ -24,9 +24,9 @@ public class MovOperation extends AssemblerBitOperation {
 	@Override
 	public String getOperationString() {
 		Bit sourceMode = source.getMode();
-		Bit destinationMode = destination.getMode();
+		Bit destinationMode = getDestination().getMode();
 		if (isMovslq(sourceMode, destinationMode)) {
-			return String.format("\tmovs%s%s %s, %s", sourceMode, destinationMode, source.toString(), destination.toString());
+			return String.format("\tmovs%s%s %s, %s", sourceMode, destinationMode, source.toString(), getDestination().toString());
 		} else {
 			Bit mode;
 
@@ -38,7 +38,7 @@ public class MovOperation extends AssemblerBitOperation {
 				mode = Bit.BIT64;
 			}
 
-			return String.format("\tmov%s %s, %s", mode, source.toString(), destination.toString());
+			return String.format("\tmov%s %s, %s", mode, source.toString(), getDestination().toString());
 		}
 
 	}
@@ -50,17 +50,17 @@ public class MovOperation extends AssemblerBitOperation {
 	@Override
 	public String[] toStringWithSpillcode() {
 		Bit sourceMode = source.getMode();
-		Bit destinationMode = destination.getMode();
+		Bit destinationMode = getDestination().getMode();
 
 		if (hasSpilledRegisters() && !isMovslq(sourceMode, destinationMode)) {
 			if ((source.getClass() == VirtualRegister.class || source.getClass() == Constant.class)
-					&& (destination.getClass() == VirtualRegister.class || destination.getClass() == Constant.class)) {
+					&& (getDestination().getClass() == VirtualRegister.class || getDestination().getClass() == Constant.class)) {
 
-				if ((source.isSpilled() && !destination.isSpilled()) || (!source.isSpilled() && destination.isSpilled())) {
+				if ((source.isSpilled() && !getDestination().isSpilled()) || (!source.isSpilled() && getDestination().isSpilled())) {
 					return new String[] { toString() };
 				} else {
 					Storage oldSource = this.source;
-					this.source = getTemporaryRegister().getRegister(destination.getMode());
+					this.source = getTemporaryRegister().getRegister(getDestination().getMode());
 					String[] result = new String[] {
 							new MovOperation(oldSource, this.source).toString(),
 							toString()
@@ -72,4 +72,13 @@ public class MovOperation extends AssemblerBitOperation {
 		}
 		return super.toStringWithSpillcode();
 	}
+
+	public Storage getSource() {
+		return source;
+	}
+
+	public Storage getDestination() {
+		return destination;
+	}
+
 }
