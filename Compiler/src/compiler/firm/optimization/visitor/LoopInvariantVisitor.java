@@ -1,5 +1,6 @@
 package compiler.firm.optimization.visitor;
 
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Set;
@@ -52,8 +53,15 @@ public class LoopInvariantVisitor extends OptimizationVisitor<Node> {
 			}
 		}
 
+		ArrayList<Block> dominatedBlocks = new ArrayList<>();
 		for (Block b : loops) {
 			if (dominators.containsKey(b) && dominators.get(b).containsAll(loops)) {
+				dominatedBlocks.add(b);
+			}
+		}
+		loops.removeAll(dominatedBlocks);
+		if (loops.size() == 1) {
+			for (Block b : loops) {
 				return b;
 			}
 		}
