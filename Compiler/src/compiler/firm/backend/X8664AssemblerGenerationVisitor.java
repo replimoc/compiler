@@ -475,20 +475,21 @@ public class X8664AssemblerGenerationVisitor implements BulkPhiNodeVisitor {
 	public void visit(Div node) {
 		Node right = node.getRight();
 
-		if (right instanceof Const)
-		{
-			int divisor = ((Const) right).getTarval().asInt();
-			int absDivisor = Math.abs(divisor);
-
-			if ((absDivisor & (absDivisor - 1)) == 0) {
-				divByPow2(node, node.getLeft(), absDivisor, (divisor > 0));
-			} else {
-				divByConst(node, node.getLeft(), absDivisor, (divisor > 0));
-			}
-		} else {
-			IdivOperation divMod = visitDivMod(node.getLeft(), right);
-			storageManagement.storeToBackEdges(node, divMod.getResult());
-		}
+		// TODO: Reenable div optimization
+		// if (right instanceof Const)
+		// {
+		// int divisor = ((Const) right).getTarval().asInt();
+		// int absDivisor = Math.abs(divisor);
+		//
+		// if ((absDivisor & (absDivisor - 1)) == 0) {
+		// divByPow2(node, node.getLeft(), absDivisor, (divisor > 0));
+		// } else {
+		// divByConst(node, node.getLeft(), absDivisor, (divisor > 0));
+		// }
+		// } else {
+		IdivOperation divMod = visitDivMod(node.getLeft(), right);
+		storageManagement.storeToBackEdges(node, divMod.getResult());
+		// }
 	}
 
 	@Override
