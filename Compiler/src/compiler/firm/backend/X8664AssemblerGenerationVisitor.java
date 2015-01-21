@@ -38,8 +38,8 @@ import compiler.firm.backend.operations.jump.JleOperation;
 import compiler.firm.backend.operations.jump.JmpOperation;
 import compiler.firm.backend.operations.jump.JzOperation;
 import compiler.firm.backend.operations.templates.AssemblerOperation;
-import compiler.firm.backend.operations.templates.StorageRegisterOperation;
-import compiler.firm.backend.operations.templates.StorageRegisterOperationFactory;
+import compiler.firm.backend.operations.templates.StorageRegisterRegisterOperation;
+import compiler.firm.backend.operations.templates.StorageRegisterRegisterOperationFactory;
 import compiler.firm.backend.storage.Constant;
 import compiler.firm.backend.storage.MemoryPointer;
 import compiler.firm.backend.storage.RegisterBased;
@@ -154,7 +154,7 @@ public class X8664AssemblerGenerationVisitor implements BulkPhiNodeVisitor {
 		operations.add(assemblerOption);
 	}
 
-	private <T extends StorageRegisterOperation> void visitTwoOperandsNode(StorageRegisterOperationFactory operationFactory, Node parent,
+	private <T extends StorageRegisterRegisterOperation> void visitTwoOperandsNode(StorageRegisterRegisterOperationFactory operationFactory, Node parent,
 			Node left, Node right) {
 		// get left node
 		Storage registerLeft = storageManagement.getValueAvoidNewRegister(left);
@@ -178,7 +178,7 @@ public class X8664AssemblerGenerationVisitor implements BulkPhiNodeVisitor {
 		}
 
 		// create operation object
-		StorageRegisterOperation operation = operationFactory.instantiate(registerLeft, registerRight);
+		StorageRegisterRegisterOperation operation = operationFactory.instantiate(registerLeft, registerRight);
 		// execute operation
 		addOperation(operation);
 		// store on stack
@@ -220,7 +220,7 @@ public class X8664AssemblerGenerationVisitor implements BulkPhiNodeVisitor {
 		addOperation(new CmovSignOperation(parent.toString(), temporaryRegister, leftArgument));
 		int pow = 31 - Integer.numberOfLeadingZeros(absDivisor);
 		assert pow > 0;
-		addOperation(new SarOperation(StorageManagement.getMode(left), leftArgument, new Constant(pow)));
+		addOperation(new SarOperation(StorageManagement.getMode(left), new Constant(pow), leftArgument));
 
 		if (!isPositive) {
 			addOperation(new NegOperation(leftArgument));
@@ -562,7 +562,7 @@ public class X8664AssemblerGenerationVisitor implements BulkPhiNodeVisitor {
 		Constant constant = new Constant((Const) node.getRight());
 
 		// execute operation
-		addOperation(new ShlOperation(StorageManagement.getMode(node), register, constant));
+		addOperation(new ShlOperation(StorageManagement.getMode(node), constant, register));
 		// store on stack
 		storageManagement.storeValue(node, register);
 	}

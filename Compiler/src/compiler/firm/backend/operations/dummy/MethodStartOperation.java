@@ -31,7 +31,7 @@ public class MethodStartOperation extends MethodStartEndOperation {
 		}
 
 		if (stackOperationSize > 0) {
-			result.add(new SubOperation("stack reservation", new Constant(stackOperationSize), SingleRegister.RSP).toString());
+			result.add(new SubOperation("stack reservation", new Constant(stackOperationSize), SingleRegister.RSP, SingleRegister.RSP).toString());
 		} else {
 			result.add(new Comment("no items on stack, skip reservation").toString());
 		}

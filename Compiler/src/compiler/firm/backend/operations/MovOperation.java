@@ -1,28 +1,24 @@
 package compiler.firm.backend.operations;
 
 import compiler.firm.backend.Bit;
-import compiler.firm.backend.operations.templates.SourceDestinationOperation;
+import compiler.firm.backend.operations.templates.AssemblerBitOperation;
 import compiler.firm.backend.storage.Constant;
 import compiler.firm.backend.storage.Storage;
 import compiler.firm.backend.storage.VirtualRegister;
 
-public class MovOperation extends SourceDestinationOperation {
+public class MovOperation extends AssemblerBitOperation {
+
+	private Storage source;
+	private final Storage destination;
 
 	public MovOperation(Storage source, Storage destination) {
 		this(null, source, destination);
 	}
 
-	public MovOperation(String comment, VirtualRegister source, VirtualRegister destination) {
-		super(comment, source, destination);
-
-		if (source.getMode() == null || destination.getMode() == null || source.getMode() == destination.getMode()) {
-			source.setPreferedRegister(destination);
-			destination.setPreferedRegister(source);
-		}
-	}
-
 	public MovOperation(String comment, Storage source, Storage destination) {
-		super(comment, source, destination);
+		super(comment);
+		this.source = source;
+		this.destination = destination;
 	}
 
 	@Override

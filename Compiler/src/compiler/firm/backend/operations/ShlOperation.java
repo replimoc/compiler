@@ -1,18 +1,17 @@
 package compiler.firm.backend.operations;
 
-import compiler.firm.backend.Bit;
-import compiler.firm.backend.operations.templates.RegisterConstantOperation;
+import compiler.firm.backend.operations.templates.ConstantRegisterRegisterOperation;
 import compiler.firm.backend.storage.Constant;
 import compiler.firm.backend.storage.RegisterBased;
 
-public class ShlOperation extends RegisterConstantOperation {
+public class ShlOperation extends ConstantRegisterRegisterOperation {
 
-	public ShlOperation(Bit mode, RegisterBased register, Constant constant) {
-		super(mode, register, constant);
+	public ShlOperation(Constant constant, RegisterBased source, RegisterBased destination) {
+		super(constant, source, destination);
 	}
 
 	@Override
 	public String getOperationString() {
-		return String.format("\tshl %s, %s", getConstant().toString(), getRegister().toString());
+		return String.format("\tshl %s, %s", getConstant().toString(), getSource().toString());
 	}
 }

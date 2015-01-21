@@ -1,12 +1,13 @@
 package compiler.firm.backend.operations;
 
-import java.util.Arrays;
+import java.util.Set;
 
 import compiler.firm.backend.Bit;
 import compiler.firm.backend.operations.templates.RegisterOperation;
 import compiler.firm.backend.storage.RegisterBased;
 import compiler.firm.backend.storage.RegisterBundle;
 import compiler.firm.backend.storage.VirtualRegister;
+import compiler.utils.Utils;
 
 public class IdivOperation extends RegisterOperation {
 
@@ -19,21 +20,17 @@ public class IdivOperation extends RegisterOperation {
 
 	@Override
 	public String getOperationString() {
-		return String.format("\tidiv %s", getRegister().toString());
+		return String.format("\tidiv %s", register.toString());
 	}
 
 	@Override
-	public RegisterBased[] getReadRegisters() {
-		RegisterBased[] usedRegister = getRegister().getUsedRegister();
-		RegisterBased[] result = Arrays.copyOf(usedRegister, usedRegister.length + 2);
-		result[usedRegister.length] = this.result;
-		result[usedRegister.length + 1] = this.remainder;
-		return result;
+	public Set<RegisterBased> getReadRegisters() {
+		return Utils.unionSet(register.getUsedRegister(), new RegisterBased[] { result, remainder });
 	}
 
 	@Override
-	public RegisterBased[] getWriteRegisters() {
-		return new RegisterBased[] { result, remainder };
+	public Set<RegisterBased> getWriteRegisters() {
+		return Utils.<RegisterBased> unionSet(result, remainder);
 	}
 
 	public VirtualRegister getResult() {

@@ -1,31 +1,31 @@
 package compiler.firm.backend.operations;
 
-import compiler.firm.backend.operations.templates.StorageRegisterOperation;
-import compiler.firm.backend.operations.templates.StorageRegisterOperationFactory;
+import compiler.firm.backend.operations.templates.StorageRegisterRegisterOperationFactory;
+import compiler.firm.backend.operations.templates.StorageRegisterRegisterOperation;
 import compiler.firm.backend.storage.RegisterBased;
 import compiler.firm.backend.storage.Storage;
 
-public class AddOperation extends StorageRegisterOperation {
+public class AddOperation extends StorageRegisterRegisterOperation {
 
-	public static StorageRegisterOperationFactory getFactory(final String comment) {
-		return new StorageRegisterOperationFactory() {
+	public static StorageRegisterRegisterOperationFactory getFactory(final String comment) {
+		return new StorageRegisterRegisterOperationFactory() {
 			@Override
-			public StorageRegisterOperation instantiate(Storage input, RegisterBased destination) {
-				return new AddOperation(comment, input, destination);
+			public StorageRegisterRegisterOperation instantiate(Storage source1, RegisterBased source2, RegisterBased destination) {
+				return new AddOperation(comment, source1, source2, destination);
 			}
 		};
 	}
 
-	public AddOperation(Storage input, RegisterBased destinationRegister) {
-		super(null, input, destinationRegister);
+	public AddOperation(Storage source1, RegisterBased source2, RegisterBased destinationRegister) {
+		super(null, source1, source2, destinationRegister);
 	}
 
-	public AddOperation(String comment, Storage input, RegisterBased destinationRegister) {
-		super(comment, input, destinationRegister);
+	public AddOperation(String comment, Storage source1, RegisterBased source2, RegisterBased destinationRegister) {
+		super(comment, source1, source2, destinationRegister);
 	}
 
 	@Override
 	public String getOperationString() {
-		return String.format("\tadd %s, %s", getStorage().toString(), getDestination().toString());
+		return String.format("\tadd %s, %s", getSource().toString(), getDestination().toString());
 	}
 }

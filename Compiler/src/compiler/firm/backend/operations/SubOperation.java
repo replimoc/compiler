@@ -1,31 +1,31 @@
 package compiler.firm.backend.operations;
 
-import compiler.firm.backend.operations.templates.StorageRegisterOperation;
-import compiler.firm.backend.operations.templates.StorageRegisterOperationFactory;
+import compiler.firm.backend.operations.templates.StorageRegisterRegisterOperation;
+import compiler.firm.backend.operations.templates.StorageRegisterRegisterOperationFactory;
 import compiler.firm.backend.storage.RegisterBased;
 import compiler.firm.backend.storage.Storage;
 
-public class SubOperation extends StorageRegisterOperation {
+public class SubOperation extends StorageRegisterRegisterOperation {
 
-	public static StorageRegisterOperationFactory getFactory(final String comment) {
-		return new StorageRegisterOperationFactory() {
+	public static StorageRegisterRegisterOperationFactory getFactory(final String comment) {
+		return new StorageRegisterRegisterOperationFactory() {
 			@Override
-			public StorageRegisterOperation instantiate(Storage input, RegisterBased destination) {
-				return new SubOperation(comment, input, destination);
+			public StorageRegisterRegisterOperation instantiate(Storage source, RegisterBased source2, RegisterBased destination) {
+				return new SubOperation(comment, source, source2, destination);
 			}
 		};
 	}
 
-	public SubOperation(Storage input, RegisterBased destinationRegister) {
-		super(null, input, destinationRegister);
+	public SubOperation(Storage source, RegisterBased source2, RegisterBased destination) {
+		super(null, source, source2, destination);
 	}
 
-	public SubOperation(String comment, Storage input, RegisterBased destinationRegister) {
-		super(comment, input, destinationRegister);
+	public SubOperation(String comment, Storage input, RegisterBased source2, RegisterBased destination) {
+		super(comment, input, source2, destination);
 	}
 
 	@Override
 	public String getOperationString() {
-		return String.format("\tsub %s, %s", getStorage().toString(), getDestination().toString());
+		return String.format("\tsub %s, %s", getSource().toString(), getDestination().toString());
 	}
 }
