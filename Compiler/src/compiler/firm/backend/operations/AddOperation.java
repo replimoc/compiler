@@ -26,6 +26,24 @@ public class AddOperation extends SourceSourceDestinationOperation {
 
 	@Override
 	public String getOperationString() {
-		return String.format("\tadd %s, %s", getSource().toString(), getDestination().toString());
+		if (isLea()) {
+			return String.format("\tlea (%s, %s), %s", source.toString(), source2.toString(), destination.toString());
+		} else {
+			return String.format("\tadd %s, %s", source.toString(), destination.toString());
+		}
+	}
+
+	@Override
+	protected MovOperation getPreOperation() {
+		if (isLea()) {
+			return null;
+		} else {
+			return super.getPreOperation();
+		}
+	}
+
+	private boolean isLea() {
+		return source.getSingleRegister() != destination.getSingleRegister() && source2.getSingleRegister() != destination.getSingleRegister() &&
+				source.getSingleRegister() != null && source.getSingleRegister() != null && destination.getSingleRegister() != null;
 	}
 }
