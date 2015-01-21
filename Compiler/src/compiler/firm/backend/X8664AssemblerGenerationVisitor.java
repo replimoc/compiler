@@ -154,7 +154,8 @@ public class X8664AssemblerGenerationVisitor implements BulkPhiNodeVisitor {
 		operations.add(assemblerOption);
 	}
 
-	private <T extends StorageRegisterRegisterOperation> void visitTwoOperandsNode(StorageRegisterRegisterOperationFactory operationFactory, Node parent,
+	private <T extends StorageRegisterRegisterOperation> void visitTwoOperandsNode(StorageRegisterRegisterOperationFactory operationFactory,
+			Node parent,
 			Node left, Node right) {
 		// get left node
 		Storage registerLeft = storageManagement.getValueAvoidNewRegister(left);
@@ -177,12 +178,14 @@ public class X8664AssemblerGenerationVisitor implements BulkPhiNodeVisitor {
 			}
 		}
 
+		RegisterBased result = new VirtualRegister(StorageManagement.getMode(parent));
+
 		// create operation object
-		StorageRegisterRegisterOperation operation = operationFactory.instantiate(registerLeft, registerRight);
+		StorageRegisterRegisterOperation operation = operationFactory.instantiate(registerLeft, registerRight, result);
 		// execute operation
 		addOperation(operation);
 		// store on stack
-		storageManagement.storeValue(parent, registerRight);
+		storageManagement.storeValue(parent, result);
 	}
 
 	private LabelOperation getBlockLabel(Block node) {
@@ -217,10 +220,10 @@ public class X8664AssemblerGenerationVisitor implements BulkPhiNodeVisitor {
 		MemoryPointer memoryPointer = new MemoryPointer(absDivisor - 1, leftArgument);
 		addOperation(new LeaOperation(parent.toString(), memoryPointer, temporaryRegister));
 		addOperation(new TestOperation(parent.toString(), leftArgument, leftArgument));
-		addOperation(new CmovSignOperation(parent.toString(), temporaryRegister, leftArgument));
+		addOperation(new CmovSignOperation(parent.toString(), temporaryRegister, leftArgument, leftArgument));
 		int pow = 31 - Integer.numberOfLeadingZeros(absDivisor);
 		assert pow > 0;
-		addOperation(new SarOperation(StorageManagement.getMode(left), new Constant(pow), leftArgument));
+		addOperation(new SarOperation(new Constant(pow), leftArgument, leftArgument));
 
 		if (!isPositive) {
 			addOperation(new NegOperation(leftArgument));
@@ -247,13 +250,13 @@ public class X8664AssemblerGenerationVisitor implements BulkPhiNodeVisitor {
 		addOperation(imull);
 		RegisterBased edx = imull.getResultHigh();
 
-		addOperation(new AddOperation(parent.toString(), leftArgument, edx)); // todo replace with lea?
-		addOperation(new SarOperation(parent.toString(), null, edx, new Constant(l - 1)));
+		addOperation(new AddOperation(parent.toString(), leftArgument, edx, edx)); // todo replace with lea?
+		addOperation(new SarOperation(parent.toString(), new Constant(l - 1), edx, edx));
 
 		RegisterBased leftArgument2 = storageManagement.getValue(left, true);
 
-		addOperation(new SarOperation(parent.toString(), null, leftArgument2, new Constant(31)));
-		addOperation(new SubOperation(parent.toString(), leftArgument2, edx));
+		addOperation(new SarOperation(parent.toString(), new Constant(31), leftArgument2, leftArgument2));
+		addOperation(new SubOperation(parent.toString(), leftArgument2, edx, edx));
 
 		if (!isPositive) {
 			addOperation(new NegOperation(edx));
@@ -561,10 +564,11 @@ public class X8664AssemblerGenerationVisitor implements BulkPhiNodeVisitor {
 
 		Constant constant = new Constant((Const) node.getRight());
 
+		RegisterBased result = new VirtualRegister(StorageManagement.getMode(node));
 		// execute operation
-		addOperation(new ShlOperation(StorageManagement.getMode(node), constant, register));
+		addOperation(new ShlOperation(constant, register, result));
 		// store on stack
-		storageManagement.storeValue(node, register);
+		storageManagement.storeValue(node, result);
 	}
 
 	public MemoryPointer getMemoryPointerForNode(Node addressNode) {
