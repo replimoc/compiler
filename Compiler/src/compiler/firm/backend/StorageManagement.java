@@ -16,7 +16,6 @@ import firm.BackEdges;
 import firm.BackEdges.Edge;
 import firm.Mode;
 import firm.nodes.Const;
-import firm.nodes.Conv;
 import firm.nodes.Node;
 
 public class StorageManagement {
@@ -38,45 +37,31 @@ public class StorageManagement {
 		nodeStorages.put(node, storage);
 	}
 
-	public Storage getStorage(Node node) {
-		return nodeStorages.get(node);
-	}
-
 	public void addConstant(Const node) {
 		addStorage(node, new Constant(node));
 	}
 
-	public Storage getValueAvoidNewRegister(Node node) {
-		if (nodeStorages.containsKey(node)) {
-			return nodeStorages.get(node);
+	public Storage getStorage(Node node) {
+		Storage storage = nodeStorages.get(node);
+
+		if (storage == null) {
+			storage = new VirtualRegister(getMode(node));
+			addStorage(node, storage);
+		}
+		return storage;
+	}
+
+	public RegisterBased getValue(Node node) {
+		RegisterBased result;
+		Storage storage = getStorage(node);
+		if (storage instanceof RegisterBased) {
+			result = (RegisterBased) storage;
 		} else {
-			return getValue(node, false);
+			result = new VirtualRegister(getMode(node));
+			addOperation(new MovOperation(node.toString(), storage, result));
+			addStorage(node, result);
 		}
-	}
-
-	public RegisterBased getValue(Node node, boolean overwrite) {
-		return getValue(node, null, overwrite);
-	}
-
-	public RegisterBased getValue(Node node, RegisterBundle resultRegisterBundle) {
-		return getValue(node, resultRegisterBundle.getRegister(getMode(node)), true);
-	}
-
-	public RegisterBased getValue(Node node, RegisterBased resultRegister, boolean overwrite) {
-		if (!nodeStorages.containsKey(node)) {
-			addStorage(node, new VirtualRegister(getMode(node)));
-		}
-		Storage originalStorage = nodeStorages.get(node);
-
-		if (!overwrite && resultRegister == null && originalStorage.getClass() == VirtualRegister.class && !(node instanceof Conv)) {
-			return (VirtualRegister) originalStorage;
-		}
-
-		Bit mode = getMode(node);
-		resultRegister = new VirtualRegister(mode, resultRegister);
-
-		addOperation(new MovOperation("Load address " + node.toString(), originalStorage, resultRegister));
-		return resultRegister;
+		return result;
 	}
 
 	public void storeValue(Node node, VirtualRegister storage) {
@@ -146,5 +131,10 @@ public class StorageManagement {
 				storeValueAndCreateNewStorage(edgeNode, register, true);
 			}
 		}
+	}
+
+	public void placeValue(Node node, RegisterBundle register) {
+		addOperation(new MovOperation(getStorage(node), new VirtualRegister(StorageManagement.getMode(node), register)));
+
 	}
 }
