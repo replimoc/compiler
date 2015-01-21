@@ -86,8 +86,7 @@ public class PeepholeOptimizer {
 				}
 				nextOperation();
 
-				// default case
-			} else {
+			} else { // default case
 				writeOperation();
 				nextOperation();
 			}

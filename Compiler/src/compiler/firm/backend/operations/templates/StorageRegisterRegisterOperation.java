@@ -1,21 +1,46 @@
 package compiler.firm.backend.operations.templates;
 
+import java.util.Set;
+
 import compiler.firm.backend.storage.RegisterBased;
 import compiler.firm.backend.storage.Storage;
+import compiler.utils.Utils;
 
-public abstract class StorageRegisterRegisterOperation extends SourceSourceDestinationOperation {
+public abstract class StorageRegisterRegisterOperation extends AssemblerBitOperation {
 
-	public StorageRegisterRegisterOperation(String comment, Storage storage, RegisterBased source2, RegisterBased destination) {
-		super(comment, storage, source2, destination);
+	protected Storage source;
+	protected RegisterBased source2;
+	protected final RegisterBased destination;
+
+	public StorageRegisterRegisterOperation(String comment, Storage source, RegisterBased source2, RegisterBased destination) {
+		super(comment);
+		this.source = source;
+		this.source2 = source2;
+		this.destination = destination;
 	}
 
 	@Override
+	public Set<RegisterBased> getReadRegisters() {
+		RegisterBased[] sourceRegisters = source.getUsedRegister();
+		RegisterBased[] source2Registers = source2.getUsedRegister();
+		RegisterBased[] destinationRegisters = destination.getReadOnRightSideRegister();
+		return Utils.unionSet(sourceRegisters, source2Registers, destinationRegisters);
+	}
+
+	@Override
+	public Set<RegisterBased> getWriteRegisters() {
+		return Utils.unionSet(destination.getUsedRegister());
+	}
+
+	public Storage getSource() {
+		return source;
+	}
+
 	public RegisterBased getSource2() {
-		return (RegisterBased) source2;
+		return source2;
 	}
 
-	@Override
 	public RegisterBased getDestination() {
-		return (RegisterBased) super.getDestination();
+		return destination;
 	}
 }
