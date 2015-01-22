@@ -642,7 +642,7 @@ public class X8664AssemblerGenerationVisitor implements BulkPhiNodeVisitor {
 				if (proj.getNum() < parameterRegisters.length) {
 					RegisterBundle registerBundle = parameterRegisters[proj.getNum()];
 					VirtualRegister storage = new VirtualRegister(mode, registerBundle);
-
+					startOperation.addWriteRegister(storage);
 					addOperation(new MovOperation(storage, location));
 				} else {
 					// + 2 for dynamic link
