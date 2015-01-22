@@ -55,20 +55,27 @@ public class PeepholeOptimizer {
 						LabelOperation label = (LabelOperation) currentOperation;
 
 						if (jump2.getLabel().equals(label)) {
+							setAlignment(jump);
 							writeOperation(jump);
 							writeOperation(new Comment(jump2));
 						} else if (jump.getLabel().equals(label) && !(jump instanceof JmpOperation)) {
+							setAlignment(jump2);
 							writeOperation(jump.invert(jump2.getLabel()));
 							writeOperation(new Comment("Fallthrough to " + jump.getLabel()));
 						} else {
+							setAlignment(jump);
+							setAlignment(jump2);
 							writeOperation(jump);
 							writeOperation(jump2);
 						}
 					} else {
+						setAlignment(jump);
+						setAlignment(jump2);
 						writeOperation(jump);
 						writeOperation(jump2);
 					}
 				} else {
+					setAlignment(jump);
 					writeOperation(jump);
 				}
 			} else if (currentOperation instanceof MovOperation) {
@@ -90,6 +97,12 @@ public class PeepholeOptimizer {
 				writeOperation();
 				nextOperation();
 			}
+		}
+	}
+
+	private void setAlignment(JumpOperation jump) {
+		if (outputOperations.contains(jump.getLabel())) {
+			jump.getLabel().setAlignment(true);
 		}
 	}
 
