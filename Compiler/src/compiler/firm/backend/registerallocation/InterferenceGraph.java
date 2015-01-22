@@ -3,14 +3,12 @@ package compiler.firm.backend.registerallocation;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Comparator;
-import java.util.HashMap;
-import java.util.HashSet;
 import java.util.Iterator;
 import java.util.LinkedHashMap;
+import java.util.LinkedHashSet;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map.Entry;
-import java.util.Set;
 
 import compiler.firm.backend.Bit;
 import compiler.firm.backend.storage.RegisterBundle;
@@ -21,7 +19,7 @@ import compiler.utils.Pair;
 public class InterferenceGraph {
 	private static final boolean DEBUG = true;
 
-	private final HashMap<VirtualRegister, Set<VirtualRegister>> graph = new LinkedHashMap<>();
+	private final LinkedHashMap<VirtualRegister, LinkedHashSet<VirtualRegister>> graph = new LinkedHashMap<>();
 
 	public InterferenceGraph(List<VirtualRegister> registers) {
 		// create a list of all intervals with their according register
@@ -64,9 +62,9 @@ public class InterferenceGraph {
 	}
 
 	private void addInterferences(VirtualRegister currRegister, List<Pair<Interval, VirtualRegister>> activeIntervals) {
-		Set<VirtualRegister> interfering = graph.get(currRegister);
+		LinkedHashSet<VirtualRegister> interfering = graph.get(currRegister);
 		if (interfering == null) {
-			interfering = new HashSet<>();
+			interfering = new LinkedHashSet<>();
 			graph.put(currRegister, interfering);
 		}
 
@@ -76,8 +74,8 @@ public class InterferenceGraph {
 		}
 	}
 
-	public Set<RegisterBundle> allocateRegisters(RegisterAllocationPolicy allocationPolicy) { // color graph
-		HashMap<VirtualRegister, Set<VirtualRegister>> graph = new HashMap<>(this.graph);
+	public LinkedHashSet<RegisterBundle> allocateRegisters(RegisterAllocationPolicy allocationPolicy) { // color graph
+		LinkedHashMap<VirtualRegister, LinkedHashSet<VirtualRegister>> graph = new LinkedHashMap<>(this.graph);
 		int availableRegisters = allocationPolicy.getNumberOfRegisters(Bit.BIT64);
 
 		LinkedList<VirtualRegister> removedRegisters = new LinkedList<>();
@@ -94,7 +92,7 @@ public class InterferenceGraph {
 		}
 		debug("colorable; removed: " + removedRegisters);
 
-		Set<RegisterBundle> usedRegisters = new HashSet<RegisterBundle>();
+		LinkedHashSet<RegisterBundle> usedRegisters = new LinkedHashSet<RegisterBundle>();
 		graph = this.graph;
 		for (VirtualRegister curr : removedRegisters) {
 			if (curr.getRegister() != null) {
@@ -110,7 +108,7 @@ public class InterferenceGraph {
 		return usedRegisters;
 	}
 
-	private RegisterBundle getFreeRegisterBundle(RegisterAllocationPolicy allocationPolicy, Set<VirtualRegister> edges) {
+	private RegisterBundle getFreeRegisterBundle(RegisterAllocationPolicy allocationPolicy, LinkedHashSet<VirtualRegister> edges) {
 		SingleRegister[] availableRegisters = allocationPolicy.getAllowedRegisters(Bit.BIT64);
 		OUTER: for (SingleRegister currRegister : availableRegisters) {
 			RegisterBundle currBundle = currRegister.getRegisterBundle();
@@ -126,17 +124,17 @@ public class InterferenceGraph {
 		throw new RuntimeException("THIS MAY NEVER HAPPEN!");
 	}
 
-	private void remove(HashMap<VirtualRegister, Set<VirtualRegister>> graph, VirtualRegister nextRegister) {
+	private void remove(LinkedHashMap<VirtualRegister, LinkedHashSet<VirtualRegister>> graph, VirtualRegister nextRegister) {
 		// remove node
-		Set<VirtualRegister> edges = graph.remove(nextRegister);
+		LinkedHashSet<VirtualRegister> edges = graph.remove(nextRegister);
 		// remove edges leading back
 		for (VirtualRegister edgeNode : edges) {
 			graph.get(edgeNode).remove(nextRegister);
 		}
 	}
 
-	private VirtualRegister selectNode(HashMap<VirtualRegister, Set<VirtualRegister>> graph, int availableRegisters) {
-		for (Entry<VirtualRegister, Set<VirtualRegister>> currEntry : graph.entrySet()) {
+	private VirtualRegister selectNode(LinkedHashMap<VirtualRegister, LinkedHashSet<VirtualRegister>> graph, int availableRegisters) {
+		for (Entry<VirtualRegister, LinkedHashSet<VirtualRegister>> currEntry : graph.entrySet()) {
 			if (currEntry.getValue().size() < availableRegisters) {
 				return currEntry.getKey();
 			}
