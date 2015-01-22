@@ -10,13 +10,13 @@ public class RegisterBundle {
 
 	// reserved for special usage
 	public static final RegisterBundle _SP = new RegisterBundle(SingleRegister.RSP); // stack pointer
-	public static final RegisterBundle _BP = new RegisterBundle(SingleRegister.RBP); // frame pointer
 
 	// free registers
 	public static final RegisterBundle _DI = new RegisterBundle(SingleRegister.RDI, SingleRegister.EDI, SingleRegister.DIL);
 	public static final RegisterBundle _SI = new RegisterBundle(SingleRegister.RSI, SingleRegister.ESI, SingleRegister.SIL);
+	public static final RegisterBundle _BP = new RegisterBundle(SingleRegister.RBP, SingleRegister.EBP, SingleRegister.BPL);
 
-	// registers with 8bit regs
+	// registers with two 8bit regs
 	public static final RegisterBundle _AX = new RegisterBundle(SingleRegister.RAX, SingleRegister.EAX, SingleRegister.AH, SingleRegister.AL); // accumulator
 	public static final RegisterBundle _BX = new RegisterBundle(SingleRegister.RBX, SingleRegister.EBX, SingleRegister.BH, SingleRegister.BL);
 	public static final RegisterBundle _CX = new RegisterBundle(SingleRegister.RCX, SingleRegister.ECX, SingleRegister.CH, SingleRegister.CL);
