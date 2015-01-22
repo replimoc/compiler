@@ -2,8 +2,8 @@ package compiler.utils;
 
 public class Pair<A, B> {
 
-	private final A first;
-	private final B second;
+	public final A first;
+	public final B second;
 
 	public Pair(A first, B second) {
 		this.first = first;
@@ -18,4 +18,8 @@ public class Pair<A, B> {
 		return second;
 	}
 
+	@Override
+	public String toString() {
+		return first + ":" + second;
+	}
 }

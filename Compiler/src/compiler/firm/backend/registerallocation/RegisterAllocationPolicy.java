@@ -48,4 +48,12 @@ public final class RegisterAllocationPolicy {
 
 		return result;
 	}
+
+	public int getNumberOfRegisters(Bit mode) {
+		return allowedRegisters[mode.ordinal()].length;
+	}
+
+	public SingleRegister[] getAllowedRegisters(Bit mode) {
+		return allowedRegisters[mode.ordinal()];
+	}
 }
