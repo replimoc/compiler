@@ -9,6 +9,9 @@ public class AndOperation extends SourceSourceDestinationOperation {
 	public AndOperation(Storage source1, RegisterBased source2, RegisterBased destination) {
 		super(null, source1, source2, destination);
 	}
+	public AndOperation(String comment, Storage storage, RegisterBased destination) {
+		super(comment, storage, destination);
+	}
 
 	@Override
 	public String getOperationString() {
