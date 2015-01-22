@@ -22,11 +22,15 @@ public class InterferenceGraph {
 	private final LinkedHashMap<VirtualRegister, LinkedHashSet<VirtualRegister>> graph = new LinkedHashMap<>();
 
 	public InterferenceGraph(List<VirtualRegister> registers) {
+		debug("DEBUG IG: registers: ");
+
 		// create a list of all intervals with their according register
 		List<Pair<Interval, VirtualRegister>> allIntervals = new ArrayList<>();
 		for (VirtualRegister curr : registers) {
+			debug("VR_" + curr.getNum() + ": ");
 			for (Interval interval : curr.getLiftimeIntervals()) {
 				allIntervals.add(new Pair<>(interval, curr));
+				debug(interval);
 			}
 		}
 
@@ -38,7 +42,7 @@ public class InterferenceGraph {
 			}
 		});
 
-		debug("allIntervals: " + allIntervals);
+		debugln("allIntervals: " + allIntervals);
 
 		// create interference graph from intervals
 		List<Pair<Interval, VirtualRegister>> activeIntervals = new LinkedList<>();
@@ -58,7 +62,7 @@ public class InterferenceGraph {
 			activeIntervals.add(currInterval);
 		}
 
-		debug("interferences: " + graph);
+		debugln("interferences graph: " + graph);
 	}
 
 	private void addInterferences(VirtualRegister currRegister, List<Pair<Interval, VirtualRegister>> activeIntervals) {
@@ -90,7 +94,7 @@ public class InterferenceGraph {
 			removedRegisters.push(nextRegister);
 			remove(graph, nextRegister);
 		}
-		debug("colorable; removed: " + removedRegisters);
+		debugln("colorable; removed: " + removedRegisters);
 
 		LinkedHashSet<RegisterBundle> usedRegisters = new LinkedHashSet<RegisterBundle>();
 		graph = this.graph;
@@ -104,7 +108,7 @@ public class InterferenceGraph {
 			usedRegisters.add(freeBundle);
 		}
 
-		debug("colored registers: " + removedRegisters);
+		debugln("colored registers: " + removedRegisters);
 		return usedRegisters;
 	}
 
@@ -142,8 +146,13 @@ public class InterferenceGraph {
 		return null;
 	}
 
-	private void debug(Object o) {
+	private void debugln(Object o) {
 		if (DEBUG)
 			System.out.println("DEBUG IG: " + o);
+	}
+
+	private void debug(Object o) {
+		if (DEBUG)
+			System.out.print(o);
 	}
 }
