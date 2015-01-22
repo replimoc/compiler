@@ -1,14 +1,17 @@
 package compiler.firm.backend.registerallocation;
 
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.HashSet;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Set;
 
 import compiler.firm.backend.operations.CallOperation;
+import compiler.firm.backend.operations.LabelOperation;
 import compiler.firm.backend.operations.dummy.MethodStartEndOperation;
 import compiler.firm.backend.operations.templates.AssemblerOperation;
+import compiler.firm.backend.operations.templates.JumpOperation;
 import compiler.firm.backend.storage.RegisterBased;
 import compiler.firm.backend.storage.RegisterBundle;
 import compiler.firm.backend.storage.VirtualRegister;
@@ -45,7 +48,19 @@ public class LinearScanRegisterAllocation {
 
 	private void calculateRegisterLivetime() {
 		int line = 0;
+		HashMap<LabelOperation, Integer> passedLabels = new HashMap<>();
 		for (AssemblerOperation operation : operations) {
+			if (operation instanceof LabelOperation) {
+				passedLabels.put((LabelOperation) operation, line);
+			}
+			if (operation instanceof JumpOperation) {
+				LabelOperation labelOperation = ((JumpOperation) operation).getLabel();
+				Integer lineOfLabel = passedLabels.get(labelOperation);
+				if (lineOfLabel != null) { // we already had this label => loop found
+					expandRegisterUsage(lineOfLabel, line);
+				}
+			}
+
 			for (RegisterBased register : operation.getReadRegisters()) {
 				setOccurrence(register, line, true);
 			}
@@ -53,6 +68,14 @@ public class LinearScanRegisterAllocation {
 				setOccurrence(register, line, false);
 			}
 			line++;
+		}
+	}
+
+	private void expandRegisterUsage(int startOperation, int endOperation) {
+		for (VirtualRegister register : virtualRegisters) {
+			if (register.isAliveAt(startOperation)) {
+				setOccurrence(register, endOperation, true);
+			}
 		}
 	}
 
