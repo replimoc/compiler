@@ -12,8 +12,11 @@ import compiler.firm.backend.operations.LabelOperation;
 import compiler.firm.backend.operations.dummy.MethodStartEndOperation;
 import compiler.firm.backend.operations.templates.AssemblerOperation;
 import compiler.firm.backend.operations.templates.JumpOperation;
+import compiler.firm.backend.registerallocation.InterferenceGraph.AllocationResult;
+import compiler.firm.backend.storage.MemoryPointer;
 import compiler.firm.backend.storage.RegisterBased;
 import compiler.firm.backend.storage.RegisterBundle;
+import compiler.firm.backend.storage.SingleRegister;
 import compiler.firm.backend.storage.VirtualRegister;
 
 public class LinearScanRegisterAllocation {
@@ -37,8 +40,10 @@ public class LinearScanRegisterAllocation {
 
 		InterferenceGraph interferenceGraph = new InterferenceGraph(virtualRegisters);
 		try {
-			Set<RegisterBundle> usedRegisters = interferenceGraph.allocateRegisters(registerPolicy);
-			setDummyOperationsInformation(usedRegisters);
+			AllocationResult allocationResult = interferenceGraph.allocateRegisters(registerPolicy);
+
+			spillRegisters(allocationResult.spilledRegisters);
+			setDummyOperationsInformation(allocationResult.usedRegisters);
 		} catch (Throwable t) {
 			t.printStackTrace();
 		}
@@ -87,6 +92,14 @@ public class LinearScanRegisterAllocation {
 			if (!virtualRegisters.contains(virtualRegister)) {
 				virtualRegisters.add(virtualRegister);
 			}
+		}
+	}
+
+	private void spillRegisters(LinkedList<VirtualRegister> spilledRegisters) {
+		for (VirtualRegister spilledRegister : spilledRegisters) {
+			spilledRegister.setSpilled(true);
+			currentStackOffset += STACK_ITEM_SIZE;
+			spilledRegister.setStorage(new MemoryPointer(currentStackOffset, SingleRegister.RSP));
 		}
 	}
 

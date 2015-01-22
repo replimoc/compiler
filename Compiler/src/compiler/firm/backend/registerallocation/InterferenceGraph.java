@@ -22,12 +22,12 @@ public class InterferenceGraph {
 	private final LinkedHashMap<VirtualRegister, LinkedHashSet<VirtualRegister>> graph = new LinkedHashMap<>();
 
 	public InterferenceGraph(List<VirtualRegister> registers) {
-		debug("DEBUG IG: registers: ");
+		debug("DEBUG IG: registers:");
 
 		// create a list of all intervals with their according register
 		List<Pair<Interval, VirtualRegister>> allIntervals = new ArrayList<>();
 		for (VirtualRegister curr : registers) {
-			debug("VR_" + curr.getNum() + ": ");
+			debug(" VR_" + curr.getNum() + ": ");
 			for (Interval interval : curr.getLiftimeIntervals()) {
 				allIntervals.add(new Pair<>(interval, curr));
 				debug(interval);
@@ -78,22 +78,28 @@ public class InterferenceGraph {
 		}
 	}
 
-	public LinkedHashSet<RegisterBundle> allocateRegisters(RegisterAllocationPolicy allocationPolicy) { // color graph
-		LinkedHashMap<VirtualRegister, LinkedHashSet<VirtualRegister>> graph = new LinkedHashMap<>(this.graph);
+	public AllocationResult allocateRegisters(RegisterAllocationPolicy allocationPolicy) { // color graph
+		LinkedHashMap<VirtualRegister, LinkedHashSet<VirtualRegister>> graph = copyGraph(this.graph);
 		int availableRegisters = allocationPolicy.getNumberOfRegisters(Bit.BIT64);
 
+		LinkedList<VirtualRegister> spilledRegisters = new LinkedList<>();
 		LinkedList<VirtualRegister> removedRegisters = new LinkedList<>();
 
 		// remove nodes according to heuristic
 		while (!graph.isEmpty()) {
 			VirtualRegister nextRegister = selectNode(graph, availableRegisters);
 			if (nextRegister == null) {
-				throw new RuntimeException("NOT ENOUGH REGISTERS");
+				VirtualRegister spillRegister = getNodeWithMaxInterferences(graph);
+				remove(graph, spillRegister);
+				remove(this.graph, spillRegister);
+				spilledRegisters.add(spillRegister);
+				continue;
 			}
 
 			removedRegisters.push(nextRegister);
 			remove(graph, nextRegister);
 		}
+		debugln("spilled: " + spilledRegisters);
 		debugln("colorable; removed: " + removedRegisters);
 
 		LinkedHashSet<RegisterBundle> usedRegisters = new LinkedHashSet<RegisterBundle>();
@@ -109,7 +115,33 @@ public class InterferenceGraph {
 		}
 
 		debugln("colored registers: " + removedRegisters);
-		return usedRegisters;
+
+		return new AllocationResult(spilledRegisters, usedRegisters);
+	}
+
+	private LinkedHashMap<VirtualRegister, LinkedHashSet<VirtualRegister>> copyGraph(
+			LinkedHashMap<VirtualRegister, LinkedHashSet<VirtualRegister>> graph) {
+		LinkedHashMap<VirtualRegister, LinkedHashSet<VirtualRegister>> result = new LinkedHashMap<>();
+
+		for (Entry<VirtualRegister, LinkedHashSet<VirtualRegister>> curr : graph.entrySet()) {
+			result.put(curr.getKey(), new LinkedHashSet<>(curr.getValue()));
+		}
+
+		return result;
+	}
+
+	private VirtualRegister getNodeWithMaxInterferences(LinkedHashMap<VirtualRegister, LinkedHashSet<VirtualRegister>> graph) {
+		VirtualRegister maxRegister = null;
+		int maxInterferences = 0;
+		for (Entry<VirtualRegister, LinkedHashSet<VirtualRegister>> curr : graph.entrySet()) {
+			VirtualRegister register = curr.getKey();
+			int numberOfEdges = curr.getValue().size();
+			if (register.getRegister() == null && numberOfEdges > maxInterferences) {
+				maxInterferences = numberOfEdges;
+				maxRegister = register;
+			}
+		}
+		return maxRegister;
 	}
 
 	private RegisterBundle getFreeRegisterBundle(RegisterAllocationPolicy allocationPolicy, LinkedHashSet<VirtualRegister> edges) {
@@ -117,8 +149,8 @@ public class InterferenceGraph {
 		OUTER: for (SingleRegister currRegister : availableRegisters) {
 			RegisterBundle currBundle = currRegister.getRegisterBundle();
 
-			for (VirtualRegister currEdgeNode : edges) {
-				if (currEdgeNode.getRegisterBundle() == currBundle) { // check if interfering registers use this one
+			for (VirtualRegister currEdgeNode : edges) {// check if interfering registers use this one
+				if (currEdgeNode.getRegister() != null && currEdgeNode.getRegisterBundle() == currBundle) {
 					continue OUTER;
 				}
 			}
@@ -128,12 +160,12 @@ public class InterferenceGraph {
 		throw new RuntimeException("THIS MAY NEVER HAPPEN!");
 	}
 
-	private void remove(LinkedHashMap<VirtualRegister, LinkedHashSet<VirtualRegister>> graph, VirtualRegister nextRegister) {
+	private void remove(LinkedHashMap<VirtualRegister, LinkedHashSet<VirtualRegister>> graph, VirtualRegister register) {
 		// remove node
-		LinkedHashSet<VirtualRegister> edges = graph.remove(nextRegister);
+		LinkedHashSet<VirtualRegister> edges = graph.remove(register);
 		// remove edges leading back
 		for (VirtualRegister edgeNode : edges) {
-			graph.get(edgeNode).remove(nextRegister);
+			graph.get(edgeNode).remove(register);
 		}
 	}
 
@@ -154,5 +186,16 @@ public class InterferenceGraph {
 	private void debug(Object o) {
 		if (DEBUG)
 			System.out.print(o);
+	}
+
+	public static class AllocationResult {
+
+		public final LinkedList<VirtualRegister> spilledRegisters;
+		public final LinkedHashSet<RegisterBundle> usedRegisters;
+
+		public AllocationResult(LinkedList<VirtualRegister> spilledRegisters, LinkedHashSet<RegisterBundle> usedRegisters) {
+			this.spilledRegisters = spilledRegisters;
+			this.usedRegisters = usedRegisters;
+		}
 	}
 }
