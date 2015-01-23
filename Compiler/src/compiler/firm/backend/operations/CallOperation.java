@@ -2,8 +2,10 @@ package compiler.firm.backend.operations;
 
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.LinkedList;
 import java.util.List;
+import java.util.Set;
 
 import compiler.firm.backend.Bit;
 import compiler.firm.backend.calling.CallingConvention;
@@ -15,6 +17,7 @@ import compiler.firm.backend.storage.RegisterBundle;
 import compiler.firm.backend.storage.SingleRegister;
 import compiler.firm.backend.storage.Storage;
 import compiler.firm.backend.storage.VirtualRegister;
+import compiler.utils.Utils;
 
 public class CallOperation extends AssemblerOperation {
 	private static final int STACK_ITEM_SIZE = 8;
@@ -40,20 +43,19 @@ public class CallOperation extends AssemblerOperation {
 	}
 
 	@Override
-	public RegisterBased[] getReadRegisters() {
-		RegisterBased[] readRegister = new RegisterBased[this.parameters.size()];
-		int i = 0;
+	public Set<RegisterBased> getReadRegisters() {
+		Set<RegisterBased> readRegisters = new HashSet<>();
 		for (Parameter parameter : this.parameters) {
 			if (parameter.storage instanceof RegisterBased) {
-				readRegister[i++] = (RegisterBased) parameter.storage;
+				readRegisters.add((RegisterBased) parameter.storage);
 			}
 		}
-		return readRegister;
+		return readRegisters;
 	}
 
 	@Override
-	public RegisterBased[] getWriteRegisters() {
-		return new RegisterBased[] { result };
+	public Set<RegisterBased> getWriteRegisters() {
+		return Utils.<RegisterBased> unionSet(result);
 	}
 
 	public VirtualRegister getResult() {
@@ -96,7 +98,7 @@ public class CallOperation extends AssemblerOperation {
 		Constant stackAllocationSize = new Constant(STACK_ITEM_SIZE * numberOfstackParameters);
 
 		if (numberOfstackParameters > 0) {
-			result.add(new SubOperation(stackAllocationSize, SingleRegister.RSP).toString());
+			result.add(new SubOperation(stackAllocationSize, SingleRegister.RSP, SingleRegister.RSP).toString());
 
 			RegisterBundle temporaryRegister = getTemporaryRegister();
 
@@ -136,7 +138,7 @@ public class CallOperation extends AssemblerOperation {
 		result.add(toString());
 
 		if (numberOfstackParameters > 0) {
-			result.add(new AddOperation(stackAllocationSize, SingleRegister.RSP).toString());
+			result.add(new AddOperation(stackAllocationSize, SingleRegister.RSP, SingleRegister.RSP).toString());
 		}
 
 		for (int i = callerSavedRegisters.size() - 1; i >= 0; i--) {

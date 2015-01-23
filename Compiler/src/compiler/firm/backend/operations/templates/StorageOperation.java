@@ -1,8 +1,12 @@
 package compiler.firm.backend.operations.templates;
 
+import java.util.Collections;
+import java.util.Set;
+
 import compiler.firm.backend.Bit;
 import compiler.firm.backend.storage.RegisterBased;
 import compiler.firm.backend.storage.Storage;
+import compiler.utils.Utils;
 
 public abstract class StorageOperation extends AssemblerBitOperation {
 	private final Storage storage;
@@ -21,12 +25,12 @@ public abstract class StorageOperation extends AssemblerBitOperation {
 	}
 
 	@Override
-	public RegisterBased[] getReadRegisters() {
-		return storage.getUsedRegister();
+	public Set<RegisterBased> getReadRegisters() {
+		return Utils.unionSet(storage.getUsedRegister());
 	}
 
 	@Override
-	public RegisterBased[] getWriteRegisters() {
-		return new RegisterBased[] {};
+	public Set<RegisterBased> getWriteRegisters() {
+		return Collections.emptySet();
 	}
 }

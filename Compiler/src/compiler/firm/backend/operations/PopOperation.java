@@ -1,5 +1,8 @@
 package compiler.firm.backend.operations;
 
+import java.util.Collections;
+import java.util.Set;
+
 import compiler.firm.backend.operations.templates.AssemblerBitOperation;
 import compiler.firm.backend.storage.RegisterBased;
 
@@ -21,7 +24,7 @@ public class PopOperation extends AssemblerBitOperation {
 	}
 
 	@Override
-	public RegisterBased[] getReadRegisters() {
-		return new RegisterBased[] {};
+	public Set<RegisterBased> getReadRegisters() {
+		return Collections.emptySet();
 	}
 }

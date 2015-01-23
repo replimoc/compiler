@@ -1,8 +1,11 @@
 package compiler.firm.backend.operations;
 
+import java.util.Set;
+
 import compiler.firm.backend.operations.templates.AssemblerBitOperation;
 import compiler.firm.backend.storage.RegisterBased;
 import compiler.firm.backend.storage.Storage;
+import compiler.utils.Utils;
 
 public class LeaOperation extends AssemblerBitOperation {
 	private final Storage addressStorage;
@@ -15,7 +18,7 @@ public class LeaOperation extends AssemblerBitOperation {
 		this.resultRegister = resultRegister;
 	}
 
-    public LeaOperation(String comment, Storage addressStorage, RegisterBased resultRegister) {
+	public LeaOperation(String comment, Storage addressStorage, RegisterBased resultRegister) {
 		super(comment);
 
 		this.addressStorage = addressStorage;
@@ -28,12 +31,12 @@ public class LeaOperation extends AssemblerBitOperation {
 	}
 
 	@Override
-	public RegisterBased[] getReadRegisters() {
-		return addressStorage.getUsedRegister();
+	public Set<RegisterBased> getReadRegisters() {
+		return Utils.unionSet(addressStorage.getUsedRegister());
 	}
 
 	@Override
-	public RegisterBased[] getWriteRegisters() {
-		return new RegisterBased[] { resultRegister };
+	public Set<RegisterBased> getWriteRegisters() {
+		return Utils.unionSet(resultRegister);
 	}
 }

@@ -25,7 +25,7 @@ import compiler.utils.Utils;
  * this test should be started from Compiler directory
  */
 @Ignore
-public abstract class AbstractAutomatedOutputComparisonTest implements TestFileVisitor.FileTester {
+public abstract class AbstractAutomatedOutputComparisonIT implements TestFileVisitor.FileTester {
 
 	private static final String OUTPUT_FILE_EXTENSION = ".result";
 	private static final String OUTPUT_FILE_EXTENSION_MJTEST = ".check";

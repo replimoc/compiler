@@ -10,9 +10,8 @@ public class SingleRegister extends RegisterBased {
 
 	// reserved for special usage
 	public static final SingleRegister RSP = new SingleRegister(Bit.BIT64, "%rsp", FULL); // stack pointer
-	public static final SingleRegister RBP = new SingleRegister(Bit.BIT64, "%rbp", FULL); // frame pointer
 
-	// registers with no 8 bit registers
+	// general purpose registers
 	public static final SingleRegister RDI = new SingleRegister(Bit.BIT64, "%rdi", FULL);
 	public static final SingleRegister EDI = new SingleRegister(Bit.BIT32, "%edi", FULL);
 	public static final SingleRegister DIL = new SingleRegister(Bit.BIT8, "%dil", LOW);
@@ -20,6 +19,10 @@ public class SingleRegister extends RegisterBased {
 	public static final SingleRegister RSI = new SingleRegister(Bit.BIT64, "%rsi", FULL);
 	public static final SingleRegister ESI = new SingleRegister(Bit.BIT32, "%esi", FULL);
 	public static final SingleRegister SIL = new SingleRegister(Bit.BIT8, "%sil", LOW);
+
+	public static final SingleRegister RBP = new SingleRegister(Bit.BIT64, "%rbp", FULL);
+	public static final SingleRegister EBP = new SingleRegister(Bit.BIT32, "%ebp", FULL);
+	public static final SingleRegister BPL = new SingleRegister(Bit.BIT8, "%bpl", LOW);
 
 	// registers with two 8bit registers
 	public static final SingleRegister RAX = new SingleRegister(Bit.BIT64, "%rax", FULL); // accumulator
