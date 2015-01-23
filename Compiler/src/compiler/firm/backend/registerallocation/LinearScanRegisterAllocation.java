@@ -12,7 +12,6 @@ import compiler.firm.backend.operations.LabelOperation;
 import compiler.firm.backend.operations.dummy.MethodStartEndOperation;
 import compiler.firm.backend.operations.templates.AssemblerOperation;
 import compiler.firm.backend.operations.templates.JumpOperation;
-import compiler.firm.backend.registerallocation.InterferenceGraph.AllocationResult;
 import compiler.firm.backend.storage.MemoryPointer;
 import compiler.firm.backend.storage.RegisterBased;
 import compiler.firm.backend.storage.RegisterBundle;
@@ -40,7 +39,7 @@ public class LinearScanRegisterAllocation {
 
 		InterferenceGraph interferenceGraph = new InterferenceGraph(virtualRegisters);
 		try {
-			AllocationResult allocationResult = interferenceGraph.allocateRegisters(registerPolicy);
+			AllocationResult allocationResult = InterferenceGraph.allocateRegisters(interferenceGraph, registerPolicy);
 
 			spillRegisters(allocationResult.spilledRegisters);
 			setDummyOperationsInformation(allocationResult.usedRegisters);
