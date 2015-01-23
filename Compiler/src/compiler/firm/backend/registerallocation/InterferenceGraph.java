@@ -17,7 +17,7 @@ import compiler.firm.backend.storage.VirtualRegister;
 import compiler.utils.Pair;
 
 public class InterferenceGraph {
-	private static final boolean DEBUG = true;
+	private static final boolean DEBUG = false;
 
 	private final LinkedHashMap<VirtualRegister, LinkedHashSet<VirtualRegister>> graph = new LinkedHashMap<>();
 
@@ -33,6 +33,7 @@ public class InterferenceGraph {
 				debug(interval);
 			}
 		}
+		debug("\n");
 
 		// sort the intervals by their start
 		Collections.sort(allIntervals, new Comparator<Pair<Interval, VirtualRegister>>() {
@@ -89,11 +90,16 @@ public class InterferenceGraph {
 		while (!graph.isEmpty()) {
 			VirtualRegister nextRegister = selectNode(graph, availableRegisters);
 			if (nextRegister == null) {
-				VirtualRegister spillRegister = getNodeWithMaxInterferences(graph);
-				remove(graph, spillRegister);
-				remove(this.graph, spillRegister);
-				spilledRegisters.add(spillRegister);
-				continue;
+				VirtualRegister registerToSpill = getNodeWithMaxInterferences(graph);
+				if (registerToSpill != null) {
+					remove(graph, registerToSpill);
+					remove(this.graph, registerToSpill);
+					spilledRegisters.add(registerToSpill);
+					continue;
+				} else {
+					removedRegisters.addAll(graph.keySet());
+					break; // all spillable registers are spilled, but graph contains nodes => these are fixed registers
+				}
 			}
 
 			removedRegisters.push(nextRegister);
@@ -132,7 +138,7 @@ public class InterferenceGraph {
 
 	private VirtualRegister getNodeWithMaxInterferences(LinkedHashMap<VirtualRegister, LinkedHashSet<VirtualRegister>> graph) {
 		VirtualRegister maxRegister = null;
-		int maxInterferences = 0;
+		int maxInterferences = -1;
 		for (Entry<VirtualRegister, LinkedHashSet<VirtualRegister>> curr : graph.entrySet()) {
 			VirtualRegister register = curr.getKey();
 			int numberOfEdges = curr.getValue().size();
