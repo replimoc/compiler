@@ -1,10 +1,10 @@
 package compiler.firm;
 
-public class AutomatedOutputBackendOptNoRegComparisonTest extends AbstractAutomatedOutputComparisonTest {
+public class AutomatedOutputBackendOptRegComparisonIT extends AbstractAutomatedOutputComparisonIT {
 
 	@Override
 	protected String[] getAdditionalOptions() {
-		return new String[] { "--no-registers" };
+		return new String[] {};
 	}
 
 	@Override

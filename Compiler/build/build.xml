@@ -119,7 +119,8 @@
 
 	<target name="all"
 		description="clean and build everything, run tests and build jar file">
-		<antcall target="test" />
+		<antcall target="runUnitTests" />
+		<antcall target="runIntegrationTests-compile" />
 		<antcall target="buildZip" />
 	</target>
 
@@ -134,7 +135,7 @@
 	</target>
 
 
-	<target name="test" depends="buildTests">
+	<target name="runUnitTests" depends="buildTests">
 		<junit printsummary="on" fork="true" dir="${basedir}"
 			haltonfailure="yes" maxmemory="1g">
 			<classpath>
@@ -144,7 +145,22 @@
 			<formatter type="brief" usefile="false" />
 
 			<batchtest>
-				<fileset dir="${tests}" includes="**/*Test*.java" />
+				<fileset dir="${tests}" includes="**/*Test.java" />
+			</batchtest>
+		</junit>
+	</target>
+	
+	<target name="runIntegrationTests-compile" depends="buildTests">
+		<junit printsummary="on" fork="true" dir="${basedir}"
+			haltonfailure="yes" maxmemory="1g">
+			<classpath>
+				<path refid="classpath.test" />
+			</classpath>
+
+			<formatter type="brief" usefile="false" />
+
+			<batchtest>
+				<fileset dir="${tests}" includes="compiler/firm/*IT.java" />
 			</batchtest>
 		</junit>
 	</target>
