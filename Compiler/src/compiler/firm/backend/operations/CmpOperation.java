@@ -1,22 +1,18 @@
 package compiler.firm.backend.operations;
 
-import compiler.firm.backend.operations.templates.StorageRegisterOperation;
+import compiler.firm.backend.operations.templates.SourceSourceOperation;
 import compiler.firm.backend.storage.RegisterBased;
 import compiler.firm.backend.storage.Storage;
 
-public class CmpOperation extends StorageRegisterOperation {
+public class CmpOperation extends SourceSourceOperation {
 
-	public CmpOperation(String comment, Storage input, RegisterBased destinationRegister) {
-		super(comment, input, destinationRegister);
+	public CmpOperation(String comment, Storage source, RegisterBased source2) {
+		super(comment, source, source2);
 	}
 
 	@Override
 	public String getOperationString() {
-		return String.format("\tcmp%s %s, %s", getDestination().getMode(), getStorage().toString(), getDestination().toString());
+		return String.format("\tcmp%s %s, %s", source2.getMode(), source1.toString(), source2.toString());
 	}
 
-	@Override
-	public RegisterBased[] getWriteRegisters() {
-		return new RegisterBased[0];
-	}
 }

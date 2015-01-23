@@ -5,19 +5,19 @@ import compiler.firm.backend.storage.SingleRegister;
 
 public final class RegisterAllocationPolicy {
 
-	public static final RegisterAllocationPolicy ALL_A_B_C_D_8_9_10_11_12_DI_SI = new RegisterAllocationPolicy(new SingleRegister[][] {
+	public static final RegisterAllocationPolicy ALL_A_B_C_D_8_9_10_11_12_BP_DI_SI = new RegisterAllocationPolicy(new SingleRegister[][] {
 			// 64bit registers
 			{ SingleRegister.RAX, SingleRegister.RBX, SingleRegister.RCX, SingleRegister.RDX,
 					SingleRegister.R8, SingleRegister.R9, SingleRegister.R10, SingleRegister.R11, SingleRegister.R12,
-					SingleRegister.RDI, SingleRegister.RSI },
+					SingleRegister.RBP, SingleRegister.RDI, SingleRegister.RSI },
 			// 32 bit registers
 			{ SingleRegister.EAX, SingleRegister.EBX, SingleRegister.ECX, SingleRegister.EDX,
 					SingleRegister.R8D, SingleRegister.R9D, SingleRegister.R10D, SingleRegister.R11D, SingleRegister.R12D,
-					SingleRegister.EDI, SingleRegister.ESI },
+					SingleRegister.EBP, SingleRegister.EDI, SingleRegister.ESI },
 			// 8 bit registers
 			{ SingleRegister.AL, SingleRegister.BL, SingleRegister.CL, SingleRegister.DL,
 					SingleRegister.R8B, SingleRegister.R9B, SingleRegister.R10B, SingleRegister.R11B, SingleRegister.R12B,
-					SingleRegister.DIL, SingleRegister.SIL }
+					SingleRegister.BPL, SingleRegister.DIL, SingleRegister.SIL }
 	});
 
 	public static final RegisterAllocationPolicy NO_REGISTERS = new RegisterAllocationPolicy(new SingleRegister[][] {
@@ -47,5 +47,13 @@ public final class RegisterAllocationPolicy {
 		}
 
 		return result;
+	}
+
+	public int getNumberOfRegisters(Bit mode) {
+		return allowedRegisters[mode.ordinal()].length;
+	}
+
+	public SingleRegister[] getAllowedRegisters(Bit mode) {
+		return allowedRegisters[mode.ordinal()];
 	}
 }

@@ -1,23 +1,23 @@
 package compiler.firm.backend.operations;
 
-import compiler.firm.backend.operations.templates.StorageRegisterOperation;
-import compiler.firm.backend.operations.templates.StorageRegisterOperationFactory;
+import compiler.firm.backend.operations.templates.SourceSourceDestinationOperation;
+import compiler.firm.backend.operations.templates.StorageRegisterRegisterOperationFactory;
 import compiler.firm.backend.storage.RegisterBased;
 import compiler.firm.backend.storage.Storage;
 
-public class ImulOperation extends StorageRegisterOperation {
+public class ImulOperation extends SourceSourceDestinationOperation {
 
-	public static StorageRegisterOperationFactory getFactory(final String comment) {
-		return new StorageRegisterOperationFactory() {
+	public static StorageRegisterRegisterOperationFactory getFactory(final String comment) {
+		return new StorageRegisterRegisterOperationFactory() {
 			@Override
-			public StorageRegisterOperation instantiate(Storage input, RegisterBased destination) {
-				return new ImulOperation(comment, input, destination);
+			public SourceSourceDestinationOperation instantiate(Storage source1, RegisterBased source2, RegisterBased destination) {
+				return new ImulOperation(comment, source1, source2, destination);
 			}
 		};
 	}
 
-	private ImulOperation(String comment, Storage input, RegisterBased destination) {
-		super(comment, input, destination);
+	private ImulOperation(String comment, Storage source1, RegisterBased source2, RegisterBased destination) {
+		super(comment, source1, source2, destination);
 	}
 
 	@Override

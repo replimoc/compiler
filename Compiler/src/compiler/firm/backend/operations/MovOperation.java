@@ -1,36 +1,36 @@
 package compiler.firm.backend.operations;
 
+import java.util.Set;
+
 import compiler.firm.backend.Bit;
-import compiler.firm.backend.operations.templates.SourceDestinationOperation;
+import compiler.firm.backend.operations.templates.AssemblerBitOperation;
 import compiler.firm.backend.storage.Constant;
+import compiler.firm.backend.storage.RegisterBased;
 import compiler.firm.backend.storage.Storage;
 import compiler.firm.backend.storage.VirtualRegister;
+import compiler.utils.Utils;
 
-public class MovOperation extends SourceDestinationOperation {
+public class MovOperation extends AssemblerBitOperation {
+
+	private Storage source;
+	private final Storage destination;
 
 	public MovOperation(Storage source, Storage destination) {
 		this(null, source, destination);
 	}
 
-	public MovOperation(String comment, VirtualRegister source, VirtualRegister destination) {
-		super(comment, source, destination);
-
-		if (source.getMode() == null || destination.getMode() == null || source.getMode() == destination.getMode()) {
-			source.setPreferedRegister(destination);
-			destination.setPreferedRegister(source);
-		}
-	}
-
 	public MovOperation(String comment, Storage source, Storage destination) {
-		super(comment, source, destination);
+		super(comment);
+		this.source = source;
+		this.destination = destination;
 	}
 
 	@Override
 	public String getOperationString() {
 		Bit sourceMode = source.getMode();
-		Bit destinationMode = destination.getMode();
+		Bit destinationMode = getDestination().getMode();
 		if (isMovslq(sourceMode, destinationMode)) {
-			return String.format("\tmovs%s%s %s, %s", sourceMode, destinationMode, source.toString(), destination.toString());
+			return String.format("\tmovs%s%s %s, %s", sourceMode, destinationMode, source.toString(), getDestination().toString());
 		} else {
 			Bit mode;
 
@@ -42,7 +42,7 @@ public class MovOperation extends SourceDestinationOperation {
 				mode = Bit.BIT64;
 			}
 
-			return String.format("\tmov%s %s, %s", mode, source.toString(), destination.toString());
+			return String.format("\tmov%s %s, %s", mode, source.toString(), getDestination().toString());
 		}
 
 	}
@@ -54,17 +54,17 @@ public class MovOperation extends SourceDestinationOperation {
 	@Override
 	public String[] toStringWithSpillcode() {
 		Bit sourceMode = source.getMode();
-		Bit destinationMode = destination.getMode();
+		Bit destinationMode = getDestination().getMode();
 
 		if (hasSpilledRegisters() && !isMovslq(sourceMode, destinationMode)) {
 			if ((source.getClass() == VirtualRegister.class || source.getClass() == Constant.class)
-					&& (destination.getClass() == VirtualRegister.class || destination.getClass() == Constant.class)) {
+					&& (getDestination().getClass() == VirtualRegister.class || getDestination().getClass() == Constant.class)) {
 
-				if ((source.isSpilled() && !destination.isSpilled()) || (!source.isSpilled() && destination.isSpilled())) {
+				if ((source.isSpilled() && !getDestination().isSpilled()) || (!source.isSpilled() && getDestination().isSpilled())) {
 					return new String[] { toString() };
 				} else {
 					Storage oldSource = this.source;
-					this.source = getTemporaryRegister().getRegister(destination.getMode());
+					this.source = getTemporaryRegister().getRegister(getDestination().getMode());
 					String[] result = new String[] {
 							new MovOperation(oldSource, this.source).toString(),
 							toString()
@@ -76,4 +76,23 @@ public class MovOperation extends SourceDestinationOperation {
 		}
 		return super.toStringWithSpillcode();
 	}
+
+	public Storage getSource() {
+		return source;
+	}
+
+	public Storage getDestination() {
+		return destination;
+	}
+
+	@Override
+	public Set<RegisterBased> getReadRegisters() {
+		return Utils.unionSet(source.getUsedRegister(), destination.getReadOnRightSideRegister());
+	}
+
+	@Override
+	public Set<RegisterBased> getWriteRegisters() {
+		return Utils.unionSet(destination.getUsedRegister());
+	}
+
 }

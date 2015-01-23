@@ -4,10 +4,11 @@ import compiler.firm.backend.Bit;
 
 public class MemoryPointer extends Storage {
 
-	private int offset;
+	protected int offset;
 	private RegisterBased register;
 	private RegisterBased factorRegister;
 	private int factor;
+	private int temporaryStackOffset = 0;
 
 	public MemoryPointer(int offset, RegisterBased register) {
 		this(offset, register, null, 0);
@@ -25,7 +26,14 @@ public class MemoryPointer extends Storage {
 	}
 
 	@Override
+	public void setTemporaryStackOffset(int temporaryStackOffset) {
+		this.temporaryStackOffset = temporaryStackOffset;
+	}
+
+	@Override
 	public String toString() {
+		int oldOffset = offset;
+		offset += this.temporaryStackOffset;
 		// Always use 64 bit register, this are stack addresses.
 		String secondRegister = "";
 		if (factorRegister != null) {
@@ -44,6 +52,7 @@ public class MemoryPointer extends Storage {
 		} else {
 			result = String.format("0x%x(%s%s)", offset, register.toString(), secondRegister);
 		}
+		offset = oldOffset;
 		return result;
 	}
 

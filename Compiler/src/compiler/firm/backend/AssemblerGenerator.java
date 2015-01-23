@@ -88,7 +88,7 @@ public final class AssemblerGenerator {
 			boolean debugRegisterAllocation) {
 		boolean isMain = MainMethodDeclaration.MAIN_METHOD_NAME.equals(graph.getEntity().getLdName());
 		RegisterAllocationPolicy regsiterPolicy = noRegisters ? RegisterAllocationPolicy.NO_REGISTERS
-				: RegisterAllocationPolicy.ALL_A_B_C_D_8_9_10_11_12_DI_SI;
+				: RegisterAllocationPolicy.ALL_A_B_C_D_8_9_10_11_12_BP_DI_SI;
 		new LinearScanRegisterAllocation(regsiterPolicy, isMain, operationsBlocksPostOrder).allocateRegisters(debugRegisterAllocation);
 	}
 

@@ -7,7 +7,6 @@ import compiler.firm.backend.Bit;
 import compiler.firm.backend.calling.CallingConvention;
 import compiler.firm.backend.operations.AddOperation;
 import compiler.firm.backend.operations.Comment;
-import compiler.firm.backend.operations.MovOperation;
 import compiler.firm.backend.operations.PopOperation;
 import compiler.firm.backend.storage.Constant;
 import compiler.firm.backend.storage.RegisterBundle;
@@ -15,8 +14,8 @@ import compiler.firm.backend.storage.SingleRegister;
 
 public class MethodEndOperation extends MethodStartEndOperation {
 
-	public MethodEndOperation(CallingConvention callingConvention) {
-		super(callingConvention);
+	public MethodEndOperation(CallingConvention callingConvention, int stackItemSize) {
+		super(callingConvention, stackItemSize);
 	}
 
 	@Override
@@ -25,7 +24,7 @@ public class MethodEndOperation extends MethodStartEndOperation {
 		List<String> result = new LinkedList<String>();
 
 		if (stackOperationSize > 0) {
-			result.add(new AddOperation("stack free", new Constant(stackOperationSize), SingleRegister.RSP).toString());
+			result.add(new AddOperation("stack free", new Constant(stackOperationSize), SingleRegister.RSP, SingleRegister.RSP).toString());
 		} else {
 			result.add(new Comment("no items on stack, skip freeing").toString());
 		}
@@ -36,9 +35,6 @@ public class MethodEndOperation extends MethodStartEndOperation {
 				result.add(new PopOperation(registers[i].getRegister(Bit.BIT64)).toString());
 			}
 		}
-
-		result.add(new MovOperation(SingleRegister.RBP, SingleRegister.RSP).toString());
-		result.add(new PopOperation(SingleRegister.RBP).toString());
 
 		return result.toArray(new String[result.size()]);
 	}

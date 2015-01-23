@@ -1,5 +1,8 @@
 package compiler.firm.backend.operations.templates;
 
+import java.util.Collections;
+import java.util.Set;
+
 import compiler.firm.backend.storage.RegisterBased;
 import compiler.firm.backend.storage.RegisterBundle;
 
@@ -34,12 +37,12 @@ public abstract class AssemblerOperation {
 
 	public abstract String getOperationString();
 
-	public RegisterBased[] getReadRegisters() {
-		return new RegisterBased[] {};
+	public Set<RegisterBased> getReadRegisters() {
+		return Collections.emptySet();
 	}
 
-	public RegisterBased[] getWriteRegisters() {
-		return new RegisterBased[] {};
+	public Set<RegisterBased> getWriteRegisters() {
+		return Collections.emptySet();
 	}
 
 	public boolean hasSpilledRegisters() {

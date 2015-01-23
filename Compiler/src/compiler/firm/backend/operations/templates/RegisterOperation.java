@@ -1,10 +1,13 @@
 package compiler.firm.backend.operations.templates;
 
+import java.util.Set;
+
 import compiler.firm.backend.storage.RegisterBased;
+import compiler.utils.Utils;
 
 public abstract class RegisterOperation extends AssemblerBitOperation {
 
-	private RegisterBased register;
+	protected RegisterBased register;
 
 	public RegisterOperation(RegisterBased register) {
 		this(null, register);
@@ -20,12 +23,12 @@ public abstract class RegisterOperation extends AssemblerBitOperation {
 	}
 
 	@Override
-	public RegisterBased[] getReadRegisters() {
-		return new RegisterBased[] { this.register };
+	public Set<RegisterBased> getReadRegisters() {
+		return Utils.unionSet(this.register);
 	}
 
 	@Override
-	public RegisterBased[] getWriteRegisters() {
-		return new RegisterBased[] { this.register };
+	public Set<RegisterBased> getWriteRegisters() {
+		return Utils.unionSet(this.register);
 	}
 }

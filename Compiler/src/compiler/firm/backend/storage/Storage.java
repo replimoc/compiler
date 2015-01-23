@@ -19,4 +19,6 @@ public abstract class Storage {
 	public abstract RegisterBundle getRegisterBundle();
 
 	public abstract MemoryPointer getMemoryPointer();
+
+	public abstract void setTemporaryStackOffset(int temporaryStackOffset);
 }

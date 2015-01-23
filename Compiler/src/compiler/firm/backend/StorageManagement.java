@@ -16,7 +16,6 @@ import firm.BackEdges;
 import firm.BackEdges.Edge;
 import firm.Mode;
 import firm.nodes.Const;
-import firm.nodes.Conv;
 import firm.nodes.Node;
 
 public class StorageManagement {
@@ -34,80 +33,49 @@ public class StorageManagement {
 		operations.add(assemblerOption);
 	}
 
-	public void addStorage(Node node, Storage storage) {
+	private void addStorage(Node node, Storage storage) {
 		nodeStorages.put(node, storage);
-	}
-
-	public Storage getStorage(Node node) {
-		return nodeStorages.get(node);
 	}
 
 	public void addConstant(Const node) {
 		addStorage(node, new Constant(node));
 	}
 
-	public Storage getValueAvoidNewRegister(Node node) {
-		if (nodeStorages.containsKey(node)) {
-			return nodeStorages.get(node);
-		} else {
-			return getValue(node, false);
-		}
-	}
+	public Storage getStorage(Node node) {
+		Storage storage = nodeStorages.get(node);
 
-	public RegisterBased getValue(Node node, boolean overwrite) {
-		return getValue(node, null, overwrite);
-	}
-
-	public RegisterBased getValue(Node node, RegisterBundle resultRegisterBundle) {
-		return getValue(node, resultRegisterBundle.getRegister(getMode(node)), true);
-	}
-
-	public RegisterBased getValue(Node node, RegisterBased resultRegister, boolean overwrite) {
-		if (!nodeStorages.containsKey(node)) {
-			addStorage(node, new VirtualRegister(getMode(node)));
-		}
-		Storage originalStorage = nodeStorages.get(node);
-
-		if (!overwrite && resultRegister == null && originalStorage.getClass() == VirtualRegister.class && !(node instanceof Conv)) {
-			return (VirtualRegister) originalStorage;
-		}
-
-		Bit mode = getMode(node);
-		resultRegister = new VirtualRegister(mode, resultRegister);
-
-		addOperation(new MovOperation("Load address " + node.toString(), originalStorage, resultRegister));
-		return resultRegister;
-	}
-
-	public void storeValue(Node node, VirtualRegister storage) {
-		Storage destination = nodeStorages.get(node);
-		if (destination == null && storage.getRegister() == null) {
+		if (storage == null) {
+			storage = new VirtualRegister(getMode(node));
 			addStorage(node, storage);
-		} else {
-			storeValueAndCreateNewStorage(node, storage, false);
 		}
+		return storage;
+	}
+
+	public RegisterBased getValue(Node node) {
+		RegisterBased result;
+		Storage storage = getStorage(node);
+		if (storage instanceof RegisterBased) {
+			result = (RegisterBased) storage;
+		} else {
+			result = new VirtualRegister(getMode(node));
+			addOperation(new MovOperation(node.toString(), storage, result));
+			addStorage(node, result);
+		}
+		return result;
 	}
 
 	public void storeValue(Node node, Storage storage) {
-		storeValueAndCreateNewStorage(node, storage, false);
-	}
-
-	public void storeValueAndCreateNewStorage(Node node, Storage storage, boolean forceNew) {
 		Storage destination = nodeStorages.get(node);
 		if (destination == null) {
-			if (forceNew || countSuccessors(node) > 1) {
-				destination = new VirtualRegister(getMode(node));
-			} else {
-				destination = storage;
-			}
-			addStorage(node, destination);
+			destination = storage;
 		}
+		addStorage(node, storage);
 		storeValue(node, storage, destination);
 	}
 
 	public void storeValue(Node node, Storage storage, Storage destination) {
 		if (storage != destination) {
-			addOperation(new MovOperation("Store node " + node, storage, destination));
+			throw new RuntimeException("storeValue source != destination");
 		}
 	}
 
@@ -125,26 +93,17 @@ public class StorageManagement {
 		}
 	}
 
-	private int countSuccessors(Node node) {
-		int n = 0;
-		for (Edge successors : BackEdges.getOuts(node)) {
-			if (isNotModeM(successors.node)) {
-				n++;
-			}
-		}
-		return n;
-	}
-
-	private boolean isNotModeM(Node node) {
-		return !node.getMode().equals(Mode.getM());
-	}
-
 	void storeToBackEdges(Node node, RegisterBased register) {
 		for (Edge edge : BackEdges.getOuts(node)) {
 			Node edgeNode = edge.node;
 			if (!edgeNode.getMode().equals(Mode.getM())) {
-				storeValueAndCreateNewStorage(edgeNode, register, true);
+				storeValue(edgeNode, register);
 			}
 		}
+	}
+
+	public void placeValue(Node node, RegisterBundle register) {
+		addOperation(new MovOperation(getStorage(node), new VirtualRegister(StorageManagement.getMode(node), register)));
+
 	}
 }

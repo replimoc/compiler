@@ -1,9 +1,12 @@
 package compiler.firm.backend.operations;
 
-import compiler.firm.backend.operations.templates.StorageRegisterOperation;
+import java.util.Collections;
+import java.util.Set;
+
+import compiler.firm.backend.operations.templates.SourceSourceOperation;
 import compiler.firm.backend.storage.RegisterBased;
 
-public class TestOperation extends StorageRegisterOperation {
+public class TestOperation extends SourceSourceOperation {
 
 	public TestOperation(String comment, RegisterBased source, RegisterBased destination) {
 		super(comment, source, destination);
@@ -11,11 +14,11 @@ public class TestOperation extends StorageRegisterOperation {
 
 	@Override
 	public String getOperationString() {
-		return String.format("\ttest %s, %s", getStorage().toString(), getDestination().toString());
+		return String.format("\ttest %s, %s", source1.toString(), source2.toString());
 	}
 
 	@Override
-	public RegisterBased[] getWriteRegisters() {
-		return new RegisterBased[0];
+	public Set<RegisterBased> getWriteRegisters() {
+		return Collections.emptySet();
 	}
 }

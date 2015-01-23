@@ -1,24 +1,18 @@
 package compiler.firm.optimization.visitor;
 
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.Map;
 import java.util.Set;
 
-import firm.BackEdges;
-import firm.BackEdges.Edge;
-import firm.BlockWalker;
-import firm.Graph;
-import firm.Mode;
 import firm.nodes.Add;
-import firm.nodes.Anchor;
 import firm.nodes.Block;
 import firm.nodes.Conv;
-import firm.nodes.Jmp;
 import firm.nodes.Minus;
 import firm.nodes.Mul;
 import firm.nodes.Node;
 import firm.nodes.Not;
-import firm.nodes.Proj;
 import firm.nodes.Shl;
 import firm.nodes.Shr;
 import firm.nodes.Shrs;
@@ -34,8 +28,8 @@ public class LoopInvariantVisitor extends OptimizationVisitor<Node> {
 		}
 	};
 
-	private final HashMap<Node, Node> backedges = new HashMap<>();
-	private final HashMap<Block, Set<Block>> dominators = new HashMap<>();
+	private HashMap<Node, Node> backedges = new HashMap<>();
+	private HashMap<Block, Set<Block>> dominators = new HashMap<>();
 
 	@Override
 	public HashMap<Node, Node> getLatticeValues() {
@@ -52,6 +46,24 @@ public class LoopInvariantVisitor extends OptimizationVisitor<Node> {
 			}
 		}
 
+		ArrayList<Block> sameLevelLoops = new ArrayList<>();
+		L1: for (Block b : loops) {
+			if (dominators.containsKey(b) && dominators.get(b).containsAll(loops)) {
+				for (Map.Entry<Node, Node> entry : backedges.entrySet()) {
+					if (entry.getValue().equals(b)) {
+						if (dominators.containsKey((Block) entry.getKey()) && !dominators.get((Block) entry.getKey()).contains(block)
+								&& !dominatorBlocks.contains(entry.getKey())) {
+							// b and the looṕ header are on the same 'level'
+							sameLevelLoops.add(b);
+							continue L1;
+						}
+					}
+				}
+			}
+		}
+		for (Block b : sameLevelLoops) {
+			loops.remove(b);
+		}
 		for (Block b : loops) {
 			if (dominators.containsKey(b) && dominators.get(b).containsAll(loops)) {
 				return b;
@@ -266,69 +278,8 @@ public class LoopInvariantVisitor extends OptimizationVisitor<Node> {
 
 	@Override
 	public void visit(Start start) {
-		Graph graph = start.getGraph();
-		final Block startBlock = (Block) start.getBlock();
-
-		BlockWalker walker = new BlockWalker() {
-
-			@Override
-			public void visitBlock(Block block) {
-				Set<Block> doms = new HashSet<Block>();
-
-				for (Node node : block.getPreds()) {
-					Block pred = (Block) node.getBlock();
-					Set<Block> dominatedBlocks = dominators.get(pred);
-
-					if (dominatedBlocks == null || dominators.get(pred).contains(block))
-						continue;
-
-					if (doms.size() == 0) {
-						for (Block b : dominatedBlocks) {
-							doms.add(b);
-						}
-					} else {
-						doms.retainAll(dominatedBlocks);
-					}
-				}
-				doms.add(block);
-				doms.add(startBlock);
-
-				if (!dominators.containsKey(block)) {
-					dominators.put(block, doms);
-				} else if (!dominators.get(block).equals(doms)) {
-					dominators.put(block, doms);
-					for (Edge edge : BackEdges.getOuts(block)) {
-						if (edge.node instanceof Anchor)
-							continue;
-						if (((edge.node instanceof Proj && edge.node.getMode().equals(Mode.getX()) || edge.node instanceof Jmp))) {
-							for (Edge backedge : BackEdges.getOuts(edge.node)) {
-								// visit dominated blocks
-								if (dominators.get((Block) backedge.node) != null && dominators.get((Block) backedge.node).contains(block)) {
-									visitBlock((Block) backedge.node);
-								}
-							}
-						}
-					}
-				}
-
-				if (block.getPredCount() > 1) {
-					for (Node node : block.getPreds()) {
-						Set<Block> tmpBlocks = dominators.get(node.getBlock());
-						if (tmpBlocks != null && tmpBlocks.contains(block)) {
-							// found back edge to loop header
-							backedges.put(node.getBlock(), block);
-						}
-					}
-				}
-			}
-		};
-		// ensure that the fixpoint is reached
-		int dominatorCount;
-		int backedgesCount;
-		do {
-			dominatorCount = dominators.values().size();
-			backedgesCount = backedges.values().size();
-			graph.walkBlocks(walker);
-		} while (dominatorCount != dominators.values().size() || backedgesCount != backedges.values().size());
+		FirmUtils utils = new FirmUtils(start.getGraph());
+		dominators = utils.getDominators();
+		backedges = utils.getBackEdges();
 	}
 }

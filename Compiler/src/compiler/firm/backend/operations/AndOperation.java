@@ -1,17 +1,17 @@
 package compiler.firm.backend.operations;
 
-import compiler.firm.backend.operations.templates.StorageRegisterOperation;
+import compiler.firm.backend.operations.templates.SourceSourceDestinationOperation;
 import compiler.firm.backend.storage.RegisterBased;
 import compiler.firm.backend.storage.Storage;
 
-public class AndOperation extends StorageRegisterOperation {
+public class AndOperation extends SourceSourceDestinationOperation {
 
-	public AndOperation(Storage storage, RegisterBased destination) {
-		super(null, storage, destination);
+	public AndOperation(Storage source1, RegisterBased source2, RegisterBased destination) {
+		super(null, source1, source2, destination);
 	}
 
 	@Override
 	public String getOperationString() {
-		return String.format("\tand %s, %s", getStorage().toString(), getDestination().toString());
+		return String.format("\tand %s, %s", getSource().toString(), getDestination().toString());
 	}
 }

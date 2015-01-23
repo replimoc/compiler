@@ -1,12 +1,9 @@
 package compiler.firm.backend.operations.templates;
 
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.HashMap;
-import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map.Entry;
-import java.util.Set;
 
 import compiler.firm.backend.operations.Comment;
 import compiler.firm.backend.operations.MovOperation;
@@ -31,14 +28,14 @@ public abstract class AssemblerBitOperation extends AssemblerOperation {
 			List<VirtualRegister> storageMappingWrite = new ArrayList<>();
 
 			// unique read registers
-			for (RegisterBased register : arrayToUniqueSet(getReadRegisters())) {
+			for (RegisterBased register : getReadRegisters()) {
 				if (register.isSpilled()) {
 					VirtualRegister virtualRegister = (VirtualRegister) register;
 					Storage storage = insertSpillcode(virtualRegister, result, true);
 					storageMapping.put(virtualRegister, storage);
 				}
 			}
-			for (RegisterBased register : arrayToUniqueSet(getWriteRegisters())) {
+			for (RegisterBased register : getWriteRegisters()) {
 				if (register.isSpilled()) {
 					VirtualRegister virtualRegister = (VirtualRegister) register;
 					if (!storageMapping.containsKey(register)) {
@@ -49,7 +46,7 @@ public abstract class AssemblerBitOperation extends AssemblerOperation {
 				}
 			}
 
-			result.add(toString());
+			addOperation(result);
 
 			for (Entry<VirtualRegister, Storage> storageMap : storageMapping.entrySet()) {
 				VirtualRegister virtualRegister = storageMap.getKey();
@@ -65,12 +62,33 @@ public abstract class AssemblerBitOperation extends AssemblerOperation {
 			result.toArray(resultArray);
 			return resultArray;
 		} else {
-			return new String[] { toString() };
+			List<String> result = new ArrayList<>();
+			addOperation(result);
+
+			String[] resultString = new String[result.size()];
+			result.toArray(resultString);
+			return resultString;
 		}
 	}
 
-	private Set<RegisterBased> arrayToUniqueSet(RegisterBased[] array) {
-		return new LinkedHashSet<RegisterBased>(Arrays.asList(array));
+	private void addOperation(List<String> result) {
+		AssemblerOperation preOperation = getPreOperation();
+		if (preOperation != null)
+			result.add(preOperation.toString());
+
+		result.add(toString());
+
+		AssemblerOperation postOperation = getPostOperation();
+		if (postOperation != null)
+			result.add(postOperation.toString());
+	}
+
+	protected MovOperation getPreOperation() {
+		return null;
+	}
+
+	protected AssemblerOperation getPostOperation() {
+		return null;
 	}
 
 	private Storage insertSpillcode(VirtualRegister virtualRegister, List<String> result, boolean restore) {
