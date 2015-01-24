@@ -124,9 +124,10 @@ public final class FirmOptimizer {
 	private static void replaceNodesWithTargets(Graph graph, HashMap<Node, Node> targetValuesMap) {
 		for (Entry<Node, Node> targetEntry : targetValuesMap.entrySet()) {
 			Node node = targetEntry.getKey();
+			Node replacement = targetEntry.getValue();
 
-			if (node.getPredCount() > 0 && !node.equals(targetEntry.getValue())) {
-				Graph.exchange(node, targetEntry.getValue());
+			if (node.getPredCount() > 0 && !node.equals(replacement)) {
+				Graph.exchange(node, replacement);
 			}
 		}
 	}
