@@ -4,15 +4,9 @@ import java.util.HashMap;
 import java.util.LinkedList;
 import java.util.Map.Entry;
 
-import compiler.firm.optimization.visitor.CommonSubexpressionEliminationVisitor;
-import compiler.firm.optimization.visitor.ConstantFoldingVisitor;
-import compiler.firm.optimization.visitor.ControlFlowVisitor;
-import compiler.firm.optimization.visitor.LocalOptimizationVisitor;
-import compiler.firm.optimization.visitor.LoopInvariantVisitor;
-import compiler.firm.optimization.visitor.NormalizationVisitor;
+import compiler.firm.optimization.visitor.FunctionInliningVisitor;
 import compiler.firm.optimization.visitor.OptimizationVisitor;
 import compiler.firm.optimization.visitor.OptimizationVisitorFactory;
-import compiler.firm.optimization.visitor.StrengthReductionVisitor;
 
 import firm.BackEdges;
 import firm.BackEdges.Edge;
@@ -33,13 +27,14 @@ public final class FirmOptimizer {
 		boolean finished = true;
 		do {
 			finished = true;
-			finished &= optimize(NormalizationVisitor.FACTORY);
-			finished &= optimize(ConstantFoldingVisitor.FACTORY);
-			finished &= optimize(LocalOptimizationVisitor.FACTORY);
-			finished &= optimize(ControlFlowVisitor.FACTORY);
-			finished &= optimize(CommonSubexpressionEliminationVisitor.FACTORY);
-			finished &= optimize(LoopInvariantVisitor.FACTORY);
-			finished &= optimize(StrengthReductionVisitor.FACTORY);
+			// finished &= optimize(NormalizationVisitor.FACTORY);
+			// finished &= optimize(ConstantFoldingVisitor.FACTORY);
+			// finished &= optimize(LocalOptimizationVisitor.FACTORY);
+			// finished &= optimize(ControlFlowVisitor.FACTORY);
+			// finished &= optimize(CommonSubexpressionEliminationVisitor.FACTORY);
+			// finished &= optimize(LoopInvariantVisitor.FACTORY);
+			// finished &= optimize(StrengthReductionVisitor.FACTORY);
+			finished &= optimize(FunctionInliningVisitor.FACTORY);
 		} while (!finished);
 	}
 
