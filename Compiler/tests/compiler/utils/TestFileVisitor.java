@@ -151,7 +151,7 @@ public class TestFileVisitor extends SimpleFileVisitor<Path> {
 	public void checkForFailedTests() {
 		try {
 			threadPool.shutdown();
-			threadPool.awaitTermination(100, TimeUnit.SECONDS);
+			threadPool.awaitTermination(150, TimeUnit.SECONDS);
 		} catch (InterruptedException e) {
 			e.printStackTrace();
 		}
