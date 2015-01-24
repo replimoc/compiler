@@ -18,7 +18,7 @@ import compiler.firm.backend.storage.VirtualRegister;
 import compiler.utils.Pair;
 
 public class InterferenceGraph {
-	private static final boolean DEBUG = false;
+	private static final boolean DEBUG = true;
 
 	private final LinkedHashMap<VirtualRegister, LinkedHashSet<VirtualRegister>> graph = new LinkedHashMap<>();
 
@@ -127,13 +127,12 @@ public class InterferenceGraph {
 
 		// color graph
 		LinkedHashSet<RegisterBundle> usedRegisters = new LinkedHashSet<RegisterBundle>();
-		graph = inputGraph;
 		for (VirtualRegister curr : removedRegisters) {
 			if (curr.getRegister() != null) {
 				continue;
 			}
 
-			RegisterBundle freeBundle = graph.getFreeRegisterBundle(curr, allocationPolicy);
+			RegisterBundle freeBundle = inputGraph.getFreeRegisterBundle(curr, allocationPolicy);
 			curr.setStorage(freeBundle.getRegister(curr.getMode()));
 			usedRegisters.add(freeBundle);
 		}
@@ -195,7 +194,7 @@ public class InterferenceGraph {
 
 	private VirtualRegister selectNodeWithLessInterferences(int availableRegisters) {
 		for (Entry<VirtualRegister, LinkedHashSet<VirtualRegister>> currEntry : graph.entrySet()) {
-			if (currEntry.getValue().size() < availableRegisters) {
+			if (currEntry.getKey().getRegister() == null && currEntry.getValue().size() < availableRegisters) {
 				return currEntry.getKey();
 			}
 		}
