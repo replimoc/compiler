@@ -56,7 +56,6 @@ class a3 {
                 int x= 1;
                 x=2;
                 return 2;
-                x=1;
             }
         } else return 5;
     }

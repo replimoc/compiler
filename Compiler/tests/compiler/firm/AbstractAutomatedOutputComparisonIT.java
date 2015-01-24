@@ -29,6 +29,7 @@ public abstract class AbstractAutomatedOutputComparisonIT implements TestFileVis
 
 	private static final String OUTPUT_FILE_EXTENSION = ".result";
 	private static final String OUTPUT_FILE_EXTENSION_MJTEST = ".check";
+	private static final String C_FILE_EXTENSION = ".c";
 
 	@Test
 	public void testCompareJavaOutputWithResultReference() throws Exception {
@@ -46,10 +47,12 @@ public abstract class AbstractAutomatedOutputComparisonIT implements TestFileVis
 	}
 
 	@Override
-	public void testSourceFile(Path sourceFile, Path expectedFile, Path cIncludeFilePath) throws Exception {
+	public void testSourceFile(TestFileVisitor visitor, Path sourceFile, Path expectedFile) throws Exception {
 		System.out.println("Testing execution result of " + sourceFile);
 		File binarFile = File.createTempFile("executable", Utils.getBinaryFileName(""));
 		binarFile.deleteOnExit();
+
+		Path cIncludeFilePath = visitor.getFileWithEnding(sourceFile, C_FILE_EXTENSION);
 
 		Pair<Integer, List<String>> compilingState;
 		if (Files.exists(cIncludeFilePath)) {
