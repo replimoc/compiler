@@ -1,0 +1,8 @@
+error: Identifier main at position line   4, character 20 has already been defined.
+error: Identifier a at position line  14, character 21 has already been defined.
+error: type error in token at position line   5, character 15: Expected return statement without type.
+error: type error in token at position line  15, character 20
+error: type error in token at position line  23, character 11
+error: type error in token at position line  31, character 10: Array access on a non array.
+error: type error in token at position line  31, character 15: Array access on a non array.
+error: Member out at position line  39, character 15 is not available in object a defined at line  37, character 13

@@ -1,0 +1,8 @@
+error: type error in token at position line   3, character 29
+error: type error in token at position line   5, character 30: Can't create void arrays.
+error: type error in token at position line   7, character 32: Can't create void arrays.
+error: type error in token at position line   9, character 34: Can't create void arrays.
+error: type error in token at position line  15, character 15
+error: type error in token at position line  16, character 15: Can't create void arrays.
+error: type error in token at position line  17, character 17: Can't create void arrays.
+error: type error in token at position line  18, character 19: Can't create void arrays.

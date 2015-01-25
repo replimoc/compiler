@@ -47,7 +47,7 @@ public class SubOperation extends SourceSourceDestinationOperation {
 	@Override
 	protected AssemblerOperation getPostOperation() {
 		if (negateResult) {
-			return new NegOperation(destination);
+			return new NegOperation(destination, destination);
 		} else {
 			return null;
 		}

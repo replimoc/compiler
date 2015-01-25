@@ -12,6 +12,7 @@ import org.junit.Test;
 import compiler.StringTable;
 import compiler.ast.Program;
 import compiler.lexer.Lexer;
+import compiler.parser.AutomatedAstComparisionTest;
 import compiler.parser.Parser;
 import compiler.parser.ParsingFailedException;
 import compiler.semantic.exceptions.SemanticAnalysisException;
@@ -19,17 +20,17 @@ import compiler.utils.TestFileVisitor;
 import compiler.utils.TestUtils;
 
 /**
- * Test correctness of semantic analysis che
+ * Test correctness of semantic analysis
  */
 public class AutomatedSemanticCheckTest implements TestFileVisitor.FileTester {
 
 	private static final String SEMANTIC_CHECK_EXTENSION = ".sc";
-	private boolean allCorrect = false;
+	private boolean allCorrect;
 
 	@Test
 	public void testCheckFiles() throws Exception {
 		allCorrect = true;
-		TestFileVisitor.runTests(this, "testdata", TestFileVisitor.JAVA_EXTENSION, SEMANTIC_CHECK_EXTENSION);
+		TestFileVisitor.runTests(this, "testdata", TestFileVisitor.JAVA_EXTENSION, TestFileVisitor.JAVA_EXTENSION);
 	}
 
 	@Test
@@ -57,14 +58,23 @@ public class AutomatedSemanticCheckTest implements TestFileVisitor.FileTester {
 	}
 
 	@Override
-	public void testSourceFile(Path sourceFilePath, Path expectedResultFilePath, Path cIncludeFilePath) throws Exception {
+	public void testSourceFile(TestFileVisitor visitor, Path sourceFilePath, Path expectedResultFilePath) throws Exception {
+		// check preconditions
+		Path prettyFile = visitor.getFileWithEnding(sourceFilePath, AutomatedAstComparisionTest.PRETTY_AST_EXTENSION);
+		if (Files.exists(prettyFile) && AutomatedAstComparisionTest.isParserFailExpected(Files.readAllLines(prettyFile, StandardCharsets.US_ASCII))) {
+			return;
+		}
+		if (TestFileVisitor.JAVA_EXTENSION.equals(visitor.getSourceFileExtension()) && sourceFilePath.toString().contains("mj-test")) {
+			return;
+		}
 
 		System.out.println("Testing file = " + sourceFilePath + "----------------------------------------------->");
 
 		// read expected results file
+		Path checkFile = visitor.getFileWithEnding(sourceFilePath, SEMANTIC_CHECK_EXTENSION);
 		List<String> lines = Arrays.asList(allCorrect ? "correct" : "error");
-		if (!expectedResultFilePath.equals(sourceFilePath)) {
-			lines = Files.readAllLines(expectedResultFilePath, StandardCharsets.US_ASCII);
+		if (Files.exists(checkFile)) {
+			lines = Files.readAllLines(checkFile, StandardCharsets.US_ASCII);
 		}
 		boolean isErrorExpected = !"correct".equals(lines.get(0));
 		int expectedNumberOfErrors = lines.size() > 1 ? Integer.parseInt(lines.get(1)) : -1;

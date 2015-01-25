@@ -61,11 +61,8 @@ public class LoopInvariantVisitor extends OptimizationVisitor<Node> {
 				}
 			}
 		}
-		for (Block b : sameLevelLoops) {
-			loops.remove(b);
-		}
 		for (Block b : loops) {
-			if (dominators.containsKey(b) && dominators.get(b).containsAll(loops)) {
+			if (!sameLevelLoops.contains(b) && dominators.containsKey(b) && dominators.get(b).containsAll(loops)) {
 				return b;
 			}
 		}

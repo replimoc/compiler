@@ -479,7 +479,6 @@ public class FirmGenerationVisitor implements AstVisitor {
 	private void variableAccess(VariableAccessExpression variableAccessExpression, Expression assignmentRightSide) {
 		LocalVariableDeclaration declaration = (LocalVariableDeclaration) variableAccessExpression.getDeclaration();
 		int variableNumber = declaration.getVariableNumber();
-		methodConstruction.getCurrentMem();
 
 		if (assignmentRightSide != null) {
 			Node rightSideNode = getRightSideOfAssignment(assignmentRightSide);
@@ -578,27 +577,24 @@ public class FirmGenerationVisitor implements AstVisitor {
 
 	@Override
 	public void visit(ReturnStatement returnStatement) {
-		// prevent a second return from being set for this block
-		if (!methodReturns.containsKey(methodConstruction.getCurrentBlock())) {
-			boolean hasOperand = returnStatement.getOperand() != null;
+		boolean hasOperand = returnStatement.getOperand() != null;
 
-			Node returnNode;
-			if (hasOperand) {
-				Node exprNode;
-				if (returnStatement.getOperand().getType().is(BasicType.BOOLEAN)) {
-					exprNode = createBooleanNodeFromBinaryExpression(returnStatement.getOperand());
-				} else {
-					returnStatement.getOperand().accept(this);
-					exprNode = returnStatement.getOperand().getFirmNode();
-				}
-				returnNode = methodConstruction.newReturn(methodConstruction.getCurrentMem(), new Node[] { exprNode });
+		Node returnNode;
+		if (hasOperand) {
+			Node exprNode;
+			if (returnStatement.getOperand().getType().is(BasicType.BOOLEAN)) {
+				exprNode = createBooleanNodeFromBinaryExpression(returnStatement.getOperand());
 			} else {
-				// return void
-				returnNode = methodConstruction.newReturn(methodConstruction.getCurrentMem(), new Node[] {});
+				returnStatement.getOperand().accept(this);
+				exprNode = returnStatement.getOperand().getFirmNode();
 			}
-
-			methodReturns.put(methodConstruction.getCurrentBlock(), returnNode);
+			returnNode = methodConstruction.newReturn(methodConstruction.getCurrentMem(), new Node[] { exprNode });
+		} else {
+			// return void
+			returnNode = methodConstruction.newReturn(methodConstruction.getCurrentMem(), new Node[] {});
 		}
+
+		methodReturns.put(methodConstruction.getCurrentBlock(), returnNode);
 	}
 
 	@Override
@@ -722,10 +718,9 @@ public class FirmGenerationVisitor implements AstVisitor {
 				endifBlock.addPred(falseJmp);
 			}
 		}
+
 		endifBlock.mature();
-
 		methodConstruction.setCurrentBlock(endifBlock);
-
 		ifStatement.setFirmNode(null);
 	}
 
@@ -751,10 +746,10 @@ public class FirmGenerationVisitor implements AstVisitor {
 			Node loopJump = methodConstruction.newJmp();
 			startBlock.addPred(loopJump);
 		}
+
 		startBlock.mature();
 		methodConstruction.setCurrentBlock(endBlock);
 		methodConstruction.getGraph().keepAlive(startBlock);
-
 		whileStatement.setFirmNode(null);
 	}
 
@@ -850,7 +845,6 @@ public class FirmGenerationVisitor implements AstVisitor {
 			graph.getEndBlock().addPred(returnNode);
 		}
 
-		methodConstruction.setUnreachable();
 		methodConstruction.finish();
 	}
 

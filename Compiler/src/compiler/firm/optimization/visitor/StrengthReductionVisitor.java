@@ -55,11 +55,8 @@ public class StrengthReductionVisitor extends OptimizationVisitor<Node> {
 				}
 			}
 		}
-		for (Block b : sameLevelLoops) {
-			loops.remove(b);
-		}
 		for (Block b : loops) {
-			if (dominators.containsKey(b) && dominators.get(b).containsAll(loops)) {
+			if (!sameLevelLoops.contains(b) && dominators.containsKey(b) && dominators.get(b).containsAll(loops)) {
 				return b;
 			}
 		}
@@ -79,7 +76,7 @@ public class StrengthReductionVisitor extends OptimizationVisitor<Node> {
 					if (pred == null)
 						return;
 					Node preLoopBlock = pred.getPred(0).getBlock();
-					if (!dominators.get(right.getBlock()).contains(preLoopBlock)) {
+					if (!dominators.get(preLoopBlock).contains(right.getBlock())) {
 						return;
 					}
 					Node base = mul.getGraph().newMul(preLoopBlock, left.getPred(0), right, mul.getMode());
@@ -111,7 +108,7 @@ public class StrengthReductionVisitor extends OptimizationVisitor<Node> {
 					if (pred == null)
 						return;
 					Node preLoopBlock = pred.getPred(0).getBlock();
-					if (!dominators.get(left.getBlock()).contains(preLoopBlock)) {
+					if (!dominators.get(preLoopBlock).contains(left.getBlock())) {
 						return;
 					}
 					Node base = mul.getGraph().newMul(preLoopBlock, right.getPred(0), left, mul.getMode());

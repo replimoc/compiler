@@ -38,14 +38,10 @@ public class LinearScanRegisterAllocation {
 		calculateRegisterLivetime();
 
 		InterferenceGraph interferenceGraph = new InterferenceGraph(virtualRegisters);
-		try {
-			AllocationResult allocationResult = InterferenceGraph.allocateRegisters(interferenceGraph, registerPolicy);
+		AllocationResult allocationResult = InterferenceGraph.allocateRegisters(interferenceGraph, registerPolicy);
 
-			spillRegisters(allocationResult.spilledRegisters);
-			setDummyOperationsInformation(allocationResult.usedRegisters);
-		} catch (Throwable t) {
-			t.printStackTrace();
-		}
+		spillRegisters(allocationResult.spilledRegisters);
+		setDummyOperationsInformation(allocationResult.usedRegisters);
 	}
 
 	// ---------------------- calculate register livetime -------------------

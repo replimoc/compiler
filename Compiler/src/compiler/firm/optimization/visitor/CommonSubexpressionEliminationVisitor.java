@@ -2,6 +2,8 @@ package compiler.firm.optimization.visitor;
 
 import java.util.HashMap;
 
+import firm.BackEdges;
+import firm.BackEdges.Edge;
 import firm.nodes.Add;
 import firm.nodes.Const;
 import firm.nodes.Conv;
@@ -95,6 +97,40 @@ public class CommonSubexpressionEliminationVisitor extends OptimizationVisitor<N
 		}
 	}
 
+	/**
+	 * Transfer function for a mod or div node with 2 predecessors.
+	 * 
+	 * @param node
+	 * @param left
+	 * @param right
+	 */
+	private void modDivTransferFunction(Node node, int left, int right) {
+		Node target = nodeValues.get(new NodeValue(left, right));
+		if (target != null) {
+			if (!sameType(target, node)) {
+				return;
+			}
+			if (!node.equals(target) && !nodeReplacements.containsKey(target) && !nodeReplacements.containsKey(node)
+					&& target.getBlock().equals(node.getBlock())) {
+				Node suc = null;
+				Node sucTarget = null;
+				for (Edge e : BackEdges.getOuts(node)) {
+					suc = e.node;
+					break;
+				}
+				for (Edge e : BackEdges.getOuts(target)) {
+					sucTarget = e.node;
+					break;
+				}
+				// replace the Proj node so the firm backend is happy
+				addReplacement(suc, sucTarget);
+				addReplacement(node, target);
+			}
+		} else {
+			nodeValues.put(new NodeValue(left, right), node);
+		}
+	}
+
 	@Override
 	public void visit(Conv conv) {
 		Node pred = conv.getPred(0);
@@ -144,7 +180,7 @@ public class CommonSubexpressionEliminationVisitor extends OptimizationVisitor<N
 		int left = getValue(leftNode);
 		int right = getValue(rightNode);
 
-		binaryTransferFunction(div, left, right);
+		modDivTransferFunction(div, left, right);
 	}
 
 	@Override
@@ -156,7 +192,7 @@ public class CommonSubexpressionEliminationVisitor extends OptimizationVisitor<N
 		int left = getValue(leftNode);
 		int right = getValue(rightNode);
 
-		binaryTransferFunction(mod, left, right);
+		modDivTransferFunction(mod, left, right);
 	}
 
 	@Override
