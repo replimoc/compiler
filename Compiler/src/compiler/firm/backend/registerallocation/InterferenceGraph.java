@@ -18,7 +18,7 @@ import compiler.firm.backend.storage.VirtualRegister;
 import compiler.utils.Pair;
 
 public class InterferenceGraph {
-	private static final boolean DEBUG = true;
+	private static final boolean DEBUG = false;
 
 	private final LinkedHashMap<VirtualRegister, LinkedHashSet<VirtualRegister>> graph = new LinkedHashMap<>();
 
