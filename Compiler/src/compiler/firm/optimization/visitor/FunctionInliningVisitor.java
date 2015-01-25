@@ -50,15 +50,12 @@ public class FunctionInliningVisitor extends OptimizationVisitor<Node> {
 
 		inlinedCalls.add(call);
 
-		System.out.println("Call " + call);
 		Address address = (Address) call.getPred(1);
 
 		String methodName = address.getEntity().getLdName();
 		// address.getGraph().getNr()
 		for (Graph graph : Program.getGraphs()) {
 			if (methodName.equals(graph.getEntity().getLdName())) {
-				System.out.println(methodName);
-
 				Node firstSuccessor = null;
 
 				for (Edge edge : BackEdges.getOuts(call)) {
@@ -67,7 +64,6 @@ public class FunctionInliningVisitor extends OptimizationVisitor<Node> {
 						break;
 					}
 				}
-				System.out.println("first successor " + firstSuccessor);
 
 				List<Node> arguments = new ArrayList<>();
 				for (int i = 2; i < call.getPredCount(); i++) {
