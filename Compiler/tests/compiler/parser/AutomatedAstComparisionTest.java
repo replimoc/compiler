@@ -9,6 +9,7 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.Iterator;
 import java.util.List;
+import java.util.Map;
 import java.util.Scanner;
 
 import org.junit.Test;
@@ -26,6 +27,7 @@ import compiler.utils.TestUtils;
 public class AutomatedAstComparisionTest implements TestFileVisitor.FileTester {
 
 	public static final String PRETTY_AST_EXTENSION = ".pretty";
+	private static final Object DISABLE_NESTING_IS_FUN = "DISABLE_NESTING_IS_FUN";
 
 	@Test
 	public void testParserFiles() throws Exception {
@@ -54,6 +56,14 @@ public class AutomatedAstComparisionTest implements TestFileVisitor.FileTester {
 
 	@Override
 	public void testSourceFile(TestFileVisitor visitor, Path sourceFile, Path expectedFile) throws Exception {
+		if (sourceFile.endsWith("nesting-is-fun.mj")) {
+			Map<String, String> env = System.getenv();
+			if (env.containsKey(DISABLE_NESTING_IS_FUN)) {
+				System.out.println("Nesting is fun is disabled, skipping!");
+				return;
+			}
+		}
+
 		// read expected output
 		List<String> expectedOutput = Files.readAllLines(expectedFile, StandardCharsets.US_ASCII);
 		boolean failingExpected = isParserFailExpected(expectedOutput);

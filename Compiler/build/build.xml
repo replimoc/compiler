@@ -144,6 +144,7 @@
 
 			<formatter type="brief" usefile="false" />
 
+			<env key="DISABLE_NESTING_IS_FUN" value="1" />
 			<batchtest>
 				<fileset dir="${tests}" includes="**/*Test.java" />
 			</batchtest>
