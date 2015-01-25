@@ -201,8 +201,8 @@ public class X8664AssemblerGenerationVisitor implements BulkPhiNodeVisitor {
 
 		RegisterBased leftArgument = storageManagement.getValue(left);
 		Bit mode = StorageManagement.getMode(divNode);
-		RegisterBased temp1 = new VirtualRegister(mode);
-		RegisterBased temp2 = new VirtualRegister(mode);
+		VirtualRegister temp1 = new VirtualRegister(mode);
+		VirtualRegister temp2 = new VirtualRegister(mode);
 
 		addOperation(new MovOperation(leftArgument, temp1));
 		MemoryPointer memoryPointer = new MemoryPointer(absDivisor - 1, temp1);
@@ -213,11 +213,13 @@ public class X8664AssemblerGenerationVisitor implements BulkPhiNodeVisitor {
 		assert pow > 0;
 		addOperation(new SarOperation(new Constant(pow), temp1, temp1));
 
+		VirtualRegister result = temp1;
 		if (isNegative) {
-			addOperation(new NegOperation(temp1));
+			result = new VirtualRegister(mode);
+			addOperation(new NegOperation(temp1, result));
 		}
 
-		storageManagement.storeToBackEdges(divNode, temp1);
+		storageManagement.storeToBackEdges(divNode, result);
 	}
 
 	/**
@@ -238,9 +240,9 @@ public class X8664AssemblerGenerationVisitor implements BulkPhiNodeVisitor {
 
 		Bit mode = StorageManagement.getMode(divNode);
 		RegisterBased leftArgument = storageManagement.getValue(left);
-		RegisterBased eax = new VirtualRegister(mode, RegisterBundle._AX);
-		RegisterBased temp1 = new VirtualRegister(mode);
-		RegisterBased temp2 = new VirtualRegister(mode);
+		VirtualRegister eax = new VirtualRegister(mode, RegisterBundle._AX);
+		VirtualRegister temp1 = new VirtualRegister(mode);
+		VirtualRegister temp2 = new VirtualRegister(mode);
 
 		addOperation(new MovOperation(leftArgument, temp1));
 		addOperation(new MovOperation(nodeComment, new Constant(m), temp2));
@@ -248,7 +250,7 @@ public class X8664AssemblerGenerationVisitor implements BulkPhiNodeVisitor {
 
 		OneOperandImulOperation imull = new OneOperandImulOperation(nodeComment, temp2);
 		addOperation(imull);
-		RegisterBased edx = imull.getResultHigh();
+		VirtualRegister edx = imull.getResultHigh();
 
 		addOperation(new AddOperation(nodeComment, temp1, edx, edx));
 		addOperation(new SarOperation(nodeComment, new Constant(l - 1), edx, edx));
@@ -256,11 +258,13 @@ public class X8664AssemblerGenerationVisitor implements BulkPhiNodeVisitor {
 		addOperation(new SarOperation(nodeComment, new Constant(31), temp1, temp1));
 		addOperation(new SubOperation(nodeComment, temp1, edx, edx));
 
+		VirtualRegister result = edx;
 		if (isNegative) {
-			addOperation(new NegOperation(edx));
+			result = new VirtualRegister(mode);
+			addOperation(new NegOperation(edx, result));
 		}
 
-		storageManagement.storeToBackEdges(divNode, edx);
+		storageManagement.storeToBackEdges(divNode, result);
 	}
 
 	// ----------------------------------------------- Lea and Co ---------------------------------------------------
@@ -523,8 +527,9 @@ public class X8664AssemblerGenerationVisitor implements BulkPhiNodeVisitor {
 	@Override
 	public void visit(Minus node) {
 		RegisterBased register = storageManagement.getValue(node.getPred(0));
-		addOperation(new NegOperation(register));
-		storageManagement.storeValue(node, register);
+		VirtualRegister result = new VirtualRegister(StorageManagement.getMode(node));
+		addOperation(new NegOperation(register, result));
+		storageManagement.storeValue(node, result);
 	}
 
 	@Override
@@ -544,8 +549,9 @@ public class X8664AssemblerGenerationVisitor implements BulkPhiNodeVisitor {
 	public void visit(Not node) {
 		Node predecessor = node.getPred(0);
 		RegisterBased value = storageManagement.getValue(predecessor);
-		addOperation(new NotOperation(value));
-		storageManagement.storeValue(node, value);
+		VirtualRegister result = new VirtualRegister(StorageManagement.getMode(node));
+		addOperation(new NotOperation(value, result));
+		storageManagement.storeValue(node, result);
 
 	}
 

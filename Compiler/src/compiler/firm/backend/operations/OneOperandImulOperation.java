@@ -3,13 +3,13 @@ package compiler.firm.backend.operations;
 import java.util.Set;
 
 import compiler.firm.backend.Bit;
-import compiler.firm.backend.operations.templates.RegisterOperation;
+import compiler.firm.backend.operations.templates.SourceOperation;
 import compiler.firm.backend.storage.RegisterBased;
 import compiler.firm.backend.storage.RegisterBundle;
 import compiler.firm.backend.storage.VirtualRegister;
 import compiler.utils.Utils;
 
-public class OneOperandImulOperation extends RegisterOperation {
+public class OneOperandImulOperation extends SourceOperation {
 
 	private final VirtualRegister resultLow = new VirtualRegister(Bit.BIT32, RegisterBundle._AX);
 	private final VirtualRegister resultHigh = new VirtualRegister(Bit.BIT32, RegisterBundle._DX);
@@ -20,7 +20,7 @@ public class OneOperandImulOperation extends RegisterOperation {
 
 	@Override
 	public Set<RegisterBased> getReadRegisters() {
-		return Utils.unionSet(register, this.resultLow, this.resultHigh);
+		return Utils.unionSet(source, this.resultLow, this.resultHigh);
 	}
 
 	@Override
@@ -30,7 +30,7 @@ public class OneOperandImulOperation extends RegisterOperation {
 
 	@Override
 	public String getOperationString() {
-		return String.format("\timul %s", getRegister().toString());
+		return String.format("\timul %s", source.toString());
 	}
 
 	public VirtualRegister getResultLow() {
