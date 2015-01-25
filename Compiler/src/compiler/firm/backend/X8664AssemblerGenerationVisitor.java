@@ -256,12 +256,15 @@ public class X8664AssemblerGenerationVisitor implements BulkPhiNodeVisitor {
 		addOperation(new SarOperation(nodeComment, new Constant(l - 1), edx, edx));
 
 		addOperation(new SarOperation(nodeComment, new Constant(31), temp1, temp1));
-		addOperation(new SubOperation(nodeComment, temp1, edx, edx));
 
-		VirtualRegister result = edx;
+		VirtualRegister result = new VirtualRegister(mode);
+
+		addOperation(new SubOperation(nodeComment, temp1, edx, result));
+
 		if (isNegative) {
+			VirtualRegister oldResult = result;
 			result = new VirtualRegister(mode);
-			addOperation(new NegOperation(edx, result));
+			addOperation(new NegOperation(oldResult, result));
 		}
 
 		storageManagement.storeToBackEdges(divNode, result);
