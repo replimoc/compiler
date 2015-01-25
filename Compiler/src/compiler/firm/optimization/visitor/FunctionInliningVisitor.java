@@ -2,9 +2,13 @@ package compiler.firm.optimization.visitor;
 
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
 
 import compiler.firm.FirmUtils;
+import compiler.firm.optimization.visitor.inlining.CorrectBlockVisitor;
+import compiler.firm.optimization.visitor.inlining.GraphInliningCopyOperationVisitor;
 
 import firm.BackEdges;
 import firm.BackEdges.Edge;
@@ -16,6 +20,8 @@ import firm.nodes.Call;
 import firm.nodes.Node;
 
 public class FunctionInliningVisitor extends OptimizationVisitor<Node> {
+
+	private Set<Call> inlinedCalls = new HashSet<>();
 
 	public static final OptimizationVisitorFactory<Node> FACTORY = new OptimizationVisitorFactory<Node>() {
 		@Override
@@ -38,7 +44,11 @@ public class FunctionInliningVisitor extends OptimizationVisitor<Node> {
 	}
 
 	@Override
-	public void visit(final Call call) {
+	public void visit(Call call) {
+		if (inlinedCalls.contains(call))
+			return;
+
+		inlinedCalls.add(call);
 
 		System.out.println("Call " + call);
 		Address address = (Address) call.getPred(1);
@@ -84,8 +94,13 @@ public class FunctionInliningVisitor extends OptimizationVisitor<Node> {
 
 				// replace call with predecessor to keep control flow
 				addReplacement(call, call.getPred(0));
+
+				Node useBlock = blockCopyWalker.getLastBlock();
+				call.getGraph().walkPostorder(new CorrectBlockVisitor(call, call.getBlock(), useBlock, blockCopyWalker.getCopiedNodes()));
+
 				return;
 			}
 		}
 	}
+
 }

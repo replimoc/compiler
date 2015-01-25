@@ -1,5 +1,7 @@
-package compiler.firm.optimization.visitor;
+package compiler.firm.optimization.visitor.inlining;
 
+import java.util.ArrayList;
+import java.util.Collection;
 import java.util.HashMap;
 import java.util.List;
 
@@ -68,9 +70,11 @@ public class GraphInliningCopyOperationVisitor implements NodeVisitor {
 	private final Node startNode;
 	private Node result;
 	private List<Node> arguments;
+	private Node lastBlock;
 
 	public GraphInliningCopyOperationVisitor(Node startNode, List<Node> arguments) {
 		this.graph = startNode.getGraph();
+		this.lastBlock = startNode.getBlock();
 		this.startNode = startNode;
 		this.arguments = arguments;
 	}
@@ -83,7 +87,15 @@ public class GraphInliningCopyOperationVisitor implements NodeVisitor {
 		return result;
 	}
 
-	private void copyNode(Node node) {
+	public Node getLastBlock() {
+		return lastBlock;
+	}
+
+	public Collection<Node> getCopiedNodes() {
+		return nodeMapping.values();
+	}
+
+	private Node copyNode(Node node) {
 		Node copy = graph.copyNode(node);
 		copy.setBlock(getMappedNode(node.getBlock()));
 
@@ -92,6 +104,8 @@ public class GraphInliningCopyOperationVisitor implements NodeVisitor {
 		}
 
 		nodeMapping.put(node, copy);
+
+		return copy;
 	}
 
 	@Override
@@ -99,14 +113,26 @@ public class GraphInliningCopyOperationVisitor implements NodeVisitor {
 		if (block.equals(block.getGraph().getStartBlock())) {
 			nodeMapping.put(block, startNode.getBlock());
 		} else {
-			Node blockCopy = graph.newBlock(new Node[0]);
-			nodeMapping.put(block, blockCopy);
+			List<Node> predecessors = new ArrayList<Node>();
+			for (int i = 0; i < block.getPredCount(); i++) {
+				if (getMappedNode(block.getPred(i)) != null) {
+					predecessors.add(getMappedNode(block.getPred(i)));
+				}
+			}
+
+			Node[] predecessorsArray = new Node[predecessors.size()];
+			predecessors.toArray(predecessorsArray);
+			Node newBlock = graph.newBlock(predecessorsArray);
+
+			graph.keepAlive(newBlock);
+			nodeMapping.put(block, newBlock);
 		}
 	}
 
 	@Override
 	public void visit(Return ret) {
 		if (ret.getPredCount() >= 2) {
+			lastBlock = nodeMapping.get(ret.getBlock());
 			result = nodeMapping.get(ret.getPred(1));
 		}
 	}
@@ -198,7 +224,8 @@ public class GraphInliningCopyOperationVisitor implements NodeVisitor {
 
 	@Override
 	public void visit(Const node) {
-		copyNode(node);
+		Node constant = copyNode(node);
+		constant.setBlock(graph.getStartBlock());
 	}
 
 	@Override
