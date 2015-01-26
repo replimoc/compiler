@@ -53,9 +53,11 @@ public class FunctionInliningVisitor extends OptimizationVisitor<Node> {
 		Address address = (Address) call.getPred(1);
 
 		String methodName = address.getEntity().getLdName();
+
 		// address.getGraph().getNr()
 		for (Graph graph : Program.getGraphs()) {
 			if (methodName.equals(graph.getEntity().getLdName())) {
+
 				Node firstSuccessor = null;
 
 				for (Edge edge : BackEdges.getOuts(call)) {
@@ -74,6 +76,8 @@ public class FunctionInliningVisitor extends OptimizationVisitor<Node> {
 
 				GraphInliningCopyOperationVisitor blockCopyWalker = new GraphInliningCopyOperationVisitor(call, arguments);
 				graph.walkPostorder(blockCopyWalker);
+
+				blockCopyWalker.cleanupNodes();
 
 				BackEdges.enable(call.getGraph());
 
