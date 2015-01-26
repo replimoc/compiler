@@ -52,7 +52,6 @@ public class FunctionInliningVisitor extends OptimizationVisitor<Node> {
 		inlinedCalls.add(call);
 
 		Address address = (Address) call.getPred(1);
-
 		String methodName = address.getEntity().getLdName();
 
 		// address.getGraph().getNr()
@@ -90,8 +89,6 @@ public class FunctionInliningVisitor extends OptimizationVisitor<Node> {
 				blockCopyWalker.cleanupNodes();
 
 				BackEdges.enable(call.getGraph());
-
-				addReplacement(call.getPred(2), createBadNode(call.getPred(2)));
 
 				if (secondSuccessor != null) {
 					Node oldCallResult = FirmUtils.getFirstSuccessor(secondSuccessor);

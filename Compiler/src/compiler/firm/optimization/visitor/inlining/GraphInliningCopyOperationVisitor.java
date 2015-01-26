@@ -170,16 +170,25 @@ public class GraphInliningCopyOperationVisitor extends VisitAllNodeVisitor {
 
 	@Override
 	public void visit(Start start) {
+		if (nodeMapping.containsKey(start))
+			return;
+
 		nodeMapping.put(start, startNode);
 	}
 
 	@Override
 	public void visit(Address address) {
+		if (nodeMapping.containsKey(address))
+			return;
+
 		visitNode(address).setBlock(graph.getStartBlock());
 	}
 
 	@Override
 	public void visit(Const node) {
+		if (nodeMapping.containsKey(node))
+			return;
+
 		visitNode(node).setBlock(graph.getStartBlock());
 	}
 
