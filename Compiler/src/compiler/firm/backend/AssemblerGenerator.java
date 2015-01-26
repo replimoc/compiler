@@ -17,8 +17,8 @@ import compiler.firm.backend.operations.FunctionSpecificationOperation;
 import compiler.firm.backend.operations.P2AlignOperation;
 import compiler.firm.backend.operations.TextOperation;
 import compiler.firm.backend.operations.templates.AssemblerOperation;
+import compiler.firm.backend.registerallocation.InterferenceGraph;
 import compiler.firm.backend.registerallocation.LinearScanRegisterAllocation;
-import compiler.firm.backend.registerallocation.RegisterAllocationPolicy;
 
 import firm.BackEdges;
 import firm.BlockWalker;
@@ -32,8 +32,9 @@ public final class AssemblerGenerator {
 	}
 
 	public static void createAssemblerX8664(Path outputFile, final CallingConvention callingConvention, boolean doPeephole, boolean noRegisters,
-			boolean debugRegisterAllocation)
-			throws IOException {
+			boolean debugRegisterAllocation) throws IOException {
+		InterferenceGraph.setDebuggingMode(debugRegisterAllocation);
+
 		final ArrayList<AssemblerOperation> assembler = new ArrayList<>();
 
 		assembler.add(new TextOperation());
@@ -44,7 +45,8 @@ public final class AssemblerGenerator {
 		}
 
 		for (Graph graph : Program.getGraphs()) {
-			// System.out.println(graph.getEntity().getLdName());
+			if (debugRegisterAllocation)
+				System.out.println(graph.getEntity().getLdName());
 
 			BlockNodesCollectingVisitor collectorVisitor = new BlockNodesCollectingVisitor();
 			graph.walkTopological(collectorVisitor);
@@ -64,9 +66,8 @@ public final class AssemblerGenerator {
 			final HashMap<Block, ArrayList<AssemblerOperation>> operationsOfBlocks = visitor.getOperationsOfBlocks();
 			allocateRegisters(graph, operationsBlocksPostOrder, noRegisters, debugRegisterAllocation);
 
-			if (debugRegisterAllocation) {
+			if (debugRegisterAllocation)
 				generatePlainAssemblerFile(Paths.get(graph.getEntity().getLdName() + ".plain"), operationsBlocksPostOrder);
-			}
 
 			operationsBlocksPostOrder.clear(); // free some memory
 
@@ -86,9 +87,8 @@ public final class AssemblerGenerator {
 	private static void allocateRegisters(Graph graph, ArrayList<AssemblerOperation> operationsBlocksPostOrder, boolean noRegisters,
 			boolean debugRegisterAllocation) {
 		boolean isMain = MainMethodDeclaration.MAIN_METHOD_NAME.equals(graph.getEntity().getLdName());
-		RegisterAllocationPolicy regsiterPolicy = noRegisters ? RegisterAllocationPolicy.NO_REGISTERS
-				: RegisterAllocationPolicy.ALL_A_B_C_D_8_9_10_11_12_BP_DI_SI;
-		new LinearScanRegisterAllocation(regsiterPolicy, isMain, operationsBlocksPostOrder).allocateRegisters(debugRegisterAllocation);
+
+		new LinearScanRegisterAllocation(isMain, operationsBlocksPostOrder).allocateRegisters(debugRegisterAllocation);
 	}
 
 	private static ArrayList<AssemblerOperation> generateOperationsList(Graph graph, HashMap<Block, BlockInfo> blockInfos,

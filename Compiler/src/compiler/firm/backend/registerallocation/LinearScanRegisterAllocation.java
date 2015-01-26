@@ -3,10 +3,12 @@ package compiler.firm.backend.registerallocation;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.LinkedHashSet;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Set;
 
+import compiler.firm.backend.Bit;
 import compiler.firm.backend.operations.CallOperation;
 import compiler.firm.backend.operations.LabelOperation;
 import compiler.firm.backend.operations.dummy.MethodStartEndOperation;
@@ -21,15 +23,13 @@ import compiler.firm.backend.storage.VirtualRegister;
 public class LinearScanRegisterAllocation {
 	private static final int STACK_ITEM_SIZE = 8;
 
-	private final RegisterAllocationPolicy registerPolicy;
 	private final boolean isMainMethod;
 	private final List<AssemblerOperation> operations;
 
 	private final ArrayList<VirtualRegister> virtualRegisters = new ArrayList<VirtualRegister>();
 	private int currentStackOffset = 0;
 
-	public LinearScanRegisterAllocation(RegisterAllocationPolicy registerPolicy, boolean isMain, List<AssemblerOperation> operations) {
-		this.registerPolicy = registerPolicy;
+	public LinearScanRegisterAllocation(boolean isMain, List<AssemblerOperation> operations) {
 		this.isMainMethod = isMain;
 		this.operations = operations;
 	}
@@ -38,10 +38,22 @@ public class LinearScanRegisterAllocation {
 		calculateRegisterLivetime();
 
 		InterferenceGraph interferenceGraph = new InterferenceGraph(virtualRegisters);
-		AllocationResult allocationResult = InterferenceGraph.allocateRegisters(interferenceGraph, registerPolicy);
 
-		spillRegisters(allocationResult.spilledRegisters);
-		setDummyOperationsInformation(allocationResult.usedRegisters);
+		// try with spill registers
+		RegisterAllocationPolicy policy = RegisterAllocationPolicy.A_B_C_D_8_9_10_11_12_13_14_15_BP_DI_SI;
+		int availableRegisters = policy.getNumberOfRegisters(Bit.BIT64);
+		RemoveResult removeResult = InterferenceGraph.calculateRemoveListAndSpills(interferenceGraph, availableRegisters);
+		if (!removeResult.spilledRegisters.isEmpty()) { // if we need to spill, we can't use the spill registers
+			policy = RegisterAllocationPolicy.A_B_C_D_8_9_10_11_12_BP_DI_SI;
+			availableRegisters = policy.getNumberOfRegisters(Bit.BIT64);
+			removeResult = InterferenceGraph.calculateRemoveListAndSpills(interferenceGraph, availableRegisters);
+		}
+
+		LinkedHashSet<RegisterBundle> usedRegisters = InterferenceGraph
+				.allocateRegisters(interferenceGraph, policy, removeResult.removedList);
+
+		spillRegisters(removeResult.spilledRegisters);
+		setDummyOperationsInformation(usedRegisters);
 	}
 
 	// ---------------------- calculate register livetime -------------------
@@ -90,7 +102,7 @@ public class LinearScanRegisterAllocation {
 		}
 	}
 
-	private void spillRegisters(LinkedList<VirtualRegister> spilledRegisters) {
+	private void spillRegisters(List<VirtualRegister> spilledRegisters) {
 		for (VirtualRegister spilledRegister : spilledRegisters) {
 			spilledRegister.setSpilled(true);
 			currentStackOffset += STACK_ITEM_SIZE;

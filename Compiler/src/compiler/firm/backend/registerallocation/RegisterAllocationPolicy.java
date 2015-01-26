@@ -5,7 +5,7 @@ import compiler.firm.backend.storage.SingleRegister;
 
 public final class RegisterAllocationPolicy {
 
-	public static final RegisterAllocationPolicy ALL_A_B_C_D_8_9_10_11_12_BP_DI_SI = new RegisterAllocationPolicy(new SingleRegister[][] {
+	public static final RegisterAllocationPolicy A_B_C_D_8_9_10_11_12_BP_DI_SI = new RegisterAllocationPolicy(new SingleRegister[][] {
 			// 64bit registers
 			{ SingleRegister.RAX, SingleRegister.RBX, SingleRegister.RCX, SingleRegister.RDX,
 					SingleRegister.R8, SingleRegister.R9, SingleRegister.R10, SingleRegister.R11, SingleRegister.R12,
@@ -18,6 +18,24 @@ public final class RegisterAllocationPolicy {
 			{ SingleRegister.AL, SingleRegister.BL, SingleRegister.CL, SingleRegister.DL,
 					SingleRegister.R8B, SingleRegister.R9B, SingleRegister.R10B, SingleRegister.R11B, SingleRegister.R12B,
 					SingleRegister.BPL, SingleRegister.DIL, SingleRegister.SIL }
+	});
+
+	public static final RegisterAllocationPolicy A_B_C_D_8_9_10_11_12_13_14_15_BP_DI_SI = new RegisterAllocationPolicy(new SingleRegister[][] {
+			// 64bit registers
+			{ SingleRegister.RAX, SingleRegister.RBX, SingleRegister.RCX, SingleRegister.RDX,
+					SingleRegister.R8, SingleRegister.R9, SingleRegister.R10, SingleRegister.R11, SingleRegister.R12,
+					SingleRegister.RBP, SingleRegister.RDI, SingleRegister.RSI,
+					SingleRegister.R13, SingleRegister.R14, SingleRegister.R15 },
+			// 32 bit registers
+			{ SingleRegister.EAX, SingleRegister.EBX, SingleRegister.ECX, SingleRegister.EDX,
+					SingleRegister.R8D, SingleRegister.R9D, SingleRegister.R10D, SingleRegister.R11D, SingleRegister.R12D,
+					SingleRegister.EBP, SingleRegister.EDI, SingleRegister.ESI,
+					SingleRegister.R13D, SingleRegister.R14D, SingleRegister.R15D },
+			// 8 bit registers
+			{ SingleRegister.AL, SingleRegister.BL, SingleRegister.CL, SingleRegister.DL,
+					SingleRegister.R8B, SingleRegister.R9B, SingleRegister.R10B, SingleRegister.R11B, SingleRegister.R12B,
+					SingleRegister.BPL, SingleRegister.DIL, SingleRegister.SIL,
+					SingleRegister.R13B, SingleRegister.R14B, SingleRegister.R15B }
 	});
 
 	public static final RegisterAllocationPolicy NO_REGISTERS = new RegisterAllocationPolicy(new SingleRegister[][] {
