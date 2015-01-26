@@ -16,6 +16,7 @@ import compiler.firm.optimization.visitor.StrengthReductionVisitor;
 
 import firm.BackEdges;
 import firm.BackEdges.Edge;
+import firm.Entity;
 import firm.Graph;
 import firm.GraphBase;
 import firm.Mode;
@@ -35,7 +36,7 @@ public final class FirmOptimizer {
 	public static void optimize() {
 		boolean finished;
 		do {
-			HashMap<Graph, GraphDetails> graphDetails = evaluateGraphs();
+			HashMap<Entity, GraphDetails> graphDetails = evaluateGraphs();
 			finished = true;
 			finished &= optimize(NormalizationVisitor.FACTORY);
 			finished &= optimize(ConstantFoldingVisitor.FACTORY);
@@ -47,12 +48,12 @@ public final class FirmOptimizer {
 		} while (!finished);
 	}
 
-	private static HashMap<Graph, GraphDetails> evaluateGraphs() {
-		HashMap<Graph, GraphDetails> result = new HashMap<>();
+	private static HashMap<Entity, GraphDetails> evaluateGraphs() {
+		HashMap<Entity, GraphDetails> result = new HashMap<>();
 
 		for (Graph graph : Program.getGraphs()) {
 			BackEdges.enable(graph);
-			result.put(graph, new GraphDetails(hasSideEffects(graph)));
+			result.put(graph.getEntity(), new GraphDetails(hasSideEffects(graph)));
 			BackEdges.disable(graph);
 		}
 

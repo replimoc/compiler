@@ -10,9 +10,11 @@ import java.util.Set;
 
 import compiler.firm.optimization.GraphDetails;
 
-import firm.Graph;
+import firm.Entity;
 import firm.nodes.Add;
+import firm.nodes.Address;
 import firm.nodes.Block;
+import firm.nodes.Call;
 import firm.nodes.Conv;
 import firm.nodes.Minus;
 import firm.nodes.Mul;
@@ -26,7 +28,7 @@ import firm.nodes.Sub;
 
 public class LoopInvariantVisitor extends OptimizationVisitor<Node> {
 
-	public static final OptimizationVisitorFactory<Node> FACTORY(final HashMap<Graph, GraphDetails> graphDetails) {
+	public static final OptimizationVisitorFactory<Node> FACTORY(final HashMap<Entity, GraphDetails> graphDetails) {
 		return new OptimizationVisitorFactory<Node>() {
 			@Override
 			public OptimizationVisitor<Node> create() {
@@ -35,12 +37,12 @@ public class LoopInvariantVisitor extends OptimizationVisitor<Node> {
 		};
 	}
 
-	private final HashMap<Graph, GraphDetails> graphDetails;
+	private final HashMap<Entity, GraphDetails> graphDetails;
 
 	private HashMap<Node, Node> backedges = new HashMap<>();
 	private HashMap<Block, Set<Block>> dominators = new HashMap<>();
 
-	public LoopInvariantVisitor(HashMap<Graph, GraphDetails> graphDetails) {
+	public LoopInvariantVisitor(HashMap<Entity, GraphDetails> graphDetails) {
 		this.graphDetails = graphDetails;
 	}
 
@@ -88,7 +90,7 @@ public class LoopInvariantVisitor extends OptimizationVisitor<Node> {
 		Block leftBlock = (Block) getNodeOrReplacement(addNode.getLeft()).getBlock();
 		Block rightBlock = (Block) getNodeOrReplacement(addNode.getRight()).getBlock();
 
-		checkNode(new NodeFactory() {
+		replaceNodeIfPossible(new NodeFactory() {
 			@Override
 			public Node copyNode(Block newBlock) {
 				return addNode.getGraph().newAdd(newBlock, addNode.getLeft(), addNode.getRight(), addNode.getMode());
@@ -103,7 +105,7 @@ public class LoopInvariantVisitor extends OptimizationVisitor<Node> {
 		Block leftBlock = (Block) getNodeOrReplacement(subNode.getLeft()).getBlock();
 		Block rightBlock = (Block) getNodeOrReplacement(subNode.getRight()).getBlock();
 
-		checkNode(new NodeFactory() {
+		replaceNodeIfPossible(new NodeFactory() {
 			@Override
 			public Node copyNode(Block newBlock) {
 				return subNode.getGraph().newSub(newBlock, subNode.getLeft(), subNode.getRight(), subNode.getMode());
@@ -118,7 +120,7 @@ public class LoopInvariantVisitor extends OptimizationVisitor<Node> {
 		Block leftBlock = (Block) getNodeOrReplacement(shlNode.getLeft()).getBlock();
 		Block rightBlock = (Block) getNodeOrReplacement(shlNode.getRight()).getBlock();
 
-		checkNode(new NodeFactory() {
+		replaceNodeIfPossible(new NodeFactory() {
 			@Override
 			public Node copyNode(Block newBlock) {
 				return shlNode.getGraph().newShl(newBlock, shlNode.getLeft(), shlNode.getRight(), shlNode.getMode());
@@ -133,7 +135,7 @@ public class LoopInvariantVisitor extends OptimizationVisitor<Node> {
 		Block leftBlock = (Block) getNodeOrReplacement(shrNode.getLeft()).getBlock();
 		Block rightBlock = (Block) getNodeOrReplacement(shrNode.getRight()).getBlock();
 
-		checkNode(new NodeFactory() {
+		replaceNodeIfPossible(new NodeFactory() {
 			@Override
 			public Node copyNode(Block newBlock) {
 				return shrNode.getGraph().newShr(newBlock, shrNode.getLeft(), shrNode.getRight(), shrNode.getMode());
@@ -148,7 +150,7 @@ public class LoopInvariantVisitor extends OptimizationVisitor<Node> {
 		Block leftBlock = (Block) getNodeOrReplacement(shrsNode.getLeft()).getBlock();
 		Block rightBlock = (Block) getNodeOrReplacement(shrsNode.getRight()).getBlock();
 
-		checkNode(new NodeFactory() {
+		replaceNodeIfPossible(new NodeFactory() {
 			@Override
 			public Node copyNode(Block newBlock) {
 				return shrsNode.getGraph().newShrs(newBlock, shrsNode.getLeft(), shrsNode.getRight(), shrsNode.getMode());
@@ -163,7 +165,7 @@ public class LoopInvariantVisitor extends OptimizationVisitor<Node> {
 		Block leftBlock = (Block) getNodeOrReplacement(mulNode.getLeft()).getBlock();
 		Block rightBlock = (Block) getNodeOrReplacement(mulNode.getRight()).getBlock();
 
-		checkNode(new NodeFactory() {
+		replaceNodeIfPossible(new NodeFactory() {
 			@Override
 			public Node copyNode(Block newBlock) {
 				return mulNode.getGraph().newMul(newBlock, mulNode.getLeft(), mulNode.getRight(), mulNode.getMode());
@@ -177,7 +179,7 @@ public class LoopInvariantVisitor extends OptimizationVisitor<Node> {
 		final Minus minusNode = getNodeOrReplacement(minus);
 		Block operandBlock = (Block) getNodeOrReplacement(minusNode.getOp()).getBlock();
 
-		checkNode(new NodeFactory() {
+		replaceNodeIfPossible(new NodeFactory() {
 			@Override
 			public Node copyNode(Block newBlock) {
 				return minusNode.getGraph().newMinus(newBlock, minusNode.getOp(), minusNode.getMode());
@@ -191,7 +193,7 @@ public class LoopInvariantVisitor extends OptimizationVisitor<Node> {
 		final Not notNode = getNodeOrReplacement(not);
 		Block operandBlock = (Block) getNodeOrReplacement(notNode.getOp()).getBlock();
 
-		checkNode(new NodeFactory() {
+		replaceNodeIfPossible(new NodeFactory() {
 			@Override
 			public Node copyNode(Block newBlock) {
 				return notNode.getGraph().newNot(newBlock, notNode.getOp(), notNode.getMode());
@@ -205,7 +207,7 @@ public class LoopInvariantVisitor extends OptimizationVisitor<Node> {
 		final Conv convNode = getNodeOrReplacement(conv);
 		Block operandBlock = (Block) getNodeOrReplacement(convNode.getOp()).getBlock();
 
-		checkNode(new NodeFactory() {
+		replaceNodeIfPossible(new NodeFactory() {
 			@Override
 			public Node copyNode(Block newBlock) {
 				return convNode.getGraph().newConv(newBlock, convNode.getOp(), convNode.getMode());
@@ -214,7 +216,36 @@ public class LoopInvariantVisitor extends OptimizationVisitor<Node> {
 		}, convNode, operandBlock);
 	}
 
-	private void checkNode(NodeFactory factory, Node node, Block... operandBlocks) {
+	@Override
+	public void visit(Call call) {
+		final Call callNode = getNodeOrReplacement(call);
+		final Address address = (Address) callNode.getPred(1);
+		Entity entity = address.getEntity();
+		if (graphDetails.get(entity).hasSideEffects()) {
+			return;
+		}
+
+		Block[] operandBlocks = new Block[callNode.getPredCount() - 2];
+		final Node[] parameters = new Node[callNode.getPredCount() - 2];
+		for (int i = 2; i < callNode.getPredCount(); i++) {
+			parameters[i] = getNodeOrReplacement(callNode.getPred(i));
+			operandBlocks[i] = ((Block) parameters[i]).getBlock();
+		}
+
+		replaceNodeIfPossible(new NodeFactory() {
+			@Override
+			public Node copyNode(Block newBlock) {
+				return callNode.getGraph().newCall(newBlock, getMemoryBeforeLoop(callNode), address, parameters, callNode.getType());
+			}
+		}, callNode, operandBlocks);
+	}
+
+	private Node getMemoryBeforeLoop(Call callNode) {
+
+		return null;
+	}
+
+	private void replaceNodeIfPossible(NodeFactory factory, Node node, Block... operandBlocks) {
 		List<Block> operandBlocksList = Arrays.asList(operandBlocks);
 
 		if (dominators.size() > 0 && dominators.get(node.getBlock()).size() > 2) {
