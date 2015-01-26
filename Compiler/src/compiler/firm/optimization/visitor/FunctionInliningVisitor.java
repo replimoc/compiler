@@ -8,6 +8,7 @@ import java.util.Set;
 
 import compiler.firm.FirmUtils;
 import compiler.firm.optimization.visitor.inlining.CorrectBlockVisitor;
+import compiler.firm.optimization.visitor.inlining.CountNodesVisitor;
 import compiler.firm.optimization.visitor.inlining.GraphInliningCopyOperationVisitor;
 
 import firm.BackEdges;
@@ -57,6 +58,13 @@ public class FunctionInliningVisitor extends OptimizationVisitor<Node> {
 		// address.getGraph().getNr()
 		for (Graph graph : Program.getGraphs()) {
 			if (methodName.equals(graph.getEntity().getLdName())) {
+				CountNodesVisitor countVisitor = new CountNodesVisitor();
+				graph.walk(countVisitor);
+
+				if (countVisitor.getNumNodes() > 100) {
+					// Not inline it
+					return;
+				}
 
 				Node firstSuccessor = null;
 
