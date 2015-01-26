@@ -2,10 +2,14 @@ package compiler.firm.optimization.visitor.inlining;
 
 import java.util.Collection;
 
+import firm.Mode;
 import firm.nodes.Address;
 import firm.nodes.Call;
+import firm.nodes.Cond;
 import firm.nodes.Const;
+import firm.nodes.Jmp;
 import firm.nodes.Node;
+import firm.nodes.Proj;
 
 public class CorrectBlockVisitor extends VisitAllNodeVisitor {
 
@@ -28,6 +32,12 @@ public class CorrectBlockVisitor extends VisitAllNodeVisitor {
 			node.setBlock(newBlock);
 		}
 		return node;
+	}
+
+	protected void correctBlock(Node node) {
+		if (oldBlock.equals(node.getBlock()) && !newNodes.contains(node)) {
+			node.setBlock(newBlock);
+		}
 	}
 
 	protected void setStartBlock(Node node) {
@@ -53,5 +63,24 @@ public class CorrectBlockVisitor extends VisitAllNodeVisitor {
 	@Override
 	public void visit(Address address) {
 		setStartBlock(address);
+	}
+
+	@Override
+	public void visit(Cond node) {
+		correctBlock(node);
+	}
+
+	@Override
+	public void visit(Proj node) {
+		if (node.getMode().equals(Mode.getX())) {
+			correctBlock(node);
+		} else {
+			visitNode(node);
+		}
+	}
+
+	@Override
+	public void visit(Jmp node) {
+		correctBlock(node);
 	}
 }
