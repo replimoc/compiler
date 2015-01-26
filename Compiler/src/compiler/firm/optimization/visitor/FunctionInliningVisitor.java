@@ -67,11 +67,13 @@ public class FunctionInliningVisitor extends OptimizationVisitor<Node> {
 				}
 
 				Node firstSuccessor = null;
+				Node secondSuccessor = null;
 
 				for (Edge edge : BackEdges.getOuts(call)) {
-					if (edge.node.getMode().equals(Mode.getT())) {
+					if (edge.node.getMode().equals(Mode.getM())) {
 						firstSuccessor = edge.node;
-						break;
+					} else if (edge.node.getMode().equals(Mode.getT())) {
+						secondSuccessor = edge.node;
 					}
 				}
 
@@ -91,17 +93,23 @@ public class FunctionInliningVisitor extends OptimizationVisitor<Node> {
 
 				addReplacement(call.getPred(2), createBadNode(call.getPred(2)));
 
-				if (firstSuccessor != null) {
-					Node oldCallResult = FirmUtils.getFirstSuccessor(firstSuccessor);
+				if (secondSuccessor != null) {
+					Node oldCallResult = FirmUtils.getFirstSuccessor(secondSuccessor);
 
 					// remove call result
-					addReplacement(firstSuccessor, createBadNode(firstSuccessor));
+					addReplacement(secondSuccessor, createBadNode(secondSuccessor));
 					// write result to new result
 					addReplacement(oldCallResult, blockCopyWalker.getResult());
 				}
 
 				// replace call with predecessor to keep control flow
 				addReplacement(call, call.getPred(0));
+
+				addReplacement(blockCopyWalker.getStartProjM(), call.getPred(0));
+
+				System.out.println(blockCopyWalker.getStartProjM());
+
+				addReplacement(firstSuccessor, blockCopyWalker.getEndProjM());
 
 				Node useBlock = blockCopyWalker.getLastBlock();
 				call.getGraph().walkPostorder(new CorrectBlockVisitor(call, call.getBlock(), useBlock, blockCopyWalker.getCopiedNodes()));

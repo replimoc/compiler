@@ -30,6 +30,8 @@ public class GraphInliningCopyOperationVisitor extends VisitAllNodeVisitor {
 	private Node lastBlock;
 	private HashMap<Node, Node> blockPredecessors = new HashMap<>();
 	private Set<Phi> phis = new HashSet<Phi>();
+	private Node startProjM;
+	private Node endProjM;
 
 	public GraphInliningCopyOperationVisitor(Node startNode, List<Node> arguments) {
 		this.graph = startNode.getGraph();
@@ -57,6 +59,14 @@ public class GraphInliningCopyOperationVisitor extends VisitAllNodeVisitor {
 
 			Graph.exchange(badNode, newPhi);
 		}
+	}
+
+	public Node getStartProjM() {
+		return startProjM;
+	}
+
+	public Node getEndProjM() {
+		return endProjM;
 	}
 
 	private Node getMappedNode(Node node) {
@@ -135,8 +145,10 @@ public class GraphInliningCopyOperationVisitor extends VisitAllNodeVisitor {
 		if (nodeMapping.containsKey(ret))
 			return;
 
+		endProjM = getMappedNode(ret.getPred(0));
+		lastBlock = nodeMapping.get(ret.getBlock());
+
 		if (ret.getPredCount() >= 2) {
-			lastBlock = nodeMapping.get(ret.getBlock());
 			result = nodeMapping.get(ret.getPred(1));
 		}
 	}
@@ -149,6 +161,8 @@ public class GraphInliningCopyOperationVisitor extends VisitAllNodeVisitor {
 		// Handle arguments
 		if (proj.getPred(0).equals(proj.getGraph().getArgs())) {
 			nodeMapping.put(proj, this.arguments.get(proj.getNum()));
+		} else if (proj.getPred(0).equals(proj.getGraph().getStart())) {
+			startProjM = visitNode(proj);
 		} else {
 			visitNode(proj);
 		}
