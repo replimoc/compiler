@@ -60,7 +60,7 @@ public class FunctionInliningVisitor extends OptimizationVisitor<Node> {
 				CountNodesVisitor countVisitor = new CountNodesVisitor();
 				graph.walk(countVisitor);
 
-				if (countVisitor.getNumNodes() > 100) {
+				if (countVisitor.getNumNodes() > 10000) {
 					// Not inline it
 					return;
 				}
@@ -103,8 +103,6 @@ public class FunctionInliningVisitor extends OptimizationVisitor<Node> {
 				addReplacement(call, call.getPred(0));
 
 				addReplacement(blockCopyWalker.getStartProjM(), call.getPred(0));
-
-				System.out.println(blockCopyWalker.getStartProjM());
 
 				addReplacement(firstSuccessor, blockCopyWalker.getEndProjM());
 

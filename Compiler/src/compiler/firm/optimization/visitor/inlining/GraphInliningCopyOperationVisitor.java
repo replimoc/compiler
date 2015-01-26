@@ -142,15 +142,6 @@ public class GraphInliningCopyOperationVisitor extends VisitAllNodeVisitor {
 
 	@Override
 	public void visit(Return ret) {
-		if (nodeMapping.containsKey(ret))
-			return;
-
-		endProjM = getMappedNode(ret.getPred(0));
-		lastBlock = nodeMapping.get(ret.getBlock());
-
-		if (ret.getPredCount() >= 2) {
-			result = nodeMapping.get(ret.getPred(1));
-		}
 	}
 
 	@Override
@@ -193,7 +184,63 @@ public class GraphInliningCopyOperationVisitor extends VisitAllNodeVisitor {
 	}
 
 	@Override
-	public void visit(End arg0) {
+	public void visit(End end) {
+		Node endBlock = end.getBlock();
+
+		List<ReturnInfo> returns = new ArrayList<>();
+		for (Node pred : endBlock.getPreds()) {
+			returns.add(buildReturnInfo(pred));
+		}
+
+		ReturnInfo returnInfo = buildReturnInfo(returns, 0, returns.size() - 1);
+
+		result = returnInfo.result;
+		endProjM = returnInfo.modeM;
+		lastBlock = returnInfo.block;
+	}
+
+	private ReturnInfo buildReturnInfo(List<ReturnInfo> returns, int left, int right) {
+		int diff = right - left;
+		if (diff == 0) {
+			return returns.get(left);
+		} else {
+			ReturnInfo leftReturn = buildReturnInfo(returns, left, diff / 2);
+			ReturnInfo rightReturn = buildReturnInfo(returns, diff / 2 + 1, right);
+
+			Node leftJmp = graph.newJmp(leftReturn.block);
+			Node rightJmp = graph.newJmp(rightReturn.block);
+
+			Node block = graph.newBlock(new Node[] { leftJmp, rightJmp });
+
+			Node modeM = graph.newPhi(block, new Node[] { leftReturn.modeM, rightReturn.modeM }, Mode.getM());
+
+			Node result = null;
+			if (leftReturn.result != null) {
+				result = graph.newPhi(block, new Node[] { leftReturn.result, rightReturn.result }, leftReturn.result.getMode());
+			}
+
+			return new ReturnInfo(block, modeM, result);
+		}
+	}
+
+	private static class ReturnInfo {
+		public final Node modeM;
+		public final Node block;
+		public final Node result;
+
+		public ReturnInfo(Node block, Node modeM, Node result) {
+			this.modeM = modeM;
+			this.block = block;
+			this.result = result;
+		}
+	}
+
+	private ReturnInfo buildReturnInfo(Node ret) {
+		Node result = null;
+		if (ret.getPredCount() >= 2) {
+			result = nodeMapping.get(ret.getPred(1));
+		}
+		return new ReturnInfo(nodeMapping.get(ret.getBlock()), nodeMapping.get(ret.getPred(0)), result);
 	}
 
 }
