@@ -27,7 +27,6 @@ import firm.nodes.Block;
 import firm.nodes.Node;
 import firm.nodes.Phi;
 import firm.nodes.Proj;
-import firm.nodes.Return;
 
 public final class FirmOptimizer {
 	private FirmOptimizer() {
@@ -65,12 +64,13 @@ public final class FirmOptimizer {
 			if (startFollower.node.getMode().equals(Mode.getM())) {
 				Proj projM = (Proj) startFollower.node;
 
-				if (BackEdges.getNOuts(projM) == 1) {
-					Edge projMFollower = BackEdges.getOuts(projM).iterator().next();
-					if (projMFollower.node instanceof Return) {
-						return false;
+				Iterable<Node> returns = graph.getEndBlock().getPreds();
+				for (Node ret : returns) {
+					if (!ret.getPred(0).equals(projM)) {
+						return true;
 					}
 				}
+				return false;
 			}
 		}
 

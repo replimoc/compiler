@@ -10,7 +10,10 @@ import java.util.Set;
 
 import compiler.firm.optimization.GraphDetails;
 
+import firm.BackEdges;
+import firm.BackEdges.Edge;
 import firm.Entity;
+import firm.Mode;
 import firm.nodes.Add;
 import firm.nodes.Address;
 import firm.nodes.Block;
@@ -20,6 +23,8 @@ import firm.nodes.Minus;
 import firm.nodes.Mul;
 import firm.nodes.Node;
 import firm.nodes.Not;
+import firm.nodes.Phi;
+import firm.nodes.Proj;
 import firm.nodes.Shl;
 import firm.nodes.Shr;
 import firm.nodes.Shrs;
@@ -41,6 +46,7 @@ public class LoopInvariantVisitor extends OptimizationVisitor<Node> {
 
 	private HashMap<Node, Node> backedges = new HashMap<>();
 	private HashMap<Block, Set<Block>> dominators = new HashMap<>();
+	private HashMap<Block, Phi> loopPhis = new HashMap<>();
 
 	public LoopInvariantVisitor(HashMap<Entity, GraphDetails> graphDetails) {
 		this.graphDetails = graphDetails;
@@ -68,7 +74,7 @@ public class LoopInvariantVisitor extends OptimizationVisitor<Node> {
 					if (entry.getValue().equals(b)) {
 						if (dominators.containsKey(entry.getKey()) && !dominators.get(entry.getKey()).contains(block)
 								&& !dominatorBlocks.contains(entry.getKey())) {
-							// b and the looṕ header are on the same 'level'
+							// b and the loop header are on the same 'level'
 							sameLevelLoops.add(b);
 							continue L1;
 						}
@@ -221,27 +227,36 @@ public class LoopInvariantVisitor extends OptimizationVisitor<Node> {
 		final Call callNode = getNodeOrReplacement(call);
 		final Address address = (Address) callNode.getPred(1);
 		Entity entity = address.getEntity();
-		if (graphDetails.get(entity).hasSideEffects()) {
+		if (!graphDetails.containsKey(entity) || graphDetails.get(entity).hasSideEffects()) {
 			return;
 		}
 
 		Block[] operandBlocks = new Block[callNode.getPredCount() - 2];
 		final Node[] parameters = new Node[callNode.getPredCount() - 2];
 		for (int i = 2; i < callNode.getPredCount(); i++) {
-			parameters[i] = getNodeOrReplacement(callNode.getPred(i));
-			operandBlocks[i] = ((Block) parameters[i]).getBlock();
+			parameters[i - 2] = getNodeOrReplacement(callNode.getPred(i));
+			operandBlocks[i - 2] = (Block) (parameters[i - 2]).getBlock();
 		}
 
 		replaceNodeIfPossible(new NodeFactory() {
 			@Override
 			public Node copyNode(Block newBlock) {
-				return callNode.getGraph().newCall(newBlock, getMemoryBeforeLoop(callNode), address, parameters, callNode.getType());
+				Node mem = getMemoryBeforeLoop(callNode);
+				if (mem == null)
+					return null;
+				return callNode.getGraph().newCall(newBlock, mem, address, parameters, callNode.getType());
 			}
 		}, callNode, operandBlocks);
 	}
 
 	private Node getMemoryBeforeLoop(Call callNode) {
-
+		if (backedges.containsKey((Block) callNode.getBlock())) {
+			Block loopBlock = (Block) backedges.get((Block) callNode.getBlock());
+			if (loopPhis.containsKey(loopBlock)) {
+				Phi loopPhi = loopPhis.get(loopBlock);
+				return loopPhi.getPred(0);
+			}
+		}
 		return null;
 	}
 
@@ -260,6 +275,28 @@ public class LoopInvariantVisitor extends OptimizationVisitor<Node> {
 				if (domBorder.containsAll(operandBlocksList)) {
 					Node copy = factory.copyNode(preLoopBlock);
 					addReplacement(node, copy);
+					if (node instanceof Call) {
+						// proj T result
+						Proj projT = (Proj) BackEdges.getOuts(node).iterator().next().node;
+						Node copyT = node.getGraph().newProj(copy, projT.getMode(), projT.getNum());
+						addReplacement(projT, copyT);
+						for (Edge projEdge : BackEdges.getOuts(projT)) {
+							// proj nodes after proj T
+							Proj proj = (Proj) projEdge.node;
+							Node copyProj = node.getGraph().newProj(copyT, proj.getMode(), proj.getNum());
+							addReplacement(proj, copyProj);
+						}
+
+						for (Edge memPhi : BackEdges.getOuts(node)) {
+							if (memPhi.node.getMode().equals(Mode.getM()) && memPhi.node instanceof Proj) {
+								// memory phi after call
+								Proj proj = (Proj) memPhi.node;
+								Node copyProj = node.getGraph().newProj(node, proj.getMode(), proj.getNum());
+								copyProj.setBlock(preLoopBlock);
+								addReplacement(proj, copyProj);
+							}
+						}
+					}
 				}
 			}
 		}
@@ -275,6 +312,7 @@ public class LoopInvariantVisitor extends OptimizationVisitor<Node> {
 		FirmUtils utils = new FirmUtils(start.getGraph());
 		dominators = utils.getDominators();
 		backedges = utils.getBackEdges();
+		loopPhis = utils.getLoopPhis();
 	}
 
 	private static interface NodeFactory {
