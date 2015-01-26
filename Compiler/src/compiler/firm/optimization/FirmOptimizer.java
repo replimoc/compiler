@@ -18,29 +18,62 @@ import firm.BackEdges;
 import firm.BackEdges.Edge;
 import firm.Graph;
 import firm.GraphBase;
+import firm.Mode;
 import firm.Program;
 import firm.bindings.binding_irgopt;
 import firm.bindings.binding_irgraph;
 import firm.nodes.Block;
 import firm.nodes.Node;
 import firm.nodes.Phi;
+import firm.nodes.Proj;
+import firm.nodes.Return;
 
 public final class FirmOptimizer {
 	private FirmOptimizer() {
 	}
 
 	public static void optimize() {
-		boolean finished = true;
+		boolean finished;
 		do {
+			HashMap<Graph, GraphDetails> graphDetails = evaluateGraphs();
 			finished = true;
 			finished &= optimize(NormalizationVisitor.FACTORY);
 			finished &= optimize(ConstantFoldingVisitor.FACTORY);
 			finished &= optimize(LocalOptimizationVisitor.FACTORY);
 			finished &= optimize(ControlFlowVisitor.FACTORY);
 			finished &= optimize(CommonSubexpressionEliminationVisitor.FACTORY);
-			finished &= optimize(LoopInvariantVisitor.FACTORY);
+			finished &= optimize(LoopInvariantVisitor.FACTORY(graphDetails));
 			finished &= optimize(StrengthReductionVisitor.FACTORY);
 		} while (!finished);
+	}
+
+	private static HashMap<Graph, GraphDetails> evaluateGraphs() {
+		HashMap<Graph, GraphDetails> result = new HashMap<>();
+
+		for (Graph graph : Program.getGraphs()) {
+			BackEdges.enable(graph);
+			result.put(graph, new GraphDetails(hasSideEffects(graph)));
+			BackEdges.disable(graph);
+		}
+
+		return result;
+	}
+
+	private static boolean hasSideEffects(Graph graph) {
+		for (Edge startFollower : BackEdges.getOuts(graph.getStart())) {
+			if (startFollower.node.getMode().equals(Mode.getM())) {
+				Proj projM = (Proj) startFollower.node;
+
+				if (BackEdges.getNOuts(projM) == 1) {
+					Edge projMFollower = BackEdges.getOuts(projM).iterator().next();
+					if (projMFollower.node instanceof Return) {
+						return false;
+					}
+				}
+			}
+		}
+
+		return true;
 	}
 
 	public static <T> boolean optimize(OptimizationVisitorFactory<T> visitorFactory) {
