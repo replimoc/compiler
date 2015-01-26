@@ -88,7 +88,7 @@ public final class AssemblerGenerator {
 			boolean debugRegisterAllocation) {
 		boolean isMain = MainMethodDeclaration.MAIN_METHOD_NAME.equals(graph.getEntity().getLdName());
 
-		new LinearScanRegisterAllocation(isMain, operationsBlocksPostOrder).allocateRegisters(debugRegisterAllocation);
+		new LinearScanRegisterAllocation(isMain, operationsBlocksPostOrder).allocateRegisters(debugRegisterAllocation, noRegisters);
 	}
 
 	private static ArrayList<AssemblerOperation> generateOperationsList(Graph graph, HashMap<Block, BlockInfo> blockInfos,

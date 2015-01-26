@@ -34,19 +34,27 @@ public class LinearScanRegisterAllocation {
 		this.operations = operations;
 	}
 
-	public void allocateRegisters(boolean debugRegisterAllocation) {
+	public void allocateRegisters(boolean debugRegisterAllocation, boolean noRegisters) {
 		calculateRegisterLivetime();
 
 		InterferenceGraph interferenceGraph = new InterferenceGraph(virtualRegisters);
 
-		// try with spill registers
-		RegisterAllocationPolicy policy = RegisterAllocationPolicy.A_BP_B_12_13_14_15__DI_SI_D_C_8_9_10_11;
-		int availableRegisters = policy.getNumberOfRegisters(Bit.BIT64);
-		RemoveResult removeResult = InterferenceGraph.calculateRemoveListAndSpills(interferenceGraph, availableRegisters);
-		if (!removeResult.spilledRegisters.isEmpty()) { // if we need to spill, we can't use the spill registers
-			policy = RegisterAllocationPolicy.A_BP_B_12__DI_SI_D_C_8_9_10_11;
-			availableRegisters = policy.getNumberOfRegisters(Bit.BIT64);
+		RegisterAllocationPolicy policy;
+		RemoveResult removeResult;
+		if (noRegisters) {
+			policy = RegisterAllocationPolicy.NO_REGISTERS;
+			int availableRegisters = policy.getNumberOfRegisters(Bit.BIT64);
 			removeResult = InterferenceGraph.calculateRemoveListAndSpills(interferenceGraph, availableRegisters);
+		} else {
+			// try with spill registers
+			policy = RegisterAllocationPolicy.A_BP_B_12_13_14_15__DI_SI_D_C_8_9_10_11;
+			int availableRegisters = policy.getNumberOfRegisters(Bit.BIT64);
+			removeResult = InterferenceGraph.calculateRemoveListAndSpills(interferenceGraph, availableRegisters);
+			if (!removeResult.spilledRegisters.isEmpty()) { // if we need to spill, we can't use the spill registers
+				policy = RegisterAllocationPolicy.A_BP_B_12__DI_SI_D_C_8_9_10_11;
+				availableRegisters = policy.getNumberOfRegisters(Bit.BIT64);
+				removeResult = InterferenceGraph.calculateRemoveListAndSpills(interferenceGraph, availableRegisters);
+			}
 		}
 
 		LinkedHashSet<RegisterBundle> usedRegisters = InterferenceGraph
