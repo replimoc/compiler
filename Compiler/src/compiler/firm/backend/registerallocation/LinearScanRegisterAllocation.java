@@ -51,7 +51,7 @@ public class LinearScanRegisterAllocation {
 			int availableRegisters = policy.getNumberOfRegisters(Bit.BIT64);
 			removeResult = InterferenceGraph.calculateRemoveListAndSpills(interferenceGraph, availableRegisters);
 			if (!removeResult.spilledRegisters.isEmpty()) { // if we need to spill, we can't use the spill registers
-				policy = RegisterAllocationPolicy.A_BP_B_12__DI_SI_D_C_8_9_10_11;
+				policy = RegisterAllocationPolicy.A_BP_B_12_13_14_15__DI_SI_D_C_8;
 				availableRegisters = policy.getNumberOfRegisters(Bit.BIT64);
 				removeResult = InterferenceGraph.calculateRemoveListAndSpills(interferenceGraph, availableRegisters);
 			}
