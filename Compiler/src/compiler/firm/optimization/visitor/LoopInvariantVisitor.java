@@ -276,24 +276,24 @@ public class LoopInvariantVisitor extends OptimizationVisitor<Node> {
 					Node copy = factory.copyNode(preLoopBlock);
 					addReplacement(node, copy);
 					if (node instanceof Call) {
-						// proj T result
-						Proj projT = (Proj) BackEdges.getOuts(node).iterator().next().node;
-						Node copyT = node.getGraph().newProj(copy, projT.getMode(), projT.getNum());
-						addReplacement(projT, copyT);
-						for (Edge projEdge : BackEdges.getOuts(projT)) {
-							// proj nodes after proj T
-							Proj proj = (Proj) projEdge.node;
-							Node copyProj = node.getGraph().newProj(copyT, proj.getMode(), proj.getNum());
-							addReplacement(proj, copyProj);
-						}
-
-						for (Edge memPhi : BackEdges.getOuts(node)) {
-							if (memPhi.node.getMode().equals(Mode.getM()) && memPhi.node instanceof Proj) {
-								// memory phi after call
-								Proj proj = (Proj) memPhi.node;
-								Node copyProj = node.getGraph().newProj(node, proj.getMode(), proj.getNum());
+						for (Edge backEdge : BackEdges.getOuts(node)) {
+							Node followerNode = backEdge.node;
+							if (followerNode.getMode().equals(Mode.getM()) && followerNode instanceof Proj) {
+								Proj projM = (Proj) followerNode;
+								Node copyProj = node.getGraph().newProj(node, projM.getMode(), projM.getNum());
 								copyProj.setBlock(preLoopBlock);
-								addReplacement(proj, copyProj);
+								addReplacement(projM, copyProj);
+
+							} else if (followerNode.getMode().equals(Mode.getT()) && followerNode instanceof Proj) {
+								Proj projT = (Proj) followerNode;
+								Node copyT = node.getGraph().newProj(copy, projT.getMode(), projT.getNum());
+								addReplacement(projT, copyT);
+								for (Edge projEdge : BackEdges.getOuts(projT)) {
+									// proj nodes after proj T
+									Proj proj = (Proj) projEdge.node;
+									Node copyProj = node.getGraph().newProj(copyT, proj.getMode(), proj.getNum());
+									addReplacement(proj, copyProj);
+								}
 							}
 						}
 					}
