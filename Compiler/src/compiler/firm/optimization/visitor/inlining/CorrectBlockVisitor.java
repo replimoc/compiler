@@ -35,13 +35,15 @@ public class CorrectBlockVisitor extends VisitAllNodeVisitor {
 	}
 
 	private boolean hasModeM(Node node) {
-		if (node.getPredCount() > 0 && node.getPred(0).getMode().equals(Mode.getM())) {
-			Node predecessor = node;
-			while (predecessor != null && predecessor.getPredCount() > 0) {
-				if (predecessor.equals(startOperation)) {
+		if (node.getMode().equals(Mode.getM())) {
+			if (node.equals(startOperation)) {
+				return true;
+			}
+
+			for (Node predecessor : node.getPreds()) {
+				if (hasModeM(predecessor)) {
 					return true;
 				}
-				predecessor = predecessor.getPred(0);
 			}
 		}
 		return false;
