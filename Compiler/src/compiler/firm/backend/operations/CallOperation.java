@@ -80,42 +80,40 @@ public class CallOperation extends AssemblerOperation {
 
 		// The following is before filling registers to have no problem with register allocation.
 		RegisterBundle[] callingRegisters = callingConvention.getParameterRegisters();
-		int numberOfstackParameters = parameters.size() - callingRegisters.length;
+		int numberOfStackParameters = parameters.size() - callingRegisters.length;
 
 		HashMap<RegisterBundle, MemoryPointer> registerStackLocations = new HashMap<>();
-		int stackPosition = STACK_ITEM_SIZE * (callerSavedRegisters.size() + Math.max(0, numberOfstackParameters) - 1);
+		int stackPosition = STACK_ITEM_SIZE * (callerSavedRegisters.size() + Math.max(0, numberOfStackParameters) - 1);
 		int maxStackOffset = stackPosition + STACK_ITEM_SIZE;
 
 		// Save all callerSavedRegisters to stack
 		for (RegisterBundle saveRegister : callerSavedRegisters) {
-			result.add(new PushOperation(Bit.BIT64, saveRegister.getRegister(Bit.BIT64)).toString());
+			result.add(new PushOperation(saveRegister.getRegister(Bit.BIT64)).toString());
 			// maxStackOffset will be added by temporaryStackOffset
 			registerStackLocations.put(saveRegister, new MemoryPointer(stackPosition - maxStackOffset, SingleRegister.RSP));
-
 			stackPosition -= STACK_ITEM_SIZE;
 		}
 
-		Constant stackAllocationSize = new Constant(STACK_ITEM_SIZE * numberOfstackParameters);
+		Constant stackAllocationSize = new Constant(STACK_ITEM_SIZE * numberOfStackParameters);
 
-		if (numberOfstackParameters > 0) {
-			result.add(new SubOperation(stackAllocationSize, SingleRegister.RSP, SingleRegister.RSP).toString());
-
-			RegisterBundle temporaryRegister = getTemporaryRegister();
-
+		if (numberOfStackParameters > 0) {
+			stackPosition = STACK_ITEM_SIZE * callerSavedRegisters.size();
 			// Copy parameters to stack
-			for (int i = 0; i < numberOfstackParameters; i++) {
+			for (int i = numberOfStackParameters - 1; i >= 0; i--) {
 				Parameter source = parameters.get(i + callingRegisters.length);
 				// Copy parameter
-				MemoryPointer destinationPointer = new MemoryPointer(i * STACK_ITEM_SIZE, SingleRegister.RSP);
-				source.storage.setTemporaryStackOffset(maxStackOffset);
-				if (source.storage instanceof MemoryPointer
-						|| (source.storage.getClass() == VirtualRegister.class && source.storage.isSpilled())) {
-					result.add(new MovOperation(source.storage, temporaryRegister.getRegister(source.mode)).toString());
-					result.add(new MovOperation(temporaryRegister.getRegister(source.mode), destinationPointer).toString());
+				source.storage.setTemporaryStackOffset(stackPosition);
+				Storage sourceStorage;
+
+				if (source.storage.getRegisterBundle() != null) { // TODO: make this work with high and low bytes of registers
+					sourceStorage = source.storage.getRegisterBundle().getRegister(Bit.BIT64);
 				} else {
-					result.add(new MovOperation(source.storage, destinationPointer).toString());
+					sourceStorage = source.storage;
 				}
+
+				result.add(new PushOperation(sourceStorage).toString());
 				source.storage.setTemporaryStackOffset(0);
+				stackPosition += STACK_ITEM_SIZE;
 			}
 		}
 
@@ -129,15 +127,13 @@ public class CallOperation extends AssemblerOperation {
 				storage = registerStackLocations.get(storage.getRegisterBundle());
 			}
 			storage.setTemporaryStackOffset(maxStackOffset);
-
 			result.add(new MovOperation(storage, register.getRegister(source.mode)).toString());
-
 			storage.setTemporaryStackOffset(0);
 		}
 
 		result.add(toString());
 
-		if (numberOfstackParameters > 0) {
+		if (numberOfStackParameters > 0) {
 			result.add(new AddOperation(stackAllocationSize, SingleRegister.RSP, SingleRegister.RSP).toString());
 		}
 

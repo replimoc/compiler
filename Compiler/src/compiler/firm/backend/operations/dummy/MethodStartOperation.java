@@ -31,7 +31,7 @@ public class MethodStartOperation extends MethodStartEndOperation {
 		RegisterBundle[] registers = callingConvention.calleeSavedRegisters();
 		for (int i = 0; i < registers.length; i++) {
 			if (super.isRegisterSaveNeeded(registers[i])) {
-				result.add(new PushOperation(Bit.BIT64, registers[i].getRegister(Bit.BIT64)).toString());
+				result.add(new PushOperation(registers[i].getRegister(Bit.BIT64)).toString());
 			}
 		}
 

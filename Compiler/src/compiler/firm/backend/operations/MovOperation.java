@@ -64,7 +64,7 @@ public class MovOperation extends AssemblerBitOperation {
 					return new String[] { toString() };
 				} else {
 					Storage oldSource = this.source;
-					this.source = getTemporaryRegister().getRegister(getDestination().getMode());
+					this.source = getSpillRegister().getRegister(getDestination().getMode());
 					String[] result = new String[] {
 							new MovOperation(oldSource, this.source).toString(),
 							toString()

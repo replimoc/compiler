@@ -94,7 +94,7 @@ public abstract class AssemblerBitOperation extends AssemblerOperation {
 	private Storage insertSpillcode(VirtualRegister virtualRegister, List<String> result, boolean restore) {
 		Storage stackPointer = virtualRegister.getRegister();
 
-		RegisterBundle temporaryRegisterBundle = getTemporaryRegister();
+		RegisterBundle temporaryRegisterBundle = getSpillRegister();
 		SingleRegister temporaryRegister = temporaryRegisterBundle.getRegister(virtualRegister.getMode());
 
 		if (restore) {
