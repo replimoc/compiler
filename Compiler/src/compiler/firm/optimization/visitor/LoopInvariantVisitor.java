@@ -8,8 +8,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
-import compiler.firm.optimization.GraphDetails;
-
+import compiler.firm.optimization.evaluation.ProgramDetails;
 import firm.BackEdges;
 import firm.BackEdges.Edge;
 import firm.Entity;
@@ -33,23 +32,23 @@ import firm.nodes.Sub;
 
 public class LoopInvariantVisitor extends OptimizationVisitor<Node> {
 
-	public static final OptimizationVisitorFactory<Node> FACTORY(final HashMap<Entity, GraphDetails> graphDetails) {
+	public static final OptimizationVisitorFactory<Node> FACTORY(final ProgramDetails programDetails) {
 		return new OptimizationVisitorFactory<Node>() {
 			@Override
 			public OptimizationVisitor<Node> create() {
-				return new LoopInvariantVisitor(graphDetails);
+				return new LoopInvariantVisitor(programDetails);
 			}
 		};
 	}
 
-	private final HashMap<Entity, GraphDetails> graphDetails;
+	private final ProgramDetails programDetails;
 
 	private HashMap<Node, Node> backedges = new HashMap<>();
 	private HashMap<Block, Set<Block>> dominators = new HashMap<>();
 	private HashMap<Block, Phi> loopPhis = new HashMap<>();
 
-	public LoopInvariantVisitor(HashMap<Entity, GraphDetails> graphDetails) {
-		this.graphDetails = graphDetails;
+	public LoopInvariantVisitor(ProgramDetails programDetails) {
+		this.programDetails = programDetails;
 	}
 
 	@Override
@@ -227,7 +226,7 @@ public class LoopInvariantVisitor extends OptimizationVisitor<Node> {
 		final Call callNode = getNodeOrReplacement(call);
 		final Address address = (Address) callNode.getPred(1);
 		Entity entity = address.getEntity();
-		if (!graphDetails.containsKey(entity) || graphDetails.get(entity).hasSideEffects()) {
+		if (!programDetails.hasNoSideEffects(entity)) {
 			return;
 		}
 
@@ -250,8 +249,8 @@ public class LoopInvariantVisitor extends OptimizationVisitor<Node> {
 	}
 
 	private Node getMemoryBeforeLoop(Call callNode) {
-		if (backedges.containsKey((Block) callNode.getBlock())) {
-			Block loopBlock = (Block) backedges.get((Block) callNode.getBlock());
+		if (backedges.containsKey(callNode.getBlock())) {
+			Block loopBlock = (Block) backedges.get(callNode.getBlock());
 			if (loopPhis.containsKey(loopBlock)) {
 				Phi loopPhi = loopPhis.get(loopBlock);
 				return loopPhi.getPred(0);

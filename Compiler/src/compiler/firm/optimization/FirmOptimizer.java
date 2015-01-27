@@ -4,6 +4,8 @@ import java.util.HashMap;
 import java.util.LinkedList;
 import java.util.Map.Entry;
 
+import compiler.firm.optimization.evaluation.GraphEvaluationVisitor;
+import compiler.firm.optimization.evaluation.ProgramDetails;
 import compiler.firm.optimization.visitor.CommonSubexpressionEliminationVisitor;
 import compiler.firm.optimization.visitor.ConstantFoldingVisitor;
 import compiler.firm.optimization.visitor.ControlFlowVisitor;
@@ -16,17 +18,14 @@ import compiler.firm.optimization.visitor.StrengthReductionVisitor;
 
 import firm.BackEdges;
 import firm.BackEdges.Edge;
-import firm.Entity;
 import firm.Graph;
 import firm.GraphBase;
-import firm.Mode;
 import firm.Program;
 import firm.bindings.binding_irgopt;
 import firm.bindings.binding_irgraph;
 import firm.nodes.Block;
 import firm.nodes.Node;
 import firm.nodes.Phi;
-import firm.nodes.Proj;
 
 public final class FirmOptimizer {
 	private FirmOptimizer() {
@@ -35,46 +34,29 @@ public final class FirmOptimizer {
 	public static void optimize() {
 		boolean finished;
 		do {
-			HashMap<Entity, GraphDetails> graphDetails = evaluateGraphs();
+			ProgramDetails programDetails = evaluateGraphs();
 			finished = true;
 			finished &= optimize(NormalizationVisitor.FACTORY);
 			finished &= optimize(ConstantFoldingVisitor.FACTORY);
 			finished &= optimize(LocalOptimizationVisitor.FACTORY);
 			finished &= optimize(ControlFlowVisitor.FACTORY);
 			finished &= optimize(CommonSubexpressionEliminationVisitor.FACTORY);
-			finished &= optimize(LoopInvariantVisitor.FACTORY(graphDetails));
+			finished &= optimize(LoopInvariantVisitor.FACTORY(programDetails));
 			finished &= optimize(StrengthReductionVisitor.FACTORY);
 		} while (!finished);
 	}
 
-	private static HashMap<Entity, GraphDetails> evaluateGraphs() {
-		HashMap<Entity, GraphDetails> result = new HashMap<>();
+	private static ProgramDetails evaluateGraphs() {
+		ProgramDetails programDetails = new ProgramDetails();
 
 		for (Graph graph : Program.getGraphs()) {
 			BackEdges.enable(graph);
-			result.put(graph.getEntity(), new GraphDetails(hasSideEffects(graph)));
+			programDetails.getEntityDetails(graph.getEntity()).setHasNoSideEffects(GraphEvaluationVisitor.hasNoSideEffects(graph));
+			graph.walk(new GraphEvaluationVisitor(programDetails));
 			BackEdges.disable(graph);
 		}
 
-		return result;
-	}
-
-	private static boolean hasSideEffects(Graph graph) {
-		for (Edge startFollower : BackEdges.getOuts(graph.getStart())) {
-			if (startFollower.node.getMode().equals(Mode.getM())) {
-				Proj projM = (Proj) startFollower.node;
-
-				Iterable<Node> returns = graph.getEndBlock().getPreds();
-				for (Node ret : returns) {
-					if (!ret.getPred(0).equals(projM)) {
-						return true;
-					}
-				}
-				return false;
-			}
-		}
-
-		return true;
+		return programDetails;
 	}
 
 	public static <T> boolean optimize(OptimizationVisitorFactory<T> visitorFactory) {
