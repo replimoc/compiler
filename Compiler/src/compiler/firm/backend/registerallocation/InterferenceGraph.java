@@ -180,20 +180,31 @@ public class InterferenceGraph {
 
 	private RegisterBundle getFreeRegisterBundle(VirtualRegister register, RegisterAllocationPolicy allocationPolicy) {
 		LinkedHashSet<VirtualRegister> interferringNodes = graph.get(register);
-		SingleRegister[] availableRegisters = allocationPolicy.getAllowedRegisters(Bit.BIT64);
 
-		OUTER: for (SingleRegister currRegister : availableRegisters) {
+		for (RegisterBundle preferredBundle : register.getPreferedRegisterBundles()) {
+			if (allocationPolicy.contains(preferredBundle) && isBundleAllocatable(preferredBundle, interferringNodes)) {
+				return preferredBundle;
+			}
+		}
+
+		for (SingleRegister currRegister : allocationPolicy.getAllowedRegisters(Bit.BIT64)) {
 			RegisterBundle currBundle = currRegister.getRegisterBundle();
 
-			for (VirtualRegister currEdgeNode : interferringNodes) {// check if interfering registers use this one
-				if (currEdgeNode.getRegister() != null && currEdgeNode.getRegisterBundle() == currBundle) {
-					continue OUTER;
-				}
+			if (isBundleAllocatable(currBundle, interferringNodes)) {
+				return currBundle;
 			}
-			return currBundle;
 		}
 
 		throw new RuntimeException("THIS MAY NEVER HAPPEN!");
+	}
+
+	private boolean isBundleAllocatable(RegisterBundle currBundle, LinkedHashSet<VirtualRegister> interferringNodes) {
+		for (VirtualRegister currEdgeNode : interferringNodes) {// check if interfering registers use this one
+			if (currEdgeNode.getRegister() != null && currEdgeNode.getRegisterBundle() == currBundle) {
+				return false;
+			}
+		}
+		return true;
 	}
 
 	private VirtualRegister selectNodeWithLessInterferences(int availableRegisters) {

@@ -1,6 +1,7 @@
 package compiler.firm.backend.registerallocation;
 
 import compiler.firm.backend.Bit;
+import compiler.firm.backend.storage.RegisterBundle;
 import compiler.firm.backend.storage.SingleRegister;
 
 public final class RegisterAllocationPolicy {
@@ -111,5 +112,16 @@ public final class RegisterAllocationPolicy {
 
 	public SingleRegister[] getAllowedRegisters(Bit mode) {
 		return allowedRegisters[mode.ordinal()];
+	}
+
+	public boolean contains(RegisterBundle bundle) {
+		for (int i = 0; i < allowedRegisters.length; i++) {
+			for (int r = 0; r < allowedRegisters[i].length; r++) {
+				if (allowedRegisters[i][r].getRegisterBundle() == bundle) {
+					return true;
+				}
+			}
+		}
+		return false;
 	}
 }
