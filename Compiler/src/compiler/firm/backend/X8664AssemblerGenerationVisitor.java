@@ -338,7 +338,7 @@ public class X8664AssemblerGenerationVisitor implements BulkPhiNodeVisitor {
 		String methodName = getMethodName(node);
 
 		if (node.equals(graph.getStartBlock())) {
-			addOperation(new LabelOperation(methodName));
+			addOperation(new LabelOperation(methodName, true));
 			methodStart(node);
 		}
 
