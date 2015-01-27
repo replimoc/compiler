@@ -7,8 +7,8 @@ import firm.Entity;
 public class ProgramDetails {
 	private final HashMap<Entity, EntityDetails> entityDetails = new HashMap<>();
 
-	public boolean hasNoSideEffects(Entity entity) {
-		EntityDetails details = entityDetails.get(entity);
+	public boolean hasNoSideEffects(Entity graph) {
+		EntityDetails details = entityDetails.get(graph);
 		return details != null && details.hasNoSideEffects();
 	}
 
@@ -19,6 +19,10 @@ public class ProgramDetails {
 			entityDetails.put(entity, details);
 		}
 		return details;
+	}
+
+	public HashMap<Entity, EntityDetails> getEntityDetails() {
+		return entityDetails;
 	}
 
 }

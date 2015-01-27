@@ -9,6 +9,7 @@ import java.util.Map;
 import java.util.Set;
 
 import compiler.firm.optimization.evaluation.ProgramDetails;
+
 import firm.BackEdges;
 import firm.BackEdges.Edge;
 import firm.Entity;

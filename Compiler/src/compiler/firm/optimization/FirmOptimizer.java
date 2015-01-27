@@ -2,7 +2,6 @@ package compiler.firm.optimization;
 
 import java.util.HashMap;
 import java.util.LinkedList;
-import java.util.Map.Entry;
 
 import compiler.firm.optimization.evaluation.GraphEvaluationVisitor;
 import compiler.firm.optimization.evaluation.ProgramDetails;
@@ -21,7 +20,6 @@ import firm.BackEdges.Edge;
 import firm.Graph;
 import firm.GraphBase;
 import firm.Program;
-import firm.bindings.binding_irgopt;
 import firm.bindings.binding_irgraph;
 import firm.nodes.Block;
 import firm.nodes.Node;
@@ -43,6 +41,7 @@ public final class FirmOptimizer {
 			finished &= optimize(CommonSubexpressionEliminationVisitor.FACTORY);
 			finished &= optimize(LoopInvariantVisitor.FACTORY(programDetails));
 			finished &= optimize(StrengthReductionVisitor.FACTORY);
+			finished &= MethodParametersEliminator.eliminateObsoleteParameters(programDetails);
 		} while (!finished);
 	}
 
@@ -51,7 +50,7 @@ public final class FirmOptimizer {
 
 		for (Graph graph : Program.getGraphs()) {
 			BackEdges.enable(graph);
-			programDetails.getEntityDetails(graph.getEntity()).setHasNoSideEffects(GraphEvaluationVisitor.hasNoSideEffects(graph));
+			GraphEvaluationVisitor.calculateStaticDetails(graph, programDetails.getEntityDetails(graph.getEntity()));
 			graph.walk(new GraphEvaluationVisitor(programDetails));
 			BackEdges.disable(graph);
 		}
@@ -75,10 +74,8 @@ public final class FirmOptimizer {
 
 			finished &= targetValues.isEmpty();
 
-			replaceNodesWithTargets(graph, targetValues);
-
-			binding_irgopt.remove_unreachable_code(graph.ptr);
-			binding_irgopt.remove_bads(graph.ptr);
+			compiler.firm.FirmUtils.replaceNodes(targetValues);
+			compiler.firm.FirmUtils.removeBadsAndUnreachable(graph);
 		}
 		return finished;
 	}
@@ -137,14 +134,4 @@ public final class FirmOptimizer {
 		}
 	}
 
-	private static void replaceNodesWithTargets(Graph graph, HashMap<Node, Node> targetValuesMap) {
-		for (Entry<Node, Node> targetEntry : targetValuesMap.entrySet()) {
-			Node node = targetEntry.getKey();
-			Node replacement = targetEntry.getValue();
-
-			if (node.getPredCount() > 0 && !node.equals(replacement)) {
-				Graph.exchange(node, replacement);
-			}
-		}
-	}
 }
