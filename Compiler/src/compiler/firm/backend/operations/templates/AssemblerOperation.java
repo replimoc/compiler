@@ -59,9 +59,9 @@ public abstract class AssemblerOperation {
 		return false;
 	}
 
-	protected RegisterBundle getTemporaryRegister() {
+	protected RegisterBundle getSpillRegister() {
 		if (accumulatorRegister >= ACCUMULATOR_REGISTERS.length) {
-			throw new RuntimeException("Running out of accumulator registers");
+			throw new RuntimeException("Running out of spill registers");
 		}
 		return ACCUMULATOR_REGISTERS[accumulatorRegister++];
 	}
