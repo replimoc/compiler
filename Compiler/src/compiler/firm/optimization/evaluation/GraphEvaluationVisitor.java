@@ -75,6 +75,7 @@ public class GraphEvaluationVisitor extends AbstractFirmNodesVisitor {
 		final Address address = (Address) callNode.getPred(1);
 		Entity entity = address.getEntity();
 		EntityDetails entityDetails = programDetails.getEntityDetails(entity);
+
 		entityDetails.addCallInfo(callNode, constantArguments);
 	}
 

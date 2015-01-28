@@ -48,7 +48,6 @@ public class ProgramDetails {
 	}
 
 	public void updateGraph(Graph graph) {
-		entityDetails.remove(graph.getEntity());
 		BackEdges.enable(graph);
 		GraphEvaluationVisitor.calculateStaticDetails(graph, getEntityDetails(graph.getEntity()));
 		graph.walk(new GraphEvaluationVisitor(this));
