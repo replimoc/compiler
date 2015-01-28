@@ -1,8 +1,15 @@
 package compiler.firm.optimization.evaluation;
 
+import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.List;
+import java.util.Map.Entry;
 
+import firm.BackEdges;
 import firm.Entity;
+import firm.Graph;
+import firm.nodes.Call;
+import firm.nodes.Node;
 
 public class ProgramDetails {
 	private final HashMap<Entity, EntityDetails> entityDetails = new HashMap<>();
@@ -21,8 +28,30 @@ public class ProgramDetails {
 		return details;
 	}
 
+	public EntityDetails getEntityDetails(Node node) {
+		return getEntityDetails(node.getGraph().getEntity());
+	}
+
 	public HashMap<Entity, EntityDetails> getEntityDetails() {
 		return entityDetails;
 	}
 
+	public List<Call> getCalls() {
+		List<Call> calls = new ArrayList<>();
+		for (Entry<Entity, EntityDetails> entityDetailEntry : getEntityDetails().entrySet()) {
+			EntityDetails entityDetails = entityDetailEntry.getValue();
+			for (Entry<Call, CallInformation> callInfo : entityDetails.getCallsToEntity().entrySet()) {
+				calls.add(callInfo.getKey());
+			}
+		}
+		return calls;
+	}
+
+	public void updateGraph(Graph graph) {
+		entityDetails.remove(graph.getEntity());
+		BackEdges.enable(graph);
+		GraphEvaluationVisitor.calculateStaticDetails(graph, getEntityDetails(graph.getEntity()));
+		graph.walk(new GraphEvaluationVisitor(this));
+		BackEdges.disable(graph);
+	}
 }

@@ -3,7 +3,6 @@ package compiler.firm.optimization;
 import java.util.HashMap;
 import java.util.LinkedList;
 
-import compiler.firm.optimization.evaluation.GraphEvaluationVisitor;
 import compiler.firm.optimization.evaluation.ProgramDetails;
 import compiler.firm.optimization.visitor.CommonSubexpressionEliminationVisitor;
 import compiler.firm.optimization.visitor.ControlFlowVisitor;
@@ -48,10 +47,7 @@ public final class FirmOptimizer {
 		ProgramDetails programDetails = new ProgramDetails();
 
 		for (Graph graph : Program.getGraphs()) {
-			BackEdges.enable(graph);
-			GraphEvaluationVisitor.calculateStaticDetails(graph, programDetails.getEntityDetails(graph.getEntity()));
-			graph.walk(new GraphEvaluationVisitor(programDetails));
-			BackEdges.disable(graph);
+			programDetails.updateGraph(graph);
 		}
 
 		return programDetails;

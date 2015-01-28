@@ -12,9 +12,12 @@ import firm.MethodType;
 import firm.Mode;
 import firm.nodes.Address;
 import firm.nodes.Call;
+import firm.nodes.Cmp;
 import firm.nodes.Const;
+import firm.nodes.Jmp;
 import firm.nodes.Node;
 import firm.nodes.Proj;
+import firm.nodes.Return;
 
 public class GraphEvaluationVisitor extends AbstractFirmNodesVisitor {
 
@@ -73,5 +76,25 @@ public class GraphEvaluationVisitor extends AbstractFirmNodesVisitor {
 		Entity entity = address.getEntity();
 		EntityDetails entityDetails = programDetails.getEntityDetails(entity);
 		entityDetails.addCallInfo(callNode, constantArguments);
+	}
+
+	private void collectEnd(Node node) {
+		EntityDetails entityDetails = programDetails.getEntityDetails(node.getGraph().getEntity());
+		entityDetails.addBlockInfo(node.getBlock(), new BlockInformation(node));
+	}
+
+	@Override
+	public void visit(Cmp cmp) {
+		collectEnd(cmp);
+	}
+
+	@Override
+	public void visit(Jmp jmp) {
+		collectEnd(jmp);
+	}
+
+	@Override
+	public void visit(Return ret) {
+		collectEnd(ret);
 	}
 }

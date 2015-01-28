@@ -3,20 +3,16 @@ package compiler.firm.optimization;
 import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
-import java.util.Map.Entry;
 import java.util.Set;
 
 import compiler.firm.FirmUtils;
-import compiler.firm.optimization.evaluation.CallInformation;
-import compiler.firm.optimization.evaluation.EntityDetails;
+import compiler.firm.optimization.evaluation.BlockInformation;
 import compiler.firm.optimization.evaluation.ProgramDetails;
 import compiler.firm.optimization.visitor.inlining.CountNodesVisitor;
-import compiler.firm.optimization.visitor.inlining.GetNodesForBlockVisitor;
 import compiler.firm.optimization.visitor.inlining.GraphInliningCopyOperationVisitor;
 
 import firm.BackEdges;
 import firm.BackEdges.Edge;
-import firm.Entity;
 import firm.Graph;
 import firm.Mode;
 import firm.nodes.Address;
@@ -27,21 +23,22 @@ public final class MethodInliner {
 
 	public static boolean inlineCalls(ProgramDetails programDetails) {
 		boolean changes = false;
-		for (Entry<Entity, EntityDetails> entityDetailEntry : programDetails.getEntityDetails().entrySet()) {
-			for (Entry<Call, CallInformation> callInfo : entityDetailEntry.getValue().getCallsToEntity().entrySet()) {
-				Call call = callInfo.getKey();
+		List<Call> calls = programDetails.getCalls();
+		for (Call call : calls) {
+			Address address = (Address) call.getPred(1);
+			Graph graph = address.getEntity().getGraph();
 
-				Address address = (Address) call.getPred(1);
-				Graph graph = address.getEntity().getGraph();
+			if (graph != null) {
+				CountNodesVisitor countVisitor = new CountNodesVisitor();
+				graph.walk(countVisitor);
 
-				if (graph != null) {
-					CountNodesVisitor countVisitor = new CountNodesVisitor();
-					graph.walk(countVisitor);
+				if (countVisitor.getNumNodes() <= 10000) {
+					changes = true;
 
-					if (countVisitor.getNumNodes() <= 10000) {
-						changes = true;
-						inline(call, graph);
-					}
+					programDetails.updateGraph(call.getGraph());
+					BlockInformation blockInformation = programDetails.getEntityDetails(call)
+							.getBlockInformation(call.getBlock());
+					inline(call, graph, blockInformation);
 				}
 			}
 		}
@@ -49,13 +46,12 @@ public final class MethodInliner {
 		return !changes;
 	}
 
-	private static void inline(Call call, Graph graph) {
-		GetNodesForBlockVisitor nodesForBlock = new GetNodesForBlockVisitor(call.getBlock());
-		call.getGraph().walk(nodesForBlock);
-
+	private static void inline(Call call, Graph graph, BlockInformation blockInformation) {
 		BackEdges.enable(call.getGraph());
 		Set<Node> moveNodes = getAllSuccessorsInSameBlock(call);
-		moveNodes.addAll(getAllSuccessorsInSameBlock(nodesForBlock.getEnd()));
+		if (blockInformation != null) {
+			moveNodes.addAll(getAllSuccessorsInSameBlock(blockInformation.getEndNode()));
+		}
 
 		Node firstSuccessor = null;
 		Node secondSuccessor = null;
