@@ -19,7 +19,7 @@ public class CountNodesVisitor extends VisitAllNodeVisitor {
 
 	@Override
 	public void visit(Call call) {
-		numNodes += 1000; // Do not inline recursions
+		numNodes += 10000; // Do not inline recursions
 	}
 
 }

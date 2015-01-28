@@ -3,10 +3,9 @@ package compiler.firm.optimization.visitor.inlining;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.HashMap;
-import java.util.HashSet;
+import java.util.LinkedList;
 import java.util.List;
 import java.util.Map.Entry;
-import java.util.Set;
 
 import firm.Graph;
 import firm.Mode;
@@ -29,7 +28,7 @@ public class GraphInliningCopyOperationVisitor extends VisitAllNodeVisitor {
 	private List<Node> arguments;
 	private Node lastBlock;
 	private HashMap<Node, Node> blockPredecessors = new HashMap<>();
-	private Set<Phi> phis = new HashSet<Phi>();
+	private LinkedList<Phi> phis = new LinkedList<Phi>();
 	private Node startProjM;
 	private Node endProjM;
 
@@ -48,21 +47,15 @@ public class GraphInliningCopyOperationVisitor extends VisitAllNodeVisitor {
 		}
 
 		for (Phi phi : phis) {
-			Node[] predecessors = new Node[] {
-					getMappedNode(phi.getPred(0)),
-					getMappedNode(phi.getPred(1))
-			};
-
-			Node badNode = getMappedNode(phi);
-
-			if (predecessors[0].equals(predecessors[1])) {
-				Graph.exchange(badNode, predecessors[0]);
-			} else {
-				Phi newPhi = (Phi) graph.newPhi(getMappedNode(phi.getBlock()), predecessors, phi.getMode());
-				newPhi.setLoop(phi.getLoop());
-
-				Graph.exchange(badNode, newPhi);
+			Node[] predecessors = new Node[phi.getPredCount()];
+			for (int i = 0; i < phi.getPredCount(); i++) {
+				predecessors[i] = getMappedNode(phi.getPred(i));
 			}
+
+			Phi newPhi = (Phi) graph.newPhi(getMappedNode(phi.getBlock()), predecessors, phi.getMode());
+			newPhi.setLoop(phi.getLoop());
+
+			Graph.exchange(getMappedNode(phi), newPhi);
 		}
 	}
 

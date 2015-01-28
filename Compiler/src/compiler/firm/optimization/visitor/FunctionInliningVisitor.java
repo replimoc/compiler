@@ -7,8 +7,8 @@ import java.util.List;
 import java.util.Set;
 
 import compiler.firm.FirmUtils;
-import compiler.firm.optimization.visitor.inlining.CorrectBlockVisitor;
 import compiler.firm.optimization.visitor.inlining.CountNodesVisitor;
+import compiler.firm.optimization.visitor.inlining.GetNodesForBlockVisitor;
 import compiler.firm.optimization.visitor.inlining.GraphInliningCopyOperationVisitor;
 
 import firm.BackEdges;
@@ -65,6 +65,14 @@ public class FunctionInliningVisitor extends OptimizationVisitor<Node> {
 					return;
 				}
 
+				Set<Node> keepInBlockNodes = getAllPredecessorsInSameBlock(call);
+
+				GetNodesForBlockVisitor nodesForBlock = new GetNodesForBlockVisitor(call.getBlock());
+				call.getGraph().walk(nodesForBlock);
+
+				Set<Node> moveNodes = nodesForBlock.getNodes();
+				moveNodes.removeAll(keepInBlockNodes);
+
 				Node firstSuccessor = null;
 				Node secondSuccessor = null;
 
@@ -107,9 +115,27 @@ public class FunctionInliningVisitor extends OptimizationVisitor<Node> {
 				addReplacement(firstSuccessor, blockCopyWalker.getEndProjM());
 
 				Node useBlock = blockCopyWalker.getLastBlock();
-				call.getGraph().walkPostorder(new CorrectBlockVisitor(call, call.getBlock(), useBlock, blockCopyWalker.getCopiedNodes()));
+
+				for (Node node : moveNodes) {
+					node.setBlock(useBlock);
+				}
 
 				return;
+			}
+		}
+	}
+
+	private Set<Node> getAllPredecessorsInSameBlock(Node node) {
+		Set<Node> nodes = new HashSet<>();
+		getAllPredecessorsInBlock(node, node.getBlock(), nodes);
+		return nodes;
+	}
+
+	private void getAllPredecessorsInBlock(Node node, Node block, Set<Node> result) {
+		for (Node predecessor : node.getPreds()) {
+			if (predecessor.getBlock() != null && predecessor.getBlock().equals(block) && !result.contains(predecessor)) {
+				result.add(predecessor);
+				getAllPredecessorsInBlock(predecessor, block, result);
 			}
 		}
 	}
