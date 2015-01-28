@@ -39,7 +39,7 @@ public final class FirmOptimizer {
 			finished &= optimize(CommonSubexpressionEliminationVisitor.FACTORY);
 			finished &= optimize(LoopInvariantVisitor.FACTORY(programDetails));
 			// finished &= optimize(StrengthReductionVisitor.FACTORY);
-			finished &= MethodParametersEliminator.eliminateObsoleteParameters(programDetails);
+			// finished &= MethodParametersEliminator.eliminateObsoleteParameters(programDetails);
 			finished &= MethodInliner.inlineCalls(programDetails);
 		} while (!finished);
 	}
