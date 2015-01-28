@@ -1,7 +1,6 @@
 package compiler.firm.optimization;
 
 import java.util.ArrayList;
-import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map.Entry;
@@ -51,13 +50,10 @@ public final class MethodInliner {
 	}
 
 	private static void inline(Call call, Graph graph) {
-		HashMap<Node, Node> nodeReplacements = new HashMap<>();
-
-		BackEdges.enable(call.getGraph());
-
 		GetNodesForBlockVisitor nodesForBlock = new GetNodesForBlockVisitor(call.getBlock());
 		call.getGraph().walk(nodesForBlock);
 
+		BackEdges.enable(call.getGraph());
 		Set<Node> moveNodes = getAllSuccessorsInSameBlock(call);
 		moveNodes.addAll(getAllSuccessorsInSameBlock(nodesForBlock.getEnd()));
 
@@ -71,47 +67,38 @@ public final class MethodInliner {
 				secondSuccessor = edge.node;
 			}
 		}
+		BackEdges.disable(call.getGraph());
 
 		List<Node> arguments = new ArrayList<>();
 		for (int i = 2; i < call.getPredCount(); i++) {
 			arguments.add(call.getPred(i));
 		}
 
-		BackEdges.disable(call.getGraph());
-
 		GraphInliningCopyOperationVisitor blockCopyWalker = new GraphInliningCopyOperationVisitor(call, arguments);
 		graph.walkPostorder(blockCopyWalker);
 
 		blockCopyWalker.cleanupNodes();
 
-		BackEdges.enable(call.getGraph());
-
 		if (secondSuccessor != null) {
+			BackEdges.enable(call.getGraph());
 			Node oldCallResult = FirmUtils.getFirstSuccessor(secondSuccessor);
+			BackEdges.disable(call.getGraph());
 
 			// remove call result
-			nodeReplacements.put(secondSuccessor, createBadNode(secondSuccessor));
+			Graph.exchange(secondSuccessor, createBadNode(secondSuccessor));
 			// write result to new result
-			nodeReplacements.put(oldCallResult, blockCopyWalker.getResult());
+			Graph.exchange(oldCallResult, blockCopyWalker.getResult());
 		}
 
 		// replace call with predecessor to keep control flow
-		nodeReplacements.put(call, call.getPred(0));
-
-		nodeReplacements.put(blockCopyWalker.getStartProjM(), call.getPred(0));
-
-		nodeReplacements.put(firstSuccessor, blockCopyWalker.getEndProjM());
+		Graph.exchange(call, call.getPred(0));
+		Graph.exchange(blockCopyWalker.getStartProjM(), call.getPred(0));
+		Graph.exchange(firstSuccessor, blockCopyWalker.getEndProjM());
 
 		Node useBlock = blockCopyWalker.getLastBlock();
 
 		for (Node node : moveNodes) {
 			node.setBlock(useBlock);
-		}
-
-		BackEdges.disable(call.getGraph());
-
-		for (Entry<Node, Node> replacement : nodeReplacements.entrySet()) {
-			Graph.exchange(replacement.getKey(), replacement.getValue());
 		}
 	}
 
