@@ -26,17 +26,14 @@ public class InliningCopyGraphVisitor extends AbstractFirmNodesVisitor {
 	private final Graph graph;
 	private HashMap<Node, Node> nodeMapping = new HashMap<>();
 	private final Node startNode;
-	private Node result;
 	private List<Node> arguments;
-	private Node lastBlock;
 	private HashMap<Node, Node> blockPredecessors = new HashMap<>();
 	private LinkedList<Phi> phis = new LinkedList<Phi>();
 	private Node startProjM;
-	private Node endProjM;
+	private ReturnInfo methodReturnInfo;
 
 	public InliningCopyGraphVisitor(Node startNode, List<Node> arguments) {
 		this.graph = startNode.getGraph();
-		this.lastBlock = startNode.getBlock();
 		this.startNode = startNode;
 		this.arguments = arguments;
 	}
@@ -66,7 +63,7 @@ public class InliningCopyGraphVisitor extends AbstractFirmNodesVisitor {
 	}
 
 	public Node getEndProjM() {
-		return endProjM;
+		return methodReturnInfo.modeM;
 	}
 
 	private Node getMappedNode(Node node) {
@@ -77,11 +74,11 @@ public class InliningCopyGraphVisitor extends AbstractFirmNodesVisitor {
 	}
 
 	public Node getResult() {
-		return result;
+		return methodReturnInfo.result;
 	}
 
 	public Node getLastBlock() {
-		return lastBlock;
+		return methodReturnInfo.block;
 	}
 
 	public Collection<Node> getCopiedNodes() {
@@ -192,37 +189,36 @@ public class InliningCopyGraphVisitor extends AbstractFirmNodesVisitor {
 		Node endBlock = end.getBlock();
 
 		List<ReturnInfo> returns = new ArrayList<>();
-		for (Node pred : endBlock.getPreds()) {
-			returns.add(buildReturnInfo(pred));
+		for (int i = 0; i < endBlock.getPredCount(); i++) {
+			returns.add(buildReturnInfo(endBlock.getPred(i)));
 		}
 
-		ReturnInfo returnInfo = buildReturnInfo(returns, 0, returns.size() - 1);
-
-		result = returnInfo.result;
-		endProjM = returnInfo.modeM;
-		lastBlock = returnInfo.block;
+		methodReturnInfo = buildReturnInfo(returns);
 	}
 
-	private ReturnInfo buildReturnInfo(List<ReturnInfo> returns, int left, int right) {
-		int diff = right - left;
-		if (diff == 0) {
-			return returns.get(left);
+	private ReturnInfo buildReturnInfo(List<ReturnInfo> returns) {
+		if (returns.size() == 1) {
+			return returns.get(0);
 		} else {
-			ReturnInfo leftReturn = buildReturnInfo(returns, left, diff / 2);
-			ReturnInfo rightReturn = buildReturnInfo(returns, diff / 2 + 1, right);
+			Node[] jumps = new Node[returns.size()];
+			Node[] modeMPredecessor = new Node[returns.size()];
+			Node[] results = new Node[returns.size()];
 
-			Node leftJmp = graph.newJmp(leftReturn.block);
-			Node rightJmp = graph.newJmp(rightReturn.block);
-
-			Node block = graph.newBlock(new Node[] { leftJmp, rightJmp });
-
-			Node modeM = graph.newPhi(block, new Node[] { leftReturn.modeM, rightReturn.modeM }, Mode.getM());
-
-			Node result = null;
-			if (leftReturn.result != null) {
-				result = graph.newPhi(block, new Node[] { leftReturn.result, rightReturn.result }, leftReturn.result.getMode());
+			int i = 0;
+			for (ReturnInfo ret : returns) {
+				jumps[i] = graph.newJmp(ret.block);
+				modeMPredecessor[i] = ret.modeM;
+				results[i] = ret.result;
+				i++;
 			}
 
+			Node block = graph.newBlock(jumps);
+			Node modeM = graph.newPhi(block, modeMPredecessor, Mode.getM());
+			Node result = null;
+
+			if (results[0] != null) {
+				result = graph.newPhi(block, results, results[0].getMode());
+			}
 			return new ReturnInfo(block, modeM, result);
 		}
 	}
