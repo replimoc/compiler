@@ -20,7 +20,6 @@ import firm.BackEdges.Edge;
 import firm.Entity;
 import firm.Graph;
 import firm.Mode;
-import firm.Program;
 import firm.nodes.Address;
 import firm.nodes.Call;
 import firm.nodes.Node;
@@ -34,24 +33,15 @@ public final class MethodInliner {
 				Call call = callInfo.getKey();
 
 				Address address = (Address) call.getPred(1);
-				String methodName = address.getEntity().getLdName();
+				Graph graph = address.getEntity().getGraph();
 
-				// address.getGraph().getNr()
-				for (Graph graph : Program.getGraphs()) {
-					if (methodName.equals(graph.getEntity().getLdName())) {
-						CountNodesVisitor countVisitor = new CountNodesVisitor();
-						graph.walk(countVisitor);
+				if (graph != null) {
+					CountNodesVisitor countVisitor = new CountNodesVisitor();
+					graph.walk(countVisitor);
 
-						if (countVisitor.getNumNodes() > 10000) {
-							// Not inline it
-							continue;
-						}
-
+					if (countVisitor.getNumNodes() <= 10000) {
 						changes = true;
-						System.out.println(methodName);
-
 						inline(call, graph);
-
 					}
 				}
 			}
