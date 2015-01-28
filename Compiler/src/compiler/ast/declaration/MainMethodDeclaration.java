@@ -11,6 +11,8 @@ import compiler.lexer.Position;
 
 public class MainMethodDeclaration extends MethodDeclaration {
 
+	public static final String MAIN_METHOD_NAME = "_main";
+
 	public MainMethodDeclaration(Position position, Symbol identifier, List<ParameterDeclaration> parameters, Type returnType, Block block) {
 		super(position, true, identifier, parameters, returnType, block);
 	}
@@ -27,6 +29,6 @@ public class MainMethodDeclaration extends MethodDeclaration {
 
 	@Override
 	public String getAssemblerName() {
-		return "_main";
+		return MAIN_METHOD_NAME;
 	}
 }

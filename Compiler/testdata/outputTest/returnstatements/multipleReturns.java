@@ -13,6 +13,5 @@ class Test {
 		} else {
 			return x+x;
 		}
-		return x+x+x;
 	}
 }

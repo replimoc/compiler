@@ -28,7 +28,6 @@ class Test {
 			
 			System.out.println(6);
 			return;
-			System.out.println(-6);
 		}
 	}
 }

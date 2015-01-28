@@ -1,14 +1,18 @@
 package compiler.firm.backend.operations;
 
-import java.util.Arrays;
+import java.util.Set;
 
 import compiler.firm.backend.Bit;
-import compiler.firm.backend.operations.templates.RegisterOperation;
+import compiler.firm.backend.operations.templates.SourceOperation;
 import compiler.firm.backend.storage.RegisterBased;
 import compiler.firm.backend.storage.RegisterBundle;
 import compiler.firm.backend.storage.VirtualRegister;
+import compiler.utils.Utils;
 
-public class IdivOperation extends RegisterOperation {
+public class IdivOperation extends SourceOperation {
+
+	private final VirtualRegister result = new VirtualRegister(Bit.BIT32, RegisterBundle._AX);
+	private final VirtualRegister remainder = new VirtualRegister(Bit.BIT32, RegisterBundle._DX);
 
 	public IdivOperation(RegisterBased register) {
 		super(null, register);
@@ -16,23 +20,24 @@ public class IdivOperation extends RegisterOperation {
 
 	@Override
 	public String getOperationString() {
-		return String.format("\tidiv %s", getRegister().toString());
+		return String.format("\tidiv %s", source.toString());
 	}
 
 	@Override
-	public RegisterBased[] getReadRegisters() {
-		RegisterBased[] usedRegister = getRegister().getUsedRegister();
-		RegisterBased[] result = Arrays.copyOf(usedRegister, usedRegister.length + 2);
-		result[usedRegister.length] = new VirtualRegister(Bit.BIT32, RegisterBundle._DX);
-		result[usedRegister.length + 1] = new VirtualRegister(Bit.BIT32, RegisterBundle._AX);
+	public Set<RegisterBased> getReadRegisters() {
+		return Utils.unionSet(source.getUsedRegister(), new RegisterBased[] { result, remainder });
+	}
+
+	@Override
+	public Set<RegisterBased> getWriteRegisters() {
+		return Utils.<RegisterBased> unionSet(result, remainder);
+	}
+
+	public VirtualRegister getResult() {
 		return result;
 	}
 
-	@Override
-	public RegisterBased[] getWriteRegisters() {
-		return new RegisterBased[] {
-				new VirtualRegister(Bit.BIT32, RegisterBundle._DX),
-				new VirtualRegister(Bit.BIT32, RegisterBundle._AX)
-		};
+	public VirtualRegister getRemainder() {
+		return remainder;
 	}
 }

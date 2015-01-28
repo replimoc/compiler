@@ -5,31 +5,34 @@ import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.HashMap;
-import java.util.LinkedList;
 import java.util.List;
 
+import compiler.ast.declaration.MainMethodDeclaration;
+import compiler.firm.backend.FirmGraphTraverser.BlockInfo;
 import compiler.firm.backend.calling.CallingConvention;
 import compiler.firm.backend.operations.FunctionSpecificationOperation;
 import compiler.firm.backend.operations.P2AlignOperation;
 import compiler.firm.backend.operations.TextOperation;
 import compiler.firm.backend.operations.templates.AssemblerOperation;
+import compiler.firm.backend.registerallocation.LinearScanRegisterAllocation;
+import compiler.firm.backend.registerallocation.RegisterAllocationPolicy;
 
 import firm.BackEdges;
 import firm.BlockWalker;
 import firm.Graph;
 import firm.Program;
-import firm.bindings.binding_irgraph;
 import firm.nodes.Block;
-import firm.nodes.Node;
 
 public final class AssemblerGenerator {
 
 	private AssemblerGenerator() {
 	}
 
-	public static void createAssemblerX8664(Path outputFile, HashMap<String, CallingConvention> callingConvention, boolean doPeephole)
+	public static void createAssemblerX8664(Path outputFile, final CallingConvention callingConvention, boolean doPeephole, boolean noRegisters,
+			boolean debugRegisterAllocation)
 			throws IOException {
 		final ArrayList<AssemblerOperation> assembler = new ArrayList<>();
 
@@ -46,91 +49,60 @@ public final class AssemblerGenerator {
 			BlockNodesCollectingVisitor collectorVisitor = new BlockNodesCollectingVisitor();
 			graph.walkTopological(collectorVisitor);
 
-			final X8664AssemblerGenerationVisitor visitor = new X8664AssemblerGenerationVisitor(callingConvention);
 			// final NodeNumberPrintingVisitor printer = new NodeNumberPrintingVisitor();
 
-			visitor.addListOfAllPhis(collectorVisitor.getAllPhis());
+			HashMap<Block, BlockNodes> nodesPerBlockMap = collectorVisitor.getNodesPerBlockMap();
+			X8664AssemblerGenerationVisitor visitor = new X8664AssemblerGenerationVisitor(callingConvention);
 
 			BackEdges.enable(graph);
-
-			final HashMap<Block, BlockNodes> nodesPerBlockMap = collectorVisitor.getNodesPerBlockMap();
-			walkBlocksPostOrder(graph, new BlockWalker() {
-				@Override
-				public void visitBlock(Block block) {
-					nodesPerBlockMap.get(block).visitNodes(visitor, nodesPerBlockMap);
-				}
-			});
+			HashMap<Block, BlockInfo> blockInfos = FirmGraphTraverser.calculateBlockInfos(graph);
+			FirmGraphTraverser.walkBlocksAllocationFriendly(graph, blockInfos, new BlockNodesWalker(visitor, nodesPerBlockMap));
 			BackEdges.disable(graph);
 
-			ArrayList<AssemblerOperation> operations = visitor.getOperations();
+			visitor.finishOperationsList();
+			ArrayList<AssemblerOperation> operationsBlocksPostOrder = visitor.getAllOperations();
+			final HashMap<Block, ArrayList<AssemblerOperation>> operationsOfBlocks = visitor.getOperationsOfBlocks();
+			allocateRegisters(graph, operationsBlocksPostOrder, noRegisters, debugRegisterAllocation);
 
-			// TODO remove next line when it's not needed any more
-			// generatePlainAssemblerFile(Paths.get(graph.getEntity().getLdName() + ".plain"), operations);
+			if (debugRegisterAllocation) {
+				generatePlainAssemblerFile(Paths.get(graph.getEntity().getLdName() + ".plain"), operationsBlocksPostOrder);
+			}
 
-			allocateRegisters(operations);
+			operationsBlocksPostOrder.clear(); // free some memory
+
+			ArrayList<AssemblerOperation> operationsList = generateOperationsList(graph, blockInfos, operationsOfBlocks);
+
 			if (doPeephole) {
-				PeepholeOptimizer peepholeOptimizer = new PeepholeOptimizer(operations, assembler);
+				PeepholeOptimizer peepholeOptimizer = new PeepholeOptimizer(operationsList, assembler);
 				peepholeOptimizer.optimize();
 			} else {
-				assembler.addAll(operations);
+				assembler.addAll(operationsList);
 			}
 		}
 
 		generateAssemblerFile(outputFile, assembler);
 	}
 
-	private static void walkBlocksPostOrder(Graph graph, BlockWalker walker) {
-		HashMap<Block, ? extends List<Block>> blockFollowers = calculateBlockFollowers(graph);
-		incrementBlockVisited(graph);
-		traverseBlocksDepthFirst(graph.getStartBlock(), blockFollowers, walker);
+	private static void allocateRegisters(Graph graph, ArrayList<AssemblerOperation> operationsBlocksPostOrder, boolean noRegisters,
+			boolean debugRegisterAllocation) {
+		boolean isMain = MainMethodDeclaration.MAIN_METHOD_NAME.equals(graph.getEntity().getLdName());
+		RegisterAllocationPolicy regsiterPolicy = noRegisters ? RegisterAllocationPolicy.NO_REGISTERS
+				: RegisterAllocationPolicy.ALL_A_B_C_D_8_9_10_11_12_BP_DI_SI;
+		new LinearScanRegisterAllocation(regsiterPolicy, isMain, operationsBlocksPostOrder).allocateRegisters(debugRegisterAllocation);
 	}
 
-	private static HashMap<Block, ? extends List<Block>> calculateBlockFollowers(Graph graph) {
-		final HashMap<Block, LinkedList<Block>> blockFollowers = new HashMap<>();
+	private static ArrayList<AssemblerOperation> generateOperationsList(Graph graph, HashMap<Block, BlockInfo> blockInfos,
+			final HashMap<Block, ArrayList<AssemblerOperation>> operationsOfBlocks) {
+		final ArrayList<AssemblerOperation> operationsList = new ArrayList<>();
 
-		graph.walkBlocks(new BlockWalker() {
+		FirmGraphTraverser.walkLoopOptimizedPostorder(graph, blockInfos, new BlockWalker() {
 			@Override
 			public void visitBlock(Block block) {
-				for (Node pred : block.getPreds()) {
-					Block predBlock = (Block) pred.getBlock();
-
-					LinkedList<Block> predsNextBlocks = blockFollowers.get(predBlock);
-					if (predsNextBlocks == null) {
-						predsNextBlocks = new LinkedList<Block>();
-						blockFollowers.put(predBlock, predsNextBlocks);
-					}
-
-					// adding the block at the beginning ensures that the loop body comes after the head
-					// adding the block to the end of the list makes depth first to the end block and then the loop body
-					predsNextBlocks.addFirst(block);
-				}
+				operationsList.addAll(operationsOfBlocks.get(block));
 			}
 		});
-		return blockFollowers;
-	}
 
-	private static void traverseBlocksDepthFirst(Block block, HashMap<Block, ? extends List<Block>> nextBlocks, BlockWalker walker) {
-		block.markBlockVisited();
-		walker.visitBlock(block);
-
-		List<Block> followers = nextBlocks.get(block);
-
-		if (followers == null)
-			return;
-
-		for (Block followerBlock : followers) {
-			if (!followerBlock.blockVisited())
-				traverseBlocksDepthFirst(followerBlock, nextBlocks, walker);
-		}
-	}
-
-	private static void incrementBlockVisited(Graph graph) {
-		binding_irgraph.inc_irg_block_visited(graph.ptr);
-	}
-
-	private static void allocateRegisters(List<AssemblerOperation> assembler) {
-		LinearScanRegisterAllocation registerAllocation = new LinearScanRegisterAllocation(assembler);
-		registerAllocation.allocateRegisters();
+		return operationsList;
 	}
 
 	private static void generateAssemblerFile(Path outputFile, List<AssemblerOperation> assembler) throws IOException {
@@ -155,6 +127,21 @@ public final class AssemblerGenerator {
 			writer.close();
 		} catch (IOException e) {
 			e.printStackTrace();
+		}
+	}
+
+	private static class BlockNodesWalker implements BlockWalker {
+		private final BulkPhiNodeVisitor visitor;
+		private final HashMap<Block, BlockNodes> nodesPerBlockMap;
+
+		public BlockNodesWalker(BulkPhiNodeVisitor visitor, HashMap<Block, BlockNodes> nodesPerBlockMap) {
+			this.visitor = visitor;
+			this.nodesPerBlockMap = nodesPerBlockMap;
+		}
+
+		@Override
+		public void visitBlock(Block block) {
+			nodesPerBlockMap.get(block).visitNodes(visitor, nodesPerBlockMap);
 		}
 	}
 }

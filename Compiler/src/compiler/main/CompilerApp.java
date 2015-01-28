@@ -18,6 +18,7 @@ import compiler.ast.AstNode;
 import compiler.firm.FirmUtils;
 import compiler.firm.FirmUtils.AssemblerCreator;
 import compiler.firm.backend.AssemblerGenerator;
+import compiler.firm.backend.calling.CallingConvention;
 import compiler.firm.generation.FirmGraphGenerator;
 import compiler.firm.optimization.FirmOptimizer;
 import compiler.lexer.Lexer;
@@ -38,10 +39,12 @@ public final class CompilerApp {
 	private static final String PRETTY_PRINT_AST = "print-ast";
 	private static final String CHECK = "check";
 	private static final String DEBUG = "debug";
+	private static final String DEBUG_REGISTER_ALLOCATION = "debug-register-allocation";
 	private static final String GRAPH_FIRM = "graph-firm";
 	private static final String OUTPUT_ASSEMBLER = "assembler";
 	private static final String COMPILE_FIRM = "compile-firm";
 	private static final String NO_OPT = "no-opt";
+	private static final String NO_REGISTERS = "no-registers";
 	private static final String OUTPUT_FILE = "o";
 	private static final String DEBUGGING_LEVEL = "g";
 	private static final String C_INCLUDE = "c-include";
@@ -73,6 +76,7 @@ public final class CompilerApp {
 		options.addOption(null, CHECK, false, "checks if the given source file is valid code.");
 
 		options.addOption(null, DEBUG, false, "prints more detailed error messages (only useful in case of a crash)");
+		options.addOption(null, DEBUG_REGISTER_ALLOCATION, false, "prints lifetime of virtual register and create assembler with virtual registers.");
 		options.addOption(null, GRAPH_FIRM, false, "dump a firm graph to the current directory.");
 		options.addOption("s", null, true, "Used to define the suffix of the dumped firm graph. (Only to be used with --"
 				+ GRAPH_FIRM + ")");
@@ -81,6 +85,8 @@ public final class CompilerApp {
 		options.addOption(OUTPUT_FILE, true, "Used to define the filename/path of the generated executable. (Only to be used with --"
 				+ COMPILE_FIRM + ")");
 		options.addOption(null, NO_OPT, false, "deactivate optimizations");
+		options.addOption(null, NO_REGISTERS, false, "Don't do register allocation. All virtual registers will be spilled. (Not working with --"
+				+ COMPILE_FIRM + ")");
 		options.addOption(null, C_INCLUDE, true, "Compile the given file and use it for the mapping of native methods.");
 		options.addOption(C_LIBRARY, true, "Use the given library for linking the c file given with --" + C_INCLUDE + ".");
 		options.addOption(DEBUGGING_LEVEL, true, "Use debugging level, passed directly as -g to gcc.");
@@ -176,10 +182,13 @@ public final class CompilerApp {
 							}
 						};
 					} else { // Default case: use our own assembler
+						final boolean noRegisters = cmd.hasOption(NO_REGISTERS);
+						final boolean debugRegisterAllocation = cmd.hasOption(DEBUG_REGISTER_ALLOCATION);
 						assemblerCreator = new AssemblerCreator() {
 							@Override
 							public void create(String fileName) throws IOException {
-								AssemblerGenerator.createAssemblerX8664(Paths.get(fileName), semanticResult.getCallingConventions(), !noOpt);
+								AssemblerGenerator.createAssemblerX8664(Paths.get(fileName), CallingConvention.SYSTEMV_ABI, !noOpt,
+										noRegisters, debugRegisterAllocation);
 							}
 						};
 					}

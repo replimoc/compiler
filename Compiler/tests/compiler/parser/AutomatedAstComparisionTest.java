@@ -9,6 +9,7 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.Iterator;
 import java.util.List;
+import java.util.Map;
 import java.util.Scanner;
 
 import org.junit.Test;
@@ -25,7 +26,8 @@ import compiler.utils.TestUtils;
  */
 public class AutomatedAstComparisionTest implements TestFileVisitor.FileTester {
 
-	private static final String PRETTY_AST_EXTENSION = ".pretty";
+	public static final String PRETTY_AST_EXTENSION = ".pretty";
+	private static final Object DISABLE_NESTING_IS_FUN = "DISABLE_NESTING_IS_FUN";
 
 	@Test
 	public void testParserFiles() throws Exception {
@@ -53,10 +55,18 @@ public class AutomatedAstComparisionTest implements TestFileVisitor.FileTester {
 	}
 
 	@Override
-	public void testSourceFile(Path sourceFile, Path expectedFile, Path cIncludeFilePath) throws Exception {
+	public void testSourceFile(TestFileVisitor visitor, Path sourceFile, Path expectedFile) throws Exception {
+		if (sourceFile.endsWith("nesting-is-fun.mj")) {
+			Map<String, String> env = System.getenv();
+			if (env.containsKey(DISABLE_NESTING_IS_FUN)) {
+				System.out.println("Nesting is fun is disabled, skipping!");
+				return;
+			}
+		}
+
 		// read expected output
 		List<String> expectedOutput = Files.readAllLines(expectedFile, StandardCharsets.US_ASCII);
-		boolean failingExpected = (!expectedOutput.isEmpty() && "error".equals(expectedOutput.get(0)));
+		boolean failingExpected = isParserFailExpected(expectedOutput);
 		boolean isFixpoint = sourceFile.equals(expectedFile);
 		if (isFixpoint && failingExpected) { // this is the case if we do the fixpoint test
 			return; // do not test error files
@@ -66,15 +76,15 @@ public class AutomatedAstComparisionTest implements TestFileVisitor.FileTester {
 
 		try {
 			Iterator<String> expectedOutputIterator = expectedOutput.iterator();
-			String printedAst = runParser(sourceFile);
+			StringBuilder printedAst = runParser(sourceFile);
 			if (isFixpoint) { // Run parser again
 				sourceFile = TestUtils.writeToTemporaryFile(printedAst).toPath();
-				expectedOutputIterator = new Scanner(printedAst);
+				expectedOutputIterator = new Scanner(new StringBuilderReader(printedAst));
 				((Scanner) expectedOutputIterator).useDelimiter("\n");
 				printedAst = runParser(sourceFile);
 			}
 
-			Scanner s = new Scanner(printedAst);
+			Scanner s = new Scanner(new StringBuilderReader(printedAst));
 			s.useDelimiter("\n"); // separate at new lines
 
 			TestUtils.assertLinesEqual(sourceFile, expectedOutputIterator, s);
@@ -98,12 +108,16 @@ public class AutomatedAstComparisionTest implements TestFileVisitor.FileTester {
 		}
 	}
 
+	public static boolean isParserFailExpected(List<String> expectedOutput) {
+		return !expectedOutput.isEmpty() && "error".equals(expectedOutput.get(0));
+	}
+
 	private static void failParsingException(ParsingFailedException e) {
 		e.printParserExceptions();
 		fail();
 	}
 
-	private String runParser(Path sourceFile) throws IOException, ParsingFailedException {
+	private StringBuilder runParser(Path sourceFile) throws IOException, ParsingFailedException {
 		Parser parser = TestUtils.initParser(sourceFile);
 		AstNode ast = parser.parse();
 		return PrettyPrinter.prettyPrint(ast);

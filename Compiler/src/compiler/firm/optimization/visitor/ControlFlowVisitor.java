@@ -168,7 +168,6 @@ public class ControlFlowVisitor extends OptimizationVisitor<Node> {
 			isTrivial = true;
 			otherNode = phi.getPred(0);
 		}
-
 		if (isTrivial && phi.getLoop() == 0) {
 			addReplacement(phi, otherNode);
 		}

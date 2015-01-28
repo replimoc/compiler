@@ -1,6 +1,7 @@
 package compiler.firm.generation;
 
 import java.util.HashMap;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
@@ -75,7 +76,7 @@ public class FirmGenerationVisitor implements AstVisitor {
 
 	// current definitions
 	private Construction methodConstruction = null;
-	private final Map<firm.nodes.Block, Node> methodReturns = new HashMap<firm.nodes.Block, Node>();
+	private final Map<firm.nodes.Block, Node> methodReturns = new LinkedHashMap<firm.nodes.Block, Node>();
 
 	// create new map for param <-> variable number
 	private Node activePhiNode;
@@ -220,7 +221,10 @@ public class FirmGenerationVisitor implements AstVisitor {
 	}
 
 	private Node createBooleanNodeFromBinaryExpression(Expression expression) {
-		if (expression instanceof BooleanConstantExpression) {
+		if (expression instanceof BooleanConstantExpression
+				|| expression instanceof VariableAccessExpression
+				|| expression instanceof MethodInvocationExpression
+				|| expression instanceof LogicalNotExpression) {
 			expression.accept(this);
 			return expression.getFirmNode();
 		} else {
@@ -232,14 +236,14 @@ public class FirmGenerationVisitor implements AstVisitor {
 			// create true block assigning true to temp variable
 			trueBlock.mature();
 			methodConstruction.setCurrentBlock(trueBlock);
-			Node trueConst = methodConstruction.newConst(1, FirmUtils.getModeBoolean());
+			Node trueConst = createBooleanConstantNode(true);
 			Node trueJump = methodConstruction.newJmp();
 			afterBlock.addPred(trueJump);
 
 			// create false block assigning false to temp variable
 			falseBlock.mature();
 			methodConstruction.setCurrentBlock(falseBlock);
-			Node falseConst = methodConstruction.newConst(0, FirmUtils.getModeBoolean());
+			Node falseConst = createBooleanConstantNode(false);
 			Node falseJump = methodConstruction.newJmp();
 			afterBlock.addPred(falseJump);
 
@@ -356,7 +360,7 @@ public class FirmGenerationVisitor implements AstVisitor {
 	}
 
 	private Node createBooleanConstantNode(boolean boolValue) {
-		int boolIntValue = boolValue ? 1 : 0;
+		int boolIntValue = boolValue ? 0xFF : 0;
 		return methodConstruction.newConst(boolIntValue, FirmUtils.getModeBoolean());
 	}
 
@@ -475,7 +479,6 @@ public class FirmGenerationVisitor implements AstVisitor {
 	private void variableAccess(VariableAccessExpression variableAccessExpression, Expression assignmentRightSide) {
 		LocalVariableDeclaration declaration = (LocalVariableDeclaration) variableAccessExpression.getDeclaration();
 		int variableNumber = declaration.getVariableNumber();
-		methodConstruction.getCurrentMem();
 
 		if (assignmentRightSide != null) {
 			Node rightSideNode = getRightSideOfAssignment(assignmentRightSide);
@@ -551,7 +554,14 @@ public class FirmGenerationVisitor implements AstVisitor {
 
 	@Override
 	public void visit(LogicalNotExpression logicalNotExpression) {
-		evaluateBooleanExpression(logicalNotExpression.getOperand(), falseDestination, trueDestination);
+		if (trueDestination == null || falseDestination == null) {
+			Expression operand = logicalNotExpression.getOperand();
+			operand.accept(this);
+			Node firmNode = operand.getFirmNode();
+			logicalNotExpression.setFirmNode(methodConstruction.newNot(firmNode, firmNode.getMode()));
+		} else {
+			evaluateBooleanExpression(logicalNotExpression.getOperand(), falseDestination, trueDestination);
+		}
 	}
 
 	@Override
@@ -567,28 +577,24 @@ public class FirmGenerationVisitor implements AstVisitor {
 
 	@Override
 	public void visit(ReturnStatement returnStatement) {
-		// prevent a second return from being set for this block
-		if (!methodReturns.containsKey(methodConstruction.getCurrentBlock())) {
-			boolean hasOperand = returnStatement.getOperand() != null;
+		boolean hasOperand = returnStatement.getOperand() != null;
 
-			Node returnNode;
-			if (hasOperand) {
-				Node exprNode;
-				if (returnStatement.getOperand().getType().is(BasicType.BOOLEAN)) {
-					exprNode = createBooleanNodeFromBinaryExpression(returnStatement.getOperand());
-				} else {
-					returnStatement.getOperand().accept(this);
-					exprNode = returnStatement.getOperand().getFirmNode();
-				}
-				returnNode = methodConstruction.newReturn(methodConstruction.getCurrentMem(), new Node[] { exprNode });
+		Node returnNode;
+		if (hasOperand) {
+			Node exprNode;
+			if (returnStatement.getOperand().getType().is(BasicType.BOOLEAN)) {
+				exprNode = createBooleanNodeFromBinaryExpression(returnStatement.getOperand());
 			} else {
-				// return void
-				returnNode = methodConstruction.newReturn(methodConstruction.getCurrentMem(), new Node[] {});
+				returnStatement.getOperand().accept(this);
+				exprNode = returnStatement.getOperand().getFirmNode();
 			}
-
-			methodReturns.put(methodConstruction.getCurrentBlock(), returnNode);
-			methodConstruction.setUnreachable();
+			returnNode = methodConstruction.newReturn(methodConstruction.getCurrentMem(), new Node[] { exprNode });
+		} else {
+			// return void
+			returnNode = methodConstruction.newReturn(methodConstruction.getCurrentMem(), new Node[] {});
 		}
+
+		methodReturns.put(methodConstruction.getCurrentBlock(), returnNode);
 	}
 
 	@Override
@@ -607,15 +613,21 @@ public class FirmGenerationVisitor implements AstVisitor {
 	public void visit(Block block) {
 		if (!block.isEmpty()) {
 			for (Statement statement : block.getStatements()) {
-				// do not visit blocks which already have a return
-				if (!methodReturns.containsKey(methodConstruction.getCurrentBlock())) {
-					statement.accept(this);
+				statement.accept(this);
+
+				if (methodReturns.containsKey(methodConstruction.getCurrentBlock())) {
+					break; // stop visiting the rest, we already have a return
 				}
 			}
 
-			// get last statement and set block firmNode to this statement
-			Statement lastStatement = block.getStatements().get(block.getNumberOfStatements() - 1);
-			block.setFirmNode(lastStatement.getFirmNode());
+			Node returnNode = methodReturns.get(methodConstruction.getCurrentBlock());
+			if (returnNode != null) {
+				block.setFirmNode(returnNode);
+			} else {
+				// get last statement and set block firmNode to this statement
+				Statement lastStatement = block.getStatements().get(block.getNumberOfStatements() - 1);
+				block.setFirmNode(lastStatement.getFirmNode());
+			}
 		}
 	}
 
@@ -623,7 +635,7 @@ public class FirmGenerationVisitor implements AstVisitor {
 		Node conditionNode;
 		if (expression.getFirmNode() != null && !expression.getFirmNode().getMode().equals(Mode.getT())) {
 			// booleans and boolean constants
-			Node trueConst = methodConstruction.newConst(1, FirmUtils.getModeBoolean());
+			Node trueConst = createBooleanConstantNode(true);
 			Node cmp = methodConstruction.newCmp(expression.getFirmNode(), trueConst, Relation.Equal);
 			conditionNode = methodConstruction.newCond(cmp);
 		} else {
@@ -651,7 +663,7 @@ public class FirmGenerationVisitor implements AstVisitor {
 			// TODO: find a more elegant way to do this!
 			// we reference a condition node that is not in the current block, get the last set phi node instead
 			// create a new condition node for that phi node
-			Node trueConst = methodConstruction.newConst(1, FirmUtils.getModeBoolean());
+			Node trueConst = createBooleanConstantNode(true);
 			Node cmp = methodConstruction.newCmp(activePhiNode, trueConst, Relation.Equal);
 			conditionNode = methodConstruction.newCond(cmp);
 			Node condTrue = methodConstruction.newProj(conditionNode, mode, 1);
@@ -689,7 +701,7 @@ public class FirmGenerationVisitor implements AstVisitor {
 		methodConstruction.setCurrentBlock(trueBlock);
 		ifStatement.getTrueCase().accept(this);
 		// prevent a second control flow instruction from being set for this block
-		if (!methodReturns.containsKey(trueBlock)) {
+		if (!methodReturns.containsKey(methodConstruction.getCurrentBlock())) {
 			Node trueJmp = methodConstruction.newJmp();
 			endifBlock.addPred(trueJmp);
 		}
@@ -706,10 +718,9 @@ public class FirmGenerationVisitor implements AstVisitor {
 				endifBlock.addPred(falseJmp);
 			}
 		}
+
 		endifBlock.mature();
-
 		methodConstruction.setCurrentBlock(endifBlock);
-
 		ifStatement.setFirmNode(null);
 	}
 
@@ -731,14 +742,14 @@ public class FirmGenerationVisitor implements AstVisitor {
 		methodConstruction.getCurrentMem();
 
 		whileStatement.getBody().accept(this);
-		if (!methodReturns.containsKey(loopBlock)) {
+		if (!methodReturns.containsKey(methodConstruction.getCurrentBlock())) {
 			Node loopJump = methodConstruction.newJmp();
 			startBlock.addPred(loopJump);
 		}
+
 		startBlock.mature();
 		methodConstruction.setCurrentBlock(endBlock);
 		methodConstruction.getGraph().keepAlive(startBlock);
-
 		whileStatement.setFirmNode(null);
 	}
 
@@ -834,7 +845,6 @@ public class FirmGenerationVisitor implements AstVisitor {
 			graph.getEndBlock().addPred(returnNode);
 		}
 
-		methodConstruction.setUnreachable();
 		methodConstruction.finish();
 	}
 

@@ -8,13 +8,10 @@ public class SingleRegister extends RegisterBased {
 	private static final byte HIGH = 0b10;
 	private static final byte LOW = 0b01;
 
-	public static final byte BLOCKED_REGISTER = 0b1111111;
-
 	// reserved for special usage
 	public static final SingleRegister RSP = new SingleRegister(Bit.BIT64, "%rsp", FULL); // stack pointer
-	public static final SingleRegister RBP = new SingleRegister(Bit.BIT64, "%rbp", FULL); // frame pointer
 
-	// registers with no 8 bit registers
+	// general purpose registers
 	public static final SingleRegister RDI = new SingleRegister(Bit.BIT64, "%rdi", FULL);
 	public static final SingleRegister EDI = new SingleRegister(Bit.BIT32, "%edi", FULL);
 	public static final SingleRegister DIL = new SingleRegister(Bit.BIT8, "%dil", LOW);
@@ -22,6 +19,10 @@ public class SingleRegister extends RegisterBased {
 	public static final SingleRegister RSI = new SingleRegister(Bit.BIT64, "%rsi", FULL);
 	public static final SingleRegister ESI = new SingleRegister(Bit.BIT32, "%esi", FULL);
 	public static final SingleRegister SIL = new SingleRegister(Bit.BIT8, "%sil", LOW);
+
+	public static final SingleRegister RBP = new SingleRegister(Bit.BIT64, "%rbp", FULL);
+	public static final SingleRegister EBP = new SingleRegister(Bit.BIT32, "%ebp", FULL);
+	public static final SingleRegister BPL = new SingleRegister(Bit.BIT8, "%bpl", LOW);
 
 	// registers with two 8bit registers
 	public static final SingleRegister RAX = new SingleRegister(Bit.BIT64, "%rax", FULL); // accumulator
@@ -102,6 +103,7 @@ public class SingleRegister extends RegisterBased {
 		return mode;
 	}
 
+	@Override
 	public RegisterBundle getRegisterBundle() {
 		return registerBundle;
 	}
@@ -112,5 +114,19 @@ public class SingleRegister extends RegisterBased {
 
 	public byte getMask() {
 		return mask;
+	}
+
+	@Override
+	public SingleRegister getSingleRegister() {
+		return this;
+	}
+
+	@Override
+	public MemoryPointer getMemoryPointer() {
+		return null;
+	}
+
+	@Override
+	public void setTemporaryStackOffset(int temporaryStackOffset) {
 	}
 }

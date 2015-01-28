@@ -1,8 +1,12 @@
 package compiler.firm.optimization.visitor;
 
 import java.util.HashMap;
+import java.util.Set;
 
+import firm.BackEdges;
+import firm.BackEdges.Edge;
 import firm.nodes.Add;
+import firm.nodes.Block;
 import firm.nodes.Const;
 import firm.nodes.Conv;
 import firm.nodes.Div;
@@ -13,6 +17,7 @@ import firm.nodes.Phi;
 import firm.nodes.Proj;
 import firm.nodes.Shl;
 import firm.nodes.Shr;
+import firm.nodes.Start;
 import firm.nodes.Sub;
 
 public class CommonSubexpressionEliminationVisitor extends OptimizationVisitor<Node> {
@@ -25,6 +30,7 @@ public class CommonSubexpressionEliminationVisitor extends OptimizationVisitor<N
 	};
 
 	private final HashMap<NodeValue, Node> nodeValues = new HashMap<>();
+	private HashMap<Block, Set<Block>> dominators = new HashMap<>();
 
 	@Override
 	public HashMap<Node, Node> getLatticeValues() {
@@ -81,14 +87,80 @@ public class CommonSubexpressionEliminationVisitor extends OptimizationVisitor<N
 	 * @param right
 	 */
 	private void binaryTransferFunction(Node node, int left, int right) {
+		if (dominators.size() == 0) {
+			node.getGraph().getStart().accept(this);
+		}
 		Node target = nodeValues.get(new NodeValue(left, right));
 		if (target != null) {
 			if (!sameType(target, node)) {
 				return;
 			}
 			if (!node.equals(target) && !nodeReplacements.containsKey(target) && !nodeReplacements.containsKey(node)
-					&& target.getBlock().equals(node.getBlock())) {
+					&& dominators.get((Block) node.getBlock()).contains((Block) target.getBlock())) {
 				addReplacement(node, target);
+			} else if (!node.equals(target) && !nodeReplacements.containsKey(target) && !nodeReplacements.containsKey(node) &&
+					dominators.get((Block) target.getBlock()).contains((Block) node.getBlock())) {
+				addReplacement(target, node);
+			} else {
+				return;
+			}
+		} else {
+			nodeValues.put(new NodeValue(left, right), node);
+		}
+	}
+
+	/**
+	 * Transfer function for a mod or div node with 2 predecessors.
+	 * 
+	 * @param node
+	 * @param left
+	 * @param right
+	 */
+	private void modDivTransferFunction(Node node, int left, int right) {
+		if (dominators.size() == 0) {
+			node.getGraph().getStart().accept(this);
+		}
+		Node target = nodeValues.get(new NodeValue(left, right));
+		if (target != null) {
+			if (!sameType(target, node)) {
+				return;
+			}
+			if (!node.equals(target) && !nodeReplacements.containsKey(target) && !nodeReplacements.containsKey(node)
+					&& dominators.get((Block) node.getBlock()).contains((Block) target.getBlock())) {
+				Node suc = null;
+				Node sucTarget = null;
+				for (Edge e : BackEdges.getOuts(node)) {
+					suc = e.node;
+					break;
+				}
+				for (Edge e : BackEdges.getOuts(target)) {
+					sucTarget = e.node;
+					break;
+				}
+				if (suc == null || sucTarget == null)
+					return;
+				// replace the Proj node so the firm backend is happy
+				addReplacement(suc, sucTarget);
+				addReplacement(node, target);
+			} else if (!node.equals(target) && !nodeReplacements.containsKey(target) && !nodeReplacements.containsKey(node)
+					&& dominators.get((Block) target.getBlock()).contains((Block) node.getBlock())) {
+				Node suc = null;
+				Node sucTarget = null;
+				for (Edge e : BackEdges.getOuts(node)) {
+					suc = e.node;
+					break;
+				}
+				for (Edge e : BackEdges.getOuts(target)) {
+					sucTarget = e.node;
+					break;
+				}
+				if (suc == null || sucTarget == null)
+					return;
+				// replace the Proj node so the firm backend is happy
+				addReplacement(sucTarget, suc);
+				addReplacement(target, node);
+			} else {
+				return;
 			}
 		} else {
 			nodeValues.put(new NodeValue(left, right), node);
@@ -144,7 +216,7 @@ public class CommonSubexpressionEliminationVisitor extends OptimizationVisitor<N
 		int left = getValue(leftNode);
 		int right = getValue(rightNode);
 
-		binaryTransferFunction(div, left, right);
+		modDivTransferFunction(div, left, right);
 	}
 
 	@Override
@@ -156,7 +228,7 @@ public class CommonSubexpressionEliminationVisitor extends OptimizationVisitor<N
 		int left = getValue(leftNode);
 		int right = getValue(rightNode);
 
-		binaryTransferFunction(mod, left, right);
+		modDivTransferFunction(mod, left, right);
 	}
 
 	@Override
@@ -209,6 +281,12 @@ public class CommonSubexpressionEliminationVisitor extends OptimizationVisitor<N
 		} else {
 			nodeValues.put(new NodeValue(getValue(phi)), phi);
 		}
+	}
+
+	@Override
+	public void visit(Start start) {
+		FirmUtils utils = new FirmUtils(start.getGraph());
+		dominators = utils.getDominators();
 	}
 
 	private class NodeValue {

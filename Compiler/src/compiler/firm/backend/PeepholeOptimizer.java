@@ -4,17 +4,14 @@ import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
 
-import compiler.firm.backend.operations.AddOperation;
 import compiler.firm.backend.operations.Comment;
-import compiler.firm.backend.operations.DecOperation;
-import compiler.firm.backend.operations.IncOperation;
 import compiler.firm.backend.operations.LabelOperation;
-import compiler.firm.backend.operations.SubOperation;
+import compiler.firm.backend.operations.MovOperation;
 import compiler.firm.backend.operations.jump.JmpOperation;
 import compiler.firm.backend.operations.templates.AssemblerOperation;
 import compiler.firm.backend.operations.templates.JumpOperation;
-import compiler.firm.backend.storage.Constant;
-import compiler.firm.backend.storage.Storage;
+import compiler.firm.backend.storage.MemoryPointer;
+import compiler.firm.backend.storage.SingleRegister;
 
 public class PeepholeOptimizer {
 
@@ -40,10 +37,10 @@ public class PeepholeOptimizer {
 
 	public void optimize() {
 		while (currentOperation != null) {
-			if (currentOperation instanceof JmpOperation) {
+			if (currentOperation instanceof JumpOperation) {
 				JumpOperation jump = (JumpOperation) currentOperation;
 				nextOperation();
-				if (currentOperation instanceof LabelOperation) {
+				if (jump instanceof JmpOperation && currentOperation instanceof LabelOperation) {
 					LabelOperation label = (LabelOperation) currentOperation;
 
 					if (jump.getLabel().equals(label)) {
@@ -51,35 +48,61 @@ public class PeepholeOptimizer {
 					} else {
 						writeOperation(jump);
 					}
+				} else if (currentOperation instanceof JmpOperation) {
+					JumpOperation jump2 = (JumpOperation) currentOperation;
+					nextOperation();
+					if (currentOperation instanceof LabelOperation) {
+						LabelOperation label = (LabelOperation) currentOperation;
+
+						if (jump2.getLabel().equals(label)) {
+							setAlignment(jump);
+							writeOperation(jump);
+							writeOperation(new Comment(jump2));
+						} else if (jump.getLabel().equals(label) && !(jump instanceof JmpOperation)) {
+							setAlignment(jump2);
+							writeOperation(jump.invert(jump2.getLabel()));
+							writeOperation(new Comment("Fallthrough to " + jump.getLabel()));
+						} else {
+							setAlignment(jump);
+							setAlignment(jump2);
+							writeOperation(jump);
+							writeOperation(jump2);
+						}
+					} else {
+						setAlignment(jump);
+						setAlignment(jump2);
+						writeOperation(jump);
+						writeOperation(jump2);
+					}
 				} else {
+					setAlignment(jump);
 					writeOperation(jump);
 				}
+			} else if (currentOperation instanceof MovOperation) {
+				MovOperation move = (MovOperation) currentOperation;
+				SingleRegister sourceRegister = move.getSource().getSingleRegister();
+				SingleRegister destinationRegister = move.getDestination().getSingleRegister();
+				MemoryPointer sourceMemoryPointer = move.getSource().getMemoryPointer();
+				MemoryPointer destinationMemoryPointer = move.getDestination().getMemoryPointer();
 
-			} else if (currentOperation instanceof SubOperation) {
-				SubOperation sub = (SubOperation) currentOperation;
-				Storage storage = sub.getStorage();
-				if (storage instanceof Constant && ((Constant) storage).getConstant() == 1) {
-					writeOperation(new DecOperation(sub.toString(), sub.getDestination()));
+				if ((sourceRegister != null && sourceRegister == destinationRegister) ||
+						(sourceMemoryPointer != null && sourceMemoryPointer == destinationMemoryPointer)) {
+					writeOperation(new Comment(currentOperation)); // discard move between the same register
 				} else {
 					writeOperation();
 				}
 				nextOperation();
 
-			} else if (currentOperation instanceof AddOperation) {
-				AddOperation add = (AddOperation) currentOperation;
-				Storage storage = add.getStorage();
-				if (storage instanceof Constant && ((Constant) storage).getConstant() == 1) {
-					writeOperation(new IncOperation(add.toString(), add.getDestination()));
-				} else {
-					writeOperation();
-				}
-				nextOperation();
-
-				// default case
-			} else {
+			} else { // default case
 				writeOperation();
 				nextOperation();
 			}
+		}
+	}
+
+	private void setAlignment(JumpOperation jump) {
+		if (outputOperations.contains(jump.getLabel())) {
+			jump.getLabel().setAlignment(true);
 		}
 	}
 

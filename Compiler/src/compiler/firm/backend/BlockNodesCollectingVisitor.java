@@ -1,8 +1,6 @@
 package compiler.firm.backend;
 
-import java.util.ArrayList;
 import java.util.HashMap;
-import java.util.List;
 
 import firm.Mode;
 import firm.nodes.Add;
@@ -64,14 +62,9 @@ import firm.nodes.Unknown;
 
 public class BlockNodesCollectingVisitor implements NodeVisitor {
 	private final HashMap<Block, BlockNodes> nodesPerBlock = new HashMap<>();
-	private final List<Phi> phiList = new ArrayList<>();
 
 	public HashMap<Block, BlockNodes> getNodesPerBlockMap() {
 		return nodesPerBlock;
-	}
-
-	public List<Phi> getAllPhis() {
-		return phiList;
 	}
 
 	private void collectNode(Node node) {
@@ -278,7 +271,6 @@ public class BlockNodesCollectingVisitor implements NodeVisitor {
 	public void visit(Phi phi) {
 		if (!phi.getMode().equals(Mode.getM())) {
 			getBlockNodes(phi).addPhi(phi);
-			phiList.add(phi);
 		}
 	}
 

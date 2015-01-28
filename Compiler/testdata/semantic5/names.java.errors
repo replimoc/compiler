@@ -1,0 +1,3 @@
+error: Identifier x at position line  16, character 18 has already been defined.
+error: Identifier x at position line  19, character 26 has already been defined.
+error: Identifier x at position line  23, character 26 has already been defined.

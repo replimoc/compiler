@@ -14,4 +14,9 @@ public class JzOperation extends JumpOperation {
 		return "\tjz " + getLabelName();
 	}
 
+	@Override
+	public JumpOperation invert(LabelOperation label) {
+		return new JnzOperation(label);
+	}
+
 }

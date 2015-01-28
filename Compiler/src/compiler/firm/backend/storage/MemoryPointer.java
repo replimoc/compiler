@@ -4,13 +4,18 @@ import compiler.firm.backend.Bit;
 
 public class MemoryPointer extends Storage {
 
-	private int offset;
+	protected int offset;
 	private RegisterBased register;
 	private RegisterBased factorRegister;
 	private int factor;
+	private int temporaryStackOffset = 0;
 
 	public MemoryPointer(int offset, RegisterBased register) {
 		this(offset, register, null, 0);
+	}
+
+	public MemoryPointer(RegisterBased register, RegisterBased factorRegister) {
+		this(0, register, factorRegister, 1);
 	}
 
 	public MemoryPointer(int offset, RegisterBased register, RegisterBased factorRegister, int factor) {
@@ -21,11 +26,22 @@ public class MemoryPointer extends Storage {
 	}
 
 	@Override
+	public void setTemporaryStackOffset(int temporaryStackOffset) {
+		this.temporaryStackOffset = temporaryStackOffset;
+	}
+
+	@Override
 	public String toString() {
+		int oldOffset = offset;
+		offset += this.temporaryStackOffset;
 		// Always use 64 bit register, this are stack addresses.
 		String secondRegister = "";
 		if (factorRegister != null) {
-			secondRegister = String.format(",%s,%d", factorRegister.toString(), factor);
+			if (factor == 1) {
+				secondRegister = String.format(",%s", factorRegister.toString());
+			} else {
+				secondRegister = String.format(",%s,%d", factorRegister.toString(), factor);
+			}
 		}
 
 		String result;
@@ -36,6 +52,7 @@ public class MemoryPointer extends Storage {
 		} else {
 			result = String.format("0x%x(%s%s)", offset, register.toString(), secondRegister);
 		}
+		offset = oldOffset;
 		return result;
 	}
 
@@ -63,6 +80,21 @@ public class MemoryPointer extends Storage {
 
 	@Override
 	public Bit getMode() {
-		return null; // TODO implement this correctly
+		return null;
+	}
+
+	@Override
+	public SingleRegister getSingleRegister() {
+		return null;
+	}
+
+	@Override
+	public RegisterBundle getRegisterBundle() {
+		return null;
+	}
+
+	@Override
+	public MemoryPointer getMemoryPointer() {
+		return this;
 	}
 }

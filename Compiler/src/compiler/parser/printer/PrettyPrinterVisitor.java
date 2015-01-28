@@ -73,6 +73,10 @@ public class PrettyPrinterVisitor implements AstVisitor {
 		return stringBuilder.toString();
 	}
 
+	public StringBuilder getOutput() {
+		return stringBuilder;
+	}
+
 	/**
 	 * Visit a binary expression, use the TokenType to display the symbol and show the brackets.
 	 * 

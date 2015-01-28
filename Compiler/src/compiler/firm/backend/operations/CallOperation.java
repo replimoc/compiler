@@ -1,8 +1,11 @@
 package compiler.firm.backend.operations;
 
 import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.HashSet;
 import java.util.LinkedList;
 import java.util.List;
+import java.util.Set;
 
 import compiler.firm.backend.Bit;
 import compiler.firm.backend.calling.CallingConvention;
@@ -14,6 +17,7 @@ import compiler.firm.backend.storage.RegisterBundle;
 import compiler.firm.backend.storage.SingleRegister;
 import compiler.firm.backend.storage.Storage;
 import compiler.firm.backend.storage.VirtualRegister;
+import compiler.utils.Utils;
 
 public class CallOperation extends AssemblerOperation {
 	private static final int STACK_ITEM_SIZE = 8;
@@ -22,13 +26,15 @@ public class CallOperation extends AssemblerOperation {
 	private final List<Parameter> parameters;
 	private final CallingConvention callingConvention;
 	private List<RegisterBundle> usedRegisters = new LinkedList<>();
+	private final VirtualRegister result;
 
-	public CallOperation(String name, List<Parameter> parameters, CallingConvention callingConvention) {
+	public CallOperation(Bit mode, String name, List<Parameter> parameters,
+			CallingConvention callingConvention) {
 		this.name = name;
 		this.parameters = parameters;
 		this.callingConvention = callingConvention;
 		this.usedRegisters.add(RegisterBundle._SP);
-		this.usedRegisters.add(RegisterBundle._BP);
+		this.result = new VirtualRegister(mode, callingConvention.getReturnRegister());
 	}
 
 	@Override
@@ -37,20 +43,23 @@ public class CallOperation extends AssemblerOperation {
 	}
 
 	@Override
-	public RegisterBased[] getReadRegisters() {
-		RegisterBased[] readRegister = new RegisterBased[this.parameters.size()];
-		int i = 0;
+	public Set<RegisterBased> getReadRegisters() {
+		Set<RegisterBased> readRegisters = new HashSet<>();
 		for (Parameter parameter : this.parameters) {
 			if (parameter.storage instanceof RegisterBased) {
-				readRegister[i++] = (RegisterBased) parameter.storage;
+				readRegisters.add((RegisterBased) parameter.storage);
 			}
 		}
-		return readRegister;
+		return readRegisters;
 	}
 
 	@Override
-	public RegisterBased[] getWriteRegisters() {
-		return new RegisterBased[] { new VirtualRegister(Bit.BIT64, callingConvention.getReturnRegister()) };
+	public Set<RegisterBased> getWriteRegisters() {
+		return Utils.<RegisterBased> unionSet(result);
+	}
+
+	public VirtualRegister getResult() {
+		return result;
 	}
 
 	private List<RegisterBundle> getSaveRegisters() {
@@ -69,33 +78,42 @@ public class CallOperation extends AssemblerOperation {
 
 		List<RegisterBundle> callerSavedRegisters = getSaveRegisters();
 
-		// Save all callerSavedRegisters to stack
-		for (RegisterBundle saveRegister : callerSavedRegisters) {
-			result.add(new PushOperation(Bit.BIT64, saveRegister.getRegister(Bit.BIT64)).toString());
-		}
-
 		// The following is before filling registers to have no problem with register allocation.
 		RegisterBundle[] callingRegisters = callingConvention.getParameterRegisters();
-		int numberOfstackParameters = parameters.size() - callingRegisters.length;
-		Constant stackAllocationSize = new Constant(STACK_ITEM_SIZE * numberOfstackParameters);
+		int numberOfStackParameters = parameters.size() - callingRegisters.length;
 
-		if (numberOfstackParameters > 0) {
-			result.add(new SubOperation(stackAllocationSize, SingleRegister.RSP).toString());
+		HashMap<RegisterBundle, MemoryPointer> registerStackLocations = new HashMap<>();
+		int stackPosition = STACK_ITEM_SIZE * (callerSavedRegisters.size() + Math.max(0, numberOfStackParameters) - 1);
+		int maxStackOffset = stackPosition + STACK_ITEM_SIZE;
 
-			RegisterBundle temporaryRegister = getTemporaryRegister();
+		// Save all callerSavedRegisters to stack
+		for (RegisterBundle saveRegister : callerSavedRegisters) {
+			result.add(new PushOperation(saveRegister.getRegister(Bit.BIT64)).toString());
+			// maxStackOffset will be added by temporaryStackOffset
+			registerStackLocations.put(saveRegister, new MemoryPointer(stackPosition - maxStackOffset, SingleRegister.RSP));
+			stackPosition -= STACK_ITEM_SIZE;
+		}
 
+		Constant stackAllocationSize = new Constant(STACK_ITEM_SIZE * numberOfStackParameters);
+
+		if (numberOfStackParameters > 0) {
+			stackPosition = STACK_ITEM_SIZE * callerSavedRegisters.size();
 			// Copy parameters to stack
-			for (int i = 0; i < numberOfstackParameters; i++) {
+			for (int i = numberOfStackParameters - 1; i >= 0; i--) {
 				Parameter source = parameters.get(i + callingRegisters.length);
 				// Copy parameter
-				MemoryPointer destinationPointer = new MemoryPointer(i * STACK_ITEM_SIZE, SingleRegister.RSP);
-				if (source.storage.getClass() == MemoryPointer.class
-						|| (source.storage.getClass() == VirtualRegister.class && source.storage.isSpilled())) {
-					result.add(new MovOperation(source.storage, temporaryRegister.getRegister(source.mode)).toString());
-					result.add(new MovOperation(temporaryRegister.getRegister(source.mode), destinationPointer).toString());
+				source.storage.setTemporaryStackOffset(stackPosition);
+				Storage sourceStorage;
+
+				if (source.storage.getRegisterBundle() != null) { // TODO: make this work with high and low bytes of registers
+					sourceStorage = source.storage.getRegisterBundle().getRegister(Bit.BIT64);
 				} else {
-					result.add(new MovOperation(source.storage, destinationPointer).toString());
+					sourceStorage = source.storage;
 				}
+
+				result.add(new PushOperation(sourceStorage).toString());
+				source.storage.setTemporaryStackOffset(0);
+				stackPosition += STACK_ITEM_SIZE;
 			}
 		}
 
@@ -103,19 +121,20 @@ public class CallOperation extends AssemblerOperation {
 		for (int i = 0; i < parameters.size() && i < callingRegisters.length; i++) {
 			Parameter source = parameters.get(i);
 			RegisterBundle register = callingRegisters[i];
-			if (register.getRegister(source.mode) == null) {
-				result.add(new MovOperation(source.storage, register.getRegister(Bit.BIT64)).toString());
-				// TODO: the mask should be saved in the mode
-				result.add(new AndOperation(new Constant(0xFF), register.getRegister(Bit.BIT64)).toString());
-			} else {
-				result.add(new MovOperation(source.storage, register.getRegister(source.mode)).toString());
+			Storage storage = source.storage;
+
+			if (registerStackLocations.containsKey(storage.getRegisterBundle())) {
+				storage = registerStackLocations.get(storage.getRegisterBundle());
 			}
+			storage.setTemporaryStackOffset(maxStackOffset);
+			result.add(new MovOperation(storage, register.getRegister(source.mode)).toString());
+			storage.setTemporaryStackOffset(0);
 		}
 
 		result.add(toString());
 
-		if (numberOfstackParameters > 0) {
-			result.add(new AddOperation(stackAllocationSize, SingleRegister.RSP).toString());
+		if (numberOfStackParameters > 0) {
+			result.add(new AddOperation(stackAllocationSize, SingleRegister.RSP, SingleRegister.RSP).toString());
 		}
 
 		for (int i = callerSavedRegisters.size() - 1; i >= 0; i--) {
@@ -127,7 +146,7 @@ public class CallOperation extends AssemblerOperation {
 		return resultStrings;
 	}
 
-	public void addUsedRegisters(List<VirtualRegister> registers) {
+	public void addAliveRegisters(List<VirtualRegister> registers) {
 		for (VirtualRegister registerBased : registers) {
 			Storage storage = registerBased.getRegister();
 			if (!(storage instanceof SingleRegister)) {

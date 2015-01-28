@@ -11,8 +11,11 @@ import java.nio.file.SimpleFileVisitor;
 import java.nio.file.attribute.BasicFileAttributes;
 import java.util.AbstractMap.SimpleEntry;
 import java.util.ArrayList;
+import java.util.Collections;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map.Entry;
+import java.util.Set;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
@@ -26,13 +29,15 @@ import org.junit.Ignore;
 @Ignore
 public class TestFileVisitor extends SimpleFileVisitor<Path> {
 
+	private static final int CHECK_TIMEOUT = 200;
+	private static final int NUMBER_OF_THREADS = 12;
+
 	public interface FileTester {
-		void testSourceFile(Path sourceFilePath, Path expectedResultFilePath, Path cIncludeFilePath) throws Exception;
+		void testSourceFile(TestFileVisitor visitor, Path sourceFilePath, Path expectedResultFilePath) throws Exception;
 	}
 
 	public static final String JAVA_EXTENSION = ".java";
 	public static final String MINIJAVA_EXTENSION = ".mj";
-	private static final String C_FILE_EXTENSION = ".c";
 
 	private final String expectedResultFileExtension;
 	private final String sourceFileExtension;
@@ -42,7 +47,8 @@ public class TestFileVisitor extends SimpleFileVisitor<Path> {
 	private final FileTester fileTester;
 	private final List<Entry<Path, Throwable>> failedTestsList = new ArrayList<>();
 
-	private final ExecutorService threadPool = Executors.newFixedThreadPool(12, Utils.getThreadFactory(Utils.DEFAULT_STACK_SIZE_MB));
+	private final ExecutorService threadPool = Executors.newFixedThreadPool(NUMBER_OF_THREADS, Utils.getThreadFactory(Utils.DEFAULT_STACK_SIZE_MB));
+	private final Set<Path> currentlyWorkedFiles = Collections.synchronizedSet(new HashSet<Path>());
 
 	private int numberOfTests = 0;
 
@@ -100,7 +106,12 @@ public class TestFileVisitor extends SimpleFileVisitor<Path> {
 			Runnable task = new Runnable() {
 				@Override
 				public void run() {
-					testFile(file, name.toString());
+					try {
+						currentlyWorkedFiles.add(file);
+						testFile(file, name.toString());
+					} finally {
+						currentlyWorkedFiles.remove(file);
+					}
 				}
 			};
 			threadPool.submit(task);
@@ -110,21 +121,27 @@ public class TestFileVisitor extends SimpleFileVisitor<Path> {
 	}
 
 	private void testFile(Path file, String fileName) {
-		String sourceFilename = fileName.replace(expectedResultFileExtension, sourceFileExtension);
-		String cFilename = fileName.replace(expectedResultFileExtension, C_FILE_EXTENSION);
-
-		Path sourceFilePath = file.getParent().resolve(sourceFilename);
-		Path cFilePath = file.getParent().resolve(cFilename);
+		Path sourceFilePath = getFileWithEnding(file, expectedResultFileExtension, getSourceFileExtension());
 
 		try {
 			if (!Files.exists(sourceFilePath)) {
 				Assert.fail("cannot find program to output " + sourceFilePath);
 			}
 
-			fileTester.testSourceFile(sourceFilePath, file, cFilePath);
+			fileTester.testSourceFile(this, sourceFilePath, file);
 		} catch (Throwable e) {
 			testFailed(sourceFilePath, e);
 		}
+	}
+
+	public Path getFileWithEnding(Path sourceFilePath, String newEnding) {
+		return getFileWithEnding(sourceFilePath, getSourceFileExtension(), newEnding);
+	}
+
+	public static Path getFileWithEnding(Path sourceFilePath, String oldEnding, String newEnding) {
+		String fileName = sourceFilePath.getFileName().toString();
+		String newFileName = fileName.replace(oldEnding, newEnding);
+		return sourceFilePath.getParent().resolve(newFileName);
 	}
 
 	private void testFailed(Path sourceFilePath, Throwable e) {
@@ -135,9 +152,13 @@ public class TestFileVisitor extends SimpleFileVisitor<Path> {
 	public void checkForFailedTests() {
 		try {
 			threadPool.shutdown();
-			threadPool.awaitTermination(100, TimeUnit.SECONDS);
+			threadPool.awaitTermination(CHECK_TIMEOUT, TimeUnit.SECONDS);
 		} catch (InterruptedException e) {
 			e.printStackTrace();
+		}
+
+		for (Path notFinishedFile : currentlyWorkedFiles) {
+			failedTestsList.add(new SimpleEntry<Path, Throwable>(notFinishedFile, new RuntimeException("Testfile did not terminate!")));
 		}
 
 		printFailedTestsMessages();
@@ -163,5 +184,9 @@ public class TestFileVisitor extends SimpleFileVisitor<Path> {
 		exception.printStackTrace();
 		System.err.println("^^^^^~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~^^^^^");
 		System.err.println();
+	}
+
+	public String getSourceFileExtension() {
+		return sourceFileExtension;
 	}
 }

@@ -7,8 +7,10 @@ import java.net.URISyntaxException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.ArrayList;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Scanner;
+import java.util.Set;
 import java.util.concurrent.ThreadFactory;
 
 public class Utils {
@@ -84,5 +86,28 @@ public class Utils {
 		Path standardLibOFile = Files.createTempFile(prefix, suffix);
 		standardLibOFile.toFile().deleteOnExit();
 		return standardLibOFile.toString();
+	}
+
+	@SuppressWarnings("unchecked")
+	public static <T> Set<T> unionSet(T[]... inputs) {
+		Set<T> result = new HashSet<>();
+		for (T[] curr : inputs) {
+			if (curr == null)
+				continue;
+
+			for (int i = 0; i < curr.length; i++) {
+				result.add(curr[i]);
+			}
+		}
+		return result;
+	}
+
+	@SafeVarargs
+	public static <T> Set<T> unionSet(T... inputs) {
+		Set<T> result = new HashSet<>();
+		for (int i = 0; i < inputs.length; i++) {
+			result.add(inputs[i]);
+		}
+		return result;
 	}
 }

@@ -14,4 +14,9 @@ public class JleOperation extends JumpOperation {
 		return "\tjle " + getLabelName();
 	}
 
+	@Override
+	public JumpOperation invert(LabelOperation label) {
+		return new JgOperation(label);
+	}
+
 }

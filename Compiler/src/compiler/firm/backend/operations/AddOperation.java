@@ -1,31 +1,49 @@
 package compiler.firm.backend.operations;
 
-import compiler.firm.backend.operations.templates.StorageRegisterOperation;
-import compiler.firm.backend.operations.templates.StorageRegisterOperationFactory;
+import compiler.firm.backend.operations.templates.SourceSourceDestinationOperation;
+import compiler.firm.backend.operations.templates.StorageRegisterRegisterOperationFactory;
 import compiler.firm.backend.storage.RegisterBased;
 import compiler.firm.backend.storage.Storage;
 
-public class AddOperation extends StorageRegisterOperation {
+public class AddOperation extends SourceSourceDestinationOperation {
 
-	public static StorageRegisterOperationFactory getFactory(final String comment) {
-		return new StorageRegisterOperationFactory() {
+	public static StorageRegisterRegisterOperationFactory getFactory(final String comment) {
+		return new StorageRegisterRegisterOperationFactory() {
 			@Override
-			public StorageRegisterOperation instantiate(Storage input, RegisterBased destination) {
-				return new AddOperation(comment, input, destination);
+			public SourceSourceDestinationOperation instantiate(Storage source1, RegisterBased source2, RegisterBased destination) {
+				return new AddOperation(comment, source1, source2, destination);
 			}
 		};
 	}
 
-	public AddOperation(Storage input, RegisterBased destinationRegister) {
-		super(null, input, destinationRegister);
+	public AddOperation(Storage source1, RegisterBased source2, RegisterBased destinationRegister) {
+		super(null, source1, source2, destinationRegister);
 	}
 
-	public AddOperation(String comment, Storage input, RegisterBased destinationRegister) {
-		super(comment, input, destinationRegister);
+	public AddOperation(String comment, Storage source1, RegisterBased source2, RegisterBased destinationRegister) {
+		super(comment, source1, source2, destinationRegister);
 	}
 
 	@Override
 	public String getOperationString() {
-		return String.format("\tadd %s, %s", getStorage().toString(), getDestination().toString());
+		if (isLea()) {
+			return String.format("\tlea (%s, %s), %s", source.toString(), source2.toString(), destination.toString());
+		} else {
+			return String.format("\tadd %s, %s", source.toString(), destination.toString());
+		}
+	}
+
+	@Override
+	protected MovOperation getPreOperation() {
+		if (isLea()) {
+			return null;
+		} else {
+			return super.getPreOperation();
+		}
+	}
+
+	private boolean isLea() {
+		return source.getSingleRegister() != destination.getSingleRegister() && source2.getSingleRegister() != destination.getSingleRegister() &&
+				source.getSingleRegister() != null && source.getSingleRegister() != null && destination.getSingleRegister() != null;
 	}
 }

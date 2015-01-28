@@ -47,6 +47,25 @@ public class Constant extends Storage {
 
 	@Override
 	public Bit getMode() {
-		return null; // TODO implement this correctly
+		return null;
+	}
+
+	@Override
+	public SingleRegister getSingleRegister() {
+		return null;
+	}
+
+	@Override
+	public RegisterBundle getRegisterBundle() {
+		return null;
+	}
+
+	@Override
+	public MemoryPointer getMemoryPointer() {
+		return null;
+	}
+
+	@Override
+	public void setTemporaryStackOffset(int temporaryStackOffset) {
 	}
 }
