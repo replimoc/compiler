@@ -7,7 +7,6 @@ import compiler.firm.optimization.evaluation.GraphEvaluationVisitor;
 import compiler.firm.optimization.evaluation.ProgramDetails;
 import compiler.firm.optimization.visitor.CommonSubexpressionEliminationVisitor;
 import compiler.firm.optimization.visitor.ControlFlowVisitor;
-import compiler.firm.optimization.visitor.FunctionInliningVisitor;
 import compiler.firm.optimization.visitor.LocalOptimizationVisitor;
 import compiler.firm.optimization.visitor.LoopInvariantVisitor;
 import compiler.firm.optimization.visitor.NormalizationVisitor;
@@ -41,7 +40,7 @@ public final class FirmOptimizer {
 			finished &= optimize(LoopInvariantVisitor.FACTORY(programDetails));
 			// finished &= optimize(StrengthReductionVisitor.FACTORY);
 			finished &= MethodParametersEliminator.eliminateObsoleteParameters(programDetails);
-			finished &= optimize(FunctionInliningVisitor.FACTORY);
+			finished &= MethodInliner.inlineCalls(programDetails);
 		} while (!finished);
 	}
 
