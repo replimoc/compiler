@@ -153,7 +153,7 @@ public class GraphInliningCopyOperationVisitor extends VisitAllNodeVisitor {
 		// Handle arguments
 		if (proj.getPred(0).equals(proj.getGraph().getArgs())) {
 			nodeMapping.put(proj, this.arguments.get(proj.getNum()));
-		} else if (proj.getPred(0).equals(proj.getGraph().getStart())) {
+		} else if (proj.getPred(0).equals(proj.getGraph().getStart()) && proj.getMode().equals(Mode.getM())) {
 			startProjM = visitNode(proj);
 		} else {
 			visitNode(proj);
