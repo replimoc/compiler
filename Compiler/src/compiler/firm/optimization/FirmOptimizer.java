@@ -6,7 +6,6 @@ import java.util.LinkedList;
 import compiler.firm.optimization.evaluation.GraphEvaluationVisitor;
 import compiler.firm.optimization.evaluation.ProgramDetails;
 import compiler.firm.optimization.visitor.CommonSubexpressionEliminationVisitor;
-import compiler.firm.optimization.visitor.ConstantFoldingVisitor;
 import compiler.firm.optimization.visitor.ControlFlowVisitor;
 import compiler.firm.optimization.visitor.FunctionInliningVisitor;
 import compiler.firm.optimization.visitor.LocalOptimizationVisitor;
@@ -35,7 +34,7 @@ public final class FirmOptimizer {
 			ProgramDetails programDetails = evaluateGraphs();
 			finished = true;
 			finished &= optimize(NormalizationVisitor.FACTORY);
-			finished &= optimize(ConstantFoldingVisitor.FACTORY);
+			// finished &= optimize(ConstantFoldingVisitor.FACTORY);
 			finished &= optimize(LocalOptimizationVisitor.FACTORY);
 			finished &= optimize(ControlFlowVisitor.FACTORY);
 			finished &= optimize(CommonSubexpressionEliminationVisitor.FACTORY);
