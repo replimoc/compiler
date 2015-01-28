@@ -6,6 +6,7 @@ import java.util.Set;
 import firm.nodes.Address;
 import firm.nodes.Const;
 import firm.nodes.Node;
+import firm.nodes.Proj;
 
 public class GetNodesForBlockVisitor extends VisitAllNodeVisitor {
 
@@ -34,6 +35,13 @@ public class GetNodesForBlockVisitor extends VisitAllNodeVisitor {
 
 	@Override
 	public void visit(Address address) {
+	}
+
+	@Override
+	public void visit(Proj proj) {
+		if (!proj.getPred(0).equals(proj.getGraph().getArgs())) {
+			visitNode(proj);
+		}
 	}
 
 }
