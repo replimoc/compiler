@@ -65,13 +65,13 @@ public class FunctionInliningVisitor extends OptimizationVisitor<Node> {
 					return;
 				}
 
-				Set<Node> keepInBlockNodes = getAllPredecessorsInSameBlock(call);
+				System.out.println(methodName);
 
 				GetNodesForBlockVisitor nodesForBlock = new GetNodesForBlockVisitor(call.getBlock());
 				call.getGraph().walk(nodesForBlock);
 
-				Set<Node> moveNodes = nodesForBlock.getNodes();
-				moveNodes.removeAll(keepInBlockNodes);
+				Set<Node> moveNodes = getAllSuccessorsInSameBlock(call);
+				moveNodes.addAll(getAllSuccessorsInSameBlock(nodesForBlock.getEnd()));
 
 				Node firstSuccessor = null;
 				Node secondSuccessor = null;
@@ -125,17 +125,20 @@ public class FunctionInliningVisitor extends OptimizationVisitor<Node> {
 		}
 	}
 
-	private Set<Node> getAllPredecessorsInSameBlock(Node node) {
+	private Set<Node> getAllSuccessorsInSameBlock(Node node) {
 		Set<Node> nodes = new HashSet<>();
-		getAllPredecessorsInBlock(node, node.getBlock(), nodes);
+		if (node != null) {
+			getAllSuccessorsInBlock(node, node.getBlock(), nodes);
+		}
 		return nodes;
 	}
 
-	private void getAllPredecessorsInBlock(Node node, Node block, Set<Node> result) {
-		for (Node predecessor : node.getPreds()) {
-			if (predecessor.getBlock() != null && predecessor.getBlock().equals(block) && !result.contains(predecessor)) {
-				result.add(predecessor);
-				getAllPredecessorsInBlock(predecessor, block, result);
+	private void getAllSuccessorsInBlock(Node node, Node block, Set<Node> result) {
+		result.add(node);
+		for (Edge edge : BackEdges.getOuts(node)) {
+			Node successor = edge.node;
+			if (successor.getBlock() != null && successor.getBlock().equals(block) && !result.contains(successor)) {
+				getAllSuccessorsInBlock(successor, block, result);
 			}
 		}
 	}

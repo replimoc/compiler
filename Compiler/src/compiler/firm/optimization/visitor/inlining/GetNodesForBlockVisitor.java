@@ -1,31 +1,28 @@
 package compiler.firm.optimization.visitor.inlining;
 
-import java.util.HashSet;
-import java.util.Set;
-
 import firm.nodes.Address;
+import firm.nodes.Cmp;
 import firm.nodes.Const;
+import firm.nodes.Jmp;
 import firm.nodes.Node;
 import firm.nodes.Proj;
+import firm.nodes.Return;
 
 public class GetNodesForBlockVisitor extends VisitAllNodeVisitor {
 
 	private final Node block;
-	private final Set<Node> nodes = new HashSet<>();
+	private Node end;
 
 	public GetNodesForBlockVisitor(Node block) {
 		this.block = block;
 	}
 
-	public Set<Node> getNodes() {
-		return nodes;
+	public Node getEnd() {
+		return end;
 	}
 
 	@Override
 	protected Node visitNode(Node node) {
-		if (node.getBlock() != null && node.getBlock().equals(block)) {
-			nodes.add(node);
-		}
 		return node;
 	}
 
@@ -44,4 +41,24 @@ public class GetNodesForBlockVisitor extends VisitAllNodeVisitor {
 		}
 	}
 
+	private void collectEnd(Node node) {
+		if (node.getBlock().equals(block)) {
+			this.end = node;
+		}
+	}
+
+	@Override
+	public void visit(Cmp cmp) {
+		collectEnd(cmp);
+	}
+
+	@Override
+	public void visit(Jmp jmp) {
+		collectEnd(jmp);
+	}
+
+	@Override
+	public void visit(Return ret) {
+		collectEnd(ret);
+	}
 }
