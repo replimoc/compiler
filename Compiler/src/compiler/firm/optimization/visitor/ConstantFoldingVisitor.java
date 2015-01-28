@@ -6,6 +6,7 @@ import java.util.Map.Entry;
 
 import compiler.firm.FirmUtils;
 import compiler.firm.optimization.FirmOptimizer;
+
 import firm.BackEdges;
 import firm.BackEdges.Edge;
 import firm.Graph;
@@ -236,13 +237,19 @@ public class ConstantFoldingVisitor extends OptimizationVisitor<TargetValue> {
 		for (int i = 1; i < phi.getPredCount(); i++) {
 			TargetValue tmpTargetValue = getTargetValue(phi.getPred(i)) == null ? TargetValue.getUnknown() : getTargetValue(phi.getPred(i));
 			if (predTargetValue.isConstant() && tmpTargetValue.isConstant() && predTargetValue.equals(tmpTargetValue)) {
+				// same constants as predecessors
 				setTargetValue(phi, predTargetValue);
 			} else if (predTargetValue.equals(TargetValue.getBad()) || tmpTargetValue.equals(TargetValue.getBad())
 					|| (predTargetValue.isConstant() && tmpTargetValue.isConstant() && !predTargetValue.equals(tmpTargetValue))) {
+				// node already bad, no chance to recover
 				setTargetValue(phi, TargetValue.getBad());
+				break;
 			} else if (tmpTargetValue.equals(TargetValue.getUnknown())) {
+				// predTargetValue is unknown or constant
 				setTargetValue(phi, predTargetValue);
 			} else {
+				// predTargetValue is unknown and tmpTargetValue is a constant
+				// save it
 				setTargetValue(phi, tmpTargetValue);
 				predTargetValue = tmpTargetValue;
 			}
@@ -315,13 +322,17 @@ public class ConstantFoldingVisitor extends OptimizationVisitor<TargetValue> {
 			for (int i = 1; i < phi.getPredCount(); i++) {
 				TargetValue tmpTargetValue = getTargetValue(phi.getPred(i)) == null ? TargetValue.getUnknown() : getTargetValue(phi.getPred(i));
 				if (predTargetValue.isConstant() && tmpTargetValue.isConstant() && predTargetValue.equals(tmpTargetValue)) {
+					// both are a constant
 					setTargetValue(phi, predTargetValue);
 				} else if (predTargetValue.equals(TargetValue.getBad()) || tmpTargetValue.equals(TargetValue.getBad())
 						|| (predTargetValue.isConstant() && tmpTargetValue.isConstant() && !predTargetValue.equals(tmpTargetValue))) {
+					// at least one is no constant
 					setTargetValue(phi, TargetValue.getBad());
 					break;
 				} else {
+					// at least one is unknown
 					setTargetValue(phi, TargetValue.getUnknown());
+					break;
 				}
 			}
 
