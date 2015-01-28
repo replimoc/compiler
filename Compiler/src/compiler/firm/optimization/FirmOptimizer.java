@@ -14,7 +14,6 @@ import compiler.firm.optimization.visitor.LoopInvariantVisitor;
 import compiler.firm.optimization.visitor.NormalizationVisitor;
 import compiler.firm.optimization.visitor.OptimizationVisitor;
 import compiler.firm.optimization.visitor.OptimizationVisitorFactory;
-import compiler.firm.optimization.visitor.StrengthReductionVisitor;
 
 import firm.BackEdges;
 import firm.BackEdges.Edge;
@@ -41,7 +40,7 @@ public final class FirmOptimizer {
 			finished &= optimize(ControlFlowVisitor.FACTORY);
 			finished &= optimize(CommonSubexpressionEliminationVisitor.FACTORY);
 			finished &= optimize(LoopInvariantVisitor.FACTORY(programDetails));
-			finished &= optimize(StrengthReductionVisitor.FACTORY);
+			// finished &= optimize(StrengthReductionVisitor.FACTORY);
 			finished &= MethodParametersEliminator.eliminateObsoleteParameters(programDetails);
 			finished &= optimize(FunctionInliningVisitor.FACTORY);
 		} while (!finished);
