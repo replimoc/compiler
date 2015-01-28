@@ -1,4 +1,4 @@
-package compiler.firm.optimization.visitor.inlining;
+package compiler.firm.optimization.visitor;
 
 import java.util.ArrayList;
 import java.util.Collection;
@@ -21,7 +21,7 @@ import firm.nodes.Proj;
 import firm.nodes.Return;
 import firm.nodes.Start;
 
-public class GraphInliningCopyOperationVisitor extends AbstractFirmNodesVisitor {
+public class InliningCopyGraphVisitor extends AbstractFirmNodesVisitor {
 
 	private final Graph graph;
 	private HashMap<Node, Node> nodeMapping = new HashMap<>();
@@ -34,7 +34,7 @@ public class GraphInliningCopyOperationVisitor extends AbstractFirmNodesVisitor 
 	private Node startProjM;
 	private Node endProjM;
 
-	public GraphInliningCopyOperationVisitor(Node startNode, List<Node> arguments) {
+	public InliningCopyGraphVisitor(Node startNode, List<Node> arguments) {
 		this.graph = startNode.getGraph();
 		this.lastBlock = startNode.getBlock();
 		this.startNode = startNode;

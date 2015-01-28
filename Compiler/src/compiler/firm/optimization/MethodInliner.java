@@ -8,9 +8,8 @@ import java.util.Set;
 import compiler.firm.FirmUtils;
 import compiler.firm.optimization.evaluation.BlockInformation;
 import compiler.firm.optimization.evaluation.ProgramDetails;
+import compiler.firm.optimization.visitor.InliningCopyGraphVisitor;
 import compiler.firm.optimization.visitor.inlining.CountNodesVisitor;
-import compiler.firm.optimization.visitor.inlining.GraphInliningCopyOperationVisitor;
-
 import firm.BackEdges;
 import firm.BackEdges.Edge;
 import firm.Graph;
@@ -70,7 +69,7 @@ public final class MethodInliner {
 			arguments.add(call.getPred(i));
 		}
 
-		GraphInliningCopyOperationVisitor blockCopyWalker = new GraphInliningCopyOperationVisitor(call, arguments);
+		InliningCopyGraphVisitor blockCopyWalker = new InliningCopyGraphVisitor(call, arguments);
 		graph.walkPostorder(blockCopyWalker);
 
 		blockCopyWalker.cleanupNodes();
