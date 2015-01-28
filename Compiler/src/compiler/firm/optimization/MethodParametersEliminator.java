@@ -12,7 +12,6 @@ import compiler.firm.optimization.evaluation.ProgramDetails;
 
 import firm.BackEdges;
 import firm.BackEdges.Edge;
-import firm.CompoundType;
 import firm.Entity;
 import firm.Graph;
 import firm.MethodType;
@@ -35,7 +34,7 @@ public final class MethodParametersEliminator {
 			EntityDetails graphDetails = entityDetailEntry.getValue();
 			HashSet<Integer> unusedParameters = graphDetails.getUnusedParameters();
 
-			if (entity.getGraph() != null && unusedParameters != null && !unusedParameters.isEmpty()) {
+			if (unusedParameters != null && !unusedParameters.isEmpty()) {
 				eliminateParametersOfEntity(entity, unusedParameters, graphDetails.getCallsToEntity());
 				nothingOptimized = false;
 			}
@@ -51,16 +50,14 @@ public final class MethodParametersEliminator {
 	private static void eliminateParametersOfEntity(Entity entity, Set<Integer> unusedParameters, HashMap<Call, CallInformation> callsToEntity) {
 		Graph graph = entity.getGraph();
 
-		Entity newEntity = createNewEntity(entity, unusedParameters);
-		graph.setEntity(newEntity);
+		MethodType newMethodType = createNewMethodType(entity, unusedParameters);
+		entity.setType(newMethodType);
 
 		exchangeParameterProjs(graph, unusedParameters);
-		removeCallParameters(newEntity, callsToEntity, unusedParameters);
-
-		entity.free();
+		removeCallParameters(newMethodType, callsToEntity, unusedParameters);
 	}
 
-	private static void removeCallParameters(Entity newEntity, HashMap<Call, CallInformation> callsToEntity, Set<Integer> unusedParameters) {
+	private static void removeCallParameters(MethodType newMethodType, HashMap<Call, CallInformation> callsToEntity, Set<Integer> unusedParameters) {
 
 		for (Entry<Call, CallInformation> callEntry : callsToEntity.entrySet()) {
 			Call call = callEntry.getKey();
@@ -74,8 +71,7 @@ public final class MethodParametersEliminator {
 				}
 			}
 
-			Node newAddress = call.getGraph().newAddress(newEntity);
-			Node newCall = call.getGraph().newCall(call.getBlock(), call.getMem(), newAddress, parameters, newEntity.getType());
+			Node newCall = call.getGraph().newCall(call.getBlock(), call.getMem(), call.getPtr(), parameters, newMethodType);
 			Graph.exchange(call, newCall);
 		}
 
@@ -117,7 +113,7 @@ public final class MethodParametersEliminator {
 		FirmUtils.replaceNodes(replacements);
 	}
 
-	private static Entity createNewEntity(Entity entity, Set<Integer> unusedParameters) {
+	private static MethodType createNewMethodType(Entity entity, Set<Integer> unusedParameters) {
 		MethodType methodType = (MethodType) entity.getType();
 
 		Type[] newParameterTypes = new Type[methodType.getNParams() - unusedParameters.size()];
@@ -133,7 +129,6 @@ public final class MethodParametersEliminator {
 			returnType = new firm.Type[] { methodType.getResType(0) };
 		}
 
-		Entity newEntity = new Entity((CompoundType) entity.getOwner(), entity.getLdName(), new MethodType(newParameterTypes, returnType));
-		return newEntity;
+		return new MethodType(newParameterTypes, returnType);
 	}
 }
