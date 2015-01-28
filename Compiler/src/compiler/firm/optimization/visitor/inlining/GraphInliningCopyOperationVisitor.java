@@ -7,6 +7,8 @@ import java.util.LinkedList;
 import java.util.List;
 import java.util.Map.Entry;
 
+import compiler.firm.optimization.AbstractFirmNodesVisitor;
+
 import firm.Graph;
 import firm.Mode;
 import firm.nodes.Address;
@@ -19,7 +21,7 @@ import firm.nodes.Proj;
 import firm.nodes.Return;
 import firm.nodes.Start;
 
-public class GraphInliningCopyOperationVisitor extends VisitAllNodeVisitor {
+public class GraphInliningCopyOperationVisitor extends AbstractFirmNodesVisitor {
 
 	private final Graph graph;
 	private HashMap<Node, Node> nodeMapping = new HashMap<>();
@@ -87,7 +89,11 @@ public class GraphInliningCopyOperationVisitor extends VisitAllNodeVisitor {
 	}
 
 	@Override
-	protected Node visitNode(Node node) {
+	protected void visitNode(Node node) {
+		copyNode(node);
+	}
+
+	private Node copyNode(Node node) {
 		if (nodeMapping.containsKey(node))
 			return nodeMapping.get(node);
 
@@ -151,9 +157,9 @@ public class GraphInliningCopyOperationVisitor extends VisitAllNodeVisitor {
 		if (proj.getPred(0).equals(proj.getGraph().getArgs())) {
 			nodeMapping.put(proj, this.arguments.get(proj.getNum()));
 		} else if (proj.getPred(0).equals(proj.getGraph().getStart()) && proj.getMode().equals(Mode.getM())) {
-			startProjM = visitNode(proj);
+			startProjM = copyNode(proj);
 		} else {
-			visitNode(proj);
+			copyNode(proj);
 		}
 	}
 
@@ -170,7 +176,7 @@ public class GraphInliningCopyOperationVisitor extends VisitAllNodeVisitor {
 		if (nodeMapping.containsKey(address))
 			return;
 
-		visitNode(address).setBlock(graph.getStartBlock());
+		copyNode(address).setBlock(graph.getStartBlock());
 	}
 
 	@Override
@@ -178,7 +184,7 @@ public class GraphInliningCopyOperationVisitor extends VisitAllNodeVisitor {
 		if (nodeMapping.containsKey(node))
 			return;
 
-		visitNode(node).setBlock(graph.getStartBlock());
+		copyNode(node).setBlock(graph.getStartBlock());
 	}
 
 	@Override

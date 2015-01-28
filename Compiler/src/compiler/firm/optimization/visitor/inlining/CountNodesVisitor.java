@@ -1,9 +1,11 @@
 package compiler.firm.optimization.visitor.inlining;
 
+import compiler.firm.optimization.AbstractFirmNodesVisitor;
+
 import firm.nodes.Call;
 import firm.nodes.Node;
 
-public class CountNodesVisitor extends VisitAllNodeVisitor {
+public class CountNodesVisitor extends AbstractFirmNodesVisitor {
 
 	private int numNodes = 0;
 
@@ -12,9 +14,8 @@ public class CountNodesVisitor extends VisitAllNodeVisitor {
 	}
 
 	@Override
-	protected Node visitNode(Node node) {
+	protected void visitNode(Node node) {
 		numNodes++;
-		return null;
 	}
 
 	@Override
