@@ -1,11 +1,16 @@
 package compiler.firm.optimization.visitor;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
+import compiler.firm.optimization.GraphDetails;
+
+import firm.Graph;
 import firm.nodes.Add;
 import firm.nodes.Block;
 import firm.nodes.Conv;
@@ -21,15 +26,23 @@ import firm.nodes.Sub;
 
 public class LoopInvariantVisitor extends OptimizationVisitor<Node> {
 
-	public static final OptimizationVisitorFactory<Node> FACTORY = new OptimizationVisitorFactory<Node>() {
-		@Override
-		public OptimizationVisitor<Node> create() {
-			return new LoopInvariantVisitor();
-		}
-	};
+	public static final OptimizationVisitorFactory<Node> FACTORY(final HashMap<Graph, GraphDetails> graphDetails) {
+		return new OptimizationVisitorFactory<Node>() {
+			@Override
+			public OptimizationVisitor<Node> create() {
+				return new LoopInvariantVisitor(graphDetails);
+			}
+		};
+	}
+
+	private final HashMap<Graph, GraphDetails> graphDetails;
 
 	private HashMap<Node, Node> backedges = new HashMap<>();
 	private HashMap<Block, Set<Block>> dominators = new HashMap<>();
+
+	public LoopInvariantVisitor(HashMap<Graph, GraphDetails> graphDetails) {
+		this.graphDetails = graphDetails;
+	}
 
 	@Override
 	public HashMap<Node, Node> getLatticeValues() {
@@ -51,7 +64,7 @@ public class LoopInvariantVisitor extends OptimizationVisitor<Node> {
 			if (dominators.containsKey(b) && dominators.get(b).containsAll(loops)) {
 				for (Map.Entry<Node, Node> entry : backedges.entrySet()) {
 					if (entry.getValue().equals(b)) {
-						if (dominators.containsKey((Block) entry.getKey()) && !dominators.get((Block) entry.getKey()).contains(block)
+						if (dominators.containsKey(entry.getKey()) && !dominators.get(entry.getKey()).contains(block)
 								&& !dominatorBlocks.contains(entry.getKey())) {
 							// b and the looṕ header are on the same 'level'
 							sameLevelLoops.add(b);
@@ -71,206 +84,159 @@ public class LoopInvariantVisitor extends OptimizationVisitor<Node> {
 
 	@Override
 	public void visit(Add add) {
-		Add node = (Add) (nodeReplacements.containsKey(add) ? nodeReplacements.get(add) : add);
-		Node left = nodeReplacements.containsKey(node.getLeft()) ? nodeReplacements.get(node.getLeft()).getBlock() : node.getLeft().getBlock();
-		Node right = nodeReplacements.containsKey(node.getRight()) ? nodeReplacements.get(node.getRight()).getBlock() : node.getRight().getBlock();
+		final Add addNode = getNodeOrReplacement(add);
+		Block leftBlock = (Block) getNodeOrReplacement(addNode.getLeft()).getBlock();
+		Block rightBlock = (Block) getNodeOrReplacement(addNode.getRight()).getBlock();
 
-		if (dominators.size() > 0 && dominators.get(node.getBlock()).size() > 2) {
-			Set<Block> doms = dominators.get(node.getBlock());
-			if (doms.contains(left) && doms.contains(right)) {
-				Node pred = getInnerMostLoopHeader((Block) node.getBlock());
-				if (pred == null)
-					return;
-				Node preLoopBlock = pred.getPred(0).getBlock();
-				// do not move nodes over dominator borders
-				Set<Block> domBorder = dominators.get(preLoopBlock);
-				if (domBorder.contains(left) && domBorder.contains(right)) {
-					Node copy = node.getGraph().newAdd(preLoopBlock, node.getLeft(), node.getRight(), node.getMode());
-					addReplacement(node, copy);
-				}
+		checkNode(new NodeFactory() {
+			@Override
+			public Node copyNode(Block newBlock) {
+				return addNode.getGraph().newAdd(newBlock, addNode.getLeft(), addNode.getRight(), addNode.getMode());
 			}
-		}
+
+		}, addNode, leftBlock, rightBlock);
 	}
 
 	@Override
 	public void visit(Sub sub) {
-		Sub node = (Sub) (nodeReplacements.containsKey(sub) ? nodeReplacements.get(sub) : sub);
-		Node left = nodeReplacements.containsKey(node.getLeft()) ? nodeReplacements.get(node.getLeft()).getBlock() : node.getLeft().getBlock();
-		Node right = nodeReplacements.containsKey(node.getRight()) ? nodeReplacements.get(node.getRight()).getBlock() : node.getRight().getBlock();
+		final Sub subNode = getNodeOrReplacement(sub);
+		Block leftBlock = (Block) getNodeOrReplacement(subNode.getLeft()).getBlock();
+		Block rightBlock = (Block) getNodeOrReplacement(subNode.getRight()).getBlock();
 
-		if (dominators.size() > 0 && dominators.get(node.getBlock()).size() > 2) {
-			Set<Block> doms = dominators.get(node.getBlock());
-			if (doms.contains(left) && doms.contains(right)) {
-				Node pred = getInnerMostLoopHeader((Block) node.getBlock());
-				if (pred == null)
-					return;
-				Node preLoopBlock = pred.getPred(0).getBlock();
-				// do not move nodes over dominator borders
-				Set<Block> domBorder = dominators.get(preLoopBlock);
-				if (domBorder.contains(left) && domBorder.contains(right)) {
-					Node copy = node.getGraph().newSub(preLoopBlock, node.getLeft(), node.getRight(), node.getMode());
-					addReplacement(node, copy);
-				}
+		checkNode(new NodeFactory() {
+			@Override
+			public Node copyNode(Block newBlock) {
+				return subNode.getGraph().newSub(newBlock, subNode.getLeft(), subNode.getRight(), subNode.getMode());
 			}
-		}
-	}
 
-	@Override
-	public void visit(Conv conv) {
-		Conv node = (Conv) (nodeReplacements.containsKey(conv) ? nodeReplacements.get(conv) : conv);
-		Node operand = nodeReplacements.containsKey(node.getOp()) ? nodeReplacements.get(node.getOp()).getBlock() : node.getOp().getBlock();
-
-		if (dominators.size() > 0 && dominators.get(node.getBlock()).size() > 2) {
-			Set<Block> doms = dominators.get(node.getBlock());
-			if (doms.contains(operand)) {
-				Node pred = getInnerMostLoopHeader((Block) node.getBlock());
-				if (pred == null)
-					return;
-				Node preLoopBlock = pred.getPred(0).getBlock();
-				// do not move nodes over dominator borders
-				Set<Block> domBorder = dominators.get(preLoopBlock);
-				if (domBorder.contains(operand)) {
-					Node copy = node.getGraph().newConv(preLoopBlock, node.getOp(), node.getMode());
-					addReplacement(node, copy);
-				}
-			}
-		}
+		}, subNode, leftBlock, rightBlock);
 	}
 
 	@Override
 	public void visit(Shl shl) {
-		Shl node = (Shl) (nodeReplacements.containsKey(shl) ? nodeReplacements.get(shl) : shl);
-		Node left = nodeReplacements.containsKey(node.getLeft()) ? nodeReplacements.get(node.getLeft()).getBlock() : node.getLeft().getBlock();
-		Node right = nodeReplacements.containsKey(node.getRight()) ? nodeReplacements.get(node.getRight()).getBlock() : node.getRight().getBlock();
+		final Shl shlNode = getNodeOrReplacement(shl);
+		Block leftBlock = (Block) getNodeOrReplacement(shlNode.getLeft()).getBlock();
+		Block rightBlock = (Block) getNodeOrReplacement(shlNode.getRight()).getBlock();
 
-		if (dominators.size() > 0 && dominators.get(node.getBlock()).size() > 2) {
-			Set<Block> doms = dominators.get(node.getBlock());
-			if (doms.contains(left) && doms.contains(right)) {
-				Node pred = getInnerMostLoopHeader((Block) node.getBlock());
-				if (pred == null)
-					return;
-				Node preLoopBlock = pred.getPred(0).getBlock();
-				// do not move nodes over dominator borders
-				Set<Block> domBorder = dominators.get(preLoopBlock);
-				if (domBorder.contains(left) && domBorder.contains(right)) {
-					Node copy = node.getGraph().newShl(preLoopBlock, node.getLeft(), node.getRight(), node.getMode());
-					addReplacement(node, copy);
-				}
+		checkNode(new NodeFactory() {
+			@Override
+			public Node copyNode(Block newBlock) {
+				return shlNode.getGraph().newShl(newBlock, shlNode.getLeft(), shlNode.getRight(), shlNode.getMode());
 			}
-		}
+
+		}, shlNode, leftBlock, rightBlock);
 	}
 
 	@Override
 	public void visit(Shr shr) {
-		Shr node = (Shr) (nodeReplacements.containsKey(shr) ? nodeReplacements.get(shr) : shr);
-		Node left = nodeReplacements.containsKey(node.getLeft()) ? nodeReplacements.get(node.getLeft()).getBlock() : node.getLeft().getBlock();
-		Node right = nodeReplacements.containsKey(node.getRight()) ? nodeReplacements.get(node.getRight()).getBlock() : node.getRight().getBlock();
+		final Shr shrNode = getNodeOrReplacement(shr);
+		Block leftBlock = (Block) getNodeOrReplacement(shrNode.getLeft()).getBlock();
+		Block rightBlock = (Block) getNodeOrReplacement(shrNode.getRight()).getBlock();
 
-		if (dominators.size() > 0 && dominators.get(node.getBlock()).size() > 2) {
-			Set<Block> doms = dominators.get(node.getBlock());
-			if (doms.contains(left) && doms.contains(right)) {
-				Node pred = getInnerMostLoopHeader((Block) node.getBlock());
-				if (pred == null)
-					return;
-				Node preLoopBlock = pred.getPred(0).getBlock();
-				// do not move nodes over dominator borders
-				Set<Block> domBorder = dominators.get(preLoopBlock);
-				if (domBorder.contains(left) && domBorder.contains(right)) {
-					Node copy = node.getGraph().newShr(preLoopBlock, node.getLeft(), node.getRight(), node.getMode());
-					addReplacement(node, copy);
-				}
+		checkNode(new NodeFactory() {
+			@Override
+			public Node copyNode(Block newBlock) {
+				return shrNode.getGraph().newShr(newBlock, shrNode.getLeft(), shrNode.getRight(), shrNode.getMode());
 			}
-		}
+
+		}, shrNode, leftBlock, rightBlock);
 	}
 
 	@Override
 	public void visit(Shrs shrs) {
-		Shrs node = (Shrs) (nodeReplacements.containsKey(shrs) ? nodeReplacements.get(shrs) : shrs);
-		Node left = nodeReplacements.containsKey(node.getLeft()) ? nodeReplacements.get(node.getLeft()).getBlock() : node.getLeft().getBlock();
-		Node right = nodeReplacements.containsKey(node.getRight()) ? nodeReplacements.get(node.getRight()).getBlock() : node.getRight().getBlock();
+		final Shrs shrsNode = getNodeOrReplacement(shrs);
+		Block leftBlock = (Block) getNodeOrReplacement(shrsNode.getLeft()).getBlock();
+		Block rightBlock = (Block) getNodeOrReplacement(shrsNode.getRight()).getBlock();
 
-		if (dominators.size() > 0 && dominators.get(node.getBlock()).size() > 2) {
-			Set<Block> doms = dominators.get(node.getBlock());
-			if (doms.contains(left) && doms.contains(right)) {
-				Node pred = getInnerMostLoopHeader((Block) node.getBlock());
-				if (pred == null)
-					return;
-				Node preLoopBlock = pred.getPred(0).getBlock();
-				// do not move nodes over dominator borders
-				Set<Block> domBorder = dominators.get(preLoopBlock);
-				if (domBorder.contains(left) && domBorder.contains(right)) {
-					Node copy = node.getGraph().newShrs(preLoopBlock, node.getLeft(), node.getRight(), node.getMode());
-					addReplacement(node, copy);
-				}
+		checkNode(new NodeFactory() {
+			@Override
+			public Node copyNode(Block newBlock) {
+				return shrsNode.getGraph().newShrs(newBlock, shrsNode.getLeft(), shrsNode.getRight(), shrsNode.getMode());
 			}
-		}
+
+		}, shrsNode, leftBlock, rightBlock);
 	}
 
 	@Override
 	public void visit(Mul mul) {
-		Mul node = (Mul) (nodeReplacements.containsKey(mul) ? nodeReplacements.get(mul) : mul);
-		Node left = nodeReplacements.containsKey(node.getLeft()) ? nodeReplacements.get(node.getLeft()).getBlock() : node.getLeft().getBlock();
-		Node right = nodeReplacements.containsKey(node.getRight()) ? nodeReplacements.get(node.getRight()).getBlock() : node.getRight().getBlock();
+		final Mul mulNode = getNodeOrReplacement(mul);
+		Block leftBlock = (Block) getNodeOrReplacement(mulNode.getLeft()).getBlock();
+		Block rightBlock = (Block) getNodeOrReplacement(mulNode.getRight()).getBlock();
 
-		if (dominators.size() > 0 && dominators.get(node.getBlock()).size() > 2) {
-			Set<Block> doms = dominators.get(node.getBlock());
-			if (doms.contains(left) && doms.contains(right)) {
-				Node pred = getInnerMostLoopHeader((Block) node.getBlock());
-				if (pred == null)
-					return;
-				Node preLoopBlock = pred.getPred(0).getBlock();
-				// do not move nodes over dominator borders
-				Set<Block> domBorder = dominators.get(preLoopBlock);
-				if (domBorder.contains(left) && domBorder.contains(right)) {
-					Node copy = node.getGraph().newMul(preLoopBlock, node.getLeft(), node.getRight(), node.getMode());
-					addReplacement(node, copy);
-				}
+		checkNode(new NodeFactory() {
+			@Override
+			public Node copyNode(Block newBlock) {
+				return mulNode.getGraph().newMul(newBlock, mulNode.getLeft(), mulNode.getRight(), mulNode.getMode());
 			}
-		}
+
+		}, mulNode, leftBlock, rightBlock);
 	}
 
 	@Override
 	public void visit(Minus minus) {
-		Minus node = (Minus) (nodeReplacements.containsKey(minus) ? nodeReplacements.get(minus) : minus);
-		Node operand = nodeReplacements.containsKey(node.getOp()) ? nodeReplacements.get(node.getOp()).getBlock() : node.getOp().getBlock();
+		final Minus minusNode = getNodeOrReplacement(minus);
+		Block operandBlock = (Block) getNodeOrReplacement(minusNode.getOp()).getBlock();
+
+		checkNode(new NodeFactory() {
+			@Override
+			public Node copyNode(Block newBlock) {
+				return minusNode.getGraph().newMinus(newBlock, minusNode.getOp(), minusNode.getMode());
+			}
+
+		}, minusNode, operandBlock);
+	}
+
+	@Override
+	public void visit(Not not) {
+		final Not notNode = getNodeOrReplacement(not);
+		Block operandBlock = (Block) getNodeOrReplacement(notNode.getOp()).getBlock();
+
+		checkNode(new NodeFactory() {
+			@Override
+			public Node copyNode(Block newBlock) {
+				return notNode.getGraph().newNot(newBlock, notNode.getOp(), notNode.getMode());
+			}
+
+		}, notNode, operandBlock);
+	}
+
+	@Override
+	public void visit(Conv conv) {
+		final Conv convNode = getNodeOrReplacement(conv);
+		Block operandBlock = (Block) getNodeOrReplacement(convNode.getOp()).getBlock();
+
+		checkNode(new NodeFactory() {
+			@Override
+			public Node copyNode(Block newBlock) {
+				return convNode.getGraph().newConv(newBlock, convNode.getOp(), convNode.getMode());
+			}
+
+		}, convNode, operandBlock);
+	}
+
+	private void checkNode(NodeFactory factory, Node node, Block... operandBlocks) {
+		List<Block> operandBlocksList = Arrays.asList(operandBlocks);
 
 		if (dominators.size() > 0 && dominators.get(node.getBlock()).size() > 2) {
 			Set<Block> doms = dominators.get(node.getBlock());
-			if (doms.contains(operand)) {
+			if (doms.containsAll(operandBlocksList)) {
 				Node pred = getInnerMostLoopHeader((Block) node.getBlock());
 				if (pred == null)
 					return;
-				Node preLoopBlock = pred.getPred(0).getBlock();
+				Block preLoopBlock = (Block) pred.getPred(0).getBlock();
 				// do not move nodes over dominator borders
 				Set<Block> domBorder = dominators.get(preLoopBlock);
-				if (domBorder.contains(operand)) {
-					Node copy = node.getGraph().newMinus(preLoopBlock, node.getOp(), node.getMode());
+				if (domBorder.containsAll(operandBlocksList)) {
+					Node copy = factory.copyNode(preLoopBlock);
 					addReplacement(node, copy);
 				}
 			}
 		}
 	}
 
-	@Override
-	public void visit(Not not) {
-		Not node = (Not) (nodeReplacements.containsKey(not) ? nodeReplacements.get(not) : not);
-		Node operand = nodeReplacements.containsKey(node.getOp()) ? nodeReplacements.get(node.getOp()).getBlock() : node.getOp().getBlock();
-
-		if (dominators.size() > 0 && dominators.get(node.getBlock()).size() > 2) {
-			Set<Block> doms = dominators.get(node.getBlock());
-			if (doms.contains(operand)) {
-				Node pred = getInnerMostLoopHeader((Block) node.getBlock());
-				if (pred == null)
-					return;
-				Node preLoopBlock = pred.getPred(0).getBlock();
-				// do not move nodes over dominator borders
-				Set<Block> domBorder = dominators.get(preLoopBlock);
-				if (domBorder.contains(operand)) {
-					Node copy = node.getGraph().newNot(preLoopBlock, node.getOp(), node.getMode());
-					addReplacement(node, copy);
-				}
-			}
-		}
+	@SuppressWarnings("unchecked")
+	public <T extends Node> T getNodeOrReplacement(T node) {
+		return (T) (nodeReplacements.containsKey(node) ? nodeReplacements.get(node) : node);
 	}
 
 	@Override
@@ -278,5 +244,9 @@ public class LoopInvariantVisitor extends OptimizationVisitor<Node> {
 		FirmUtils utils = new FirmUtils(start.getGraph());
 		dominators = utils.getDominators();
 		backedges = utils.getBackEdges();
+	}
+
+	private static interface NodeFactory {
+		Node copyNode(Block newBlock);
 	}
 }

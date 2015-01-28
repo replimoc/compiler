@@ -29,6 +29,7 @@ import org.junit.Ignore;
 @Ignore
 public class TestFileVisitor extends SimpleFileVisitor<Path> {
 
+	private static final int CHECK_TIMEOUT = 200;
 	private static final int NUMBER_OF_THREADS = 12;
 
 	public interface FileTester {
@@ -151,7 +152,7 @@ public class TestFileVisitor extends SimpleFileVisitor<Path> {
 	public void checkForFailedTests() {
 		try {
 			threadPool.shutdown();
-			threadPool.awaitTermination(150, TimeUnit.SECONDS);
+			threadPool.awaitTermination(CHECK_TIMEOUT, TimeUnit.SECONDS);
 		} catch (InterruptedException e) {
 			e.printStackTrace();
 		}
