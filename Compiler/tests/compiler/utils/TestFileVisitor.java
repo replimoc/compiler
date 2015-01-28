@@ -29,7 +29,7 @@ import org.junit.Ignore;
 @Ignore
 public class TestFileVisitor extends SimpleFileVisitor<Path> {
 
-	private static final int NUMBER_OF_THREADS = 12;
+	private static final int NUMBER_OF_THREADS = 1;
 
 	public interface FileTester {
 		void testSourceFile(TestFileVisitor visitor, Path sourceFilePath, Path expectedResultFilePath) throws Exception;

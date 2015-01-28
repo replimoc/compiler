@@ -55,10 +55,14 @@ public class GraphInliningCopyOperationVisitor extends VisitAllNodeVisitor {
 
 			Node badNode = getMappedNode(phi);
 
-			Phi newPhi = (Phi) graph.newPhi(getMappedNode(phi.getBlock()), predecessors, phi.getMode());
-			newPhi.setLoop(phi.getLoop());
+			if (predecessors[0].equals(predecessors[1])) {
+				Graph.exchange(badNode, predecessors[0]);
+			} else {
+				Phi newPhi = (Phi) graph.newPhi(getMappedNode(phi.getBlock()), predecessors, phi.getMode());
+				newPhi.setLoop(phi.getLoop());
 
-			Graph.exchange(badNode, newPhi);
+				Graph.exchange(badNode, newPhi);
+			}
 		}
 	}
 
