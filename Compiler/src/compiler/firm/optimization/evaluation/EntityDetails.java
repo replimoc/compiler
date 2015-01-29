@@ -11,6 +11,7 @@ public class EntityDetails {
 	private final HashMap<Node, BlockInformation> blockInformation = new HashMap<>();
 	private boolean hasNoSideEffects;
 	private HashSet<Integer> unusedParameters;
+	private int numberOfNodes = 0;
 
 	public boolean hasNoSideEffects() {
 		return hasNoSideEffects;
@@ -42,5 +43,17 @@ public class EntityDetails {
 
 	public BlockInformation getBlockInformation(Node block) {
 		return blockInformation.get(block);
+	}
+
+	public void setNumberOfNodes(int numberOfNodes) {
+		this.numberOfNodes = numberOfNodes;
+	}
+
+	public int getNumberOfNodes() {
+		return numberOfNodes;
+	}
+
+	public boolean isInlinable() {
+		return numberOfNodes < 10000;
 	}
 }

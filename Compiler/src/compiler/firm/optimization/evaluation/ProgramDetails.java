@@ -49,8 +49,11 @@ public class ProgramDetails {
 
 	public void updateGraph(Graph graph) {
 		BackEdges.enable(graph);
-		GraphEvaluationVisitor.calculateStaticDetails(graph, getEntityDetails(graph.getEntity()));
-		graph.walk(new GraphEvaluationVisitor(this));
+		EntityDetails entityDetail = getEntityDetails(graph.getEntity());
+		GraphEvaluationVisitor.calculateStaticDetails(graph, entityDetail);
+		GraphEvaluationVisitor graphEvaluationVisitor = new GraphEvaluationVisitor(this);
+		graph.walk(graphEvaluationVisitor);
+		entityDetail.setNumberOfNodes(graphEvaluationVisitor.getNumberOfNodes());
 		BackEdges.disable(graph);
 	}
 }

@@ -7,9 +7,10 @@ import java.util.Set;
 
 import compiler.firm.FirmUtils;
 import compiler.firm.optimization.evaluation.BlockInformation;
+import compiler.firm.optimization.evaluation.EntityDetails;
 import compiler.firm.optimization.evaluation.ProgramDetails;
 import compiler.firm.optimization.visitor.InliningCopyGraphVisitor;
-import compiler.firm.optimization.visitor.inlining.CountNodesVisitor;
+
 import firm.BackEdges;
 import firm.BackEdges.Edge;
 import firm.Graph;
@@ -28,15 +29,13 @@ public final class MethodInliner {
 			Graph graph = address.getEntity().getGraph();
 
 			if (graph != null) {
-				CountNodesVisitor countVisitor = new CountNodesVisitor();
-				graph.walk(countVisitor);
+				programDetails.updateGraph(call.getGraph());
+				EntityDetails entityDetails = programDetails.getEntityDetails(call);
 
-				if (countVisitor.getNumNodes() <= 10000) {
+				if (entityDetails.isInlinable()) {
 					changes = true;
 
-					programDetails.updateGraph(call.getGraph());
-					BlockInformation blockInformation = programDetails.getEntityDetails(call)
-							.getBlockInformation(call.getBlock());
+					BlockInformation blockInformation = entityDetails.getBlockInformation(call.getBlock());
 					inline(call, graph, blockInformation);
 				}
 			}

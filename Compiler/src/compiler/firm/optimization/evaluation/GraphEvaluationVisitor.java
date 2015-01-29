@@ -58,9 +58,14 @@ public class GraphEvaluationVisitor extends AbstractFirmNodesVisitor {
 	}
 
 	private final ProgramDetails programDetails;
+	private int numberOfNodes = 0;
 
 	public GraphEvaluationVisitor(ProgramDetails programDetails) {
 		this.programDetails = programDetails;
+	}
+
+	public int getNumberOfNodes() {
+		return numberOfNodes;
 	}
 
 	@Override
@@ -77,6 +82,9 @@ public class GraphEvaluationVisitor extends AbstractFirmNodesVisitor {
 		EntityDetails entityDetails = programDetails.getEntityDetails(entity);
 
 		entityDetails.addCallInfo(callNode, constantArguments);
+
+		visitNode(callNode);
+		numberOfNodes += 10000; // FIXME: Avoid recursions
 	}
 
 	private void collectEnd(Node node) {
@@ -87,15 +95,23 @@ public class GraphEvaluationVisitor extends AbstractFirmNodesVisitor {
 	@Override
 	public void visit(Cmp cmp) {
 		collectEnd(cmp);
+		visitNode(cmp);
 	}
 
 	@Override
 	public void visit(Jmp jmp) {
 		collectEnd(jmp);
+		visitNode(jmp);
 	}
 
 	@Override
 	public void visit(Return ret) {
 		collectEnd(ret);
+		visitNode(ret);
+	}
+
+	@Override
+	protected void visitNode(Node node) {
+		numberOfNodes++;
 	}
 }
