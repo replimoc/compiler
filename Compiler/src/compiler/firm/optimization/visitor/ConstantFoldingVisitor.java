@@ -4,7 +4,6 @@ import java.util.HashMap;
 import java.util.LinkedList;
 import java.util.Map.Entry;
 
-import compiler.firm.FirmUtils;
 import compiler.firm.optimization.FirmOptimizer;
 
 import firm.BackEdges;
@@ -31,8 +30,6 @@ import firm.nodes.Sub;
 
 public class ConstantFoldingVisitor extends OptimizationVisitor<TargetValue> {
 
-	protected boolean fixPoint = true;
-
 	public static final OptimizationVisitorFactory<TargetValue> FACTORY = new OptimizationVisitorFactory<TargetValue>() {
 		@Override
 		public OptimizationVisitor<TargetValue> create() {
@@ -58,11 +55,8 @@ public class ConstantFoldingVisitor extends OptimizationVisitor<TargetValue> {
 			currentGraph = targets.keySet().iterator().next().getGraph();
 
 			BackEdges.enable(currentGraph);
-			do {
-				visitor.fixPoint = true;
-				FirmOptimizer.walkTopological(currentGraph, workList, visitor);
-				FirmOptimizer.workList(workList, visitor);
-			} while (!visitor.fixPoint);
+			FirmOptimizer.walkTopological(currentGraph, workList, visitor);
+			FirmOptimizer.workList(workList, visitor);
 			BackEdges.disable(currentGraph);
 
 			for (Entry<Node, TargetValue> targetEntry : targets.entrySet()) {
@@ -77,9 +71,6 @@ public class ConstantFoldingVisitor extends OptimizationVisitor<TargetValue> {
 	}
 
 	private void setTargetValue(Node node, TargetValue targetValue) {
-		if (!targets.containsKey(node) || !targets.get(node).equals(targetValue)) {
-			fixPoint = false;
-		}
 		targets.put(node, targetValue);
 	}
 
@@ -97,10 +88,10 @@ public class ConstantFoldingVisitor extends OptimizationVisitor<TargetValue> {
 		}
 	}
 
-	private void unaryTransferFunction(Node node, TargetValue newTargetValue) {
-		if (newTargetValue.isConstant()) {
+	private void unaryTransferFunction(Node node, TargetValue target, TargetValue newTargetValue) {
+		if (target.isConstant()) {
 			setTargetValue(node, newTargetValue);
-		} else if (newTargetValue.equals(TargetValue.getBad())) {
+		} else if (target.equals(TargetValue.getBad())) {
 			setTargetValue(node, TargetValue.getBad());
 		} else {
 			setTargetValue(node, TargetValue.getUnknown());
@@ -109,27 +100,45 @@ public class ConstantFoldingVisitor extends OptimizationVisitor<TargetValue> {
 
 	private void divTransferFunction(Node node, TargetValue leftTarget, TargetValue rightTarget, TargetValue newTargetValue) {
 		if (leftTarget.isNull()) {
-			setTargetValue(FirmUtils.getFirstSuccessor(node), leftTarget);
+			for (Edge suc : BackEdges.getOuts(node)) {
+				setTargetValue(suc.node, leftTarget);
+			}
 		} else if (leftTarget.isConstant() && rightTarget.isConstant()) {
-			setTargetValue(FirmUtils.getFirstSuccessor(node), newTargetValue);
+			for (Edge suc : BackEdges.getOuts(node)) {
+				setTargetValue(suc.node, newTargetValue);
+			}
 		} else if (leftTarget.equals(TargetValue.getBad()) || rightTarget.equals(TargetValue.getBad())) {
-			setTargetValue(FirmUtils.getFirstSuccessor(node), TargetValue.getBad());
+			for (Edge suc : BackEdges.getOuts(node)) {
+				setTargetValue(suc.node, TargetValue.getBad());
+			}
 		} else {
-			setTargetValue(FirmUtils.getFirstSuccessor(node), TargetValue.getUnknown());
+			for (Edge suc : BackEdges.getOuts(node)) {
+				setTargetValue(suc.node, TargetValue.getUnknown());
+			}
 		}
 	}
 
 	private void modTransferFunction(Node node, TargetValue leftTarget, TargetValue rightTarget, TargetValue newTargetValue) {
 		if (leftTarget.isConstant() && rightTarget.isConstant()) {
-			setTargetValue(FirmUtils.getFirstSuccessor(node), newTargetValue);
+			for (Edge suc : BackEdges.getOuts(node)) {
+				setTargetValue(suc.node, newTargetValue);
+			}
 		} else if (leftTarget.isNull()) {
-			setTargetValue(FirmUtils.getFirstSuccessor(node), new TargetValue(0, leftTarget.getMode()));
+			for (Edge suc : BackEdges.getOuts(node)) {
+				setTargetValue(suc.node, new TargetValue(0, leftTarget.getMode()));
+			}
 		} else if (leftTarget.isOne()) {
-			setTargetValue(FirmUtils.getFirstSuccessor(node), new TargetValue(0, leftTarget.getMode()));
+			for (Edge suc : BackEdges.getOuts(node)) {
+				setTargetValue(suc.node, new TargetValue(0, leftTarget.getMode()));
+			}
 		} else if (leftTarget.equals(TargetValue.getBad()) || rightTarget.equals(TargetValue.getBad())) {
-			setTargetValue(FirmUtils.getFirstSuccessor(node), TargetValue.getBad());
+			for (Edge suc : BackEdges.getOuts(node)) {
+				setTargetValue(suc.node, TargetValue.getBad());
+			}
 		} else {
-			setTargetValue(FirmUtils.getFirstSuccessor(node), TargetValue.getUnknown());
+			for (Edge suc : BackEdges.getOuts(node)) {
+				setTargetValue(suc.node, TargetValue.getUnknown());
+			}
 		}
 	}
 
@@ -173,9 +182,10 @@ public class ConstantFoldingVisitor extends OptimizationVisitor<TargetValue> {
 	@Override
 	public void visit(Conv conversion) {
 		TargetValue target = getTargetValue(conversion.getOp());
-		TargetValue newTargetValue = target == null ? TargetValue.getUnknown() : target.convertTo(conversion.getMode());
+		TargetValue newTargetValue = target == null ? TargetValue.getUnknown() : target
+				.convertTo(conversion.getMode());
 
-		unaryTransferFunction(conversion, newTargetValue);
+		unaryTransferFunction(conversion, target, newTargetValue);
 	}
 
 	@Override
@@ -194,7 +204,7 @@ public class ConstantFoldingVisitor extends OptimizationVisitor<TargetValue> {
 		TargetValue target = getTargetValue(minus.getOp());
 		TargetValue newTargetValue = (target == null || !target.isConstant()) ? TargetValue.getUnknown() : target.neg();
 
-		unaryTransferFunction(minus, newTargetValue);
+		unaryTransferFunction(minus, target, newTargetValue);
 	}
 
 	@Override
@@ -222,7 +232,7 @@ public class ConstantFoldingVisitor extends OptimizationVisitor<TargetValue> {
 		TargetValue target = getTargetValue(not.getOp());
 		TargetValue newTargetValue = (target == null || !target.isConstant()) ? TargetValue.getUnknown() : target.not();
 
-		unaryTransferFunction(not, newTargetValue);
+		unaryTransferFunction(not, target, newTargetValue);
 	}
 
 	@Override
@@ -310,12 +320,10 @@ public class ConstantFoldingVisitor extends OptimizationVisitor<TargetValue> {
 	}
 
 	private class ConstantFoldingFixpointVisitor extends ConstantFoldingVisitor {
-		private final LinkedList<Node> workList;
 
 		private ConstantFoldingFixpointVisitor(HashMap<Node, TargetValue> targets, LinkedList<Node> workList) {
 			super();
 			this.targets = targets;
-			this.workList = workList;
 		}
 
 		@Override
@@ -324,7 +332,6 @@ public class ConstantFoldingVisitor extends OptimizationVisitor<TargetValue> {
 				// skip memory phi's that connect to an already removed node
 				return;
 			}
-			TargetValue oldTarget = getTargetValue(phi);
 			TargetValue predTargetValue = getTargetValue(phi.getPred(0)) == null ? TargetValue.getUnknown() : getTargetValue(phi.getPred(0));
 
 			for (int i = 1; i < phi.getPredCount(); i++) {
@@ -341,14 +348,6 @@ public class ConstantFoldingVisitor extends OptimizationVisitor<TargetValue> {
 					// at least one is unknown
 					setTargetValue(phi, TargetValue.getUnknown());
 					break;
-				}
-			}
-
-			/* ensure that following nodes really get the changed target value! */
-			/* do not remove this or bad things will happen! */
-			if (!oldTarget.equals(getTargetValue(phi))) {
-				for (Edge edge : BackEdges.getOuts(phi)) {
-					workList.push(edge.node);
 				}
 			}
 		}

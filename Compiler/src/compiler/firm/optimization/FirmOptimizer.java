@@ -3,6 +3,7 @@ package compiler.firm.optimization;
 import java.util.HashMap;
 import java.util.LinkedList;
 
+import compiler.firm.FirmUtils;
 import compiler.firm.optimization.evaluation.ProgramDetails;
 import compiler.firm.optimization.visitor.CommonSubexpressionEliminationVisitor;
 import compiler.firm.optimization.visitor.ConstantFoldingVisitor;
@@ -21,6 +22,8 @@ import firm.GraphBase;
 import firm.Program;
 import firm.bindings.binding_irgraph;
 import firm.nodes.Block;
+import firm.nodes.Div;
+import firm.nodes.Mod;
 import firm.nodes.Node;
 import firm.nodes.Phi;
 
@@ -127,7 +130,26 @@ public final class FirmOptimizer {
 	public static <T> void workList(LinkedList<Node> workList, OptimizationVisitor<T> visitor) {
 		while (!workList.isEmpty()) {
 			Node node = workList.pop();
+			T oldTarget = getTarget(visitor, node);
 			node.accept(visitor);
+			T newTarget = getTarget(visitor, node);
+
+			if (oldTarget != null && !oldTarget.equals(newTarget)) {
+				for (Edge e : BackEdges.getOuts(node)) {
+					workList.push(e.node);
+				}
+			}
+		}
+	}
+
+	private static <T> T getTarget(OptimizationVisitor<T> visitor, Node node) {
+		HashMap<Node, T> targetValues = visitor.getLatticeValues();
+		if (node instanceof Div || node instanceof Mod) {
+			// if div/mod changed _all_ successors changed
+			// it is enough to check the first one
+			return targetValues.get(FirmUtils.getFirstSuccessor(node));
+		} else {
+			return targetValues.get(node);
 		}
 	}
 
