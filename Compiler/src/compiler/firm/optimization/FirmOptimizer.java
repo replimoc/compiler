@@ -7,6 +7,7 @@ import java.util.Map.Entry;
 import compiler.firm.optimization.visitor.CommonSubexpressionEliminationVisitor;
 import compiler.firm.optimization.visitor.ConstantFoldingVisitor;
 import compiler.firm.optimization.visitor.ControlFlowVisitor;
+import compiler.firm.optimization.visitor.LoadStoreOptimiziationVisitor;
 import compiler.firm.optimization.visitor.LocalOptimizationVisitor;
 import compiler.firm.optimization.visitor.LoopInvariantVisitor;
 import compiler.firm.optimization.visitor.NormalizationVisitor;
@@ -44,6 +45,7 @@ public final class FirmOptimizer {
 			finished &= optimize(CommonSubexpressionEliminationVisitor.FACTORY);
 			finished &= optimize(LoopInvariantVisitor.FACTORY(graphDetails));
 			finished &= optimize(StrengthReductionVisitor.FACTORY);
+			finished &= optimize(LoadStoreOptimiziationVisitor.FACTORY);
 		} while (!finished);
 	}
 
