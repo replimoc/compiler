@@ -44,7 +44,7 @@ public final class FirmOptimizer {
 			finished &= optimize(LoopInvariantVisitor.FACTORY(programDetails));
 			finished &= optimize(StrengthReductionVisitor.FACTORY);
 			// finished &= MethodParametersEliminator.eliminateObsoleteParameters(programDetails);
-			finished &= MethodInliner.inlineCalls(programDetails);
+			finished &= MethodInliner.inlineCalls(evaluateGraphs());
 		} while (!finished);
 	}
 

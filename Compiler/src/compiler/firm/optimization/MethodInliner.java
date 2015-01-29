@@ -23,25 +23,36 @@ public final class MethodInliner {
 
 	public static boolean inlineCalls(ProgramDetails programDetails) {
 		boolean changes = false;
-		List<Call> calls = programDetails.getCalls();
+		Set<Call> calls = programDetails.getCalls();
 		for (Call call : calls) {
 			Address address = (Address) call.getPred(1);
 			Graph graph = address.getEntity().getGraph();
 
 			if (graph != null) {
-				programDetails.updateGraph(call.getGraph());
 				EntityDetails entityDetails = programDetails.getEntityDetails(call);
 
-				if (entityDetails.isInlinable()) {
+				if (entityDetails.isInlinable() && !programDetails.isRecursion(call)) {
 					changes = true;
 
 					BlockInformation blockInformation = entityDetails.getBlockInformation(call.getBlock());
 					inline(call, graph, blockInformation);
+					updateGraph(call, programDetails);
 				}
 			}
 		}
 
 		return !changes;
+	}
+
+	private static void updateGraph(Call call, ProgramDetails programDetails) {
+		Set<Graph> graphs = new HashSet<>();
+		graphs.add(call.getGraph());
+		for (Call subcall : programDetails.getCalls()) {
+			graphs.add(subcall.getGraph());
+		}
+		for (Graph updateGraph : graphs) {
+			programDetails.updateGraph(updateGraph);
+		}
 	}
 
 	private static void inline(Call call, Graph graph, BlockInformation blockInformation) {

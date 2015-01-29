@@ -83,8 +83,9 @@ public class GraphEvaluationVisitor extends AbstractFirmNodesVisitor {
 
 		entityDetails.addCallInfo(callNode, constantArguments);
 
+		programDetails.getEntityDetails(callNode.getGraph().getEntity()).addCallFromEntity(callNode);
+
 		visitNode(callNode);
-		numberOfNodes += 10000; // FIXME: Avoid recursions
 	}
 
 	private void collectEnd(Node node) {

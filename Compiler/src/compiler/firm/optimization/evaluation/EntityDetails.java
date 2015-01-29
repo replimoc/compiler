@@ -2,6 +2,7 @@ package compiler.firm.optimization.evaluation;
 
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.Set;
 
 import firm.nodes.Call;
 import firm.nodes.Node;
@@ -9,6 +10,7 @@ import firm.nodes.Node;
 public class EntityDetails {
 	private final HashMap<Call, CallInformation> callsToEntity = new HashMap<>();
 	private final HashMap<Node, BlockInformation> blockInformation = new HashMap<>();
+	private final Set<Call> callsFromEntity = new HashSet<>();
 	private boolean hasNoSideEffects;
 	private HashSet<Integer> unusedParameters;
 	private int numberOfNodes = 0;
@@ -54,6 +56,14 @@ public class EntityDetails {
 	}
 
 	public boolean isInlinable() {
-		return numberOfNodes < 10000;
+		return numberOfNodes < 100 || callsToEntity.size() <= 1;
+	}
+
+	public void addCallFromEntity(Call call) {
+		callsFromEntity.add(call);
+	}
+
+	public Set<Call> getCallsFromEntity() {
+		return callsFromEntity;
 	}
 }

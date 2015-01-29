@@ -1,13 +1,14 @@
 package compiler.firm.optimization.evaluation;
 
-import java.util.ArrayList;
 import java.util.HashMap;
-import java.util.List;
+import java.util.HashSet;
 import java.util.Map.Entry;
+import java.util.Set;
 
 import firm.BackEdges;
 import firm.Entity;
 import firm.Graph;
+import firm.nodes.Address;
 import firm.nodes.Call;
 import firm.nodes.Node;
 
@@ -36,13 +37,11 @@ public class ProgramDetails {
 		return entityDetails;
 	}
 
-	public List<Call> getCalls() {
-		List<Call> calls = new ArrayList<>();
+	public Set<Call> getCalls() {
+		Set<Call> calls = new HashSet<>();
 		for (Entry<Entity, EntityDetails> entityDetailEntry : getEntityDetails().entrySet()) {
 			EntityDetails entityDetails = entityDetailEntry.getValue();
-			for (Entry<Call, CallInformation> callInfo : entityDetails.getCallsToEntity().entrySet()) {
-				calls.add(callInfo.getKey());
-			}
+			calls.addAll(entityDetails.getCallsFromEntity());
 		}
 		return calls;
 	}
@@ -55,5 +54,32 @@ public class ProgramDetails {
 		graph.walk(graphEvaluationVisitor);
 		entityDetail.setNumberOfNodes(graphEvaluationVisitor.getNumberOfNodes());
 		BackEdges.disable(graph);
+	}
+
+	public boolean isRecursion(Call call) {
+		return isRecursion(call, new HashSet<Call>());
+	}
+
+	protected boolean isRecursion(Call call, Set<Call> calls) {
+		for (Call subcall : getSubcalls(call)) {
+			if (!calls.contains(subcall)) {
+				calls.add(subcall);
+				if (isRecursion(subcall, calls)) {
+					return true;
+				}
+				calls.remove(subcall);
+			} else {
+				return true;
+			}
+		}
+		return false;
+	}
+
+	protected Set<Call> getSubcalls(Call call) {
+		if (call.getPredCount() < 2) {
+			return new HashSet<>();
+		}
+		Address address = (Address) call.getPred(1);
+		return entityDetails.get(address.getEntity()).getCallsFromEntity();
 	}
 }
