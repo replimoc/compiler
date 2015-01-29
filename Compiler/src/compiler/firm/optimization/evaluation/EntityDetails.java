@@ -2,29 +2,38 @@ package compiler.firm.optimization.evaluation;
 
 import java.util.HashMap;
 import java.util.HashSet;
-import java.util.Set;
 
 import firm.nodes.Call;
 import firm.nodes.Node;
 
 public class EntityDetails {
 	private final HashMap<Call, CallInformation> callsToEntity = new HashMap<>();
+	private final HashMap<Call, CallInformation> callsFromEntity = new HashMap<>();
 	private final HashMap<Node, BlockInformation> blockInformation = new HashMap<>();
-	private final Set<Call> callsFromEntity = new HashSet<>();
-	private boolean hasNoSideEffects;
+	private boolean hasMemUsage;
+	private boolean hasSideEffects;
 	private HashSet<Integer> unusedParameters;
 	private int numberOfNodes = 0;
 
-	public boolean hasNoSideEffects() {
-		return hasNoSideEffects;
+	public EntityDetails(boolean hasMemUsage, boolean hasSideEffects) {
+		this.hasMemUsage = hasMemUsage;
+		this.hasSideEffects = hasSideEffects;
 	}
 
-	public void setHasNoSideEffects(boolean hasNoSideEffects) {
-		this.hasNoSideEffects = hasNoSideEffects;
+	public boolean hasSideEffects() {
+		return hasSideEffects;
 	}
 
-	public void addCallInfo(Call callNode, int constantArguments) {
-		callsToEntity.put(callNode, new CallInformation(constantArguments));
+	public void setHasSideEffects() {
+		this.hasSideEffects = true;
+	}
+
+	public void addCallToEntityInfo(Call callNode, CallInformation callInformation) {
+		callsToEntity.put(callNode, callInformation);
+	}
+
+	public void addCallFromEntityInfo(Call callNode, CallInformation callInformation) {
+		callsFromEntity.put(callNode, callInformation);
 	}
 
 	public HashMap<Call, CallInformation> getCallsToEntity() {
@@ -37,6 +46,22 @@ public class EntityDetails {
 
 	public void setUnusedParameters(HashSet<Integer> unusedParameters) {
 		this.unusedParameters = unusedParameters;
+	}
+
+	public boolean hasMemUsage() {
+		return hasMemUsage;
+	}
+
+	public void setHasMemUsage() {
+		this.hasMemUsage = true;
+	}
+
+	public HashMap<Call, CallInformation> getCallsFromEntity() {
+		return callsFromEntity;
+	}
+
+	public void removeCall(Call call) {
+		callsToEntity.remove(call);
 	}
 
 	public void addBlockInfo(Node block, BlockInformation information) {
@@ -57,13 +82,5 @@ public class EntityDetails {
 
 	public boolean isInlinable() {
 		return numberOfNodes < 100 || callsToEntity.size() <= 1;
-	}
-
-	public void addCallFromEntity(Call call) {
-		callsFromEntity.add(call);
-	}
-
-	public Set<Call> getCallsFromEntity() {
-		return callsFromEntity;
 	}
 }

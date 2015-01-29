@@ -223,11 +223,11 @@ public class LoopInvariantVisitor extends OptimizationVisitor<Node> {
 	}
 
 	@Override
-	public void visit(Call call) {
+	public void visit(final Call call) {
 		final Call callNode = getNodeOrReplacement(call);
 		final Address address = (Address) callNode.getPred(1);
 		Entity entity = address.getEntity();
-		if (!programDetails.hasNoSideEffects(entity)) {
+		if (programDetails.hasMemUsage(entity)) {
 			return;
 		}
 

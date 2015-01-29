@@ -50,9 +50,8 @@ public final class MethodInliner {
 		for (Call subcall : programDetails.getCalls()) {
 			graphs.add(subcall.getGraph());
 		}
-		for (Graph updateGraph : graphs) {
-			programDetails.updateGraph(updateGraph);
-		}
+
+		programDetails.updateGraphs(graphs);
 	}
 
 	private static void inline(Call call, Graph graph, BlockInformation blockInformation) {

@@ -2,9 +2,11 @@ package compiler.firm.optimization;
 
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.Iterator;
 import java.util.Map.Entry;
 import java.util.Set;
 
+import compiler.ast.declaration.MainMethodDeclaration;
 import compiler.firm.FirmUtils;
 import compiler.firm.optimization.evaluation.CallInformation;
 import compiler.firm.optimization.evaluation.EntityDetails;
@@ -22,8 +24,8 @@ import firm.nodes.Call;
 import firm.nodes.Node;
 import firm.nodes.Proj;
 
-public final class MethodParametersEliminator {
-	private MethodParametersEliminator() {
+public final class ObsoleteNodesEliminator {
+	private ObsoleteNodesEliminator() {
 	}
 
 	public static boolean eliminateObsoleteParameters(ProgramDetails programDetails) {
@@ -130,5 +132,58 @@ public final class MethodParametersEliminator {
 		}
 
 		return new MethodType(newParameterTypes, returnType);
+	}
+
+	public static boolean eliminateObsoleteNodes(ProgramDetails programDetails) {
+		HashMap<Node, Node> replacements = new HashMap<Node, Node>();
+
+		for (Entry<Entity, EntityDetails> curr : programDetails.getEntityDetails().entrySet()) {
+			EntityDetails currDetails = curr.getValue();
+
+			if (!currDetails.hasSideEffects()) {
+				for (Iterator<Entry<Call, CallInformation>> iterator = currDetails.getCallsToEntity().entrySet().iterator(); iterator.hasNext();) {
+					Entry<Call, CallInformation> callEntry = iterator.next();
+					Graph callingGraph = callEntry.getValue().getOtherEntity().getGraph();
+					BackEdges.enable(callingGraph);
+					Call callNode = callEntry.getKey();
+
+					if (BackEdges.getNOuts(callNode) == 1) {
+						Node predecessorM = callNode.getMem();
+						Node successorM = BackEdges.getOuts(callNode).iterator().next().node;
+						replacements.put(successorM, predecessorM);
+						replacements.put(callNode, callingGraph.newBad(callNode.getMode()));
+						iterator.remove();
+					}
+
+					BackEdges.disable(callingGraph);
+				}
+			}
+		}
+
+		FirmUtils.replaceNodes(replacements);
+
+		return replacements.isEmpty();
+	}
+
+	public static boolean eliminateObsoleteGraphs(ProgramDetails programDetails) {
+		boolean nothingOptimized = true;
+
+		for (Iterator<Entry<Entity, EntityDetails>> iterator = programDetails.getEntityDetails().entrySet().iterator(); iterator.hasNext();) {
+			Entry<Entity, EntityDetails> currEntry = iterator.next();
+			Entity currEntity = currEntry.getKey();
+			EntityDetails currEntityDetails = currEntry.getValue();
+
+			if (currEntityDetails.getCallsToEntity().isEmpty() && !MainMethodDeclaration.MAIN_METHOD_NAME.equals(currEntity.getLdName())) {
+				programDetails.removeCallsToOthers(currEntityDetails);
+				if (currEntity.getGraph() != null) {
+					currEntity.getGraph().free();
+				}
+				currEntity.free();
+				nothingOptimized = false;
+				iterator.remove();
+			}
+		}
+
+		return nothingOptimized;
 	}
 }

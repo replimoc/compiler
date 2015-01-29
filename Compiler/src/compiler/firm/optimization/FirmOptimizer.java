@@ -36,6 +36,7 @@ public final class FirmOptimizer {
 		do {
 			ProgramDetails programDetails = evaluateGraphs();
 			finished = true;
+			finished &= ObsoleteNodesEliminator.eliminateObsoleteGraphs(programDetails);
 			finished &= optimize(NormalizationVisitor.FACTORY);
 			finished &= optimize(ConstantFoldingVisitor.FACTORY);
 			finished &= optimize(LocalOptimizationVisitor.FACTORY);
@@ -43,18 +44,15 @@ public final class FirmOptimizer {
 			finished &= optimize(CommonSubexpressionEliminationVisitor.FACTORY);
 			finished &= optimize(LoopInvariantVisitor.FACTORY(programDetails));
 			finished &= optimize(StrengthReductionVisitor.FACTORY);
-			// finished &= MethodParametersEliminator.eliminateObsoleteParameters(programDetails);
+			finished &= ObsoleteNodesEliminator.eliminateObsoleteParameters(programDetails);
+			finished &= ObsoleteNodesEliminator.eliminateObsoleteNodes(evaluateGraphs());
 			finished &= MethodInliner.inlineCalls(evaluateGraphs());
 		} while (!finished);
 	}
 
 	private static ProgramDetails evaluateGraphs() {
 		ProgramDetails programDetails = new ProgramDetails();
-
-		for (Graph graph : Program.getGraphs()) {
-			programDetails.updateGraph(graph);
-		}
-
+		programDetails.updateGraphs(Program.getGraphs());
 		return programDetails;
 	}
 
