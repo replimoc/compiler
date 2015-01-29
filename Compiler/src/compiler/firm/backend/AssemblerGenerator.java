@@ -121,7 +121,7 @@ public final class AssemblerGenerator {
 		try {
 			BufferedWriter writer = Files.newBufferedWriter(outputFile, StandardCharsets.US_ASCII);
 			for (AssemblerOperation operation : operations) {
-				writer.write(operation.toString());
+				writer.write(operation.toString() + " # r:" + operation.getReadRegisters() + "; w:" + operation.getWriteRegisters());
 				writer.newLine();
 			}
 			writer.close();

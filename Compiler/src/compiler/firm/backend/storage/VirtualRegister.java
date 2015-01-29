@@ -1,6 +1,7 @@
 package compiler.firm.backend.storage;
 
 import java.util.HashSet;
+import java.util.LinkedHashSet;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Set;
@@ -16,6 +17,7 @@ public class VirtualRegister extends RegisterBased {
 	private final int num;
 	private final LinkedList<Interval> lifetimes = new LinkedList<>();
 	private final List<VirtualRegister> preferedRegisters = new LinkedList<>();
+	private final LinkedHashSet<VirtualRegister> interferences;
 
 	private Storage register;
 	private boolean forceRegister;
@@ -30,6 +32,7 @@ public class VirtualRegister extends RegisterBased {
 		this.register = register;
 		this.forceRegister = register != null;
 		this.num = I++;
+		this.interferences = new LinkedHashSet<>();
 	}
 
 	public VirtualRegister(Bit mode, RegisterBundle registerBundle) {
@@ -159,4 +162,17 @@ public class VirtualRegister extends RegisterBased {
 	public LinkedList<Interval> getLiftimeIntervals() {
 		return lifetimes;
 	}
+
+	public void addInteference(Set<VirtualRegister> interferences) {
+		for (VirtualRegister register : interferences) {
+			if (!equals(register)) {
+				this.interferences.add(register);
+			}
+		}
+	}
+
+	public LinkedHashSet<VirtualRegister> getInterferences() {
+		return this.interferences;
+	}
+
 }

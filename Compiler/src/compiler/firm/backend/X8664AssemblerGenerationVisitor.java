@@ -31,6 +31,8 @@ import compiler.firm.backend.operations.SubOperation;
 import compiler.firm.backend.operations.TestOperation;
 import compiler.firm.backend.operations.dummy.MethodEndOperation;
 import compiler.firm.backend.operations.dummy.MethodStartOperation;
+import compiler.firm.backend.operations.dummy.PhiOperation;
+import compiler.firm.backend.operations.dummy.ProxyPhiOperation;
 import compiler.firm.backend.operations.jump.JgOperation;
 import compiler.firm.backend.operations.jump.JgeOperation;
 import compiler.firm.backend.operations.jump.JlOperation;
@@ -48,6 +50,7 @@ import compiler.firm.backend.storage.StackPointer;
 import compiler.firm.backend.storage.Storage;
 import compiler.firm.backend.storage.VirtualRegister;
 import compiler.utils.MathUtils;
+import compiler.utils.Pair;
 import compiler.utils.Utils;
 
 import firm.BackEdges;
@@ -331,6 +334,10 @@ public class X8664AssemblerGenerationVisitor implements BulkPhiNodeVisitor {
 
 	@Override
 	public void visit(Block node) {
+	}
+
+	@Override
+	public void visit(Block node, List<Phi> phis) {
 		finishOperationsListOfBlock(currentBlock); // finish operations list for old block
 		currentBlock = node;
 
@@ -350,6 +357,10 @@ public class X8664AssemblerGenerationVisitor implements BulkPhiNodeVisitor {
 
 		// prepend a label before each block
 		addOperation(getBlockLabel(node));
+
+		for (Phi phi : phis) {
+			addOperation(storageManagement.getPhiOperation(phi));
+		}
 	}
 
 	@Override
@@ -669,8 +680,6 @@ public class X8664AssemblerGenerationVisitor implements BulkPhiNodeVisitor {
 
 	@Override
 	public void visit(List<Phi> phis) {
-		addOperation(new Comment("Handle phis of current block"));
-
 		HashMap<Phi, Node> node2phiMapping = new HashMap<>();
 		List<Phi> conflictNodes = new ArrayList<>();
 
@@ -693,24 +702,25 @@ public class X8664AssemblerGenerationVisitor implements BulkPhiNodeVisitor {
 			phiTempStackMapping.put(phi, temporaryStorage);
 		}
 
+		LinkedList<Pair<Storage, PhiOperation>> phiStorages = new LinkedList<>();
+
 		for (Entry<Phi, Node> mapping : node2phiMapping.entrySet()) {
 			Storage register = storageManagement.getStorage(mapping.getValue());
-			Storage destination = storageManagement.getStorage(mapping.getKey());
-			if (register instanceof VirtualRegister && destination instanceof VirtualRegister) {
-				((VirtualRegister) register).addPreferedRegister((VirtualRegister) destination);
-				((VirtualRegister) destination).addPreferedRegister((VirtualRegister) register);
+			PhiOperation destinationOperation = storageManagement.getPhiOperation(mapping.getKey());
+			VirtualRegister destination = destinationOperation.getRegister();
+			if (register instanceof VirtualRegister) {
+				((VirtualRegister) register).addPreferedRegister(destination);
+				destination.addPreferedRegister((VirtualRegister) register);
 			}
-			addOperation(new MovOperation("Phi: " + mapping.getValue() + " -> " + mapping.getKey(), register, destination));
+			phiStorages.add(new Pair<Storage, PhiOperation>(register, destinationOperation));
 		}
 
 		for (Phi phi : conflictNodes) {
-			Storage result = storageManagement.getStorage(phi);
-			if (result == null) {
-				result = new VirtualRegister(StorageManagement.getMode(phi));
-			}
-			addOperation(new MovOperation("Phi: temp -> " + phi.toString(), phiTempStackMapping.get(phi), result));
-			storageManagement.storeValue(phi, result);
+			PhiOperation destinationOperation = storageManagement.getPhiOperation(phi);
+			phiStorages.add(new Pair<Storage, PhiOperation>(phiTempStackMapping.get(phi), destinationOperation));
 		}
+
+		addOperation(new ProxyPhiOperation(phiStorages));
 	}
 
 	@Override

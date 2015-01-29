@@ -86,7 +86,7 @@ public class InterferenceGraph {
 	private void addInterferences(VirtualRegister currRegister, List<Pair<Interval, VirtualRegister>> activeIntervals) {
 		LinkedHashSet<VirtualRegister> interfering = graph.get(currRegister);
 		if (interfering == null) {
-			interfering = new LinkedHashSet<>();
+			interfering = currRegister.getInterferences();
 			graph.put(currRegister, interfering);
 		}
 
