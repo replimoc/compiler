@@ -66,34 +66,28 @@ public class ProgramDetails {
 					finished = true;
 
 				} else if (currDetails.hasMemUsage()) {
-					currDetails.setHasMemUsage();
-					finished = true;
+					currDetails.setHasMemUsage(); // don't break here, a side effect could still be found
+				}
 
-				} else if (currDetails.getCallsFromThis().isEmpty()) {
-					finished = true;
+				int finishedCallees = 0;
+				for (Entry<Call, CallInformation> currCallEntry : currDetails.getCallsFromThis().entrySet()) {
+					Entity calledEntity = currCallEntry.getValue().getOtherEntity();
+					EntityDetails calledEntityDetails = entityDetails.get(calledEntity);
 
-				} else {
-					int finishedCallees = 0;
-					for (Entry<Call, CallInformation> currCallEntry : currDetails.getCallsFromThis().entrySet()) {
-						Entity calledEntity = currCallEntry.getValue().getOtherEntity();
-						EntityDetails calledEntityDetails = entityDetails.get(calledEntity);
-
-						if (calledEntityDetails.hasSideEffects()) {
-							currDetails.setHasSideEffects();
-							currDetails.setHasMemUsage();
-							finished = true;
-							break;
-						} else if (calledEntityDetails.hasMemUsage()) {
-							currDetails.setHasMemUsage();
-							finished = true;
-							break;
-						} else if (finishedEntities.contains(calledEntity)) {
-							finishedCallees++;
-						}
+					if (calledEntityDetails.hasSideEffects()) {
+						currDetails.setHasSideEffects();
+						currDetails.setHasMemUsage();
+						finished = true;
+						break;
+					} else if (calledEntityDetails.hasMemUsage()) {
+						currDetails.setHasMemUsage(); // don't break here, a side effect could still be found
 					}
-					if (finishedCallees == currDetails.getCallsFromThis().size()) {
-						finished = true; // all callees finished but no memory usage or side effects found
+					if (finishedEntities.contains(calledEntity)) {
+						finishedCallees++;
 					}
+				}
+				if (finishedCallees == currDetails.getCallsFromThis().size()) {
+					finished = true; // all callees finished but no memory usage or side effects found
 				}
 
 				if (finished) {
