@@ -2,11 +2,9 @@ package compiler.firm.optimization.visitor;
 
 import java.util.HashMap;
 
-import compiler.firm.FirmUtils;
-
 import firm.BackEdges;
 import firm.BackEdges.Edge;
-import firm.Graph;
+import firm.Mode;
 import firm.nodes.Load;
 import firm.nodes.Node;
 import firm.nodes.Proj;
@@ -35,6 +33,39 @@ public class LoadStoreOptimiziationVisitor extends OptimizationVisitor<Node> {
 		return false;
 	}
 
+	private String getMethodName(Node node) {
+		return node.getGraph().getEntity().getLdName();
+	}
+
+	private void uniteProjSuccessors(Load load) {
+		Proj memProj = null;
+		Proj nonMemProj = null;
+
+		for (Edge edge : BackEdges.getOuts(load)) {
+			if (edge.node.getMode().equals(Mode.getM())) {
+				if (memProj == null) {
+					memProj = (Proj) edge.node;
+				} else {
+					for (Edge loadSuccEdge : BackEdges.getOuts(edge.node)) {
+						loadSuccEdge.node.setPred(loadSuccEdge.pos, memProj);
+					}
+					addReplacement(edge.node, edge.node.getGraph().newBad(edge.node.getMode()));
+				}
+			} else if (edge.node.getMode().equals(Mode.getM()) == false) {
+				if (nonMemProj == null) {
+					nonMemProj = (Proj) edge.node;
+				} else {
+					for (Edge loadSuccEdge : BackEdges.getOuts(edge.node)) {
+						loadSuccEdge.node.setPred(loadSuccEdge.pos, nonMemProj);
+					}
+					addReplacement(edge.node, edge.node.getGraph().newBad(edge.node.getMode()));
+				}
+			}
+		}
+
+		System.out.println(load + " united (" + BackEdges.getNOuts(load) + ")");
+	}
+
 	@Override
 	public HashMap<Node, Node> getLatticeValues() {
 		return getNodeReplacements();
@@ -44,20 +75,15 @@ public class LoadStoreOptimiziationVisitor extends OptimizationVisitor<Node> {
 	public void visit(Load load) {
 		if (existSavePathToLastLoad(load)) {
 			// System.out.println(load + " is being optimized!");
+			// System.out.println(getMethodName(load) + ":" + load);
 
-			boolean firstSuc = true;
 			for (Edge edge : BackEdges.getOuts(load)) {
 				edge.node.setPred(edge.pos, lastLodeNode);
-
-				if (firstSuc == false) {
-					Node node = FirmUtils.getFirstSuccessor(edge.node);
-					node.setPred(0, edge.node);
-				}
-
-				firstSuc = false;
 			}
 
-			Graph.killNode(load);
+			uniteProjSuccessors(lastLodeNode);
+
+			addReplacement(load, load.getGraph().newBad(load.getMode()));
 		}
 
 		lastLodeNode = load;
