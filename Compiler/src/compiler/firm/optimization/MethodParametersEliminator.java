@@ -35,7 +35,7 @@ public final class MethodParametersEliminator {
 			HashSet<Integer> unusedParameters = graphDetails.getUnusedParameters();
 
 			if (unusedParameters != null && !unusedParameters.isEmpty()) {
-				eliminateParametersOfEntity(entity, unusedParameters, graphDetails.getCallsToEntity());
+				eliminateParametersOfEntity(entity, unusedParameters, graphDetails.getCallsToThisEntity());
 				nothingOptimized = false;
 			}
 		}

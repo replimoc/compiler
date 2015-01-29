@@ -11,6 +11,7 @@ import java.util.Map.Entry;
 import compiler.utils.ExecutionFailedException;
 import compiler.utils.Pair;
 import compiler.utils.Utils;
+
 import firm.BackEdges;
 import firm.Backend;
 import firm.ClassType;
@@ -36,6 +37,8 @@ public final class FirmUtils {
 
 	public static final int TRUE = 1;
 	public static final int FALSE = 0;
+
+	public static final String CALLOC_PROXY = "calloc_proxy";
 
 	private FirmUtils() { // no objects of this class shall be created
 	}

@@ -51,10 +51,11 @@ public final class FirmOptimizer {
 		for (Graph graph : Program.getGraphs()) {
 			BackEdges.enable(graph);
 			GraphEvaluationVisitor.calculateStaticDetails(graph, programDetails.getEntityDetails(graph.getEntity()));
-			graph.walk(new GraphEvaluationVisitor(programDetails));
+			graph.walk(new GraphEvaluationVisitor(graph, programDetails));
 			BackEdges.disable(graph);
 		}
 
+		programDetails.finishMemoryUsageAndSideEffectCalculation();
 		return programDetails;
 	}
 

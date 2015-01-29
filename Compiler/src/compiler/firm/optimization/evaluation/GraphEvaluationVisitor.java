@@ -13,29 +13,23 @@ import firm.Mode;
 import firm.nodes.Address;
 import firm.nodes.Call;
 import firm.nodes.Const;
+import firm.nodes.Div;
+import firm.nodes.Load;
+import firm.nodes.Mod;
 import firm.nodes.Node;
+import firm.nodes.Phi;
 import firm.nodes.Proj;
+import firm.nodes.Store;
 
 public class GraphEvaluationVisitor extends AbstractFirmNodesVisitor {
 
 	public static void calculateStaticDetails(Graph graph, EntityDetails details) {
-		boolean hasNoSideEffects = false;
 		HashSet<Integer> unusedParameters = new HashSet<Integer>();
 
 		for (Edge startFollower : BackEdges.getOuts(graph.getStart())) {
 			Node startFollowerNode = startFollower.node;
-			if (startFollowerNode.getMode().equals(Mode.getM())) {
-				Proj projM = (Proj) startFollowerNode;
 
-				Iterable<Node> returns = graph.getEndBlock().getPreds();
-				for (Node ret : returns) {
-					if (!ret.getPred(0).equals(projM)) {
-						continue;
-					}
-				}
-				hasNoSideEffects = true;
-
-			} else if (startFollowerNode instanceof Proj && startFollowerNode.getMode().equals(Mode.getT())) {
+			if (startFollowerNode instanceof Proj && startFollowerNode.getMode().equals(Mode.getT())) {
 				MethodType methodType = (MethodType) graph.getEntity().getType();
 				int numberOfParams = methodType.getNParams();
 				for (int i = 0; i < numberOfParams; i++) {
@@ -50,14 +44,15 @@ public class GraphEvaluationVisitor extends AbstractFirmNodesVisitor {
 				}
 			}
 		}
-		details.setHasNoSideEffects(hasNoSideEffects);
 		details.setUnusedParameters(unusedParameters);
 	}
 
 	private final ProgramDetails programDetails;
+	private final EntityDetails ownDetails;
 
-	public GraphEvaluationVisitor(ProgramDetails programDetails) {
+	public GraphEvaluationVisitor(Graph graph, ProgramDetails programDetails) {
 		this.programDetails = programDetails;
+		this.ownDetails = programDetails.getEntityDetails(graph);
 	}
 
 	@Override
@@ -70,8 +65,39 @@ public class GraphEvaluationVisitor extends AbstractFirmNodesVisitor {
 		}
 
 		final Address address = (Address) callNode.getPred(1);
-		Entity entity = address.getEntity();
-		EntityDetails entityDetails = programDetails.getEntityDetails(entity);
-		entityDetails.addCallInfo(callNode, constantArguments);
+		Entity calledEntity = address.getEntity();
+		EntityDetails calledEntityDetails = programDetails.getEntityDetails(calledEntity);
+
+		calledEntityDetails.addCallToThisInfo(callNode, new CallInformation(callNode.getGraph().getEntity(), constantArguments));
+		ownDetails.addCallFromThisInfo(callNode, new CallInformation(calledEntity, constantArguments));
+	}
+
+	@Override
+	public void visit(Load load) {
+		ownDetails.setHasMemUsage();
+	}
+
+	@Override
+	public void visit(Store store) {
+		ownDetails.setHasSideEffects();
+		ownDetails.setHasMemUsage();
+	}
+
+	@Override
+	public void visit(Div div) {
+		ownDetails.setHasMemUsage();
+	}
+
+	@Override
+	public void visit(Mod mod) {
+		ownDetails.setHasMemUsage();
+	}
+
+	@Override
+	public void visit(Phi phi) {
+		if (phi.getMode().equals(Mode.getM())) {
+			ownDetails.setHasSideEffects();
+			ownDetails.setHasMemUsage();
+		}
 	}
 }
