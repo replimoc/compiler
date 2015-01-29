@@ -422,9 +422,6 @@ public class X8664AssemblerGenerationVisitor implements BulkPhiNodeVisitor {
 			blockFalse = block1;
 		}
 
-		// generate cmp instruction
-		visitCmpNode(cmpNode);
-
 		LabelOperation labelTrue = getBlockLabel(blockTrue);
 		LabelOperation labelFalse = getBlockLabel(blockFalse);
 
@@ -473,10 +470,11 @@ public class X8664AssemblerGenerationVisitor implements BulkPhiNodeVisitor {
 		}
 	}
 
-	private void visitCmpNode(Cmp node) {
+	@Override
+	public void visit(Cmp node) {
 		Storage register1 = storageManagement.getStorage(node.getRight());
 		RegisterBased register2 = storageManagement.getValue(node.getLeft());
-		addOperation(new CmpOperation("cmp operation", register1, register2));
+		addOperation(new CmpOperation(node.toString(), register1, register2));
 	}
 
 	@Override
@@ -890,11 +888,6 @@ public class X8664AssemblerGenerationVisitor implements BulkPhiNodeVisitor {
 	@Override
 	public void visit(Bad node) {
 		// Ignore Bad nodes.
-	}
-
-	@Override
-	public void visit(Cmp node) {
-		// Nothing to do here, its handled in Cond.
 	}
 
 	@Override

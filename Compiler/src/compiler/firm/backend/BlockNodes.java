@@ -56,6 +56,8 @@ public class BlockNodes {
 			for (Edge e : BackEdges.getOuts(condNode)) {
 				phis.addAll(blockNodes.get(getNextNode(e.node)).phis);
 			}
+			visitor.visit((Cmp) condNode.getPred(0));
+
 			visitor.visit(phis);
 
 			// handle cond node
