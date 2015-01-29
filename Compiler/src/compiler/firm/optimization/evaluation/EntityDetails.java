@@ -57,4 +57,8 @@ public class EntityDetails {
 		return callsFromThis;
 	}
 
+	public void removeCall(Call call) {
+		callsToThisEntity.remove(call);
+	}
+
 }

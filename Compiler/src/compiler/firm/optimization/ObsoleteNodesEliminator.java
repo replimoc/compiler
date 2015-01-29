@@ -6,6 +6,7 @@ import java.util.Iterator;
 import java.util.Map.Entry;
 import java.util.Set;
 
+import compiler.ast.declaration.MainMethodDeclaration;
 import compiler.firm.FirmUtils;
 import compiler.firm.optimization.evaluation.CallInformation;
 import compiler.firm.optimization.evaluation.EntityDetails;
@@ -164,4 +165,25 @@ public final class ObsoleteNodesEliminator {
 		return replacements.isEmpty();
 	}
 
+	public static boolean eliminateObsoleteGraphs(ProgramDetails programDetails) {
+		boolean nothingOptimized = true;
+
+		for (Iterator<Entry<Entity, EntityDetails>> iterator = programDetails.getEntityDetails().entrySet().iterator(); iterator.hasNext();) {
+			Entry<Entity, EntityDetails> currEntry = iterator.next();
+			Entity currEntity = currEntry.getKey();
+			EntityDetails currEntityDetails = currEntry.getValue();
+
+			if (currEntityDetails.getCallsToThisEntity().isEmpty() && !MainMethodDeclaration.MAIN_METHOD_NAME.equals(currEntity.getLdName())) {
+				programDetails.removeCallsToOthers(currEntityDetails);
+				if (currEntity.getGraph() != null) {
+					currEntity.getGraph().free();
+				}
+				currEntity.free();
+				nothingOptimized = false;
+				iterator.remove();
+			}
+		}
+
+		return nothingOptimized;
+	}
 }

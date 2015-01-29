@@ -34,6 +34,7 @@ public final class FirmOptimizer {
 		do {
 			ProgramDetails programDetails = evaluateGraphs();
 			finished = true;
+			finished &= ObsoleteNodesEliminator.eliminateObsoleteGraphs(programDetails);
 			finished &= optimize(NormalizationVisitor.FACTORY);
 			finished &= optimize(ConstantFoldingVisitor.FACTORY);
 			finished &= optimize(LocalOptimizationVisitor.FACTORY);

@@ -107,4 +107,13 @@ public class ProgramDetails {
 			entityDetail.setHasSideEffects();
 		}
 	}
+
+	public void removeCallsToOthers(EntityDetails callingEntity) {
+		for (Entry<Call, CallInformation> callFromThis : callingEntity.getCallsFromThis().entrySet()) {
+			Entity calledEntity = callFromThis.getValue().getOtherEntity();
+			EntityDetails calledEntityDetails = entityDetails.get(calledEntity);
+			calledEntityDetails.removeCall(callFromThis.getKey());
+		}
+
+	}
 }
