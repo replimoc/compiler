@@ -5,22 +5,19 @@ import java.util.Set;
 
 import compiler.firm.backend.operations.templates.AssemblerBitOperation;
 import compiler.firm.backend.storage.RegisterBased;
-import compiler.firm.backend.storage.VirtualRegister;
-import compiler.utils.Utils;
 
-public class PhiOperation extends AssemblerBitOperation {
+public class PhiWriteOperation extends AssemblerBitOperation {
 
-	private final VirtualRegister register;
+	private Set<RegisterBased> registers;
 
-	public PhiOperation(String comment, VirtualRegister register) {
-		super(comment);
-
-		this.register = register;
+	public PhiWriteOperation(Set<RegisterBased> registers) {
+		super(null);
+		this.registers = registers;
 	}
 
 	@Override
 	public String getOperationString() {
-		return "\t# phi: " + register.toString();
+		return "\t# phi write";
 	}
 
 	@Override
@@ -35,10 +32,7 @@ public class PhiOperation extends AssemblerBitOperation {
 
 	@Override
 	public Set<RegisterBased> getWriteRegisters() {
-		return Utils.unionSet(register.getUsedRegister());
+		return registers;
 	}
 
-	public VirtualRegister getRegister() {
-		return register;
-	}
 }

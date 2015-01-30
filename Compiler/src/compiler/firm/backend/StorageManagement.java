@@ -5,7 +5,7 @@ import java.util.List;
 
 import compiler.firm.FirmUtils;
 import compiler.firm.backend.operations.MovOperation;
-import compiler.firm.backend.operations.dummy.PhiOperation;
+import compiler.firm.backend.operations.dummy.PhiWriteOperation;
 import compiler.firm.backend.operations.templates.AssemblerOperation;
 import compiler.firm.backend.storage.Constant;
 import compiler.firm.backend.storage.RegisterBased;
@@ -26,7 +26,7 @@ public class StorageManagement {
 
 	private final List<AssemblerOperation> operations;
 	private final HashMap<Node, Storage> nodeStorages = new HashMap<>();
-	private final HashMap<Phi, PhiOperation> phiOperations = new HashMap<>();
+	private final HashMap<Phi, PhiWriteOperation> phiOperations = new HashMap<>();
 
 	public StorageManagement(List<AssemblerOperation> operations) {
 		this.operations = operations;
@@ -108,14 +108,5 @@ public class StorageManagement {
 	public void placeValue(Node node, RegisterBundle register) {
 		addOperation(new MovOperation(getStorage(node), new VirtualRegister(StorageManagement.getMode(node), register)));
 
-	}
-
-	public PhiOperation getPhiOperation(Phi phi) {
-		if (!phiOperations.containsKey(phi)) {
-			VirtualRegister virtualRegister = new VirtualRegister(getMode(phi.getMode()));
-			nodeStorages.put(phi, virtualRegister);
-			phiOperations.put(phi, new PhiOperation(phi.toString(), virtualRegister));
-		}
-		return phiOperations.get(phi);
 	}
 }
