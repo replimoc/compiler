@@ -41,6 +41,9 @@ public final class AssemblerGenerator {
 		assembler.add(new P2AlignOperation());
 
 		for (Graph graph : Program.getGraphs()) {
+			BackEdges.enable(graph);
+			graph.walk(new InsertBlockAfterConditionVisitor());
+			BackEdges.disable(graph);
 			assembler.add(new FunctionSpecificationOperation(graph.getEntity().getLdName()));
 		}
 
