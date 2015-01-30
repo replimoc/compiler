@@ -20,7 +20,6 @@ public class VirtualRegister extends RegisterBased {
 	private final LinkedHashSet<VirtualRegister> interferences;
 
 	private Storage register;
-	private boolean forceRegister;
 	private boolean isSpilled;
 
 	public VirtualRegister(Bit mode) {
@@ -30,7 +29,6 @@ public class VirtualRegister extends RegisterBased {
 	public VirtualRegister(Bit mode, RegisterBased register) {
 		this.mode = mode;
 		this.register = register;
-		this.forceRegister = register != null;
 		this.num = I++;
 		this.interferences = new LinkedHashSet<>();
 	}
@@ -51,14 +49,6 @@ public class VirtualRegister extends RegisterBased {
 
 	public void setStorage(Storage register) {
 		this.register = register;
-	}
-
-	public void setForceRegister(boolean forceRegister) {
-		this.forceRegister = forceRegister;
-	}
-
-	public boolean isForceRegister() {
-		return forceRegister;
 	}
 
 	public void setSpilled(boolean isSpilled) {
@@ -115,12 +105,12 @@ public class VirtualRegister extends RegisterBased {
 
 	@Override
 	public SingleRegister getSingleRegister() {
-		return register.getSingleRegister();
+		return register == null ? null : register.getSingleRegister();
 	}
 
 	@Override
 	public RegisterBundle getRegisterBundle() {
-		return register.getRegisterBundle();
+		return register == null ? null : register.getRegisterBundle();
 	}
 
 	public void addPreferedRegister(VirtualRegister preferedRegister) {

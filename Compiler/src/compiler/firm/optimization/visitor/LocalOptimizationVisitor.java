@@ -4,6 +4,7 @@ import java.util.HashMap;
 
 import compiler.firm.FirmUtils;
 
+import firm.BackEdges;
 import firm.Mode;
 import firm.TargetValue;
 import firm.nodes.Add;
@@ -52,7 +53,18 @@ public class LocalOptimizationVisitor extends OptimizationVisitor<Node> {
 			addReplacement(add, add.getRight());
 		} else if (isConstant(right) && getTargetValue(right).isNull()) {
 			addReplacement(add, add.getLeft());
+		} else if (isConstant(left) && right instanceof Add) {
+			Add rightAdd = (Add) right;
+			if (isConstant(rightAdd.getLeft()) && isInt(left) && isInt(rightAdd.getLeft()) && BackEdges.getNOuts(rightAdd) == 1) {
+				int result = getTargetValue(left).asInt() + getTargetValue(rightAdd.getLeft()).asInt();
+				addReplacement(rightAdd.getLeft(), right.getGraph().newConst(result, left.getMode()));
+				addReplacement(add, rightAdd);
+			}
 		}
+	}
+
+	private boolean isInt(Node node) {
+		return node.getMode().equals(Mode.getIs());
 	}
 
 	@Override

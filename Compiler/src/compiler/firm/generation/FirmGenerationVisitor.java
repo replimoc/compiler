@@ -56,7 +56,6 @@ import compiler.ast.type.Type;
 import compiler.ast.visitor.AstVisitor;
 import compiler.firm.FirmUtils;
 import compiler.semantic.ClassScope;
-
 import firm.Construction;
 import firm.Entity;
 import firm.Graph;
@@ -93,7 +92,7 @@ public class FirmGenerationVisitor implements AstVisitor {
 		MethodType callocType = new MethodType(
 				new firm.Type[] { new PrimitiveType(FirmUtils.getModeInteger()), new PrimitiveType(FirmUtils.getModeInteger()) },
 				new firm.Type[] { new PrimitiveType(FirmUtils.getModeReference()) });
-		calloc = new Entity(firm.Program.getGlobalType(), "calloc_proxy", callocType);
+		calloc = new Entity(firm.Program.getGlobalType(), FirmUtils.CALLOC_PROXY, callocType);
 	}
 
 	public void initialize(HashMap<Symbol, ClassScope> classScopes) {

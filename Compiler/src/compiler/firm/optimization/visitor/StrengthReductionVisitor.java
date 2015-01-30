@@ -6,6 +6,8 @@ import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
 
+import firm.BackEdges;
+import firm.BackEdges.Edge;
 import firm.nodes.Block;
 import firm.nodes.Const;
 import firm.nodes.Mul;
@@ -72,6 +74,11 @@ public class StrengthReductionVisitor extends OptimizationVisitor<Node> {
 			if (dominators.get((Block) mul.getBlock()).contains(right.getBlock()) && !mul.getBlock().equals(right.getBlock())) {
 				// right block dominates this mul -> right comes before the loop header
 				if (left.getPred(0) != null && isConstant(left.getPred(0))) {
+					for (Edge suc : BackEdges.getOuts(mul)) {
+						// do not optimize if it references itself
+						if (left.equals(suc.node))
+							return;
+					}
 					Node pred = getInnerMostLoopHeader((Block) mul.getBlock());
 					if (pred == null)
 						return;
@@ -100,10 +107,15 @@ public class StrengthReductionVisitor extends OptimizationVisitor<Node> {
 					addReplacement(mul, loopPhi);
 				}
 			}
-		} else if (inductionVariables.containsKey(right)) {
+		} else if (inductionVariables.containsKey(right) && !right.equals(mul)) {
 			if (dominators.get((Block) mul.getBlock()).contains(left.getBlock()) && !mul.getBlock().equals(left.getBlock())) {
 				// left block dominates this mul -> left comes before the loop header
 				if (right.getPred(0) != null && isConstant(right.getPred(0))) {
+					for (Edge suc : BackEdges.getOuts(mul)) {
+						// do not optimize if it references itself
+						if (right.equals(suc.node))
+							return;
+					}
 					Node pred = getInnerMostLoopHeader((Block) mul.getBlock());
 					if (pred == null)
 						return;

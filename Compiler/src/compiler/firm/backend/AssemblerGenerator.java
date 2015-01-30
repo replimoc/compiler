@@ -64,10 +64,11 @@ public final class AssemblerGenerator {
 			visitor.finishOperationsList();
 			ArrayList<AssemblerOperation> operationsBlocksPostOrder = visitor.getAllOperations();
 			final HashMap<Block, ArrayList<AssemblerOperation>> operationsOfBlocks = visitor.getOperationsOfBlocks();
-			allocateRegisters(graph, operationsBlocksPostOrder, noRegisters, debugRegisterAllocation);
 
 			if (debugRegisterAllocation)
 				generatePlainAssemblerFile(Paths.get(graph.getEntity().getLdName() + ".plain"), operationsBlocksPostOrder);
+
+			allocateRegisters(graph, operationsBlocksPostOrder, noRegisters, debugRegisterAllocation);
 
 			operationsBlocksPostOrder.clear(); // free some memory
 
