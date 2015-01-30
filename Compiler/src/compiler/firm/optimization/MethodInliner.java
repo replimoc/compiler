@@ -89,7 +89,7 @@ public final class MethodInliner {
 			BackEdges.disable(call.getGraph());
 
 			// remove call result
-			Graph.exchange(secondSuccessor, createBadNode(secondSuccessor));
+			Graph.exchange(secondSuccessor, FirmUtils.newBad(secondSuccessor));
 			// write result to new result
 			Graph.exchange(oldCallResult, blockCopyWalker.getResult());
 		}
@@ -104,10 +104,6 @@ public final class MethodInliner {
 		for (Node node : moveNodes) {
 			node.setBlock(useBlock);
 		}
-	}
-
-	private static Node createBadNode(Node node) {
-		return node.getGraph().newBad(node.getMode());
 	}
 
 	private static Set<Node> getAllSuccessorsInSameBlock(Node node) {
