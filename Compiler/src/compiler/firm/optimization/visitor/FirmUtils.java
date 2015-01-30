@@ -22,6 +22,8 @@ public class FirmUtils {
 	private final HashMap<Block, Set<Block>> dominators = new HashMap<>();
 	private final HashMap<Node, Node> backedges = new HashMap<>();
 	private final HashMap<Node, Node> inductionVariables = new HashMap<>();
+	private final HashMap<Block, Phi> loopPhis = new HashMap<>();
+	private boolean calculatedPhis = false;
 	private final Graph graph;
 
 	public FirmUtils(Graph graph) {
@@ -47,7 +49,17 @@ public class FirmUtils {
 			calculateDominators();
 		}
 		calculateInductionVariables();
+		calculatedPhis = true;
 		return inductionVariables;
+	}
+
+	public HashMap<Block, Phi> getLoopPhis() {
+		if (backedges.size() == 0) {
+			calculateDominators();
+		}
+		if (!calculatedPhis)
+			calculateInductionVariables();
+		return loopPhis;
 	}
 
 	private void calculateInductionVariables() {
@@ -72,6 +84,10 @@ public class FirmUtils {
 							// found operation inside loop
 							inductionVariables.put(phi, node);
 						}
+					}
+				} else if (phi.getMode().equals(Mode.getM())) {
+					if (backedges.containsValue(phi.getBlock())) {
+						loopPhis.put((Block) phi.getBlock(), phi);
 					}
 				}
 

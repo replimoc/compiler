@@ -2,8 +2,9 @@ package compiler.firm.optimization;
 
 import java.util.HashMap;
 import java.util.LinkedList;
-import java.util.Map.Entry;
 
+import compiler.firm.FirmUtils;
+import compiler.firm.optimization.evaluation.ProgramDetails;
 import compiler.firm.optimization.visitor.CommonSubexpressionEliminationVisitor;
 import compiler.firm.optimization.visitor.ConstantFoldingVisitor;
 import compiler.firm.optimization.visitor.ControlFlowVisitor;
@@ -18,15 +19,13 @@ import firm.BackEdges;
 import firm.BackEdges.Edge;
 import firm.Graph;
 import firm.GraphBase;
-import firm.Mode;
 import firm.Program;
-import firm.bindings.binding_irgopt;
 import firm.bindings.binding_irgraph;
 import firm.nodes.Block;
+import firm.nodes.Div;
+import firm.nodes.Mod;
 import firm.nodes.Node;
 import firm.nodes.Phi;
-import firm.nodes.Proj;
-import firm.nodes.Return;
 
 public final class FirmOptimizer {
 	private FirmOptimizer() {
@@ -35,45 +34,26 @@ public final class FirmOptimizer {
 	public static void optimize() {
 		boolean finished;
 		do {
-			HashMap<Graph, GraphDetails> graphDetails = evaluateGraphs();
+			ProgramDetails programDetails = evaluateGraphs();
 			finished = true;
+			finished &= ObsoleteNodesEliminator.eliminateObsoleteGraphs(programDetails);
 			finished &= optimize(NormalizationVisitor.FACTORY);
 			finished &= optimize(ConstantFoldingVisitor.FACTORY);
 			finished &= optimize(LocalOptimizationVisitor.FACTORY);
 			finished &= optimize(ControlFlowVisitor.FACTORY);
 			finished &= optimize(CommonSubexpressionEliminationVisitor.FACTORY);
-			finished &= optimize(LoopInvariantVisitor.FACTORY(graphDetails));
+			finished &= optimize(LoopInvariantVisitor.FACTORY(programDetails));
 			finished &= optimize(StrengthReductionVisitor.FACTORY);
+			finished &= ObsoleteNodesEliminator.eliminateObsoleteParameters(programDetails);
+			finished &= ObsoleteNodesEliminator.eliminateObsoleteNodes(evaluateGraphs());
+			finished &= MethodInliner.inlineCalls(evaluateGraphs());
 		} while (!finished);
 	}
 
-	private static HashMap<Graph, GraphDetails> evaluateGraphs() {
-		HashMap<Graph, GraphDetails> result = new HashMap<>();
-
-		for (Graph graph : Program.getGraphs()) {
-			BackEdges.enable(graph);
-			result.put(graph, new GraphDetails(hasSideEffects(graph)));
-			BackEdges.disable(graph);
-		}
-
-		return result;
-	}
-
-	private static boolean hasSideEffects(Graph graph) {
-		for (Edge startFollower : BackEdges.getOuts(graph.getStart())) {
-			if (startFollower.node.getMode().equals(Mode.getM())) {
-				Proj projM = (Proj) startFollower.node;
-
-				if (BackEdges.getNOuts(projM) == 1) {
-					Edge projMFollower = BackEdges.getOuts(projM).iterator().next();
-					if (projMFollower.node instanceof Return) {
-						return false;
-					}
-				}
-			}
-		}
-
-		return true;
+	private static ProgramDetails evaluateGraphs() {
+		ProgramDetails programDetails = new ProgramDetails();
+		programDetails.updateGraphs(Program.getGraphs());
+		return programDetails;
 	}
 
 	public static <T> boolean optimize(OptimizationVisitorFactory<T> visitorFactory) {
@@ -92,10 +72,8 @@ public final class FirmOptimizer {
 
 			finished &= targetValues.isEmpty();
 
-			replaceNodesWithTargets(graph, targetValues);
-
-			binding_irgopt.remove_unreachable_code(graph.ptr);
-			binding_irgopt.remove_bads(graph.ptr);
+			compiler.firm.FirmUtils.replaceNodes(targetValues);
+			compiler.firm.FirmUtils.removeBadsAndUnreachable(graph);
 		}
 		return finished;
 	}
@@ -150,18 +128,27 @@ public final class FirmOptimizer {
 	public static <T> void workList(LinkedList<Node> workList, OptimizationVisitor<T> visitor) {
 		while (!workList.isEmpty()) {
 			Node node = workList.pop();
+			T oldTarget = getTarget(visitor, node);
 			node.accept(visitor);
-		}
-	}
+			T newTarget = getTarget(visitor, node);
 
-	private static void replaceNodesWithTargets(Graph graph, HashMap<Node, Node> targetValuesMap) {
-		for (Entry<Node, Node> targetEntry : targetValuesMap.entrySet()) {
-			Node node = targetEntry.getKey();
-			Node replacement = targetEntry.getValue();
-
-			if (node.getPredCount() > 0 && !node.equals(replacement)) {
-				Graph.exchange(node, replacement);
+			if (oldTarget != null && !oldTarget.equals(newTarget)) {
+				for (Edge e : BackEdges.getOuts(node)) {
+					workList.push(e.node);
+				}
 			}
 		}
 	}
+
+	private static <T> T getTarget(OptimizationVisitor<T> visitor, Node node) {
+		HashMap<Node, T> targetValues = visitor.getLatticeValues();
+		if (node instanceof Div || node instanceof Mod) {
+			// if div/mod changed _all_ successors changed
+			// it is enough to check the first one
+			return targetValues.get(FirmUtils.getFirstSuccessor(node));
+		} else {
+			return targetValues.get(node);
+		}
+	}
+
 }
