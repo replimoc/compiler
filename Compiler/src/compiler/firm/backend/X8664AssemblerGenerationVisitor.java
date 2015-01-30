@@ -3,6 +3,7 @@ package compiler.firm.backend;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Iterator;
+import java.util.LinkedHashMap;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map.Entry;
@@ -671,7 +672,7 @@ public class X8664AssemblerGenerationVisitor implements BulkPhiNodeVisitor {
 	public void visit(List<Phi> phis) {
 		addOperation(new Comment("Handle phis of current block"));
 
-		HashMap<Phi, Node> node2phiMapping = new HashMap<>();
+		HashMap<Phi, Node> node2phiMapping = new LinkedHashMap<>();
 		List<Phi> conflictNodes = new ArrayList<>();
 
 		for (Phi phi : phis) {
@@ -684,7 +685,7 @@ public class X8664AssemblerGenerationVisitor implements BulkPhiNodeVisitor {
 			}
 		}
 
-		HashMap<Phi, Storage> phiTempStackMapping = new HashMap<>();
+		HashMap<Phi, Storage> phiTempStackMapping = new LinkedHashMap<>();
 		for (Phi phi : conflictNodes) {
 			Node predecessor = getRelevantPredecessor(phi);
 			Storage register = storageManagement.getStorage(predecessor);
