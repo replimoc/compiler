@@ -14,6 +14,7 @@ import compiler.firm.optimization.visitor.NormalizationVisitor;
 import compiler.firm.optimization.visitor.OptimizationVisitor;
 import compiler.firm.optimization.visitor.OptimizationVisitorFactory;
 import compiler.firm.optimization.visitor.StrengthReductionVisitor;
+import compiler.firm.optimization.visitor.UnrollingVisitor;
 
 import firm.BackEdges;
 import firm.BackEdges.Edge;
@@ -34,17 +35,19 @@ public final class FirmOptimizer {
 	public static void optimize() {
 		boolean finished;
 		do {
-			ProgramDetails programDetails = evaluateGraphs();
+			// all optimizations should run on the current graph
+			// do not optimize evaluateGraphs out!
 			finished = true;
-			finished &= ObsoleteNodesEliminator.eliminateObsoleteGraphs(programDetails);
+			finished &= ObsoleteNodesEliminator.eliminateObsoleteGraphs(evaluateGraphs());
 			finished &= optimize(NormalizationVisitor.FACTORY);
 			finished &= optimize(ConstantFoldingVisitor.FACTORY);
 			finished &= optimize(LocalOptimizationVisitor.FACTORY);
 			finished &= optimize(ControlFlowVisitor.FACTORY);
 			finished &= optimize(CommonSubexpressionEliminationVisitor.FACTORY);
-			finished &= optimize(LoopInvariantVisitor.FACTORY(programDetails));
+			finished &= optimize(LoopInvariantVisitor.FACTORY(evaluateGraphs()));
 			finished &= optimize(StrengthReductionVisitor.FACTORY);
-			finished &= ObsoleteNodesEliminator.eliminateObsoleteParameters(programDetails);
+			finished &= optimize(UnrollingVisitor.FACTORY);
+			finished &= ObsoleteNodesEliminator.eliminateObsoleteParameters(evaluateGraphs());
 			finished &= ObsoleteNodesEliminator.eliminateObsoleteNodes(evaluateGraphs());
 			finished &= MethodInliner.inlineCalls(evaluateGraphs());
 		} while (!finished);
