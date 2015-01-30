@@ -193,4 +193,8 @@ public final class FirmUtils {
 			Graph.exchange(curr.getKey(), curr.getValue());
 		}
 	}
+
+	public static Node newBad(Node node) {
+		return node.getGraph().newBad(node.getMode());
+	}
 }
