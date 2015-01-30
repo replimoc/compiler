@@ -6,6 +6,7 @@ import java.util.LinkedList;
 import java.util.List;
 import java.util.Set;
 
+import compiler.TestRuntimeException;
 import compiler.firm.backend.Bit;
 import compiler.firm.backend.registerallocation.Interval;
 
@@ -24,6 +25,10 @@ public class VirtualRegister extends RegisterBased {
 
 	public VirtualRegister(Bit mode) {
 		this(mode, (RegisterBased) null);
+	}
+
+	public VirtualRegister(SingleRegister register) {
+		this(register.getMode(), register);
 	}
 
 	public VirtualRegister(Bit mode, RegisterBased register) {
@@ -121,23 +126,18 @@ public class VirtualRegister extends RegisterBased {
 
 	public void expandLifetime(int line, boolean read) {
 		if (lifetimes.isEmpty()) {
+			if (read) {
+				throw new TestRuntimeException("first use of register is not a write: VR_" + this.num);
+			}
+
 			lifetimes.addLast(new Interval(line));
 			return;
+		} else if (!read) {
+			throw new TestRuntimeException("second definition of variable: VR_" + this.num);
 		}
 
 		Interval lastInterval = lifetimes.getLast();
-
-		if (line < lastInterval.getEnd()) {
-			throw new RuntimeException();
-		} else if (line == lastInterval.getEnd()) {
-			return; // do nothing
-		}
-
-		if (read) {
-			lastInterval.expandEnd(line);
-		} else {
-			lifetimes.addLast(new Interval(line));
-		}
+		lastInterval.expandEnd(line);
 	}
 
 	public String getLifetimes() {

@@ -77,7 +77,7 @@ public class LinearScanRegisterAllocation {
 				LabelOperation labelOperation = ((JumpOperation) operation).getLabel();
 				Integer lineOfLabel = passedLabels.get(labelOperation);
 				if (lineOfLabel != null) { // we already had this label => loop found
-				// expandRegisterUsage(lineOfLabel, line);
+					expandRegisterUsage(lineOfLabel, line);
 				}
 			}
 

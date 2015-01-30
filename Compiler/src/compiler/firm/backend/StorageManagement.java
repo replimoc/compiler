@@ -105,8 +105,9 @@ public class StorageManagement {
 		}
 	}
 
-	public void placeValue(Node node, RegisterBundle register) {
-		addOperation(new MovOperation(getStorage(node), new VirtualRegister(StorageManagement.getMode(node), register)));
-
+	public VirtualRegister placeValue(Node node, RegisterBundle register) {
+		VirtualRegister destinationRegister = new VirtualRegister(StorageManagement.getMode(node), register);
+		addOperation(new MovOperation(getStorage(node), destinationRegister));
+		return destinationRegister;
 	}
 }

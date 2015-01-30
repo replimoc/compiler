@@ -1,43 +1,31 @@
 package compiler.firm.backend.operations;
 
-import java.util.Set;
-
 import compiler.firm.backend.Bit;
-import compiler.firm.backend.operations.templates.SourceOperation;
+import compiler.firm.backend.operations.templates.TripleSourceDoubleDestinationOperation;
 import compiler.firm.backend.storage.RegisterBased;
 import compiler.firm.backend.storage.RegisterBundle;
 import compiler.firm.backend.storage.VirtualRegister;
-import compiler.utils.Utils;
 
-public class IdivOperation extends SourceOperation {
+public class IdivOperation extends TripleSourceDoubleDestinationOperation {
 
-	private final VirtualRegister result = new VirtualRegister(Bit.BIT32, RegisterBundle._AX);
-	private final VirtualRegister remainder = new VirtualRegister(Bit.BIT32, RegisterBundle._DX);
-
-	public IdivOperation(RegisterBased register) {
-		super(null, register);
+	public IdivOperation(VirtualRegister rax, VirtualRegister rdx, RegisterBased divisor) {
+		super(null, rax, rdx, divisor, new VirtualRegister(Bit.BIT32, RegisterBundle._AX), new VirtualRegister(Bit.BIT32, RegisterBundle._DX));
 	}
 
 	@Override
 	public String getOperationString() {
-		return String.format("\tidiv %s", source.toString());
+		return String.format("\tidiv %s", getDivisor());
 	}
 
-	@Override
-	public Set<RegisterBased> getReadRegisters() {
-		return Utils.unionSet(source.getReadRegisters(), Utils.<RegisterBased> unionSet(result, remainder));
-	}
-
-	@Override
-	public Set<RegisterBased> getWriteRegisters() {
-		return Utils.<RegisterBased> unionSet(result, remainder);
+	public RegisterBased getDivisor() {
+		return source3;
 	}
 
 	public VirtualRegister getResult() {
-		return result;
+		return destination1;
 	}
 
 	public VirtualRegister getRemainder() {
-		return remainder;
+		return destination2;
 	}
 }
