@@ -182,8 +182,7 @@ public class ConstantFoldingVisitor extends OptimizationVisitor<TargetValue> {
 	@Override
 	public void visit(Conv conversion) {
 		TargetValue target = getTargetValue(conversion.getOp());
-		TargetValue newTargetValue = target == null ? TargetValue.getUnknown() : target
-				.convertTo(conversion.getMode());
+		TargetValue newTargetValue = target.convertTo(conversion.getMode());
 
 		unaryTransferFunction(conversion, target, newTargetValue);
 	}
@@ -202,7 +201,7 @@ public class ConstantFoldingVisitor extends OptimizationVisitor<TargetValue> {
 	@Override
 	public void visit(Minus minus) {
 		TargetValue target = getTargetValue(minus.getOp());
-		TargetValue newTargetValue = (target == null || !target.isConstant()) ? TargetValue.getUnknown() : target.neg();
+		TargetValue newTargetValue = (!target.isConstant()) ? TargetValue.getUnknown() : target.neg();
 
 		unaryTransferFunction(minus, target, newTargetValue);
 	}
@@ -230,7 +229,7 @@ public class ConstantFoldingVisitor extends OptimizationVisitor<TargetValue> {
 	@Override
 	public void visit(Not not) {
 		TargetValue target = getTargetValue(not.getOp());
-		TargetValue newTargetValue = (target == null || !target.isConstant()) ? TargetValue.getUnknown() : target.not();
+		TargetValue newTargetValue = (!target.isConstant()) ? TargetValue.getUnknown() : target.not();
 
 		unaryTransferFunction(not, target, newTargetValue);
 	}
