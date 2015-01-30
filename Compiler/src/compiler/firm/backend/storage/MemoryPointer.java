@@ -1,6 +1,10 @@
 package compiler.firm.backend.storage;
 
+import java.util.Collections;
+import java.util.Set;
+
 import compiler.firm.backend.Bit;
+import compiler.utils.Utils;
 
 public class MemoryPointer extends Storage {
 
@@ -61,16 +65,22 @@ public class MemoryPointer extends Storage {
 	}
 
 	@Override
-	public RegisterBased[] getReadOnRightSideRegister() {
-		return getUsedRegister();
+	public Set<RegisterBased> getReadRegistersOnRightSide() {
+		return getReadRegisters();
 	}
 
 	@Override
-	public RegisterBased[] getUsedRegister() {
+	public Set<RegisterBased> getReadRegisters() {
 		if (factorRegister == null) {
-			return new RegisterBased[] { register };
+			return Utils.unionSet(register);
+		} else {
+			return Utils.unionSet(register, factorRegister);
 		}
-		return new RegisterBased[] { register, factorRegister };
+	}
+
+	@Override
+	public Set<RegisterBased> getWriteRegisters() {
+		return Collections.emptySet();
 	}
 
 	@Override

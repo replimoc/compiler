@@ -22,15 +22,12 @@ public abstract class SourceSourceDestinationOperation extends AssemblerBitOpera
 
 	@Override
 	public Set<RegisterBased> getReadRegisters() {
-		RegisterBased[] sourceRegisters = source.getUsedRegister();
-		RegisterBased[] source2Registers = source2.getUsedRegister();
-		RegisterBased[] destinationRegisters = destination.getReadOnRightSideRegister();
-		return Utils.unionSet(sourceRegisters, source2Registers, destinationRegisters);
+		return Utils.<RegisterBased> unionSet(source.getReadRegisters(), source2.getReadRegisters(), destination.getReadRegistersOnRightSide());
 	}
 
 	@Override
 	public Set<RegisterBased> getWriteRegisters() {
-		return Utils.unionSet(destination.getUsedRegister());
+		return destination.getWriteRegisters();
 	}
 
 	public Storage getSource() {

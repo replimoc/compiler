@@ -1,5 +1,8 @@
 package compiler.firm.backend.storage;
 
+import java.util.Collections;
+import java.util.Set;
+
 import compiler.firm.backend.Bit;
 
 import firm.nodes.Const;
@@ -27,13 +30,18 @@ public class Constant extends Storage {
 	}
 
 	@Override
-	public RegisterBased[] getReadOnRightSideRegister() {
-		return null;
+	public Set<RegisterBased> getReadRegistersOnRightSide() {
+		return Collections.emptySet();
 	}
 
 	@Override
-	public RegisterBased[] getUsedRegister() {
-		return null;
+	public Set<RegisterBased> getReadRegisters() {
+		return Collections.emptySet();
+	}
+
+	@Override
+	public Set<RegisterBased> getWriteRegisters() {
+		return Collections.emptySet();
 	}
 
 	@Override

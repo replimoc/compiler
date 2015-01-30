@@ -91,12 +91,12 @@ public class MovOperation extends AssemblerBitOperation {
 
 	@Override
 	public Set<RegisterBased> getReadRegisters() {
-		return Utils.unionSet(source.getUsedRegister(), destination.getReadOnRightSideRegister());
+		return Utils.unionSet(source.getReadRegisters(), destination.getReadRegistersOnRightSide());
 	}
 
 	@Override
 	public Set<RegisterBased> getWriteRegisters() {
-		return Utils.unionSet(destination.getUsedRegister());
+		return destination.getWriteRegisters();
 	}
 
 }

@@ -14,7 +14,6 @@ import compiler.firm.backend.storage.RegisterBased;
 import compiler.firm.backend.storage.RegisterBundle;
 import compiler.firm.backend.storage.Storage;
 import compiler.utils.Pair;
-import compiler.utils.Utils;
 
 public class PhiReadOperation extends AssemblerBitOperation {
 	private final LinkedList<Pair<Storage, RegisterBased>> phiStorages;
@@ -63,9 +62,7 @@ public class PhiReadOperation extends AssemblerBitOperation {
 	public Set<RegisterBased> getReadRegisters() {
 		Set<RegisterBased> registers = new HashSet<>();
 		for (Pair<Storage, RegisterBased> phiStorage : phiStorages) {
-			RegisterBased[] usedRegisters = phiStorage.getFirst().getUsedRegister();
-			if (usedRegisters != null)
-				registers.addAll(Utils.unionSet(usedRegisters));
+			registers.addAll(phiStorage.getFirst().getReadRegisters());
 		}
 		return registers;
 	}

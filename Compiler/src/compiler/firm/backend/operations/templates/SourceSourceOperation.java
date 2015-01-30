@@ -25,7 +25,7 @@ public abstract class SourceSourceOperation extends AssemblerBitOperation {
 
 	@Override
 	public Set<RegisterBased> getReadRegisters() {
-		return Utils.<RegisterBased> unionSet(source1.getUsedRegister(), source2.getUsedRegister());
+		return Utils.<RegisterBased> unionSet(source1.getReadRegisters(), source2.getReadRegisters());
 	}
 
 }

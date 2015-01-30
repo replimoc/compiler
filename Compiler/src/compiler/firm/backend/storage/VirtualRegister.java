@@ -69,27 +69,6 @@ public class VirtualRegister extends RegisterBased {
 		return null;
 	}
 
-	public void expandLifetime(int line, boolean read) {
-		if (lifetimes.isEmpty()) {
-			lifetimes.addLast(new Interval(line));
-			return;
-		}
-
-		Interval lastInterval = lifetimes.getLast();
-
-		if (line < lastInterval.getEnd()) {
-			throw new RuntimeException();
-		} else if (line == lastInterval.getEnd()) {
-			return; // do nothing
-		}
-
-		if (read) {
-			lastInterval.expandEnd(line);
-		} else {
-			lifetimes.addLast(new Interval(line));
-		}
-	}
-
 	@Override
 	public Bit getMode() {
 		return mode;
@@ -138,6 +117,27 @@ public class VirtualRegister extends RegisterBased {
 	@Override
 	public void setTemporaryStackOffset(int temporaryStackOffset) {
 		register.setTemporaryStackOffset(temporaryStackOffset);
+	}
+
+	public void expandLifetime(int line, boolean read) {
+		if (lifetimes.isEmpty()) {
+			lifetimes.addLast(new Interval(line));
+			return;
+		}
+
+		Interval lastInterval = lifetimes.getLast();
+
+		if (line < lastInterval.getEnd()) {
+			throw new RuntimeException();
+		} else if (line == lastInterval.getEnd()) {
+			return; // do nothing
+		}
+
+		if (read) {
+			lastInterval.expandEnd(line);
+		} else {
+			lifetimes.addLast(new Interval(line));
+		}
 	}
 
 	public String getLifetimes() {

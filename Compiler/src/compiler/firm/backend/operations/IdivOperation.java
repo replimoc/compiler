@@ -25,7 +25,7 @@ public class IdivOperation extends SourceOperation {
 
 	@Override
 	public Set<RegisterBased> getReadRegisters() {
-		return Utils.unionSet(source.getUsedRegister(), new RegisterBased[] { result, remainder });
+		return Utils.unionSet(source.getReadRegisters(), Utils.<RegisterBased> unionSet(result, remainder));
 	}
 
 	@Override
