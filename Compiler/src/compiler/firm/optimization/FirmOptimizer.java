@@ -46,11 +46,11 @@ public final class FirmOptimizer {
 			finished &= optimize(CommonSubexpressionEliminationVisitor.FACTORY);
 			finished &= optimize(LoopInvariantVisitor.FACTORY(evaluateGraphs()));
 			finished &= optimize(StrengthReductionVisitor.FACTORY);
-			finished &= optimize(UnrollingVisitor.FACTORY);
 			finished &= ObsoleteNodesEliminator.eliminateObsoleteParameters(evaluateGraphs());
 			finished &= ObsoleteNodesEliminator.eliminateObsoleteNodes(evaluateGraphs());
 			finished &= MethodInliner.inlineCalls(evaluateGraphs());
 		} while (!finished);
+		optimize(UnrollingVisitor.FACTORY);
 	}
 
 	private static ProgramDetails evaluateGraphs() {

@@ -6,7 +6,6 @@ import java.util.Map.Entry;
 import java.util.Set;
 
 import firm.BackEdges;
-import firm.BackEdges.Edge;
 import firm.Graph;
 import firm.Mode;
 import firm.TargetValue;
@@ -16,7 +15,6 @@ import firm.nodes.Cmp;
 import firm.nodes.Const;
 import firm.nodes.Node;
 import firm.nodes.Phi;
-import firm.nodes.Proj;
 import firm.nodes.Start;
 
 public class UnrollingVisitor extends OptimizationVisitor<Node> {
@@ -28,14 +26,13 @@ public class UnrollingVisitor extends OptimizationVisitor<Node> {
 		}
 	};
 
-	// private static final Set<Graph> finishedGraphs = new HashSet<>();
+	// private static final Set<Block> finishedLoops = new HashSet<>();
 	private static boolean finished = false;
 
 	private HashMap<Node, Node> backedges = new HashMap<>();
 	private HashMap<Block, Set<Block>> dominators = new HashMap<>();
 	private HashMap<Node, Node> inductionVariables = new HashMap<>();
 	private final HashMap<Block, Cmp> compares = new HashMap<>();
-	private final HashMap<Block, Block> follow = new HashMap<>();
 	private HashMap<Block, Set<Node>> blockNodes = new HashMap<>();
 	private HashMap<Block, Phi> loopPhis = new HashMap<>();
 	private static final int MAX_UNROLL_FACTOR = 8;
@@ -43,19 +40,6 @@ public class UnrollingVisitor extends OptimizationVisitor<Node> {
 	@Override
 	public HashMap<Node, Node> getLatticeValues() {
 		return nodeReplacements;
-	}
-
-	@Override
-	public void visit(Proj proj) {
-		if (!follow.containsKey((Block) proj.getBlock()) && proj.getMode().equals(Mode.getX())) {
-			Block b = null;
-			for (Edge e : BackEdges.getOuts(proj)) {
-				b = (Block) e.node.getBlock();
-				break;
-			}
-			follow.put((Block) proj.getBlock(), b);
-			proj.getBlock().accept(this);
-		}
 	}
 
 	@Override
@@ -68,11 +52,17 @@ public class UnrollingVisitor extends OptimizationVisitor<Node> {
 
 	@Override
 	public void visit(Block block) {
+		if (finished)
+			return;
+
 		// only unroll the innermost loop
 		if (backedges.containsKey(block) && (dominators.get(block).size() == dominators.get(backedges.get(block)).size() + 1)) {
 			// loop body
 			for (Map.Entry<Node, Node> entry : inductionVariables.entrySet()) {
 				if (entry.getKey().getBlock().equals(block.getPred(0).getBlock())) {
+
+					if (getPhiCount((Block) backedges.get(block)) > 2)
+						return;
 					// induction variable for this block
 					Node node = entry.getValue();
 					Const incr = getIncrementConstantOrNull(node);
@@ -94,33 +84,55 @@ public class UnrollingVisitor extends OptimizationVisitor<Node> {
 
 					// get cycle count for loop
 					int cycleCount = getCycleCount(cmp, constCmp, startingValue, incr);
-					if (cycleCount < 2)
+					// negative cycle count means the counter is descending
+					if (Math.abs(cycleCount) < 2)
 						return;
 
 					int unrollFactor = MAX_UNROLL_FACTOR;
-					while (unrollFactor > 1 && (cycleCount % (unrollFactor * incr.getTarval().asInt())) != 0) {
-						unrollFactor /= 2;
+					while (unrollFactor > 1 && (Math.abs(cycleCount) % unrollFactor) != 0) {
+						unrollFactor -= 1;
 					}
-					if (unrollFactor < 2 || (cycleCount % (unrollFactor * incr.getTarval().asInt())) != 0)
-						return;
 
 					Graph graph = block.getGraph();
+					// unroll if block generates overflow
+					if (cycleCount == Integer.MAX_VALUE) {
+						long target = Integer.MAX_VALUE - startingValue.getTarval().asLong() + incr.getTarval().asLong();
+						unrollFactor = MAX_UNROLL_FACTOR;
+						while (unrollFactor > 1 && (target % unrollFactor) != 0) {
+							unrollFactor -= 1;
+						}
+						if (unrollFactor < 2)
+							return;
+					} else if (cycleCount == Integer.MIN_VALUE) {
+						long target = Integer.MIN_VALUE + startingValue.getTarval().asLong() - incr.getTarval().asLong();
+						unrollFactor = MAX_UNROLL_FACTOR;
+						while (unrollFactor > 1 && (target % unrollFactor) != 0) {
+							unrollFactor -= 1;
+						}
+						if (unrollFactor < 2)
+							return;
+					} else if (unrollFactor < 2 || (Math.abs(cycleCount) % unrollFactor) != 0) {
+						return;
+					}
 
 					// counter
 					Node loopCounter = entry.getKey();
-					Node counter = loopCounter;
 					HashMap<Node, Node> changedNodes = new HashMap<>();
 					Node loopPhi = loopPhis.get(backedges.get(block));
 
 					if (loopPhi.getPredCount() > 2)
 						return;
 
+					// don't unroll too big blocks
+					if (blockNodes.get(block).size() > 30)
+						return;
+
 					// replace the increment operation
 					addReplacement(incr, graph.newConst(incr.getTarval().mul(new TargetValue(unrollFactor, incr.getMode()))));
 
-					unroll(block, incr, loopCounter, node, changedNodes, counter, loopPhi, unrollFactor);
+					unroll(block, incr, loopCounter, node, changedNodes, loopCounter, loopPhi, unrollFactor);
 
-					// finishedGraphs.add(graph);
+					// finishedLoops.add(block);
 					finished = true;
 				}
 			}
@@ -154,10 +166,15 @@ public class UnrollingVisitor extends OptimizationVisitor<Node> {
 					// check dependencies for unrolled nodes
 					for (int j = 0; j < blockNode.getPredCount(); j++) {
 						if (blockNode.getPred(j).equals(counter)) {
+							// node is before the loop increment
 							copy.setPred(j, count);
+						} else if (blockNode.getPred(j).equals(node)) {
+							// node is after the loop increment
+							blockNode.setPred(j, count);
 						} else if (changedNodes.containsKey(blockNode.getPred(j))) {
 							copy.setPred(j, changedNodes.get(blockNode.getPred(j)));
 						} else if (blockNode.getPred(j).equals(firstMemNode)) {
+							// adjust memory flow
 							if (blockNode.getPred(j).getMode().equals(Mode.getM())) {
 								copy.setPred(j, lastMemNode);
 								if (!firstMemNode.equals(loopPhi)) {
@@ -167,6 +184,7 @@ public class UnrollingVisitor extends OptimizationVisitor<Node> {
 								}
 							}
 						} else if (blockNode.getPred(j).equals(lastMemNode)) {
+							// adjust memory flow
 							if (blockNode.getPred(j).getMode().equals(Mode.getM())) {
 								copy.setPred(j, loopPhi.getPred(1));
 								lastMemNode = loopPhi.getPred(1);
@@ -200,6 +218,17 @@ public class UnrollingVisitor extends OptimizationVisitor<Node> {
 			changedNodes.clear();
 			counter = count;
 		}
+	}
+
+	private int getPhiCount(Block block) {
+		// count phi's in inside this block
+		int count = 0;
+		for (Node node : blockNodes.get(block)) {
+			if (node instanceof Phi) {
+				count++;
+			}
+		}
+		return count;
 	}
 
 	private void copyBlockNodes(HashMap<Node, Node> changedNodes, Block block, Node node) {
@@ -244,11 +273,36 @@ public class UnrollingVisitor extends OptimizationVisitor<Node> {
 	}
 
 	private int getCycleCount(Cmp cmp, Const constCmp, Const startingValue, Const incr) {
+		int count = 0;
 		switch (cmp.getRelation()) {
 		case Less:
-			return (constCmp.getTarval().asInt() - (startingValue.getTarval().asInt() * incr.getTarval().asInt()));
+			count = (int) Math.ceil((double) (constCmp.getTarval().asInt() - startingValue.getTarval().asInt()) / incr.getTarval().asInt());
+			if (incr.getTarval().isNegative()) {
+				return count < 0 ? Integer.MIN_VALUE : count;
+			} else {
+				return count < 0 ? Integer.MAX_VALUE : count;
+			}
 		case LessEqual:
-			return (constCmp.getTarval().asInt() - (startingValue.getTarval().asInt() * incr.getTarval().asInt())) + 1;
+			count = (int) Math.ceil((double) (constCmp.getTarval().asInt() - startingValue.getTarval().asInt()) / incr.getTarval().asInt());
+			if (incr.getTarval().isNegative()) {
+				return count <= 0 ? Integer.MIN_VALUE : count + 1;
+			} else {
+				return count <= 0 ? Integer.MAX_VALUE : count + 1;
+			}
+		case Greater:
+			count = (int) Math.ceil((double) (startingValue.getTarval().asInt() - constCmp.getTarval().asInt()) / incr.getTarval().asInt());
+			if (incr.getTarval().isNegative()) {
+				return count > 0 ? Integer.MIN_VALUE : count;
+			} else {
+				return count > 0 ? Integer.MAX_VALUE : count;
+			}
+		case GreaterEqual:
+			count = (int) Math.ceil((double) (startingValue.getTarval().asInt() - constCmp.getTarval().asInt()) / incr.getTarval().asInt());
+			if (incr.getTarval().isNegative()) {
+				return count >= 0 ? Integer.MIN_VALUE : count - 1;
+			} else {
+				return count >= 0 ? Integer.MAX_VALUE : count - 1;
+			}
 		default:
 			return 0;
 		}
@@ -257,7 +311,7 @@ public class UnrollingVisitor extends OptimizationVisitor<Node> {
 	@Override
 	public void visit(Start start) {
 		/*
-		 * if (finishedGraphs.contains(start.getGraph())) { return; }
+		 * if (finishedLoops.contains(start.getGraph())) { return; }
 		 */
 		if (finished)
 			return;
