@@ -4,10 +4,8 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Iterator;
-import java.util.LinkedHashMap;
 import java.util.LinkedList;
 import java.util.List;
-import java.util.Map.Entry;
 import java.util.Set;
 
 import compiler.firm.FirmUtils;
@@ -695,45 +693,14 @@ public class X8664AssemblerGenerationVisitor implements BulkPhiNodeVisitor {
 			return;
 		}
 
-		HashMap<Phi, Node> node2phiMapping = new LinkedHashMap<>();
-		List<Phi> conflictNodes = new ArrayList<>();
-
+		List<Pair<Storage, RegisterBased>> phiRelations = new LinkedList<>();
 		for (Phi phi : phis) {
-			Node predecessor = getRelevantPredecessor(phi);
-
-			if (phis.contains(predecessor)) {
-				conflictNodes.add(phi);
-			} else {
-				node2phiMapping.put(phi, predecessor);
-			}
-		}
-
-		HashMap<Phi, Storage> phiTempStackMapping = new LinkedHashMap<>();
-		for (Phi phi : conflictNodes) {
-			Node predecessor = getRelevantPredecessor(phi);
-			Storage register = storageManagement.getStorage(predecessor);
-			Storage temporaryStorage = new VirtualRegister(StorageManagement.getMode(predecessor));
-			addOperation(new MovOperation("Phi: " + phi.toString() + " -> temp", register, temporaryStorage));
-			phiTempStackMapping.put(phi, temporaryStorage);
-		}
-
-		LinkedList<Pair<Storage, RegisterBased>> phiStorages = new LinkedList<>();
-
-		for (Entry<Phi, Node> mapping : node2phiMapping.entrySet()) {
-			Storage register = storageManagement.getStorage(mapping.getValue());
-			RegisterBased destination = storageManagement.getValue(mapping.getKey());
-			if (register instanceof VirtualRegister && destination instanceof VirtualRegister) {
-				((VirtualRegister) register).addPreferedRegister((VirtualRegister) destination);
-			}
-			phiStorages.add(new Pair<Storage, RegisterBased>(register, destination));
-		}
-
-		for (Phi phi : conflictNodes) {
+			Storage source = storageManagement.getStorage(getRelevantPredecessor(phi));
 			RegisterBased destination = storageManagement.getValue(phi);
-			phiStorages.add(new Pair<Storage, RegisterBased>(phiTempStackMapping.get(phi), destination));
+			phiRelations.add(new Pair<>(source, destination));
 		}
 
-		addOperation(new PhiReadOperation(phiStorages));
+		addOperation(new PhiReadOperation(phiRelations));
 	}
 
 	@Override
