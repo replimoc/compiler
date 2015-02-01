@@ -2,6 +2,7 @@ package compiler.firm.backend.operations;
 
 import java.util.Set;
 
+import compiler.firm.backend.Bit;
 import compiler.firm.backend.operations.templates.AssemblerBitOperation;
 import compiler.firm.backend.storage.RegisterBased;
 import compiler.utils.Utils;
@@ -19,7 +20,8 @@ public class SwapOperation extends AssemblerBitOperation {
 
 	@Override
 	public String getOperationString() {
-		return String.format("\txchg %s, %s", operand1, operand2);
+		return String.format("\txchg %s, %s", operand1.getRegisterBundle().getRegister(Bit.BIT64), operand2.getRegisterBundle()
+				.getRegister(Bit.BIT64));
 	}
 
 	@Override
