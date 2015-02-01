@@ -285,7 +285,7 @@ public class CommonSubexpressionEliminationVisitor extends OptimizationVisitor<N
 
 	@Override
 	public void visit(Start start) {
-		FirmUtils utils = new FirmUtils(start.getGraph());
+		OptimizationUtils utils = new OptimizationUtils(start.getGraph());
 		dominators = utils.getDominators();
 	}
 
