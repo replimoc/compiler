@@ -1,6 +1,7 @@
 package compiler.firm.optimization.visitor;
 
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Set;
@@ -26,8 +27,7 @@ public class UnrollingVisitor extends OptimizationVisitor<Node> {
 		}
 	};
 
-	// private static final Set<Block> finishedLoops = new HashSet<>();
-	private static boolean finished = false;
+	private static final Set<Block> finishedLoops = new HashSet<>();
 
 	private HashMap<Node, Node> backedges = new HashMap<>();
 	private HashMap<Block, Set<Block>> dominators = new HashMap<>();
@@ -52,7 +52,7 @@ public class UnrollingVisitor extends OptimizationVisitor<Node> {
 
 	@Override
 	public void visit(Block block) {
-		if (finished)
+		if (finishedLoops.contains(block))
 			return;
 
 		// only unroll the innermost loop
@@ -85,7 +85,7 @@ public class UnrollingVisitor extends OptimizationVisitor<Node> {
 					// get cycle count for loop
 					int cycleCount = getCycleCount(cmp, constCmp, startingValue, incr);
 					// negative cycle count means the counter is descending
-					if (Math.abs(cycleCount) < 2)
+					if (!(cycleCount == Integer.MIN_VALUE) && Math.abs(cycleCount) < 2)
 						return;
 
 					int unrollFactor = MAX_UNROLL_FACTOR;
@@ -96,7 +96,8 @@ public class UnrollingVisitor extends OptimizationVisitor<Node> {
 					Graph graph = block.getGraph();
 					// unroll if block generates overflow
 					if (cycleCount == Integer.MAX_VALUE) {
-						long target = Integer.MAX_VALUE - startingValue.getTarval().asLong() + incr.getTarval().asLong();
+						long count = ((long) Integer.MAX_VALUE) - startingValue.getTarval().asLong();
+						long target = (long) Math.ceil((double) (count) / incr.getTarval().asLong());
 						unrollFactor = MAX_UNROLL_FACTOR;
 						while (unrollFactor > 1 && (target % unrollFactor) != 0) {
 							unrollFactor -= 1;
@@ -104,7 +105,9 @@ public class UnrollingVisitor extends OptimizationVisitor<Node> {
 						if (unrollFactor < 2)
 							return;
 					} else if (cycleCount == Integer.MIN_VALUE) {
-						long target = Integer.MIN_VALUE + startingValue.getTarval().asLong() - incr.getTarval().asLong();
+						long count = ((long) Integer.MIN_VALUE) - startingValue.getTarval().asLong();
+						long mod = count % incr.getTarval().asLong();
+						long target = (long) Math.ceil((double) count / incr.getTarval().asLong()) + (mod == 0 ? 1 : 0);
 						unrollFactor = MAX_UNROLL_FACTOR;
 						while (unrollFactor > 1 && (target % unrollFactor) != 0) {
 							unrollFactor -= 1;
@@ -132,8 +135,7 @@ public class UnrollingVisitor extends OptimizationVisitor<Node> {
 
 					unroll(block, incr, loopCounter, node, changedNodes, loopCounter, loopPhi, unrollFactor);
 
-					// finishedLoops.add(block);
-					finished = true;
+					finishedLoops.add(block);
 				}
 			}
 		}
@@ -310,12 +312,6 @@ public class UnrollingVisitor extends OptimizationVisitor<Node> {
 
 	@Override
 	public void visit(Start start) {
-		/*
-		 * if (finishedLoops.contains(start.getGraph())) { return; }
-		 */
-		if (finished)
-			return;
-
 		OptimizationUtils utils = new OptimizationUtils(start.getGraph());
 		dominators = utils.getDominators();
 		backedges = utils.getBackEdges();
