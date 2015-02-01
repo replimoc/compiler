@@ -43,9 +43,9 @@ public class CommonSubexpressionEliminationVisitor extends OptimizationVisitor<N
 	 * @param node
 	 * @return
 	 */
-	private int getValue(Node node) {
+	private long getValue(Node node) {
 		if (node instanceof Const) {
-			return ((Const) node).getTarval().asInt();
+			return ((Const) node).getTarval().asLong();
 		} else if (node instanceof Conv) {
 			return getValue(node.getPred(0));
 		} else if (nodeReplacements.containsKey(node)) {
@@ -86,7 +86,7 @@ public class CommonSubexpressionEliminationVisitor extends OptimizationVisitor<N
 	 * @param left
 	 * @param right
 	 */
-	private void binaryTransferFunction(Node node, int left, int right) {
+	private void binaryTransferFunction(Node node, long left, long right) {
 		if (dominators.size() == 0) {
 			node.getGraph().getStart().accept(this);
 		}
@@ -116,7 +116,7 @@ public class CommonSubexpressionEliminationVisitor extends OptimizationVisitor<N
 	 * @param left
 	 * @param right
 	 */
-	private void modDivTransferFunction(Node node, int left, int right) {
+	private void modDivTransferFunction(Node node, long left, long right) {
 		if (dominators.size() == 0) {
 			node.getGraph().getStart().accept(this);
 		}
@@ -125,8 +125,7 @@ public class CommonSubexpressionEliminationVisitor extends OptimizationVisitor<N
 			if (!sameType(target, node)) {
 				return;
 			}
-			if (!node.equals(target) && !nodeReplacements.containsKey(target) && !nodeReplacements.containsKey(node)
-					&& dominators.get((Block) node.getBlock()).contains((Block) target.getBlock())) {
+			if (!node.equals(target) && !nodeReplacements.containsKey(target) && !nodeReplacements.containsKey(node)) {
 				Node suc = null;
 				Node sucTarget = null;
 				for (Edge e : BackEdges.getOuts(node)) {
@@ -140,25 +139,13 @@ public class CommonSubexpressionEliminationVisitor extends OptimizationVisitor<N
 				if (suc == null || sucTarget == null)
 					return;
 				// replace the Proj node so the firm backend is happy
-				addReplacement(suc, sucTarget);
-				addReplacement(node, target);
-			} else if (!node.equals(target) && !nodeReplacements.containsKey(target) && !nodeReplacements.containsKey(node)
-					&& dominators.get((Block) target.getBlock()).contains((Block) node.getBlock())) {
-				Node suc = null;
-				Node sucTarget = null;
-				for (Edge e : BackEdges.getOuts(node)) {
-					suc = e.node;
-					break;
+				if (dominators.get((Block) node.getBlock()).contains((Block) target.getBlock())) {
+					addReplacement(suc, sucTarget);
+					addReplacement(node, target);
+				} else if (dominators.get((Block) target.getBlock()).contains((Block) node.getBlock())) {
+					addReplacement(sucTarget, suc);
+					addReplacement(target, node);
 				}
-				for (Edge e : BackEdges.getOuts(target)) {
-					sucTarget = e.node;
-					break;
-				}
-				if (suc == null || sucTarget == null)
-					return;
-				// replace the Proj node so the firm backend is happy
-				addReplacement(sucTarget, suc);
-				addReplacement(target, node);
 			} else {
 				return;
 			}
@@ -189,8 +176,8 @@ public class CommonSubexpressionEliminationVisitor extends OptimizationVisitor<N
 		Node leftNode = leftReplacement == null ? add.getLeft() : leftReplacement;
 		Node rightReplacement = nodeReplacements.get(add.getRight());
 		Node rightNode = rightReplacement == null ? add.getRight() : rightReplacement;
-		int left = getValue(leftNode);
-		int right = getValue(rightNode);
+		long left = getValue(leftNode);
+		long right = getValue(rightNode);
 
 		binaryTransferFunction(add, left, right);
 	}
@@ -201,8 +188,8 @@ public class CommonSubexpressionEliminationVisitor extends OptimizationVisitor<N
 		Node leftNode = leftReplacement == null ? sub.getLeft() : leftReplacement;
 		Node rightReplacement = nodeReplacements.get(sub.getRight());
 		Node rightNode = rightReplacement == null ? sub.getRight() : rightReplacement;
-		int left = getValue(leftNode);
-		int right = getValue(rightNode);
+		long left = getValue(leftNode);
+		long right = getValue(rightNode);
 
 		binaryTransferFunction(sub, left, right);
 	}
@@ -213,8 +200,8 @@ public class CommonSubexpressionEliminationVisitor extends OptimizationVisitor<N
 		Node leftNode = leftReplacement == null ? div.getLeft() : leftReplacement;
 		Node rightReplacement = nodeReplacements.get(div.getRight());
 		Node rightNode = rightReplacement == null ? div.getRight() : rightReplacement;
-		int left = getValue(leftNode);
-		int right = getValue(rightNode);
+		long left = getValue(leftNode);
+		long right = getValue(rightNode);
 
 		modDivTransferFunction(div, left, right);
 	}
@@ -225,8 +212,8 @@ public class CommonSubexpressionEliminationVisitor extends OptimizationVisitor<N
 		Node leftNode = leftReplacement == null ? mod.getLeft() : leftReplacement;
 		Node rightReplacement = nodeReplacements.get(mod.getRight());
 		Node rightNode = rightReplacement == null ? mod.getRight() : rightReplacement;
-		int left = getValue(leftNode);
-		int right = getValue(rightNode);
+		long left = getValue(leftNode);
+		long right = getValue(rightNode);
 
 		modDivTransferFunction(mod, left, right);
 	}
@@ -237,8 +224,8 @@ public class CommonSubexpressionEliminationVisitor extends OptimizationVisitor<N
 		Node leftNode = leftReplacement == null ? shl.getLeft() : leftReplacement;
 		Node rightReplacement = nodeReplacements.get(shl.getRight());
 		Node rightNode = rightReplacement == null ? shl.getRight() : rightReplacement;
-		int left = getValue(leftNode);
-		int right = getValue(rightNode);
+		long left = getValue(leftNode);
+		long right = getValue(rightNode);
 
 		binaryTransferFunction(shl, left, right);
 	}
@@ -249,8 +236,8 @@ public class CommonSubexpressionEliminationVisitor extends OptimizationVisitor<N
 		Node leftNode = leftReplacement == null ? shr.getLeft() : leftReplacement;
 		Node rightReplacement = nodeReplacements.get(shr.getRight());
 		Node rightNode = rightReplacement == null ? shr.getRight() : rightReplacement;
-		int left = getValue(leftNode);
-		int right = getValue(rightNode);
+		long left = getValue(leftNode);
+		long right = getValue(rightNode);
 
 		binaryTransferFunction(shr, left, right);
 	}
@@ -261,8 +248,8 @@ public class CommonSubexpressionEliminationVisitor extends OptimizationVisitor<N
 		Node leftNode = leftReplacement == null ? mul.getLeft() : leftReplacement;
 		Node rightReplacement = nodeReplacements.get(mul.getRight());
 		Node rightNode = rightReplacement == null ? mul.getRight() : rightReplacement;
-		int left = getValue(leftNode);
-		int right = getValue(rightNode);
+		long left = getValue(leftNode);
+		long right = getValue(rightNode);
 
 		binaryTransferFunction(mul, left, right);
 	}
@@ -274,8 +261,8 @@ public class CommonSubexpressionEliminationVisitor extends OptimizationVisitor<N
 			Node leftNode = leftReplacement == null ? phi.getPred(0) : leftReplacement;
 			Node rightReplacement = nodeReplacements.get(phi.getPred(1));
 			Node rightNode = rightReplacement == null ? phi.getPred(1) : rightReplacement;
-			int left = getValue(leftNode);
-			int right = getValue(rightNode);
+			long left = getValue(leftNode);
+			long right = getValue(rightNode);
 
 			binaryTransferFunction(phi, left, right);
 		} else {
@@ -290,15 +277,15 @@ public class CommonSubexpressionEliminationVisitor extends OptimizationVisitor<N
 	}
 
 	private class NodeValue {
-		final int leftPred;
-		final int rightPred;
+		final long leftPred;
+		final long rightPred;
 
-		private NodeValue(int left) {
+		private NodeValue(long left) {
 			this.leftPred = left;
 			this.rightPred = -1;
 		}
 
-		private NodeValue(int left, int right) {
+		private NodeValue(long left, long right) {
 			this.leftPred = left;
 			this.rightPred = right;
 		}
@@ -307,8 +294,8 @@ public class CommonSubexpressionEliminationVisitor extends OptimizationVisitor<N
 		public int hashCode() {
 			final int prime = 31;
 			int result = 1;
-			result = prime * result + leftPred;
-			result = prime * result + rightPred;
+			result = prime * result + (int) (leftPred ^ (leftPred >>> 32));
+			result = prime * result + (int) (rightPred ^ (rightPred >>> 32));
 			return result;
 		}
 
@@ -321,13 +308,11 @@ public class CommonSubexpressionEliminationVisitor extends OptimizationVisitor<N
 			if (getClass() != obj.getClass())
 				return false;
 			NodeValue other = (NodeValue) obj;
-
 			if (leftPred == other.leftPred && rightPred == other.rightPred)
 				return true;
 			if (leftPred == other.rightPred && rightPred == other.leftPred)
 				return true;
 			return false;
 		}
-
 	}
 }
