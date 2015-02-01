@@ -97,7 +97,8 @@ public class UnrollingVisitor extends OptimizationVisitor<Node> {
 					// unroll if block generates overflow
 					if (cycleCount == Integer.MAX_VALUE) {
 						long count = ((long) Integer.MAX_VALUE) - startingValue.getTarval().asLong();
-						long target = (long) Math.ceil((double) (count) / incr.getTarval().asLong());
+						long mod = count % incr.getTarval().asLong();
+						long target = (long) Math.ceil((double) (count) / incr.getTarval().asLong() + (mod == 0 ? 1 : 0));
 						unrollFactor = MAX_UNROLL_FACTOR;
 						while (unrollFactor > 1 && (target % unrollFactor) != 0) {
 							unrollFactor -= 1;
