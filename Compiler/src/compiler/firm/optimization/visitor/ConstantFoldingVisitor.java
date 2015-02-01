@@ -6,6 +6,7 @@ import java.util.Map.Entry;
 
 import compiler.firm.FirmUtils;
 import compiler.firm.optimization.FirmOptimizer;
+
 import firm.BackEdges;
 import firm.BackEdges.Edge;
 import firm.Graph;
@@ -29,6 +30,8 @@ import firm.nodes.Shrs;
 import firm.nodes.Sub;
 
 public class ConstantFoldingVisitor extends OptimizationVisitor<TargetValue> {
+
+	protected boolean fixPoint = true;
 
 	public static final OptimizationVisitorFactory<TargetValue> FACTORY = new OptimizationVisitorFactory<TargetValue>() {
 		@Override
@@ -55,8 +58,11 @@ public class ConstantFoldingVisitor extends OptimizationVisitor<TargetValue> {
 			currentGraph = targets.keySet().iterator().next().getGraph();
 
 			BackEdges.enable(currentGraph);
-			FirmOptimizer.walkTopological(currentGraph, workList, visitor);
-			FirmOptimizer.workList(workList, visitor);
+			do {
+				visitor.fixPoint = true;
+				FirmOptimizer.walkTopological(currentGraph, workList, visitor);
+				FirmOptimizer.workList(workList, visitor);
+			} while (!visitor.fixPoint);
 			BackEdges.disable(currentGraph);
 
 			for (Entry<Node, TargetValue> targetEntry : targets.entrySet()) {
@@ -71,6 +77,9 @@ public class ConstantFoldingVisitor extends OptimizationVisitor<TargetValue> {
 	}
 
 	private void setTargetValue(Node node, TargetValue targetValue) {
+		if (!targets.containsKey(node) || !targets.get(node).equals(targetValue)) {
+			fixPoint = false;
+		}
 		targets.put(node, targetValue);
 	}
 
@@ -236,13 +245,19 @@ public class ConstantFoldingVisitor extends OptimizationVisitor<TargetValue> {
 		for (int i = 1; i < phi.getPredCount(); i++) {
 			TargetValue tmpTargetValue = getTargetValue(phi.getPred(i)) == null ? TargetValue.getUnknown() : getTargetValue(phi.getPred(i));
 			if (predTargetValue.isConstant() && tmpTargetValue.isConstant() && predTargetValue.equals(tmpTargetValue)) {
+				// same constants as predecessors
 				setTargetValue(phi, predTargetValue);
 			} else if (predTargetValue.equals(TargetValue.getBad()) || tmpTargetValue.equals(TargetValue.getBad())
 					|| (predTargetValue.isConstant() && tmpTargetValue.isConstant() && !predTargetValue.equals(tmpTargetValue))) {
+				// node already bad, no chance to recover
 				setTargetValue(phi, TargetValue.getBad());
+				break;
 			} else if (tmpTargetValue.equals(TargetValue.getUnknown())) {
+				// predTargetValue is unknown or constant
 				setTargetValue(phi, predTargetValue);
 			} else {
+				// predTargetValue is unknown and tmpTargetValue is a constant
+				// save it
 				setTargetValue(phi, tmpTargetValue);
 				predTargetValue = tmpTargetValue;
 			}
@@ -315,13 +330,17 @@ public class ConstantFoldingVisitor extends OptimizationVisitor<TargetValue> {
 			for (int i = 1; i < phi.getPredCount(); i++) {
 				TargetValue tmpTargetValue = getTargetValue(phi.getPred(i)) == null ? TargetValue.getUnknown() : getTargetValue(phi.getPred(i));
 				if (predTargetValue.isConstant() && tmpTargetValue.isConstant() && predTargetValue.equals(tmpTargetValue)) {
+					// both are a constant
 					setTargetValue(phi, predTargetValue);
 				} else if (predTargetValue.equals(TargetValue.getBad()) || tmpTargetValue.equals(TargetValue.getBad())
 						|| (predTargetValue.isConstant() && tmpTargetValue.isConstant() && !predTargetValue.equals(tmpTargetValue))) {
+					// at least one is no constant
 					setTargetValue(phi, TargetValue.getBad());
 					break;
 				} else {
+					// at least one is unknown
 					setTargetValue(phi, TargetValue.getUnknown());
+					break;
 				}
 			}
 
