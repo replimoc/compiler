@@ -23,6 +23,10 @@ public class MovOperation extends AssemblerBitOperation {
 		super(comment);
 		this.source = source;
 		this.destination = destination;
+
+		if (source instanceof VirtualRegister && destination instanceof VirtualRegister) {
+			((VirtualRegister) destination).addPreferedRegister((VirtualRegister) source);
+		}
 	}
 
 	@Override

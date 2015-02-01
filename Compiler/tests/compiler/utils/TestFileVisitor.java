@@ -29,7 +29,7 @@ import org.junit.Ignore;
 @Ignore
 public class TestFileVisitor extends SimpleFileVisitor<Path> {
 
-	private static final int CHECK_TIMEOUT = 200;
+	private static final int CHECK_TIMEOUT = 350;
 	private static final int NUMBER_OF_THREADS = 12;
 
 	public interface FileTester {

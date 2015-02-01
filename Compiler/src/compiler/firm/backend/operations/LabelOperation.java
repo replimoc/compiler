@@ -5,10 +5,15 @@ import compiler.firm.backend.operations.templates.AssemblerOperation;
 public class LabelOperation extends AssemblerOperation {
 
 	private String name;
-	private boolean alignment;
+	private boolean align;
 
 	public LabelOperation(String name) {
 		this.name = name;
+	}
+
+	public LabelOperation(String name, boolean align) {
+		this.name = name;
+		this.align = align;
 	}
 
 	@Override
@@ -18,7 +23,7 @@ public class LabelOperation extends AssemblerOperation {
 
 	@Override
 	public String[] toStringWithSpillcode() {
-		if (alignment) {
+		if (align) {
 			return new String[] { ".p2align 4", toString() };
 		} else {
 			return new String[] { toString() };
@@ -29,7 +34,7 @@ public class LabelOperation extends AssemblerOperation {
 		return name;
 	}
 
-	public void setAlignment(boolean alignment) {
-		this.alignment = alignment;
+	public void setAlign(boolean align) {
+		this.align = align;
 	}
 }

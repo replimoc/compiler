@@ -3,6 +3,7 @@ package compiler.firm.backend;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Iterator;
+import java.util.LinkedHashMap;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map.Entry;
@@ -397,7 +398,7 @@ public class X8664AssemblerGenerationVisitor implements BulkPhiNodeVisitor {
 		String methodName = getMethodName(node);
 
 		if (node.equals(graph.getStartBlock())) {
-			addOperation(new LabelOperation(methodName));
+			addOperation(new LabelOperation(methodName, true));
 			methodStart(node);
 		}
 
@@ -747,7 +748,7 @@ public class X8664AssemblerGenerationVisitor implements BulkPhiNodeVisitor {
 	public void visit(List<Phi> phis) {
 		addOperation(new Comment("Handle phis of current block"));
 
-		HashMap<Phi, Node> node2phiMapping = new HashMap<>();
+		HashMap<Phi, Node> node2phiMapping = new LinkedHashMap<>();
 		List<Phi> conflictNodes = new ArrayList<>();
 
 		for (Phi phi : phis) {
@@ -760,7 +761,7 @@ public class X8664AssemblerGenerationVisitor implements BulkPhiNodeVisitor {
 			}
 		}
 
-		HashMap<Phi, Storage> phiTempStackMapping = new HashMap<>();
+		HashMap<Phi, Storage> phiTempStackMapping = new LinkedHashMap<>();
 		for (Phi phi : conflictNodes) {
 			Node predecessor = getRelevantPredecessor(phi);
 			Storage register = storageManagement.getStorage(predecessor);
@@ -773,8 +774,8 @@ public class X8664AssemblerGenerationVisitor implements BulkPhiNodeVisitor {
 			Storage register = storageManagement.getStorage(mapping.getValue());
 			Storage destination = storageManagement.getStorage(mapping.getKey());
 			if (register instanceof VirtualRegister && destination instanceof VirtualRegister) {
-				((VirtualRegister) register).setPreferedRegister((VirtualRegister) destination);
-				((VirtualRegister) destination).setPreferedRegister((VirtualRegister) register);
+				((VirtualRegister) register).addPreferedRegister((VirtualRegister) destination);
+				((VirtualRegister) destination).addPreferedRegister((VirtualRegister) register);
 			}
 			addOperation(new MovOperation("Phi: " + mapping.getValue() + " -> " + mapping.getKey(), register, destination));
 		}
