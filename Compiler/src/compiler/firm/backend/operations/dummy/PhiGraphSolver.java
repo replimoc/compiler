@@ -3,6 +3,7 @@ package compiler.firm.backend.operations.dummy;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
+import java.util.LinkedHashMap;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map.Entry;
@@ -23,8 +24,8 @@ public final class PhiGraphSolver {
 	public static List<String> calculateOperations(List<Pair<Storage, RegisterBased>> phiRelations) {
 		List<String> result = new ArrayList<>();
 
-		HashMap<Key, List<RegisterBased>> phiFromToGraph = new HashMap<>(); // graph with directed out-edges
-		HashMap<Key, RegisterBased> phiToFromGraph = new HashMap<>(); // graph with directed in-edges
+		HashMap<Key, List<RegisterBased>> phiFromToGraph = new LinkedHashMap<>(); // graph with directed out-edges
+		HashMap<Key, RegisterBased> phiToFromGraph = new LinkedHashMap<>(); // graph with directed in-edges
 
 		for (Pair<Storage, RegisterBased> curr : phiRelations) { // handle constant assignments and calculate graph for register assignments
 			Storage source = curr.first;
@@ -81,15 +82,20 @@ public final class PhiGraphSolver {
 		}
 
 		while (!phiToFromGraph.isEmpty()) { // phase 2: all other entries are cycles => handle cycles with swaps around the cycle
-			Entry<Key, RegisterBased> start = phiToFromGraph.entrySet().iterator().next();
-			RegisterBased currSource = start.getValue();
-			RegisterBased currDestination = start.getKey().register;
+			Key start = phiToFromGraph.keySet().iterator().next();
 
-			do {
-				result.addAll(Arrays.asList(new SwapOperation("phi", currSource, currDestination).toStringWithSpillcode()));
-				currDestination = currSource;
-				currSource = phiToFromGraph.remove(new Key(currDestination));
-			} while (currSource != null);
+			LinkedList<RegisterBased> cycleStack = new LinkedList<>();
+			RegisterBased curr = start.register;
+			while ((curr = phiToFromGraph.remove(new Key(curr))) != null) {
+				cycleStack.push(curr);
+			}
+
+			RegisterBased last = cycleStack.pop();
+			while (!cycleStack.isEmpty()) {
+				curr = cycleStack.pop();
+				result.addAll(Arrays.asList(new SwapOperation("phi", last, curr).toStringWithSpillcode()));
+				last = curr;
+			}
 		}
 
 		return result;
