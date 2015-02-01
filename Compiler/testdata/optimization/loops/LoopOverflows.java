@@ -27,5 +27,19 @@ class Test {
 		}
 		a = a - 1;
 		System.out.println(a);
+		
+		int b = 10;
+		while(9 <= b) {
+			b = b + 19;
+		}
+		b = b - 1;
+		System.out.println(b);
+		
+		int c = 6;
+		while(7 > c) {
+			c = c - 5;
+		}
+		c = c + 1;
+		System.out.println(c);
 	}
 }
