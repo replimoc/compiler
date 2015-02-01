@@ -87,7 +87,6 @@ public final class PhiGraphSolver {
 
 			do {
 				result.addAll(Arrays.asList(new SwapOperation("phi", currSource, currDestination).toStringWithSpillcode()));
-
 				currDestination = currSource;
 				currSource = phiToFromGraph.remove(new Key(currDestination));
 			} while (currSource != null);
@@ -104,9 +103,16 @@ public final class PhiGraphSolver {
 		}
 
 		@Override
+		public String toString() {
+			return register.toString();
+		}
+
+		@Override
 		public int hashCode() {
 			final int prime = 31;
 			int result = 1;
+			result = prime * result + (register.isSpilled() ? 1231 : 1237);
+			result = prime * result + (!register.isSpilled() ? 0 : register.getMemoryPointer().getOffset());
 			result = prime * result + ((register.getRegisterBundle() == null) ? 0 : register.getRegisterBundle().hashCode());
 			return result;
 		}
@@ -120,11 +126,18 @@ public final class PhiGraphSolver {
 			if (getClass() != obj.getClass())
 				return false;
 			Key other = (Key) obj;
-			if (register.getRegisterBundle() == null) {
-				if (other.register.getRegisterBundle() != null)
-					return false;
-			} else if (!register.getRegisterBundle().equals(other.register.getRegisterBundle()))
+			if (register.isSpilled() != other.register.isSpilled())
 				return false;
+			if (register.isSpilled()) {
+				if (register.getMemoryPointer().getOffset() != other.register.getMemoryPointer().getOffset())
+					return false;
+			} else {
+				if (register.getRegisterBundle() == null) {
+					if (other.register.getRegisterBundle() != null)
+						return false;
+				} else if (!register.getRegisterBundle().equals(other.register.getRegisterBundle()))
+					return false;
+			}
 			return true;
 		}
 	}
