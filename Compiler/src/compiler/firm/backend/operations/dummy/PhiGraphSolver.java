@@ -36,7 +36,8 @@ public final class PhiGraphSolver {
 				// do nothing for moves from register into itself
 
 			} else if (source instanceof Constant) {
-				constantResult.addAll(Arrays.asList(new MovOperation("phi", source, destination).toStringWithSpillcode()));
+				constantResult.addAll(Arrays.asList(new MovOperation("phi: " + destination.getComment(),
+						source, destination).toStringWithSpillcode()));
 
 			} else if (source instanceof MemoryPointer) {
 				throw new RuntimeException("No memory pointer expected here!");
@@ -67,7 +68,8 @@ public final class PhiGraphSolver {
 				RegisterBased currentSource = phiToFromGraph.get(destinationKey);
 				Key sourceKey = new Key(currentSource);
 
-				result.addAll(Arrays.asList(new MovOperation("phi", currentSource, destinationKey.register).toStringWithSpillcode()));
+				result.addAll(Arrays.asList(new MovOperation("phi: " + currentSource.getComment() + " -> " + destinationKey.register.getComment(),
+						currentSource, destinationKey.register).toStringWithSpillcode()));
 				phiToFromGraph.remove(destinationKey); // remove this edge
 				List<RegisterBased> changedTargets = phiFromToGraph.remove(sourceKey);
 				changedTargets.remove(destinationKey.register);
@@ -94,7 +96,8 @@ public final class PhiGraphSolver {
 			RegisterBased last = cycleStack.pop();
 			while (!cycleStack.isEmpty()) {
 				curr = cycleStack.pop();
-				result.addAll(Arrays.asList(new SwapOperation("phi", last, curr).toStringWithSpillcode()));
+				result.addAll(Arrays.asList(new SwapOperation("phi: " + last.getComment() + " -> " + curr.getComment(), last, curr)
+						.toStringWithSpillcode()));
 				last = curr;
 			}
 		}

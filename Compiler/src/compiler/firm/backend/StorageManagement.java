@@ -48,7 +48,7 @@ public class StorageManagement {
 		Storage storage = nodeStorages.get(node);
 
 		if (storage == null) {
-			storage = new VirtualRegister(getMode(node));
+			storage = new VirtualRegister(getMode(node), node.toString());
 			addStorage(node, storage);
 		}
 		return storage;
@@ -60,7 +60,7 @@ public class StorageManagement {
 		if (storage instanceof RegisterBased) {
 			result = (RegisterBased) storage;
 		} else {
-			result = new VirtualRegister(getMode(node));
+			result = new VirtualRegister(getMode(node), node.toString());
 			addOperation(new MovOperation(node.toString(), storage, result));
 			addStorage(node, result);
 		}

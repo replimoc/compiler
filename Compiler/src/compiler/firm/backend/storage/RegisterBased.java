@@ -25,4 +25,8 @@ public abstract class RegisterBased extends Storage {
 	public boolean isSpilled() {
 		return false;
 	}
+
+	public String getComment() {
+		return "";
+	}
 }

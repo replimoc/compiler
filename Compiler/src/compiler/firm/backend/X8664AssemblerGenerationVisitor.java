@@ -167,7 +167,7 @@ public class X8664AssemblerGenerationVisitor implements BulkPhiNodeVisitor {
 		// get right node
 		RegisterBased registerRight = storageManagement.getValue(right);
 
-		RegisterBased result = new VirtualRegister(StorageManagement.getMode(parent));
+		RegisterBased result = new VirtualRegister(StorageManagement.getMode(parent), parent.toString());
 
 		// create operation object
 		SourceSourceDestinationOperation operation = operationFactory.instantiate(registerLeft, registerRight, result);

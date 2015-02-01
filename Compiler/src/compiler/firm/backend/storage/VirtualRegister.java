@@ -19,27 +19,33 @@ public class VirtualRegister extends RegisterBased {
 	private final LinkedList<Interval> lifetimes = new LinkedList<>();
 	private final List<VirtualRegister> preferedRegisters = new LinkedList<>();
 	private final LinkedHashSet<VirtualRegister> interferences;
+	private final String comment;
 
 	private Storage register;
 	private boolean isSpilled;
 
 	public VirtualRegister(Bit mode) {
-		this(mode, (RegisterBased) null);
+		this(mode, (String) null);
+	}
+
+	public VirtualRegister(Bit mode, String comment) {
+		this(mode, (RegisterBased) null, comment);
 	}
 
 	public VirtualRegister(SingleRegister register) {
-		this(register.getMode(), register);
+		this(register.getMode(), register, null);
 	}
 
-	public VirtualRegister(Bit mode, RegisterBased register) {
+	public VirtualRegister(Bit mode, RegisterBased register, String comment) {
 		this.mode = mode;
 		this.register = register;
 		this.num = I++;
 		this.interferences = new LinkedHashSet<>();
+		this.comment = comment;
 	}
 
 	public VirtualRegister(Bit mode, RegisterBundle registerBundle) {
-		this(mode, registerBundle.getRegister(mode));
+		this(mode, registerBundle.getRegister(mode), null);
 	}
 
 	@Override
@@ -163,6 +169,11 @@ public class VirtualRegister extends RegisterBased {
 
 	public LinkedHashSet<VirtualRegister> getInterferences() {
 		return this.interferences;
+	}
+
+	@Override
+	public String getComment() {
+		return comment;
 	}
 
 }
