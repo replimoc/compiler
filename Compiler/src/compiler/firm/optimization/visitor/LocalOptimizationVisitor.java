@@ -4,6 +4,7 @@ import java.util.HashMap;
 
 import compiler.firm.FirmUtils;
 
+import firm.BackEdges;
 import firm.Mode;
 import firm.TargetValue;
 import firm.nodes.Add;
@@ -52,11 +53,23 @@ public class LocalOptimizationVisitor extends OptimizationVisitor<Node> {
 			addReplacement(add, add.getRight());
 		} else if (isConstant(right) && getTargetValue(right).isNull()) {
 			addReplacement(add, add.getLeft());
+		} else if (isConstant(left) && right instanceof Add) {
+			Add rightAdd = (Add) right;
+			if (isConstant(rightAdd.getLeft()) && isInt(left) && isInt(rightAdd.getLeft()) && BackEdges.getNOuts(rightAdd) == 1) {
+				int result = getTargetValue(left).asInt() + getTargetValue(rightAdd.getLeft()).asInt();
+				addReplacement(rightAdd.getLeft(), right.getGraph().newConst(result, left.getMode()));
+				addReplacement(add, rightAdd);
+			}
 		}
+	}
+
+	private boolean isInt(Node node) {
+		return node.getMode().equals(Mode.getIs());
 	}
 
 	@Override
 	public void visit(Div division) {
+		Node left = division.getLeft();
 		Node right = division.getRight();
 
 		if (right instanceof Conv) {
@@ -71,6 +84,19 @@ public class LocalOptimizationVisitor extends OptimizationVisitor<Node> {
 			Node suc = FirmUtils.getFirstSuccessor(division);
 			Node minus = division.getGraph().newMinus(suc.getBlock(), division.getLeft(), suc.getMode());
 			addReplacement(FirmUtils.getFirstSuccessor(division), minus);
+		} else if (isConstant(right) && left instanceof Mul) {
+			Mul mul = (Mul) left;
+			if (isConstant(mul.getLeft()) && isInt(right) && isInt(mul.getLeft()) && BackEdges.getNOuts(mul) == 1) {
+				// (x * _) / y; if x%y == 0 => (_ * (x/y))
+				int x = getTargetValue(mul.getLeft()).asInt();
+				int y = getTargetValue(right).asInt();
+
+				if (y != 0 && x % y == 0) {
+					addReplacement(mul.getLeft(), mul.getGraph().newConst(x / y, mul.getMode()));
+					addReplacement(division, FirmUtils.newBad(mul));
+					addReplacement(FirmUtils.getFirstSuccessor(division), mul);
+				}
+			}
 		}
 	}
 

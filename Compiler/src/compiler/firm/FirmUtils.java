@@ -3,8 +3,10 @@ package compiler.firm;
 import java.io.File;
 import java.io.IOException;
 import java.util.Arrays;
+import java.util.HashMap;
 import java.util.LinkedList;
 import java.util.List;
+import java.util.Map.Entry;
 
 import compiler.utils.ExecutionFailedException;
 import compiler.utils.Pair;
@@ -22,6 +24,7 @@ import firm.Mode;
 import firm.Program;
 import firm.Type;
 import firm.Util;
+import firm.bindings.binding_irgopt;
 import firm.nodes.Node;
 
 public final class FirmUtils {
@@ -34,6 +37,8 @@ public final class FirmUtils {
 
 	public static final int TRUE = 1;
 	public static final int FALSE = 0;
+
+	public static final String CALLOC_PROXY = "calloc_proxy";
 
 	private FirmUtils() { // no objects of this class shall be created
 	}
@@ -176,5 +181,20 @@ public final class FirmUtils {
 
 	public static Node getFirstSuccessor(Node node) {
 		return BackEdges.getOuts(node).iterator().next().node;
+	}
+
+	public static void removeBadsAndUnreachable(Graph graph) {
+		binding_irgopt.remove_unreachable_code(graph.ptr);
+		binding_irgopt.remove_bads(graph.ptr);
+	}
+
+	public static void replaceNodes(HashMap<Node, Node> replacements) {
+		for (Entry<Node, Node> curr : replacements.entrySet()) {
+			Graph.exchange(curr.getKey(), curr.getValue());
+		}
+	}
+
+	public static Node newBad(Node node) {
+		return node.getGraph().newBad(node.getMode());
 	}
 }
