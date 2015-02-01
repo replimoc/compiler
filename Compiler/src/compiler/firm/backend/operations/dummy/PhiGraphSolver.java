@@ -23,6 +23,7 @@ public final class PhiGraphSolver {
 
 	public static List<String> calculateOperations(List<Pair<Storage, RegisterBased>> phiRelations) {
 		List<String> result = new ArrayList<>();
+		List<String> constantResult = new ArrayList<>();
 
 		HashMap<Key, List<RegisterBased>> phiFromToGraph = new LinkedHashMap<>(); // graph with directed out-edges
 		HashMap<Key, RegisterBased> phiToFromGraph = new LinkedHashMap<>(); // graph with directed in-edges
@@ -35,7 +36,7 @@ public final class PhiGraphSolver {
 				// do nothing for moves from register into itself
 
 			} else if (source instanceof Constant) {
-				result.addAll(Arrays.asList(new MovOperation("phi", source, destination).toStringWithSpillcode()));
+				constantResult.addAll(Arrays.asList(new MovOperation("phi", source, destination).toStringWithSpillcode()));
 
 			} else if (source instanceof MemoryPointer) {
 				throw new RuntimeException("No memory pointer expected here!");
@@ -97,6 +98,8 @@ public final class PhiGraphSolver {
 				last = curr;
 			}
 		}
+
+		result.addAll(constantResult);
 
 		return result;
 	}
