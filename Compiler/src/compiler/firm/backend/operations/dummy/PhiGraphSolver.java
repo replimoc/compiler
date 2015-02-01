@@ -15,21 +15,18 @@ import compiler.firm.backend.storage.RegisterBased;
 import compiler.firm.backend.storage.Storage;
 import compiler.utils.Pair;
 
-public class PhiGraph {
+public final class PhiGraphSolver {
 
-	private List<Pair<Storage, RegisterBased>> phiRelations;
-
-	public PhiGraph(List<Pair<Storage, RegisterBased>> phiRelations) {
-		this.phiRelations = phiRelations;
+	private PhiGraphSolver() {
 	}
 
-	public List<String> calculateOperations() {
+	public static List<String> calculateOperations(List<Pair<Storage, RegisterBased>> phiRelations) {
 		List<String> result = new ArrayList<>();
 
 		HashMap<Key, List<RegisterBased>> phiFromToGraph = new HashMap<>(); // graph with directed out-edges
 		HashMap<Key, RegisterBased> phiToFromGraph = new HashMap<>(); // graph with directed in-edges
 
-		for (Pair<Storage, RegisterBased> curr : phiRelations) {
+		for (Pair<Storage, RegisterBased> curr : phiRelations) { // handle constant assignments and calculate graph for register assignments
 			Storage source = curr.first;
 			RegisterBased destination = curr.second;
 
@@ -40,10 +37,9 @@ public class PhiGraph {
 				result.addAll(Arrays.asList(new MovOperation("phi", source, destination).toStringWithSpillcode()));
 
 			} else if (source instanceof MemoryPointer) {
-				System.err.println("SHIT");
+				throw new RuntimeException("No memory pointer expected here!");
 
-			} else {
-
+			} else { // add this relation to the graph
 				List<RegisterBased> destinations = phiFromToGraph.get(new Key((RegisterBased) source));
 				if (destinations == null) {
 					destinations = new LinkedList<>();
@@ -54,37 +50,37 @@ public class PhiGraph {
 			}
 		}
 
-		while (true) { // remove all non-cyclic phis
-			List<RegisterBased> withoutOutEdges = new LinkedList<>();
+		while (true) { // phase 1: remove all non-cyclic phis
+			List<Key> withoutOutEdges = new LinkedList<>();
 			for (Entry<Key, RegisterBased> curr : phiToFromGraph.entrySet()) {
 				if (!phiFromToGraph.containsKey(curr.getKey())) {
-					withoutOutEdges.add(curr.getKey().register);
+					withoutOutEdges.add(curr.getKey());
 				}
 			}
 
-			if (withoutOutEdges.isEmpty())
+			if (withoutOutEdges.isEmpty()) // we have no target registers without an out-edge left => continue with next phase
 				break;
 
-			for (RegisterBased currentDestination : withoutOutEdges) {
-				Key destinationKey = new Key(currentDestination);
+			for (Key destinationKey : withoutOutEdges) {
 				RegisterBased currentSource = phiToFromGraph.get(destinationKey);
 				Key sourceKey = new Key(currentSource);
 
-				result.addAll(Arrays.asList(new MovOperation("phi", currentSource, currentDestination).toStringWithSpillcode()));
+				result.addAll(Arrays.asList(new MovOperation("phi", currentSource, destinationKey.register).toStringWithSpillcode()));
 				phiToFromGraph.remove(destinationKey); // remove this edge
 				List<RegisterBased> changedTargets = phiFromToGraph.remove(sourceKey);
-				changedTargets.remove(currentDestination);
+				changedTargets.remove(destinationKey.register);
 				if (!changedTargets.isEmpty())
 					phiFromToGraph.put(sourceKey, changedTargets); // put edges of source to the new copy
 
 				for (RegisterBased targetRegister : changedTargets) {
-					phiToFromGraph.remove(new Key(targetRegister));
-					phiToFromGraph.put(new Key(targetRegister), currentSource);
+					Key targetKey = new Key(targetRegister);
+					phiToFromGraph.remove(targetKey);
+					phiToFromGraph.put(targetKey, currentSource);
 				}
 			}
 		}
 
-		while (!phiToFromGraph.isEmpty()) { // all other entries are cycles
+		while (!phiToFromGraph.isEmpty()) { // phase 2: all other entries are cycles => handle cycles with swaps around the cycle
 			Entry<Key, RegisterBased> start = phiToFromGraph.entrySet().iterator().next();
 			RegisterBased currSource = start.getValue();
 			RegisterBased currDestination = start.getKey().register;
@@ -94,7 +90,6 @@ public class PhiGraph {
 
 				currDestination = currSource;
 				currSource = phiToFromGraph.remove(new Key(currDestination));
-
 			} while (currSource != null);
 		}
 
@@ -132,6 +127,5 @@ public class PhiGraph {
 				return false;
 			return true;
 		}
-
 	}
 }

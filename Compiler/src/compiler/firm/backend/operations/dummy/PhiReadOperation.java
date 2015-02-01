@@ -25,7 +25,7 @@ public class PhiReadOperation extends AssemblerBitOperation {
 
 	@Override
 	public String[] toStringWithSpillcode() {
-		List<String> result = new PhiGraph(phiRelations).calculateOperations();
+		List<String> result = PhiGraphSolver.calculateOperations(phiRelations);
 		String[] resultString = new String[result.size()];
 		result.toArray(resultString);
 		return resultString;
