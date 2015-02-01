@@ -85,14 +85,6 @@ public final class ObsoleteNodesEliminator {
 		for (Edge startFollower : BackEdges.getOuts(graph.getStart())) {
 			Node startFollowerNode = startFollower.node;
 			if (startFollowerNode instanceof Proj && startFollowerNode.getMode().equals(Mode.getT())) {
-
-				HashMap<Integer, Integer> nodeMapping = new HashMap<>(); // build a mapping ahead, because BackEdges have no order
-				for (int i = 0, newIdx = 0; i < BackEdges.getNOuts(startFollowerNode); i++) { // Note: mapping is bigger than needed
-					if (!unusedParameters.contains(i)) {
-						nodeMapping.put(i, newIdx++);
-					}
-				}
-
 				for (Edge parameterEdge : BackEdges.getOuts(startFollowerNode)) {
 					if (!(parameterEdge.node instanceof Proj)) {
 						continue; // only work on proj nodes
@@ -102,7 +94,8 @@ public final class ObsoleteNodesEliminator {
 					if (unusedParameters.contains(parameterNode.getNum())) {
 						replacements.put(parameterNode, graph.newBad(parameterNode.getMode()));
 					} else {
-						Node newProj = graph.newProj(startFollowerNode, parameterNode.getMode(), nodeMapping.get(parameterNode.getNum()));
+						Node newProj = graph.newProj(startFollowerNode, parameterNode.getMode(),
+								calculateNewParmeterNum(unusedParameters, parameterNode.getNum()));
 						replacements.put(parameterNode, newProj);
 					}
 				}
@@ -113,6 +106,16 @@ public final class ObsoleteNodesEliminator {
 		BackEdges.disable(graph);
 
 		FirmUtils.replaceNodes(replacements);
+	}
+
+	private static int calculateNewParmeterNum(Set<Integer> unusedParameters, int num) {
+		int newIdx = 0;
+		for (int i = 0; i < num; i++) {
+			if (!unusedParameters.contains(i)) {
+				newIdx++;
+			}
+		}
+		return newIdx;
 	}
 
 	private static MethodType createNewMethodType(Entity entity, Set<Integer> unusedParameters) {
