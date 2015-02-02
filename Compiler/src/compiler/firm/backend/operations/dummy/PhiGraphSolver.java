@@ -74,12 +74,12 @@ public final class PhiGraphSolver {
 				List<RegisterBased> changedTargets = phiFromToGraph.remove(sourceKey);
 				changedTargets.remove(destinationKey.register);
 				if (!changedTargets.isEmpty())
-					phiFromToGraph.put(sourceKey, changedTargets); // put edges of source to the new copy
+					phiFromToGraph.put(destinationKey, changedTargets); // put edges of source to the new copy
 
 				for (RegisterBased targetRegister : changedTargets) {
 					Key targetKey = new Key(targetRegister);
 					phiToFromGraph.remove(targetKey);
-					phiToFromGraph.put(targetKey, currentSource);
+					phiToFromGraph.put(targetKey, destinationKey.register);
 				}
 			}
 		}
