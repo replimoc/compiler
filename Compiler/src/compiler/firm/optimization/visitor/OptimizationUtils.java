@@ -29,7 +29,7 @@ public class OptimizationUtils {
 	private final HashMap<Node, Node> inductionVariables = new HashMap<>();
 	private final HashMap<Block, Phi> loopPhis = new HashMap<>();
 	private final HashMap<Block, Set<Node>> blockNodes = new HashMap<>();
-	private final HashSet<Block> ifBlocks = new HashSet<>();
+	private final HashSet<Block> conditionalBlocks = new HashSet<>();
 	private boolean calculatedPhis = false;
 	private final Graph graph;
 
@@ -38,10 +38,10 @@ public class OptimizationUtils {
 	}
 
 	public HashSet<Block> getIfBlocks() {
-		if (dominators.size() == 0 && backedges.size() == 0 || ifBlocks.size() == 0) {
+		if (dominators.size() == 0 && backedges.size() == 0 || conditionalBlocks.size() == 0) {
 			calculateDominators();
 		}
-		return ifBlocks;
+		return conditionalBlocks;
 	}
 
 	public HashMap<Block, Set<Block>> getDominators() {
@@ -218,7 +218,7 @@ public class OptimizationUtils {
 						}
 					}
 					if (potentialIf) {
-						ifBlocks.add(block);
+						conditionalBlocks.add(block);
 					}
 				}
 			}
