@@ -6,7 +6,6 @@ import java.util.LinkedList;
 import java.util.List;
 import java.util.Set;
 
-import compiler.TestRuntimeException;
 import compiler.firm.backend.Bit;
 import compiler.firm.backend.registerallocation.Interval;
 
@@ -16,10 +15,10 @@ public class VirtualRegister extends RegisterBased {
 
 	private final Bit mode;
 	private final int num;
-	private final LinkedList<Interval> lifetimes = new LinkedList<>();
 	private final List<VirtualRegister> preferedRegisters = new LinkedList<>();
 	private final LinkedHashSet<VirtualRegister> interferences;
 	private final String comment;
+	private Interval lifetime;
 
 	private Storage register;
 	private boolean isSpilled;
@@ -71,22 +70,13 @@ public class VirtualRegister extends RegisterBased {
 		return isSpilled;
 	}
 
-	private Interval getLifetimeInterval(int line) {
-		for (Interval curr : lifetimes) {
-			if (curr.contains(line)) {
-				return curr;
-			}
-		}
-		return null;
-	}
-
 	@Override
 	public Bit getMode() {
 		return mode;
 	}
 
 	public boolean isAliveAt(int line) {
-		return getLifetimeInterval(line) != null;
+		return lifetime != null && lifetime.contains(line);
 	}
 
 	public int getNum() {
@@ -131,32 +121,22 @@ public class VirtualRegister extends RegisterBased {
 	}
 
 	public void expandLifetime(int line, boolean read) {
-		if (lifetimes.isEmpty()) {
+		if (lifetime == null) {
 			if (read) {
-				throw new TestRuntimeException("first use of register is not a write: VR_" + this.num);
+				throw new RuntimeException("first use of register is not a write: VR_" + this.num);
 			}
 
-			lifetimes.addLast(new Interval(line));
+			lifetime = new Interval(line);
 			return;
 		} else if (!read) {
-			throw new TestRuntimeException("second definition of variable: VR_" + this.num);
+			throw new RuntimeException("second definition of variable: VR_" + this.num);
 		}
 
-		Interval lastInterval = lifetimes.getLast();
-		lastInterval.expandEnd(line);
+		lifetime.expandEnd(line);
 	}
 
-	public String getLifetimes() {
-		StringBuilder builder = new StringBuilder();
-		for (Interval curr : lifetimes) {
-			builder.append(' ');
-			builder.append(curr);
-		}
-		return builder.toString();
-	}
-
-	public LinkedList<Interval> getLiftimeIntervals() {
-		return lifetimes;
+	public Interval getLifetime() {
+		return lifetime;
 	}
 
 	public void addInteference(Set<VirtualRegister> interferences) {

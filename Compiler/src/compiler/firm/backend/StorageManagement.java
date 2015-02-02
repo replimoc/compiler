@@ -5,7 +5,6 @@ import java.util.List;
 
 import compiler.firm.FirmUtils;
 import compiler.firm.backend.operations.MovOperation;
-import compiler.firm.backend.operations.dummy.PhiWriteOperation;
 import compiler.firm.backend.operations.templates.AssemblerOperation;
 import compiler.firm.backend.storage.Constant;
 import compiler.firm.backend.storage.RegisterBased;
@@ -18,7 +17,6 @@ import firm.BackEdges.Edge;
 import firm.Mode;
 import firm.nodes.Const;
 import firm.nodes.Node;
-import firm.nodes.Phi;
 
 public class StorageManagement {
 
@@ -26,7 +24,6 @@ public class StorageManagement {
 
 	private final List<AssemblerOperation> operations;
 	private final HashMap<Node, Storage> nodeStorages = new HashMap<>();
-	private final HashMap<Phi, PhiWriteOperation> phiOperations = new HashMap<>();
 
 	public StorageManagement(List<AssemblerOperation> operations) {
 		this.operations = operations;

@@ -44,5 +44,4 @@ public class PhiReadOperation extends AssemblerBitOperation {
 	public Set<RegisterBased> getWriteRegisters() {
 		return Collections.emptySet();
 	}
-
 }

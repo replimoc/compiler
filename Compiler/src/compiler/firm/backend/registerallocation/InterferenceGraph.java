@@ -41,10 +41,9 @@ public class InterferenceGraph {
 		List<Pair<Interval, VirtualRegister>> allIntervals = new ArrayList<>();
 		for (VirtualRegister curr : registers) {
 			debug(" VR_" + curr.getNum() + ": ");
-			for (Interval interval : curr.getLiftimeIntervals()) {
-				allIntervals.add(new Pair<>(interval, curr));
-				debug(interval);
-			}
+			Interval lifetimeInterval = curr.getLifetime();
+			allIntervals.add(new Pair<>(lifetimeInterval, curr));
+			debug(lifetimeInterval);
 		}
 		debug("\n");
 
