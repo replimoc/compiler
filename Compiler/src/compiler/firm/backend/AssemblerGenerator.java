@@ -8,7 +8,9 @@ import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.LinkedList;
 import java.util.List;
+import java.util.Map.Entry;
 
 import compiler.ast.declaration.MainMethodDeclaration;
 import compiler.firm.backend.FirmGraphTraverser.BlockInfo;
@@ -67,6 +69,8 @@ public final class AssemblerGenerator {
 			visitor.finishOperationsList();
 			ArrayList<AssemblerOperation> operationsBlocksPostOrder = visitor.getAllOperations();
 			final HashMap<Block, ArrayList<AssemblerOperation>> operationsOfBlocks = visitor.getOperationsOfBlocks();
+
+			calculateLiveness(graph, operationsOfBlocks);
 
 			if (debugRegisterAllocation)
 				generatePlainAssemblerFile(Paths.get(graph.getEntity().getLdName() + ".plain"), operationsBlocksPostOrder);
@@ -146,6 +150,39 @@ public final class AssemblerGenerator {
 		@Override
 		public void visitBlock(Block block) {
 			nodesPerBlockMap.get(block).visitNodes(visitor, nodesPerBlockMap);
+		}
+	}
+
+	private static void calculateLiveness(Graph graph, HashMap<Block, ArrayList<AssemblerOperation>> operationsOfBlocks) {
+		final HashMap<Block, AssemblerOperationsBlock> operationsBlocks = new HashMap<>();
+		for (Entry<Block, ArrayList<AssemblerOperation>> entry : operationsOfBlocks.entrySet()) {
+			operationsBlocks.put(entry.getKey(), new AssemblerOperationsBlock(entry.getKey(), entry.getValue()));
+
+		}
+
+		final LinkedList<AssemblerOperationsBlock> workList = new LinkedList<>();
+
+		graph.walkBlocks(new BlockWalker() {
+			@Override
+			public void visitBlock(Block block) {
+				AssemblerOperationsBlock operationsBlock = operationsBlocks.get(block);
+				if (operationsBlock != null) {
+					operationsBlock.calculateTree(operationsBlocks);
+					operationsBlock.calculateUsesAndKills();
+					workList.add(operationsBlock);
+				}
+			}
+		});
+
+		while (!workList.isEmpty()) {
+			AssemblerOperationsBlock operationsBlock = workList.removeLast();
+			if (operationsBlock.calculateLiveInAndOut()) {
+				workList.addAll(operationsBlock.getPredecessors());
+			}
+		}
+
+		for (Entry<Block, AssemblerOperationsBlock> entry : operationsBlocks.entrySet()) {
+			System.out.println(entry.getValue());
 		}
 	}
 }
