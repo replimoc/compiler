@@ -5,6 +5,7 @@ import compiler.firm.backend.storage.RegisterBased;
 import compiler.firm.backend.storage.Storage;
 
 public class CmovSignOperation extends SourceSourceDestinationOperation {
+	private boolean swapped = false;
 
 	public CmovSignOperation(String comment, Storage source, RegisterBased source2, RegisterBased destination) {
 		super(comment, source, source2, destination);
@@ -12,6 +13,16 @@ public class CmovSignOperation extends SourceSourceDestinationOperation {
 
 	@Override
 	public String getOperationString() {
-		return String.format("\tcmovs %s, %s", source, destination);
+		String negate = "";
+		if (swapped) {
+			negate = "n";
+		}
+		return String.format("\tcmov%ss %s, %s", negate, source, destination);
+	}
+
+	@Override
+	protected void swapSources() {
+		swapped = true;
+		super.swapSources();
 	}
 }
