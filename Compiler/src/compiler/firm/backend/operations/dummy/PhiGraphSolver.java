@@ -90,12 +90,12 @@ public final class PhiGraphSolver {
 			LinkedList<RegisterBased> cycleStack = new LinkedList<>();
 			RegisterBased curr = start.register;
 			while ((curr = phiToFromGraph.remove(new Key(curr))) != null) {
-				cycleStack.push(curr);
+				cycleStack.add(curr);
 			}
 
-			RegisterBased last = cycleStack.pop();
+			RegisterBased last = cycleStack.removeFirst();
 			while (!cycleStack.isEmpty()) {
-				curr = cycleStack.pop();
+				curr = cycleStack.removeFirst();
 				result.addAll(Arrays.asList(new SwapOperation("phi: " + last.getComment() + " -> " + curr.getComment(), last, curr)
 						.toStringWithSpillcode()));
 				last = curr;
