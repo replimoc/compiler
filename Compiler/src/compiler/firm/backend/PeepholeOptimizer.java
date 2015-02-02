@@ -102,7 +102,7 @@ public class PeepholeOptimizer {
 
 	private void setAlignment(JumpOperation jump) {
 		if (outputOperations.contains(jump.getLabel())) {
-			jump.getLabel().setAlignment(true);
+			jump.getLabel().setAlign(true);
 		}
 	}
 

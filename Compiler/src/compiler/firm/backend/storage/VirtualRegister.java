@@ -1,6 +1,9 @@
 package compiler.firm.backend.storage;
 
+import java.util.HashSet;
 import java.util.LinkedList;
+import java.util.List;
+import java.util.Set;
 
 import compiler.firm.backend.Bit;
 import compiler.firm.backend.registerallocation.Interval;
@@ -12,11 +15,10 @@ public class VirtualRegister extends RegisterBased {
 	private final Bit mode;
 	private final int num;
 	private final LinkedList<Interval> lifetimes = new LinkedList<>();
+	private final List<VirtualRegister> preferedRegisters = new LinkedList<>();
 
 	private Storage register;
-	private boolean forceRegister;
 	private boolean isSpilled;
-	private VirtualRegister preferedRegister;
 
 	public VirtualRegister(Bit mode) {
 		this(mode, (RegisterBased) null);
@@ -25,7 +27,6 @@ public class VirtualRegister extends RegisterBased {
 	public VirtualRegister(Bit mode, RegisterBased register) {
 		this.mode = mode;
 		this.register = register;
-		this.forceRegister = register != null;
 		this.num = I++;
 	}
 
@@ -45,14 +46,6 @@ public class VirtualRegister extends RegisterBased {
 
 	public void setStorage(Storage register) {
 		this.register = register;
-	}
-
-	public void setForceRegister(boolean forceRegister) {
-		this.forceRegister = forceRegister;
-	}
-
-	public boolean isForceRegister() {
-		return forceRegister;
 	}
 
 	public void setSpilled(boolean isSpilled) {
@@ -109,27 +102,29 @@ public class VirtualRegister extends RegisterBased {
 
 	@Override
 	public SingleRegister getSingleRegister() {
-		return register.getSingleRegister();
+		return register == null ? null : register.getSingleRegister();
 	}
 
 	@Override
 	public RegisterBundle getRegisterBundle() {
-		return register.getRegisterBundle();
+		return register == null ? null : register.getRegisterBundle();
 	}
 
-	public void setPreferedRegister(VirtualRegister preferedRegister) {
-		this.preferedRegister = preferedRegister;
+	public void addPreferedRegister(VirtualRegister preferedRegister) {
+		this.preferedRegisters.add(preferedRegister);
+		preferedRegister.preferedRegisters.add(this);
 	}
 
-	public VirtualRegister getPreferedRegister() {
-		return preferedRegister;
-	}
+	public Set<RegisterBundle> getPreferedRegisterBundles() {
+		Set<RegisterBundle> preferredBundles = new HashSet<RegisterBundle>();
 
-	public SingleRegister getPreferedSingleRegister() {
-		if (preferedRegister != null && preferedRegister.getRegister() instanceof SingleRegister) {
-			return (SingleRegister) preferedRegister.getRegister();
+		for (VirtualRegister preferred : this.preferedRegisters) {
+			if (preferred.getRegister() != null) {
+				preferredBundles.add(preferred.getRegisterBundle());
+			}
 		}
-		return null;
+
+		return preferredBundles;
 	}
 
 	@Override

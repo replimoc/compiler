@@ -1,11 +1,10 @@
 package compiler.firm.optimization.visitor;
 
-import java.util.ArrayList;
 import java.util.HashMap;
-import java.util.HashSet;
-import java.util.Map;
 import java.util.Set;
 
+import firm.BackEdges;
+import firm.BackEdges.Edge;
 import firm.nodes.Block;
 import firm.nodes.Const;
 import firm.nodes.Mul;
@@ -24,43 +23,11 @@ public class StrengthReductionVisitor extends OptimizationVisitor<Node> {
 	private HashMap<Node, Node> backedges = new HashMap<>();
 	private HashMap<Block, Set<Block>> dominators = new HashMap<>();
 	private HashMap<Node, Node> inductionVariables = new HashMap<>();
+	private OptimizationUtils utils;
 
 	@Override
 	public HashMap<Node, Node> getLatticeValues() {
 		return nodeReplacements;
-	}
-
-	private Node getInnerMostLoopHeader(Block block) {
-		Set<Block> dominatorBlocks = dominators.get(block);
-		Set<Block> loops = new HashSet<>();
-		for (Block dominatorBlock : dominatorBlocks) {
-			// find loop header that dominates 'block'
-			if (!dominatorBlock.equals(block) && backedges.containsValue(dominatorBlock)) {
-				loops.add(dominatorBlock);
-			}
-		}
-
-		ArrayList<Block> sameLevelLoops = new ArrayList<>();
-		L1: for (Block b : loops) {
-			if (dominators.containsKey(b) && dominators.get(b).containsAll(loops)) {
-				for (Map.Entry<Node, Node> entry : backedges.entrySet()) {
-					if (entry.getValue().equals(b)) {
-						if (dominators.containsKey((Block) entry.getKey()) && !dominators.get((Block) entry.getKey()).contains(block)
-								&& !dominatorBlocks.contains(entry.getKey())) {
-							// b and the looṕ header are on the same 'level'
-							sameLevelLoops.add(b);
-							continue L1;
-						}
-					}
-				}
-			}
-		}
-		for (Block b : loops) {
-			if (!sameLevelLoops.contains(b) && dominators.containsKey(b) && dominators.get(b).containsAll(loops)) {
-				return b;
-			}
-		}
-		return null;
 	}
 
 	@Override
@@ -72,7 +39,12 @@ public class StrengthReductionVisitor extends OptimizationVisitor<Node> {
 			if (dominators.get((Block) mul.getBlock()).contains(right.getBlock()) && !mul.getBlock().equals(right.getBlock())) {
 				// right block dominates this mul -> right comes before the loop header
 				if (left.getPred(0) != null && isConstant(left.getPred(0))) {
-					Node pred = getInnerMostLoopHeader((Block) mul.getBlock());
+					for (Edge suc : BackEdges.getOuts(mul)) {
+						// do not optimize if it references itself
+						if (left.equals(suc.node))
+							return;
+					}
+					Node pred = utils.getInnerMostLoopHeader((Block) mul.getBlock());
 					if (pred == null)
 						return;
 					Node preLoopBlock = pred.getPred(0).getBlock();
@@ -100,11 +72,16 @@ public class StrengthReductionVisitor extends OptimizationVisitor<Node> {
 					addReplacement(mul, loopPhi);
 				}
 			}
-		} else if (inductionVariables.containsKey(right)) {
+		} else if (inductionVariables.containsKey(right) && !right.equals(mul)) {
 			if (dominators.get((Block) mul.getBlock()).contains(left.getBlock()) && !mul.getBlock().equals(left.getBlock())) {
 				// left block dominates this mul -> left comes before the loop header
 				if (right.getPred(0) != null && isConstant(right.getPred(0))) {
-					Node pred = getInnerMostLoopHeader((Block) mul.getBlock());
+					for (Edge suc : BackEdges.getOuts(mul)) {
+						// do not optimize if it references itself
+						if (right.equals(suc.node))
+							return;
+					}
+					Node pred = utils.getInnerMostLoopHeader((Block) mul.getBlock());
 					if (pred == null)
 						return;
 					Node preLoopBlock = pred.getPred(0).getBlock();
@@ -137,7 +114,7 @@ public class StrengthReductionVisitor extends OptimizationVisitor<Node> {
 
 	@Override
 	public void visit(Start start) {
-		FirmUtils utils = new FirmUtils(start.getGraph());
+		utils = new OptimizationUtils(start.getGraph());
 		dominators = utils.getDominators();
 		backedges = utils.getBackEdges();
 		inductionVariables = utils.getInductionVariables();

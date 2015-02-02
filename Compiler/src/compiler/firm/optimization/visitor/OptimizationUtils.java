@@ -1,9 +1,13 @@
 package compiler.firm.optimization.visitor;
 
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Set;
+
+import compiler.firm.optimization.AbstractFirmNodesVisitor;
 
 import firm.BackEdges;
 import firm.BackEdges.Edge;
@@ -18,13 +22,16 @@ import firm.nodes.NodeVisitor;
 import firm.nodes.Phi;
 import firm.nodes.Proj;
 
-public class FirmUtils {
+public class OptimizationUtils {
 	private final HashMap<Block, Set<Block>> dominators = new HashMap<>();
 	private final HashMap<Node, Node> backedges = new HashMap<>();
 	private final HashMap<Node, Node> inductionVariables = new HashMap<>();
+	private final HashMap<Block, Phi> loopPhis = new HashMap<>();
+	private final HashMap<Block, Set<Node>> blockNodes = new HashMap<>();
+	private boolean calculatedPhis = false;
 	private final Graph graph;
 
-	public FirmUtils(Graph graph) {
+	public OptimizationUtils(Graph graph) {
 		this.graph = graph;
 	}
 
@@ -47,7 +54,61 @@ public class FirmUtils {
 			calculateDominators();
 		}
 		calculateInductionVariables();
+		calculatedPhis = true;
 		return inductionVariables;
+	}
+
+	public HashMap<Block, Phi> getLoopPhis() {
+		if (backedges.size() == 0) {
+			calculateDominators();
+		}
+		if (!calculatedPhis)
+			calculateInductionVariables();
+		return loopPhis;
+	}
+
+	public HashMap<Block, Set<Node>> getBlockNodes() {
+		if (blockNodes.size() == 0) {
+			copyBlocks();
+		}
+		return blockNodes;
+	}
+
+	public Node getInnerMostLoopHeader(Block block) {
+		if (dominators.size() == 0 || backedges.size() == 0) {
+			calculateDominators();
+		}
+
+		Set<Block> dominatorBlocks = dominators.get(block);
+		Set<Block> loops = new HashSet<>();
+		for (Block dominatorBlock : dominatorBlocks) {
+			// find loop header that dominates 'block'
+			if (!dominatorBlock.equals(block) && backedges.containsValue(dominatorBlock)) {
+				loops.add(dominatorBlock);
+			}
+		}
+
+		ArrayList<Block> sameLevelLoops = new ArrayList<>();
+		L1: for (Block b : loops) {
+			if (dominators.containsKey(b) && dominators.get(b).containsAll(loops)) {
+				for (Map.Entry<Node, Node> entry : backedges.entrySet()) {
+					if (entry.getValue().equals(b)) {
+						if (dominators.containsKey((Block) entry.getKey()) && !dominators.get((Block) entry.getKey()).contains(block)
+								&& !dominatorBlocks.contains(entry.getKey())) {
+							// b and the looṕ header are on the same 'level'
+							sameLevelLoops.add(b);
+							continue L1;
+						}
+					}
+				}
+			}
+		}
+		for (Block b : loops) {
+			if (!sameLevelLoops.contains(b) && dominators.containsKey(b) && dominators.get(b).containsAll(loops)) {
+				return b;
+			}
+		}
+		return null;
 	}
 
 	private void calculateInductionVariables() {
@@ -72,6 +133,10 @@ public class FirmUtils {
 							// found operation inside loop
 							inductionVariables.put(phi, node);
 						}
+					}
+				} else if (phi.getMode().equals(Mode.getM())) {
+					if (backedges.containsValue(phi.getBlock())) {
+						loopPhis.put((Block) phi.getBlock(), phi);
 					}
 				}
 
@@ -146,4 +211,19 @@ public class FirmUtils {
 		} while (dominatorCount != dominators.values().size() || backedgesCount != backedges.values().size());
 	}
 
+	private void copyBlocks() {
+		AbstractFirmNodesVisitor visitor = new AbstractFirmNodesVisitor() {
+			@Override
+			protected void visitNode(Node node) {
+				Block block = (Block) node.getBlock();
+				if (!blockNodes.containsKey(block)) {
+					Set<Node> nodes = new HashSet<Node>();
+					blockNodes.put(block, nodes);
+				}
+				Set<Node> nodes = blockNodes.get(block);
+				nodes.add(node);
+			}
+		};
+		graph.walk(visitor);
+	}
 }

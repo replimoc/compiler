@@ -140,7 +140,7 @@ public class ControlFlowVisitor extends OptimizationVisitor<Node> {
 					Node jump = block.getGraph().newJmp(block);
 					addReplacement(proj, jump);
 				} else {
-					addReplacement(proj, proj.getGraph().newBad(proj.getPred().getMode()));
+					addReplacement(proj, FirmUtils.newBad(proj.getPred()));
 				}
 			}
 		}
@@ -155,6 +155,7 @@ public class ControlFlowVisitor extends OptimizationVisitor<Node> {
 
 	@Override
 	public void visit(Phi phi) {
+		// TODO: Optimize this for phis with predecessor count greater than two.
 		boolean isTrivial = false;
 		Node otherNode = null;
 		for (Node predecessor : phi.getPreds()) {
@@ -164,11 +165,11 @@ public class ControlFlowVisitor extends OptimizationVisitor<Node> {
 				otherNode = predecessor;
 			}
 		}
-		if (phi.getPredCount() == 2 && phi.getPred(0).equals(phi.getPred(1))) {
+		if (phi.getPred(0).equals(phi.getPred(1))) {
 			isTrivial = true;
 			otherNode = phi.getPred(0);
 		}
-		if (isTrivial && phi.getLoop() == 0) {
+		if (phi.getPredCount() == 2 && isTrivial && phi.getLoop() == 0) {
 			addReplacement(phi, otherNode);
 		}
 	}
