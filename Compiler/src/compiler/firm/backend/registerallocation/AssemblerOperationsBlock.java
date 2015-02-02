@@ -23,6 +23,8 @@ public class AssemblerOperationsBlock {
 	private final Set<VirtualRegister> liveIn = new HashSet<>();
 	private final Set<VirtualRegister> liveOut = new HashSet<>();
 
+	private final HashMap<VirtualRegister, AssemblerOperation> lastUsed = new HashMap<>();
+
 	public AssemblerOperationsBlock(Block block, ArrayList<AssemblerOperation> operations) {
 		this.block = block;
 		this.operations = operations;
@@ -45,13 +47,19 @@ public class AssemblerOperationsBlock {
 	public void calculateUsesAndKills() {
 		uses.clear();
 		kills.clear();
+		lastUsed.clear();
 
 		for (int i = operations.size() - 1; i >= 0; i--) {
 			AssemblerOperation operation = operations.get(i);
 
-			for (RegisterBased readRegister : operation.getReadRegisters()) {
-				uses.add((VirtualRegister) readRegister);
+			for (RegisterBased readRegisterBased : operation.getReadRegisters()) {
+				VirtualRegister readRegister = (VirtualRegister) readRegisterBased;
+				uses.add(readRegister);
+
+				lastUsed.remove(readRegister); // move the last usage back
+				lastUsed.put(readRegister, operation);
 			}
+
 			for (RegisterBased writeRegister : operation.getWriteRegisters()) {
 				kills.add((VirtualRegister) writeRegister);
 			}
@@ -84,7 +92,7 @@ public class AssemblerOperationsBlock {
 	@Override
 	public String toString() {
 		StringBuilder builder = new StringBuilder();
-		builder.append("Live in: " + block + ": \t liveOut: ");
+		builder.append(block + ": \t liveOut: ");
 
 		for (VirtualRegister register : liveOut) {
 			builder.append("VR_" + register.getNum() + ", ");
@@ -101,5 +109,13 @@ public class AssemblerOperationsBlock {
 
 	public Set<AssemblerOperationsBlock> getPredecessors() {
 		return predecessors;
+	}
+
+	public ArrayList<AssemblerOperation> getOperations() {
+		return operations;
+	}
+
+	public boolean isLastUsage(VirtualRegister register, AssemblerOperation operation) {
+		return !liveOut.contains(register) && lastUsed.get(register) == operation;
 	}
 }

@@ -156,6 +156,12 @@ public class CallOperation extends AssemblerOperation {
 		}
 	}
 
+	public void addAliveRegisters(SingleRegister[] registers) {
+		for (SingleRegister register : registers) {
+			this.usedRegisters.add(register.getRegisterBundle());
+		}
+	}
+
 	public static class Parameter {
 		public final Storage storage;
 		public final Bit mode;

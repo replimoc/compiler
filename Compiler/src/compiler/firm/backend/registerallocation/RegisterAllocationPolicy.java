@@ -1,5 +1,8 @@
 package compiler.firm.backend.registerallocation;
 
+import java.util.HashSet;
+import java.util.Set;
+
 import compiler.firm.backend.Bit;
 import compiler.firm.backend.storage.RegisterBundle;
 import compiler.firm.backend.storage.SingleRegister;
@@ -123,5 +126,13 @@ public final class RegisterAllocationPolicy {
 			}
 		}
 		return false;
+	}
+
+	public Set<RegisterBundle> getAllowedBundles(Bit mode) {
+		Set<RegisterBundle> allowedBundles = new HashSet<>();
+		for (SingleRegister curr : getAllowedRegisters(mode)) {
+			allowedBundles.add(curr.getRegisterBundle());
+		}
+		return allowedBundles;
 	}
 }
