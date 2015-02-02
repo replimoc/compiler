@@ -1,6 +1,7 @@
 package compiler.firm.optimization.visitor;
 
 import java.util.HashMap;
+import java.util.Set;
 
 import compiler.firm.FirmUtils;
 
@@ -148,8 +149,16 @@ public class ControlFlowVisitor extends OptimizationVisitor<Node> {
 
 	@Override
 	public void visit(Block block) {
-		if (block.getPredCount() == 1 && block.getPred(0) instanceof Jmp) {
-			addReplacement(block, block.getPred(0).getBlock());
+		OptimizationUtils optimizationUtils = new OptimizationUtils(block.getGraph());
+
+		for (int i = 0; i < block.getPredCount(); i++) {
+			Node jmp = block.getPred(i);
+			Set<Node> nodes = optimizationUtils.getBlockNodes().get(jmp.getBlock());
+
+			if (nodes.size() == 1 && jmp instanceof Jmp && jmp.getBlock().getPredCount() == 1) {
+				block.setPred(i, jmp.getBlock().getPred(0));
+				addReplacement(jmp.getBlock(), FirmUtils.newBad(jmp.getBlock()));
+			}
 		}
 	}
 
