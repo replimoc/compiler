@@ -697,6 +697,9 @@ public class X8664AssemblerGenerationVisitor implements BulkPhiNodeVisitor {
 		for (Phi phi : phis) {
 			Storage source = storageManagement.getStorage(getRelevantPredecessor(phi));
 			RegisterBased destination = storageManagement.getValue(phi);
+			if (destination instanceof VirtualRegister && source instanceof VirtualRegister) {
+				((VirtualRegister) destination).addPreferedRegister((VirtualRegister) source);
+			}
 			phiRelations.add(new Pair<>(source, destination));
 		}
 
