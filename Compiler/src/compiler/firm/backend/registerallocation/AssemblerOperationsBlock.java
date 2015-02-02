@@ -1,4 +1,4 @@
-package compiler.firm.backend;
+package compiler.firm.backend.registerallocation;
 
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -84,13 +84,13 @@ public class AssemblerOperationsBlock {
 	@Override
 	public String toString() {
 		StringBuilder builder = new StringBuilder();
-		builder.append("Live in: " + block + ":  liveOut :");
+		builder.append("Live in: " + block + ": \t liveOut: ");
 
 		for (VirtualRegister register : liveOut) {
 			builder.append("VR_" + register.getNum() + ", ");
 		}
 
-		builder.append("  liveIn: ");
+		builder.append("     liveIn: ");
 
 		for (VirtualRegister register : liveIn) {
 			builder.append("VR_" + register.getNum() + ", ");
