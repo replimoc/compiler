@@ -23,7 +23,7 @@ public class LoadStoreOptimiziationVisitor extends OptimizationVisitor<Node> {
 	private Store lastStoreNode;
 
 	private boolean existSavePathToLastMemNode(Node node, Node memoryNode) {
-		if (memoryNode != null && // if last node != null
+		if (node != null && memoryNode != null &&
 				node.getBlock().equals(memoryNode.getBlock()) && // both loads in the same block
 				node.getPred(0) instanceof Proj) {
 			Proj proj = (Proj) node.getPred(0);
@@ -34,11 +34,11 @@ public class LoadStoreOptimiziationVisitor extends OptimizationVisitor<Node> {
 		return false;
 	}
 
-	private boolean dependOnSameNode(Node node1, Node node2) {
+	private boolean sameMemoryAdress(Node node1, Node node2) {
 		// check if the two memory nodes are dependent on equal nodes
 
 		// if unequal number of nodes, then quit
-		if (node1.getPredCount() != node2.getPredCount()) {
+		if (node1.getPredCount() < 2 || node2.getPredCount() < 2) {
 			return false;
 		}
 
@@ -94,7 +94,8 @@ public class LoadStoreOptimiziationVisitor extends OptimizationVisitor<Node> {
 
 	@Override
 	public void visit(Load load) {
-		if (existSavePathToLastMemNode(load, lastLodeNode) && dependOnSameNode(load, lastLodeNode)) {
+		// load - load optimization
+		if (existSavePathToLastMemNode(load, lastLodeNode) && sameMemoryAdress(load, lastLodeNode)) {
 			// System.out.println(getMethodName(load) + ":" + load);
 
 			for (Edge edge : BackEdges.getOuts(load)) {
@@ -104,6 +105,18 @@ public class LoadStoreOptimiziationVisitor extends OptimizationVisitor<Node> {
 			uniteProjSuccessors(lastLodeNode);
 
 			addReplacement(load, load.getGraph().newBad(load.getMode()));
+		} else if (existSavePathToLastMemNode(load, lastStoreNode) && sameMemoryAdress(load, lastStoreNode)) { // store - load optimization
+			for (Edge edge : BackEdges.getOuts(load)) {
+				if (edge.node.getMode().equals(Mode.getM())) {
+					edge.node.setPred(edge.pos, lastStoreNode);
+				} else {
+					for (Edge nonMemEdge : BackEdges.getOuts(edge.node)) {
+						nonMemEdge.node.setPred(nonMemEdge.pos, lastStoreNode.getPred(2));
+					}
+				}
+			}
+
+			// addReplacement(load, load.getGraph().newBad(load.getMode()));
 		}
 
 		lastLodeNode = load;
@@ -113,7 +126,7 @@ public class LoadStoreOptimiziationVisitor extends OptimizationVisitor<Node> {
 	public void visit(Store store) {
 		if (existSavePathToLastMemNode(store, lastStoreNode)) {
 			// System.out.println("safe path");
-			if (dependOnSameNode(store, lastStoreNode)) {
+			if (sameMemoryAdress(store, lastStoreNode)) {
 				System.out.println(getMethodName(store) + ":" + store);
 
 				store.setPred(0, lastStoreNode.getPred(0));
