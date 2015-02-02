@@ -26,7 +26,7 @@ public class SwapOperation extends AssemblerBitOperation {
 
 	@Override
 	public Set<RegisterBased> getReadRegisters() {
-		return Utils.unionSet(operand1.getReadRegisters(), operand2.getReadRegistersOnRightSide());
+		return Utils.unionSet(operand1.getReadRegisters(), operand2.getReadRegisters());
 	}
 
 	@Override
