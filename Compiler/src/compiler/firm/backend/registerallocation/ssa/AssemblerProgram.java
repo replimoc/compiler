@@ -9,7 +9,6 @@ import java.util.Set;
 
 import compiler.firm.backend.operations.dummy.MethodStartEndOperation;
 import compiler.firm.backend.operations.templates.AssemblerOperation;
-import compiler.firm.backend.registerallocation.RegisterAllocationPolicy;
 import compiler.firm.backend.storage.RegisterBundle;
 import compiler.firm.backend.storage.VirtualRegister;
 
@@ -71,8 +70,7 @@ public class AssemblerProgram {
 		return operationsBlocks.get(block);
 	}
 
-	public void setDummyOperationsInformation(Set<RegisterBundle> usedRegisters, int stackSize, boolean isMainMethod,
-			RegisterAllocationPolicy policy) {
+	public void setDummyOperationsInformation(int stackSize) {
 		if (stackSize > 0) {
 			stackSize += 0x10;
 			stackSize &= -0x10; // Align to 8-byte.
@@ -86,12 +84,7 @@ public class AssemblerProgram {
 				if (operation instanceof MethodStartEndOperation) {
 					MethodStartEndOperation methodStartEndOperation = (MethodStartEndOperation) operation;
 					methodStartEndOperation.setStackOperationSize(stackSize);
-
-					if (isMainMethod) { // if it is the main, no registers need to be saved
-						methodStartEndOperation.setUsedRegisters(new HashSet<RegisterBundle>());
-					} else {
-						methodStartEndOperation.setUsedRegisters(usedRegisters);
-					}
+					methodStartEndOperation.setUsedRegisters(usedRegisters);
 				}
 			}
 		}

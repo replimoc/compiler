@@ -14,8 +14,8 @@ import compiler.firm.backend.storage.SingleRegister;
 
 public class MethodEndOperation extends MethodStartEndOperation {
 
-	public MethodEndOperation(CallingConvention callingConvention, int stackItemSize) {
-		super(callingConvention, stackItemSize);
+	public MethodEndOperation(CallingConvention callingConvention, int stackItemSize, boolean isMain) {
+		super(callingConvention, stackItemSize, isMain);
 	}
 
 	@Override
@@ -29,10 +29,12 @@ public class MethodEndOperation extends MethodStartEndOperation {
 			result.add(new Comment("no items on stack, skip freeing").toString());
 		}
 
-		RegisterBundle[] registers = callingConvention.calleeSavedRegisters();
-		for (int i = registers.length - 1; i >= 0; i--) {
-			if (super.isRegisterSaveNeeded(registers[i])) {
-				result.add(new PopOperation(registers[i].getRegister(Bit.BIT64)).toString());
+		if (!isMain) {
+			RegisterBundle[] registers = callingConvention.calleeSavedRegisters();
+			for (int i = registers.length - 1; i >= 0; i--) {
+				if (super.isRegisterSaveNeeded(registers[i])) {
+					result.add(new PopOperation(registers[i].getRegister(Bit.BIT64)).toString());
+				}
 			}
 		}
 

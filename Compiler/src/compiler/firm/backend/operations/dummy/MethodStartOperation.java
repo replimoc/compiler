@@ -17,10 +17,10 @@ import compiler.firm.backend.storage.SingleRegister;
 
 public class MethodStartOperation extends MethodStartEndOperation {
 
-	private Set<RegisterBased> writeRegisters = new HashSet<>();
+	private final Set<RegisterBased> writeRegisters = new HashSet<>();
 
-	public MethodStartOperation(CallingConvention callingConvention, int stackItemSize) {
-		super(callingConvention, stackItemSize);
+	public MethodStartOperation(CallingConvention callingConvention, int stackItemSize, boolean isMain) {
+		super(callingConvention, stackItemSize, isMain);
 	}
 
 	@Override
@@ -28,10 +28,12 @@ public class MethodStartOperation extends MethodStartEndOperation {
 
 		List<String> result = new LinkedList<String>();
 
-		RegisterBundle[] registers = callingConvention.calleeSavedRegisters();
-		for (int i = 0; i < registers.length; i++) {
-			if (super.isRegisterSaveNeeded(registers[i])) {
-				result.add(new PushOperation(registers[i].getRegister(Bit.BIT64)).toString());
+		if (!isMain) {
+			RegisterBundle[] registers = callingConvention.calleeSavedRegisters();
+			for (int i = 0; i < registers.length; i++) {
+				if (super.isRegisterSaveNeeded(registers[i])) {
+					result.add(new PushOperation(registers[i].getRegister(Bit.BIT64)).toString());
+				}
 			}
 		}
 

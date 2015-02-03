@@ -10,7 +10,6 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 
-import compiler.ast.declaration.MainMethodDeclaration;
 import compiler.firm.backend.FirmGraphTraverser.BlockInfo;
 import compiler.firm.backend.calling.CallingConvention;
 import compiler.firm.backend.operations.FunctionSpecificationOperation;
@@ -94,19 +93,15 @@ public final class AssemblerGenerator {
 
 	private static void allocateRegistersLinear(Graph graph, ArrayList<AssemblerOperation> operationsBlocksPostOrder, boolean noRegisters,
 			boolean debugRegisterAllocation) {
-		boolean isMain = MainMethodDeclaration.MAIN_METHOD_NAME.equals(graph.getEntity().getLdName());
-
-		new LinearScanRegisterAllocation(isMain, operationsBlocksPostOrder).allocateRegisters(debugRegisterAllocation, noRegisters);
+		new LinearScanRegisterAllocation(operationsBlocksPostOrder).allocateRegisters(debugRegisterAllocation, noRegisters);
 	}
 
 	private static void allocateRegistersSsa(Graph graph, HashMap<Block, ArrayList<AssemblerOperation>> operationsOfBlocks) {
-		boolean isMain = MainMethodDeclaration.MAIN_METHOD_NAME.equals(graph.getEntity().getLdName());
-
 		AssemblerProgram program = new AssemblerProgram(graph, operationsOfBlocks);
 		SsaRegisterAllocator ssaAllocator = new SsaRegisterAllocator(program);
 		RegisterAllocationPolicy policy = RegisterAllocationPolicy.A_BP_B_12_13_14_15__DI_SI_D_C_8_9_10_11;
 		ssaAllocator.colorGraph(graph, policy);
-		program.setDummyOperationsInformation(policy.getAllowedBundles(Bit.BIT64), 0, isMain, policy);
+		program.setDummyOperationsInformation(0);
 	}
 
 	private static ArrayList<AssemblerOperation> generateOperationsList(Graph graph, HashMap<Block, BlockInfo> blockInfos,

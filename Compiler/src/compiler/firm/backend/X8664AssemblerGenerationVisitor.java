@@ -8,6 +8,7 @@ import java.util.LinkedList;
 import java.util.List;
 import java.util.Set;
 
+import compiler.ast.declaration.MainMethodDeclaration;
 import compiler.firm.FirmUtils;
 import compiler.firm.backend.calling.CallingConvention;
 import compiler.firm.backend.operations.AddOperation;
@@ -584,7 +585,7 @@ public class X8664AssemblerGenerationVisitor implements BulkPhiNodeVisitor {
 			// Store return value in EAX register
 			storageManagement.placeValue(node.getPred(1), RegisterBundle._AX);
 		}
-		addOperation(new MethodEndOperation(callingConvention, STACK_ITEM_SIZE));
+		addOperation(new MethodEndOperation(callingConvention, STACK_ITEM_SIZE, isMain(node.getGraph())));
 		addOperation(new RetOperation(getMethodName(node)));
 	}
 
@@ -656,7 +657,7 @@ public class X8664AssemblerGenerationVisitor implements BulkPhiNodeVisitor {
 	}
 
 	private void methodStart(Node node) {
-		MethodStartOperation startOperation = new MethodStartOperation(callingConvention, STACK_ITEM_SIZE);
+		MethodStartOperation startOperation = new MethodStartOperation(callingConvention, STACK_ITEM_SIZE, isMain(node.getGraph()));
 		addOperation(startOperation);
 
 		Node args = node.getGraph().getArgs();
@@ -685,6 +686,10 @@ public class X8664AssemblerGenerationVisitor implements BulkPhiNodeVisitor {
 				storageManagement.storeValue(proj, location);
 			}
 		}
+	}
+
+	private boolean isMain(Graph graph) {
+		return MainMethodDeclaration.MAIN_METHOD_NAME.equals(graph.getEntity().getLdName());
 	}
 
 	@Override

@@ -8,14 +8,16 @@ import compiler.firm.backend.storage.RegisterBundle;
 
 public abstract class MethodStartEndOperation extends AssemblerOperation {
 
-	private int stackItemSize;
 	protected final CallingConvention callingConvention;
+	private final int stackItemSize;
+	protected final boolean isMain;
 	protected int stackOperationSize;
 	private Set<RegisterBundle> usedRegisters;
 
-	public MethodStartEndOperation(CallingConvention callingConvention, int stackItemSize) {
+	public MethodStartEndOperation(CallingConvention callingConvention, int stackItemSize, boolean isMain) {
 		this.callingConvention = callingConvention;
 		this.stackItemSize = stackItemSize;
+		this.isMain = isMain;
 	}
 
 	@Override

@@ -2,7 +2,6 @@ package compiler.firm.backend.registerallocation.linear;
 
 import java.util.ArrayList;
 import java.util.HashMap;
-import java.util.HashSet;
 import java.util.LinkedHashSet;
 import java.util.LinkedList;
 import java.util.List;
@@ -24,14 +23,12 @@ import compiler.firm.backend.storage.VirtualRegister;
 public class LinearScanRegisterAllocation {
 	private static final int STACK_ITEM_SIZE = 8;
 
-	private final boolean isMainMethod;
 	private final List<AssemblerOperation> operations;
 
 	private final ArrayList<VirtualRegister> virtualRegisters = new ArrayList<VirtualRegister>();
 	private int currentStackOffset = 0;
 
-	public LinearScanRegisterAllocation(boolean isMain, List<AssemblerOperation> operations) {
-		this.isMainMethod = isMain;
+	public LinearScanRegisterAllocation(List<AssemblerOperation> operations) {
 		this.operations = operations;
 	}
 
@@ -138,12 +135,7 @@ public class LinearScanRegisterAllocation {
 			if (operation instanceof MethodStartEndOperation) {
 				MethodStartEndOperation methodStartEndOperation = (MethodStartEndOperation) operation;
 				methodStartEndOperation.setStackOperationSize(stackSize);
-
-				if (isMainMethod) { // if it is the main, no registers need to be saved
-					methodStartEndOperation.setUsedRegisters(new HashSet<RegisterBundle>());
-				} else {
-					methodStartEndOperation.setUsedRegisters(usedRegisters);
-				}
+				methodStartEndOperation.setUsedRegisters(usedRegisters);
 			}
 			line++;
 		}
