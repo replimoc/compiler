@@ -12,8 +12,6 @@ import compiler.firm.backend.operations.templates.AssemblerOperation;
 import compiler.firm.backend.storage.RegisterBundle;
 import compiler.firm.backend.storage.VirtualRegister;
 
-import firm.BlockWalker;
-import firm.Graph;
 import firm.nodes.Block;
 
 public class AssemblerProgram {
@@ -21,26 +19,23 @@ public class AssemblerProgram {
 	private final Set<VirtualRegister> preAllocatedRegisters = new HashSet<>();
 	private final Set<RegisterBundle> usedRegisters = new HashSet<>();
 
-	public AssemblerProgram(Graph graph, HashMap<Block, ArrayList<AssemblerOperation>> operationsOfBlocks) {
+	public AssemblerProgram(HashMap<Block, ArrayList<AssemblerOperation>> operationsOfBlocks) {
 		this.operationsBlocks = createOperationsBlocks(operationsOfBlocks);
-		calculateLiveInAndLiveOut(graph);
+		calculateLiveInAndLiveOut();
 	}
 
-	private void calculateLiveInAndLiveOut(Graph graph) {
+	private void calculateLiveInAndLiveOut() {
 		final LinkedList<AssemblerOperationsBlock> workList = new LinkedList<>();
 
-		graph.walkBlocks(new BlockWalker() {
-			@Override
-			public void visitBlock(Block block) {
-				AssemblerOperationsBlock operationsBlock = operationsBlocks.get(block);
-				if (operationsBlock != null) {
-					operationsBlock.calculateTree(operationsBlocks);
-					operationsBlock.calculateUsesAndKills();
-					preAllocatedRegisters.addAll(operationsBlock.calculatePreallocatedRegisters());
-					workList.add(operationsBlock);
-				}
+		for (Entry<Block, AssemblerOperationsBlock> entry : operationsBlocks.entrySet()) {
+			AssemblerOperationsBlock operationsBlock = entry.getValue();
+			if (operationsBlock != null) {
+				operationsBlock.calculateTree(operationsBlocks);
+				operationsBlock.calculateUsesAndKills();
+				preAllocatedRegisters.addAll(operationsBlock.calculatePreallocatedRegisters());
+				workList.add(operationsBlock);
 			}
-		});
+		}
 
 		while (!workList.isEmpty()) {
 			AssemblerOperationsBlock operationsBlock = workList.removeLast();

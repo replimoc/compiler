@@ -19,7 +19,7 @@ import firm.nodes.Block;
 
 public class SsaRegisterAllocator {
 	public static boolean DEBUG = true;
-	private AssemblerProgram program;
+	private final AssemblerProgram program;
 
 	public SsaRegisterAllocator(AssemblerProgram program) {
 		this.program = program;

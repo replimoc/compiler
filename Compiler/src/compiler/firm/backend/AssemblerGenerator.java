@@ -97,7 +97,7 @@ public final class AssemblerGenerator {
 	}
 
 	private static void allocateRegistersSsa(Graph graph, HashMap<Block, ArrayList<AssemblerOperation>> operationsOfBlocks) {
-		AssemblerProgram program = new AssemblerProgram(graph, operationsOfBlocks);
+		AssemblerProgram program = new AssemblerProgram(operationsOfBlocks);
 		SsaRegisterAllocator ssaAllocator = new SsaRegisterAllocator(program);
 		RegisterAllocationPolicy policy = RegisterAllocationPolicy.A_BP_B_12_13_14_15__DI_SI_D_C_8_9_10_11;
 		ssaAllocator.colorGraph(graph, policy);
