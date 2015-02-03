@@ -24,6 +24,7 @@ import firm.Mode;
 import firm.Program;
 import firm.Type;
 import firm.Util;
+import firm.bindings.binding_irdom;
 import firm.bindings.binding_irgopt;
 import firm.nodes.Node;
 
@@ -196,5 +197,9 @@ public final class FirmUtils {
 
 	public static Node newBad(Node node) {
 		return node.getGraph().newBad(node.getMode());
+	}
+
+	public static boolean blockPostdominates(Node block, Node block2) {
+		return binding_irdom.block_postdominates(block.ptr, block2.ptr) == 1;
 	}
 }
