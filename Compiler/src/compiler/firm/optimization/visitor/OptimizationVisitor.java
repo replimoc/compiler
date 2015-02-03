@@ -2,10 +2,9 @@ package compiler.firm.optimization.visitor;
 
 import java.util.HashMap;
 
+import compiler.firm.FirmUtils;
 import compiler.firm.optimization.AbstractFirmNodesVisitor;
 
-import firm.Mode;
-import firm.nodes.Const;
 import firm.nodes.Node;
 
 public abstract class OptimizationVisitor<T extends Object> extends AbstractFirmNodesVisitor {
@@ -23,8 +22,7 @@ public abstract class OptimizationVisitor<T extends Object> extends AbstractFirm
 	public abstract HashMap<Node, T> getLatticeValues();
 
 	protected boolean isConstant(Node node) {
-		return node instanceof Const &&
-				(node.getMode().equals(Mode.getIs()) || node.getMode().equals(Mode.getBu()) || node.getMode().equals(Mode.getLu()));
+		return FirmUtils.isConstant(node);
 	}
 
 }
