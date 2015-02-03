@@ -5,11 +5,11 @@ import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Set;
 
+import compiler.firm.FirmUtils;
 import compiler.firm.backend.operations.templates.AssemblerOperation;
 import compiler.firm.backend.storage.RegisterBased;
 import compiler.firm.backend.storage.VirtualRegister;
 
-import firm.bindings.binding_irdom;
 import firm.nodes.Block;
 import firm.nodes.Node;
 
@@ -148,7 +148,7 @@ public class AssemblerOperationsBlock {
 	}
 
 	public boolean dominates(AssemblerOperationsBlock otherBlock) {
-		return binding_irdom.block_dominates(block.ptr, otherBlock.block.ptr) > 0;
+		return FirmUtils.blockPostdominates(block, otherBlock.block);
 	}
 
 	public boolean strictlyDominates(AssemblerOperation operation1, AssemblerOperation operation2) {
