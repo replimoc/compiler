@@ -61,8 +61,8 @@ public class AssemblerOperationsBlock {
 				VirtualRegister readRegister = (VirtualRegister) readRegisterBased;
 				uses.add(readRegister);
 
-				lastUsed.remove(readRegister); // move the last usage back
-				lastUsed.put(readRegister, operation);
+				if (!lastUsed.containsKey(readRegister)) // keep in mind, we go from the last operation to the first one
+					lastUsed.put(readRegister, operation);
 				readRegister.addUsage(operation);
 			}
 
