@@ -160,6 +160,18 @@ public class ControlFlowVisitor extends OptimizationVisitor<Node> {
 				addReplacement(jmp.getBlock(), FirmUtils.newBad(jmp.getBlock()));
 			}
 		}
+
+		if (block.getPredCount() == 1 && block.getPred(0) instanceof Jmp) {
+			Node obsoleteJmpNode = block.getPred(0);
+			Node predecessorBlock = obsoleteJmpNode.getBlock();
+			Set<Node> nodes = optimizationUtils.getBlockNodes().get(block);
+			if (nodes != null) {
+				for (Node node : nodes) {
+					node.setBlock(predecessorBlock);
+				}
+			}
+			addReplacement(obsoleteJmpNode, FirmUtils.newBad(obsoleteJmpNode));
+		}
 	}
 
 	@Override
