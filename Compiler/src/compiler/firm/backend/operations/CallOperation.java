@@ -28,8 +28,7 @@ public class CallOperation extends AssemblerOperation {
 	private List<RegisterBundle> usedRegisters = new LinkedList<>();
 	private final VirtualRegister result;
 
-	public CallOperation(Bit mode, String name, List<Parameter> parameters,
-			CallingConvention callingConvention) {
+	public CallOperation(Bit mode, String name, List<Parameter> parameters, CallingConvention callingConvention) {
 		this.name = name;
 		this.parameters = parameters;
 		this.callingConvention = callingConvention;
@@ -156,10 +155,8 @@ public class CallOperation extends AssemblerOperation {
 		}
 	}
 
-	public void addAliveRegisters(SingleRegister[] registers) {
-		for (SingleRegister register : registers) {
-			this.usedRegisters.add(register.getRegisterBundle());
-		}
+	public void addAliveRegisters(Set<RegisterBundle> registers) {
+		this.usedRegisters.addAll(registers);
 	}
 
 	public static class Parameter {

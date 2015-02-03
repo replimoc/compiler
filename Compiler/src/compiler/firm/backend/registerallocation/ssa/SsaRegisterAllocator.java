@@ -8,7 +8,6 @@ import java.util.Map.Entry;
 import java.util.Set;
 
 import com.sun.jna.Pointer;
-
 import compiler.firm.backend.Bit;
 import compiler.firm.backend.operations.CallOperation;
 import compiler.firm.backend.operations.dummy.MethodStartEndOperation;
@@ -17,6 +16,7 @@ import compiler.firm.backend.registerallocation.RegisterAllocationPolicy;
 import compiler.firm.backend.storage.RegisterBased;
 import compiler.firm.backend.storage.RegisterBundle;
 import compiler.firm.backend.storage.VirtualRegister;
+
 import firm.BlockWalker;
 import firm.Graph;
 import firm.bindings.binding_irdom;
@@ -105,6 +105,8 @@ public class SsaRegisterAllocator {
 					freeRegisters.remove(freeBundle);
 				}
 			}
+
+			checkForOperationAssignments(operation, policy, freeRegisters); // irrelevant for register allocation
 		}
 
 		for (Pointer dominatedPtr = binding_irdom.get_Block_dominated_first(block.ptr); dominatedPtr != null; dominatedPtr = binding_irdom
@@ -124,20 +126,26 @@ public class SsaRegisterAllocator {
 		return freeRegisters.iterator().next();
 	}
 
+	private void checkForOperationAssignments(AssemblerOperation operation, RegisterAllocationPolicy policy, Set<RegisterBundle> freeRegisters) {
+		if (operation instanceof CallOperation) {
+			Set<RegisterBundle> usedBundles = policy.getAllowedBundles(Bit.BIT64);
+			usedBundles.removeAll(freeRegisters);
+			((CallOperation) operation).addAliveRegisters(usedBundles);
+		}
+	}
+
 	public void setDummyOperationsInformation(Set<RegisterBundle> usedRegisters, int stackSize, boolean isMainMethod,
 			RegisterAllocationPolicy policy) {
 		if (stackSize > 0) {
 			stackSize += 0x10;
 			stackSize &= -0x10; // Align to 8-byte.
+		} else {
+			stackSize = 0;
 		}
 
 		for (Entry<Block, AssemblerOperationsBlock> curr : operationsBlocks.entrySet()) {
 			ArrayList<AssemblerOperation> operations = curr.getValue().getOperations();
 			for (AssemblerOperation operation : operations) {
-				if (operation instanceof CallOperation) {
-					((CallOperation) operation).addAliveRegisters(policy.getAllowedRegisters(Bit.BIT64));
-				}
-
 				if (operation instanceof MethodStartEndOperation) {
 					MethodStartEndOperation methodStartEndOperation = (MethodStartEndOperation) operation;
 					methodStartEndOperation.setStackOperationSize(stackSize);
