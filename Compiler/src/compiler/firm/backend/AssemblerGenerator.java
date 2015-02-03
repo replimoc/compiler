@@ -20,6 +20,7 @@ import compiler.firm.backend.operations.templates.AssemblerOperation;
 import compiler.firm.backend.registerallocation.RegisterAllocationPolicy;
 import compiler.firm.backend.registerallocation.linear.InterferenceGraph;
 import compiler.firm.backend.registerallocation.linear.LinearScanRegisterAllocation;
+import compiler.firm.backend.registerallocation.ssa.AssemblerProgram;
 import compiler.firm.backend.registerallocation.ssa.SsaRegisterAllocator;
 
 import firm.BackEdges;
@@ -73,8 +74,8 @@ public final class AssemblerGenerator {
 			if (debugRegisterAllocation)
 				generatePlainAssemblerFile(Paths.get(graph.getEntity().getLdName() + ".plain"), operationsBlocksPostOrder);
 
-			// allocateRegisters(graph, operationsBlocksPostOrder, noRegisters, debugRegisterAllocation);
-			allocateRegisters(graph, operationsOfBlocks);
+			allocateRegisters(graph, operationsBlocksPostOrder, noRegisters, debugRegisterAllocation);
+			// allocateRegisters(graph, operationsOfBlocks);
 
 			operationsBlocksPostOrder.clear(); // free some memory
 
@@ -101,10 +102,11 @@ public final class AssemblerGenerator {
 	private static void allocateRegisters(Graph graph, HashMap<Block, ArrayList<AssemblerOperation>> operationsOfBlocks) {
 		boolean isMain = MainMethodDeclaration.MAIN_METHOD_NAME.equals(graph.getEntity().getLdName());
 
-		SsaRegisterAllocator ssaAllocator = new SsaRegisterAllocator(graph, operationsOfBlocks);
+		AssemblerProgram program = new AssemblerProgram(graph, operationsOfBlocks);
+		SsaRegisterAllocator ssaAllocator = new SsaRegisterAllocator(program);
 		RegisterAllocationPolicy policy = RegisterAllocationPolicy.A_B_C_D_8_9_10_11_12_13_14_15_BP_DI_SI;
 		ssaAllocator.colorGraph(graph, policy);
-		ssaAllocator.setDummyOperationsInformation(policy.getAllowedBundles(Bit.BIT64), 0, isMain, policy);
+		program.setDummyOperationsInformation(policy.getAllowedBundles(Bit.BIT64), 0, isMain, policy);
 	}
 
 	private static ArrayList<AssemblerOperation> generateOperationsList(Graph graph, HashMap<Block, BlockInfo> blockInfos,
