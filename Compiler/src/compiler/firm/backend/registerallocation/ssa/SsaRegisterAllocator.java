@@ -30,7 +30,6 @@ public class SsaRegisterAllocator {
 	}
 
 	private void colorRecursive(Block block, RegisterAllocationPolicy policy) {
-		System.out.println(block);
 		AssemblerOperationsBlock operationsBlock = program.getOperationsBlock(block);
 
 		Set<RegisterBundle> freeRegisters = policy.getAllowedBundles(Bit.BIT64);

@@ -63,6 +63,7 @@ public class AssemblerOperationsBlock {
 
 				lastUsed.remove(readRegister); // move the last usage back
 				lastUsed.put(readRegister, operation);
+				readRegister.addUsage(operation);
 			}
 
 			for (RegisterBased writeRegisterBased : operation.getWriteRegisters()) {
