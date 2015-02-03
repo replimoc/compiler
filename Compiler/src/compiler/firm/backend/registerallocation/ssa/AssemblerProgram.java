@@ -20,6 +20,7 @@ import firm.nodes.Block;
 public class AssemblerProgram {
 	private final HashMap<Block, AssemblerOperationsBlock> operationsBlocks;
 	private final Set<VirtualRegister> preAllocatedRegisters = new HashSet<>();
+	private final Set<RegisterBundle> usedRegisters = new HashSet<>();
 
 	public AssemblerProgram(Graph graph, HashMap<Block, ArrayList<AssemblerOperation>> operationsOfBlocks) {
 		this.operationsBlocks = createOperationsBlocks(operationsOfBlocks);
@@ -153,6 +154,14 @@ public class AssemblerProgram {
 		} else {
 			return operationsBlock1.dominates(operationsBlock2);
 		}
+	}
+
+	public void addUsedRegister(RegisterBundle freeBundle) {
+		usedRegisters.add(freeBundle);
+	}
+
+	public Set<RegisterBundle> getUsedRegisters() {
+		return usedRegisters;
 	}
 
 }

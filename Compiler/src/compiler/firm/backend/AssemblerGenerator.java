@@ -104,7 +104,7 @@ public final class AssemblerGenerator {
 
 		AssemblerProgram program = new AssemblerProgram(graph, operationsOfBlocks);
 		SsaRegisterAllocator ssaAllocator = new SsaRegisterAllocator(program);
-		RegisterAllocationPolicy policy = RegisterAllocationPolicy.A_B_C_D_8_9_10_11_12_13_14_15_BP_DI_SI;
+		RegisterAllocationPolicy policy = RegisterAllocationPolicy.A_BP_B_12_13_14_15__DI_SI_D_C_8_9_10_11;
 		ssaAllocator.colorGraph(graph, policy);
 		program.setDummyOperationsInformation(policy.getAllowedBundles(Bit.BIT64), 0, isMain, policy);
 	}

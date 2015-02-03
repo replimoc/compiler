@@ -10,6 +10,7 @@ import compiler.firm.backend.operations.templates.AssemblerOperation;
 import compiler.firm.backend.registerallocation.RegisterAllocationPolicy;
 import compiler.firm.backend.storage.RegisterBased;
 import compiler.firm.backend.storage.RegisterBundle;
+import compiler.firm.backend.storage.SingleRegister;
 import compiler.firm.backend.storage.VirtualRegister;
 
 import firm.Graph;
@@ -27,6 +28,8 @@ public class SsaRegisterAllocator {
 	public void colorGraph(Graph graph, RegisterAllocationPolicy policy) {
 		Block startBlock = graph.getStartBlock();
 		colorRecursive(startBlock, policy);
+
+		System.out.println("used registers (" + program.getUsedRegisters().size() + "): " + program.getUsedRegisters());
 	}
 
 	private void colorRecursive(Block block, RegisterAllocationPolicy policy) {
@@ -52,7 +55,7 @@ public class SsaRegisterAllocator {
 			for (RegisterBased writeRegisterBased : operation.getWriteRegisters()) {
 				VirtualRegister writeRegister = (VirtualRegister) writeRegisterBased;
 				if (writeRegister.getRegister() == null) {
-					assignFreeRegister(freeRegisters, writeRegister);
+					assignFreeRegister(policy, freeRegisters, writeRegister);
 				}
 			}
 
@@ -66,26 +69,31 @@ public class SsaRegisterAllocator {
 		}
 	}
 
-	private void assignFreeRegister(Set<RegisterBundle> freeRegisters, VirtualRegister virtualRegister) {
+	private void assignFreeRegister(RegisterAllocationPolicy policy, Set<RegisterBundle> freeRegisters, VirtualRegister virtualRegister) {
 		Set<RegisterBundle> interferringPreallocated = program.getInterferringPreallocatedBundles(virtualRegister);
 
 		HashSet<RegisterBundle> freeNonInterferringRegisters = new HashSet<>(freeRegisters);
 		freeNonInterferringRegisters.removeAll(interferringPreallocated);
 
-		RegisterBundle freeBundle = getFreeBundle(freeNonInterferringRegisters, virtualRegister.getPreferedRegisterBundles());
+		RegisterBundle freeBundle = getFreeBundle(policy, freeNonInterferringRegisters, virtualRegister.getPreferedRegisterBundles());
 		virtualRegister.setStorage(freeBundle.getRegister(virtualRegister.getMode()));
 		freeRegisters.remove(freeBundle);
+		program.addUsedRegister(freeBundle);
 	}
 
-	private RegisterBundle getFreeBundle(Set<RegisterBundle> freeRegisters, Set<RegisterBundle> preferedRegisters) {
-
+	private RegisterBundle getFreeBundle(RegisterAllocationPolicy policy, Set<RegisterBundle> freeRegisters, Set<RegisterBundle> preferedRegisters) {
 		for (RegisterBundle preferred : preferedRegisters) {
 			if (freeRegisters.contains(preferred)) {
 				return preferred;
 			}
 		}
 
-		return freeRegisters.iterator().next();
+		for (SingleRegister register : policy.getAllowedRegisters(Bit.BIT64)) {
+			if (freeRegisters.contains(register.getRegisterBundle())) {
+				return register.getRegisterBundle();
+			}
+		}
+		throw new RuntimeException("THIS MAY NEVER HAPPEN!");
 	}
 
 	private void checkForOperationAssignments(AssemblerOperation operation, RegisterAllocationPolicy policy, Set<RegisterBundle> freeRegisters) {
