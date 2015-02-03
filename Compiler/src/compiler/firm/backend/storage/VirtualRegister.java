@@ -1,7 +1,6 @@
 package compiler.firm.backend.storage;
 
 import java.util.HashSet;
-import java.util.LinkedHashSet;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Set;
@@ -13,13 +12,12 @@ public class VirtualRegister extends RegisterBased {
 
 	private static int I = 0;
 
-	private final Bit mode;
 	private final int num;
-	private final List<VirtualRegister> preferedRegisters = new LinkedList<>();
-	private final LinkedHashSet<VirtualRegister> interferences;
+	private final Bit mode;
 	private final String comment;
-	private Interval lifetime;
+	private final List<VirtualRegister> preferedRegisters = new LinkedList<>();
 
+	private Interval lifetime;
 	private Storage register;
 	private boolean isSpilled;
 
@@ -35,16 +33,15 @@ public class VirtualRegister extends RegisterBased {
 		this(register.getMode(), register, null);
 	}
 
+	public VirtualRegister(Bit mode, RegisterBundle registerBundle) {
+		this(mode, registerBundle.getRegister(mode), null);
+	}
+
 	public VirtualRegister(Bit mode, RegisterBased register, String comment) {
 		this.mode = mode;
 		this.register = register;
 		this.num = I++;
-		this.interferences = new LinkedHashSet<>();
 		this.comment = comment;
-	}
-
-	public VirtualRegister(Bit mode, RegisterBundle registerBundle) {
-		this(mode, registerBundle.getRegister(mode), null);
 	}
 
 	@Override
@@ -137,18 +134,6 @@ public class VirtualRegister extends RegisterBased {
 
 	public Interval getLifetime() {
 		return lifetime;
-	}
-
-	public void addInteference(Set<VirtualRegister> interferences) {
-		for (VirtualRegister register : interferences) {
-			if (!equals(register)) {
-				this.interferences.add(register);
-			}
-		}
-	}
-
-	public LinkedHashSet<VirtualRegister> getInterferences() {
-		return this.interferences;
 	}
 
 	@Override

@@ -73,8 +73,8 @@ public final class AssemblerGenerator {
 			if (debugRegisterAllocation)
 				generatePlainAssemblerFile(Paths.get(graph.getEntity().getLdName() + ".plain"), operationsBlocksPostOrder);
 
-			allocateRegisters(graph, operationsBlocksPostOrder, noRegisters, debugRegisterAllocation);
-			// allocateRegisters(graph, operationsOfBlocks);
+			// allocateRegisters(graph, operationsBlocksPostOrder, noRegisters, debugRegisterAllocation);
+			allocateRegisters(graph, operationsOfBlocks);
 
 			operationsBlocksPostOrder.clear(); // free some memory
 
