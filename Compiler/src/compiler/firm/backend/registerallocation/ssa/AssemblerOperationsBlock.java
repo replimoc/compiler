@@ -65,10 +65,29 @@ public class AssemblerOperationsBlock {
 				lastUsed.put(readRegister, operation);
 			}
 
-			for (RegisterBased writeRegister : operation.getWriteRegisters()) {
-				kills.add((VirtualRegister) writeRegister);
+			for (RegisterBased writeRegisterBased : operation.getWriteRegisters()) {
+				VirtualRegister writeRegister = (VirtualRegister) writeRegisterBased;
+				kills.add(writeRegister);
+				writeRegister.setDefinition(operation);
 			}
 		}
+	}
+
+	public Set<VirtualRegister> calculatePreallocatedRegisters() {
+		Set<VirtualRegister> preallocatedRegisters = new HashSet<>();
+
+		for (VirtualRegister use : uses) {
+			if (use.getRegister() != null) {
+				preallocatedRegisters.add(use);
+			}
+		}
+		for (VirtualRegister kill : kills) {
+			if (kill.getRegister() != null) {
+				preallocatedRegisters.add(kill);
+			}
+		}
+
+		return preallocatedRegisters;
 	}
 
 	public boolean calculateLiveInAndOut() {

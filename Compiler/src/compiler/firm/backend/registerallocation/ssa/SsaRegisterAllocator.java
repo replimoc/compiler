@@ -1,5 +1,6 @@
 package compiler.firm.backend.registerallocation.ssa;
 
+import java.util.HashSet;
 import java.util.Set;
 
 import com.sun.jna.Pointer;
@@ -52,9 +53,7 @@ public class SsaRegisterAllocator {
 			for (RegisterBased writeRegisterBased : operation.getWriteRegisters()) {
 				VirtualRegister writeRegister = (VirtualRegister) writeRegisterBased;
 				if (writeRegister.getRegister() == null) {
-					RegisterBundle freeBundle = getFreeBundle(freeRegisters, writeRegister.getPreferedRegisterBundles());
-					writeRegister.setStorage(freeBundle.getRegister(writeRegister.getMode()));
-					freeRegisters.remove(freeBundle);
+					assignFreeRegister(freeRegisters, writeRegister);
 				}
 			}
 
@@ -68,54 +67,19 @@ public class SsaRegisterAllocator {
 		}
 	}
 
-	/**
-	 * @see Algorithm 4.6 (page 69) of thesis on SSA Register Allocation.
-	 * 
-	 * @param register1
-	 * @param register2
-	 * @return
-	 */
-	private static boolean doVariablesInterfere(VirtualRegister register1, VirtualRegister register2) {
-		AssemblerOperation definition1 = register1.getDefinition();
-		AssemblerOperation definition2 = register2.getDefinition();
+	private void assignFreeRegister(Set<RegisterBundle> freeRegisters, VirtualRegister virtualRegister) {
+		Set<RegisterBundle> interferringPreallocated = program.getInterferringPreallocatedBundles(virtualRegister);
 
-		VirtualRegister dominating;
-		VirtualRegister dominated;
+		HashSet<RegisterBundle> freeNonInterferringRegisters = new HashSet<>(freeRegisters);
+		freeNonInterferringRegisters.removeAll(interferringPreallocated);
 
-		if (dominates(definition1, definition2)) {
-			dominating = register1;
-			dominated = register2;
-		} else if (dominates(definition2, definition1)) {
-			dominating = register2;
-			dominated = register1;
-		} else {
-			return false;
-		}
-
-		if (dominated.getDefinition().getOperationsBlock().getLiveOut().contains(dominating))
-			return true;
-
-		for (AssemblerOperation usage : dominating.getUsages()) {
-			if (dominates(dominated.getDefinition(), usage)) {
-				return true; // if the definition of the dominated dominates a usage of the dominating, they interfere
-			}
-		}
-
-		return false;
-	}
-
-	private static boolean dominates(AssemblerOperation operation1, AssemblerOperation operation2) {
-		AssemblerOperationsBlock operationsBlock1 = operation1.getOperationsBlock();
-		AssemblerOperationsBlock operationsBlock2 = operation2.getOperationsBlock();
-
-		if (operationsBlock1 == operationsBlock2) {
-			return operationsBlock1.strictlyDominates(operation1, operation2);
-		} else {
-			return operationsBlock1.dominates(operationsBlock2);
-		}
+		RegisterBundle freeBundle = getFreeBundle(freeNonInterferringRegisters, virtualRegister.getPreferedRegisterBundles());
+		virtualRegister.setStorage(freeBundle.getRegister(virtualRegister.getMode()));
+		freeRegisters.remove(freeBundle);
 	}
 
 	private RegisterBundle getFreeBundle(Set<RegisterBundle> freeRegisters, Set<RegisterBundle> preferedRegisters) {
+
 		for (RegisterBundle preferred : preferedRegisters) {
 			if (freeRegisters.contains(preferred)) {
 				return preferred;
@@ -132,4 +96,5 @@ public class SsaRegisterAllocator {
 			((CallOperation) operation).addAliveRegisters(usedBundles);
 		}
 	}
+
 }

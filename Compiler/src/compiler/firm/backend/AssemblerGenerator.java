@@ -74,8 +74,8 @@ public final class AssemblerGenerator {
 			if (debugRegisterAllocation)
 				generatePlainAssemblerFile(Paths.get(graph.getEntity().getLdName() + ".plain"), operationsBlocksPostOrder);
 
-			allocateRegisters(graph, operationsBlocksPostOrder, noRegisters, debugRegisterAllocation);
-			// allocateRegisters(graph, operationsOfBlocks);
+			// allocateRegistersLinear(graph, operationsBlocksPostOrder, noRegisters, debugRegisterAllocation);
+			allocateRegistersSsa(graph, operationsOfBlocks);
 
 			operationsBlocksPostOrder.clear(); // free some memory
 
@@ -92,14 +92,14 @@ public final class AssemblerGenerator {
 		generateAssemblerFile(outputFile, assembler);
 	}
 
-	private static void allocateRegisters(Graph graph, ArrayList<AssemblerOperation> operationsBlocksPostOrder, boolean noRegisters,
+	private static void allocateRegistersLinear(Graph graph, ArrayList<AssemblerOperation> operationsBlocksPostOrder, boolean noRegisters,
 			boolean debugRegisterAllocation) {
 		boolean isMain = MainMethodDeclaration.MAIN_METHOD_NAME.equals(graph.getEntity().getLdName());
 
 		new LinearScanRegisterAllocation(isMain, operationsBlocksPostOrder).allocateRegisters(debugRegisterAllocation, noRegisters);
 	}
 
-	private static void allocateRegisters(Graph graph, HashMap<Block, ArrayList<AssemblerOperation>> operationsOfBlocks) {
+	private static void allocateRegistersSsa(Graph graph, HashMap<Block, ArrayList<AssemblerOperation>> operationsOfBlocks) {
 		boolean isMain = MainMethodDeclaration.MAIN_METHOD_NAME.equals(graph.getEntity().getLdName());
 
 		AssemblerProgram program = new AssemblerProgram(graph, operationsOfBlocks);

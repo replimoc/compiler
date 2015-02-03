@@ -11,6 +11,7 @@ import compiler.firm.backend.operations.dummy.MethodStartEndOperation;
 import compiler.firm.backend.operations.templates.AssemblerOperation;
 import compiler.firm.backend.registerallocation.RegisterAllocationPolicy;
 import compiler.firm.backend.storage.RegisterBundle;
+import compiler.firm.backend.storage.VirtualRegister;
 
 import firm.BlockWalker;
 import firm.Graph;
@@ -18,6 +19,7 @@ import firm.nodes.Block;
 
 public class AssemblerProgram {
 	private final HashMap<Block, AssemblerOperationsBlock> operationsBlocks;
+	private final Set<VirtualRegister> preAllocatedRegisters = new HashSet<>();
 
 	public AssemblerProgram(Graph graph, HashMap<Block, ArrayList<AssemblerOperation>> operationsOfBlocks) {
 		this.operationsBlocks = createOperationsBlocks(operationsOfBlocks);
@@ -34,6 +36,7 @@ public class AssemblerProgram {
 				if (operationsBlock != null) {
 					operationsBlock.calculateTree(operationsBlocks);
 					operationsBlock.calculateUsesAndKills();
+					preAllocatedRegisters.addAll(operationsBlock.calculatePreallocatedRegisters());
 					workList.add(operationsBlock);
 				}
 			}
@@ -92,4 +95,64 @@ public class AssemblerProgram {
 			}
 		}
 	}
+
+	public Set<RegisterBundle> getInterferringPreallocatedBundles(VirtualRegister virtualRegister) {
+		Set<RegisterBundle> interferringBundles = new HashSet<>();
+
+		for (VirtualRegister preallocated : preAllocatedRegisters) {
+			if (doVariablesInterfere(virtualRegister, preallocated)) {
+				interferringBundles.add(preallocated.getRegisterBundle());
+			}
+		}
+
+		return interferringBundles;
+	}
+
+	/**
+	 * @see Algorithm 4.6 (page 69) of thesis on SSA Register Allocation.
+	 * 
+	 * @param register1
+	 * @param register2
+	 * @return
+	 */
+	private static boolean doVariablesInterfere(VirtualRegister register1, VirtualRegister register2) {
+		AssemblerOperation definition1 = register1.getDefinition();
+		AssemblerOperation definition2 = register2.getDefinition();
+
+		VirtualRegister dominating;
+		VirtualRegister dominated;
+
+		if (dominates(definition1, definition2)) {
+			dominating = register1;
+			dominated = register2;
+		} else if (dominates(definition2, definition1)) {
+			dominating = register2;
+			dominated = register1;
+		} else {
+			return false;
+		}
+
+		if (dominated.getDefinition().getOperationsBlock().getLiveOut().contains(dominating))
+			return true;
+
+		for (AssemblerOperation usage : dominating.getUsages()) {
+			if (dominates(dominated.getDefinition(), usage)) {
+				return true; // if the definition of the dominated dominates a usage of the dominating, they interfere
+			}
+		}
+
+		return false;
+	}
+
+	private static boolean dominates(AssemblerOperation operation1, AssemblerOperation operation2) {
+		AssemblerOperationsBlock operationsBlock1 = operation1.getOperationsBlock();
+		AssemblerOperationsBlock operationsBlock2 = operation2.getOperationsBlock();
+
+		if (operationsBlock1 == operationsBlock2) {
+			return operationsBlock1.strictlyDominates(operation1, operation2);
+		} else {
+			return operationsBlock1.dominates(operationsBlock2);
+		}
+	}
+
 }
