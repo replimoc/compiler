@@ -1,4 +1,4 @@
-package compiler.firm.backend.registerallocation;
+package compiler.firm.backend.registerallocation.ssa;
 
 import java.util.ArrayList;
 import java.util.HashMap;

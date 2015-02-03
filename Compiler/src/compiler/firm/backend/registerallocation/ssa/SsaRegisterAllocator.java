@@ -1,4 +1,4 @@
-package compiler.firm.backend.registerallocation;
+package compiler.firm.backend.registerallocation.ssa;
 
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -8,14 +8,15 @@ import java.util.Map.Entry;
 import java.util.Set;
 
 import com.sun.jna.Pointer;
+
 import compiler.firm.backend.Bit;
 import compiler.firm.backend.operations.CallOperation;
 import compiler.firm.backend.operations.dummy.MethodStartEndOperation;
 import compiler.firm.backend.operations.templates.AssemblerOperation;
+import compiler.firm.backend.registerallocation.RegisterAllocationPolicy;
 import compiler.firm.backend.storage.RegisterBased;
 import compiler.firm.backend.storage.RegisterBundle;
 import compiler.firm.backend.storage.VirtualRegister;
-
 import firm.BlockWalker;
 import firm.Graph;
 import firm.bindings.binding_irdom;

@@ -1,4 +1,4 @@
-package compiler.firm.backend.registerallocation;
+package compiler.firm.backend.registerallocation.linear;
 
 import java.util.ArrayList;
 import java.util.Collections;
@@ -12,6 +12,7 @@ import java.util.Map.Entry;
 import java.util.Set;
 
 import compiler.firm.backend.Bit;
+import compiler.firm.backend.registerallocation.RegisterAllocationPolicy;
 import compiler.firm.backend.storage.RegisterBundle;
 import compiler.firm.backend.storage.SingleRegister;
 import compiler.firm.backend.storage.VirtualRegister;

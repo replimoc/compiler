@@ -1,4 +1,4 @@
-package compiler.firm.backend.registerallocation;
+package compiler.firm.backend.registerallocation.linear;
 
 public class Interval {
 	private int start;

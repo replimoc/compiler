@@ -1,4 +1,4 @@
-package compiler.firm.backend.registerallocation;
+package compiler.firm.backend.registerallocation.linear;
 
 import java.util.List;
 

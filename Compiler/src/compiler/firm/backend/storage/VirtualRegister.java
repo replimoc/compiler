@@ -7,7 +7,7 @@ import java.util.List;
 import java.util.Set;
 
 import compiler.firm.backend.Bit;
-import compiler.firm.backend.registerallocation.Interval;
+import compiler.firm.backend.registerallocation.linear.Interval;
 
 public class VirtualRegister extends RegisterBased {
 
