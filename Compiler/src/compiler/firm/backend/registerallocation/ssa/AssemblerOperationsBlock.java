@@ -149,7 +149,7 @@ public class AssemblerOperationsBlock {
 	}
 
 	public boolean dominates(AssemblerOperationsBlock otherBlock) {
-		return FirmUtils.blockPostdominates(block, otherBlock.block);
+		return FirmUtils.blockDominates(block, otherBlock.block);
 	}
 
 	public boolean strictlyDominates(AssemblerOperation operation1, AssemblerOperation operation2) {

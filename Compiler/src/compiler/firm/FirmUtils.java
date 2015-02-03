@@ -202,4 +202,8 @@ public final class FirmUtils {
 	public static boolean blockPostdominates(Node block, Node block2) {
 		return binding_irdom.block_postdominates(block.ptr, block2.ptr) == 1;
 	}
+
+	public static boolean blockDominates(Node block, Node block2) {
+		return binding_irdom.block_dominates(block.ptr, block2.ptr) == 1;
+	}
 }
