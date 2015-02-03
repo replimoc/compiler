@@ -1,6 +1,8 @@
 package compiler.firm.optimization.visitor;
 
+import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Set;
 
 import firm.BackEdges;
@@ -96,10 +98,10 @@ public class CommonSubexpressionEliminationVisitor extends OptimizationVisitor<N
 				return;
 			}
 			if (!node.equals(target) && !nodeReplacements.containsKey(target) && !nodeReplacements.containsKey(node)
-					&& dominators.get((Block) node.getBlock()).contains((Block) target.getBlock())) {
+					&& dominators.get(node.getBlock()).contains(target.getBlock())) {
 				addReplacement(node, target);
 			} else if (!node.equals(target) && !nodeReplacements.containsKey(target) && !nodeReplacements.containsKey(node) &&
-					dominators.get((Block) target.getBlock()).contains((Block) node.getBlock())) {
+					dominators.get(target.getBlock()).contains(node.getBlock())) {
 				addReplacement(target, node);
 			} else {
 				return;
@@ -126,25 +128,36 @@ public class CommonSubexpressionEliminationVisitor extends OptimizationVisitor<N
 				return;
 			}
 			if (!node.equals(target) && !nodeReplacements.containsKey(target) && !nodeReplacements.containsKey(node)) {
-				Node suc = null;
-				Node sucTarget = null;
+				List<Node> suc = new ArrayList<Node>();
+				List<Node> sucTarget = new ArrayList<Node>();
 				for (Edge e : BackEdges.getOuts(node)) {
-					suc = e.node;
-					break;
+					suc.add(e.node);
 				}
 				for (Edge e : BackEdges.getOuts(target)) {
-					sucTarget = e.node;
-					break;
+					sucTarget.add(e.node);
 				}
-				if (suc == null || sucTarget == null)
+				if (suc.size() == 0 || sucTarget.size() == 0)
 					return;
+
 				// replace the Proj node so the firm backend is happy
-				if (dominators.get((Block) node.getBlock()).contains((Block) target.getBlock())) {
-					addReplacement(suc, sucTarget);
+				if (node.getBlock().equals(target.getBlock())) {
+					if (isReachable(node, target)) {
+						replaceDivMod(target, node, sucTarget, suc);
+					} else {
+						replaceDivMod(node, target, suc, sucTarget);
+					}
+				} else if (dominators.get(node.getBlock()).contains(target.getBlock())) {
+					System.out.println(node + " with " + target);
 					addReplacement(node, target);
-				} else if (dominators.get((Block) target.getBlock()).contains((Block) node.getBlock())) {
-					addReplacement(sucTarget, suc);
+					addReplacement(suc.get(0), sucTarget.get(0));
+					// replaceDivMod(node, target, suc, sucTarget);
+				} else if (dominators.get(target.getBlock()).contains(node.getBlock())) {
+					System.out.println(target + " with " + node);
 					addReplacement(target, node);
+					addReplacement(sucTarget.get(0), suc.get(0));
+					// replaceDivMod(target, node, sucTarget, suc);
+				} else {
+					return;
 				}
 			} else {
 				return;
@@ -152,6 +165,33 @@ public class CommonSubexpressionEliminationVisitor extends OptimizationVisitor<N
 		} else {
 			nodeValues.put(new NodeValue(left, right), node);
 		}
+	}
+
+	private void replaceDivMod(Node src, Node dest, List<Node> srcPred, List<Node> destPred) {
+		Node first = destPred.get(0);
+		for (int i = 1; i < destPred.size(); i++) {
+			addReplacement(destPred.get(i), first);
+		}
+		for (int i = 0; i < srcPred.size(); i++) {
+			addReplacement(srcPred.get(i), first);
+		}
+		addReplacement(src, dest);
+	}
+
+	private boolean isReachable(Node src, Node dest) {
+		Node tmp = src.getPred(0);
+		while (tmp != null && tmp.getBlock().equals(src.getBlock())) {
+			if (tmp.equals(dest)) {
+				// src is dominated by dest
+				return true;
+			}
+			if (tmp.getPredCount() > 0) {
+				tmp = tmp.getPred(0); // get memory predecessor
+			} else {
+				return false;
+			}
+		}
+		return false;
 	}
 
 	@Override
@@ -256,18 +296,7 @@ public class CommonSubexpressionEliminationVisitor extends OptimizationVisitor<N
 
 	@Override
 	public void visit(Phi phi) {
-		if (phi.getPredCount() == 2) {
-			Node leftReplacement = nodeReplacements.get(phi.getPred(0));
-			Node leftNode = leftReplacement == null ? phi.getPred(0) : leftReplacement;
-			Node rightReplacement = nodeReplacements.get(phi.getPred(1));
-			Node rightNode = rightReplacement == null ? phi.getPred(1) : rightReplacement;
-			long left = getValue(leftNode);
-			long right = getValue(rightNode);
-
-			binaryTransferFunction(phi, left, right);
-		} else {
-			nodeValues.put(new NodeValue(getValue(phi)), phi);
-		}
+		nodeValues.put(new NodeValue(getValue(phi)), phi);
 	}
 
 	@Override

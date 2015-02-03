@@ -2,6 +2,7 @@ package compiler.firm.optimization.visitor;
 
 import java.util.Arrays;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 
@@ -44,6 +45,7 @@ public class LoopInvariantVisitor extends OptimizationVisitor<Node> {
 	private HashMap<Node, Node> backedges = new HashMap<>();
 	private HashMap<Block, Set<Block>> dominators = new HashMap<>();
 	private HashMap<Block, Phi> loopPhis = new HashMap<>();
+	private HashSet<Block> ifBlocks = new HashSet<>();
 	private OptimizationUtils utils;
 
 	public LoopInvariantVisitor(ProgramDetails programDetails) {
@@ -234,6 +236,10 @@ public class LoopInvariantVisitor extends OptimizationVisitor<Node> {
 				Node pred = utils.getInnerMostLoopHeader((Block) node.getBlock());
 				if (pred == null)
 					return;
+				// do not move nodes inside if's
+				if (ifBlocks.contains(node.getBlock()))
+					return;
+
 				Block preLoopBlock = (Block) pred.getPred(0).getBlock();
 				// do not move nodes over dominator borders
 				Set<Block> domBorder = dominators.get(preLoopBlock);
@@ -278,6 +284,7 @@ public class LoopInvariantVisitor extends OptimizationVisitor<Node> {
 		dominators = utils.getDominators();
 		backedges = utils.getBackEdges();
 		loopPhis = utils.getLoopPhis();
+		ifBlocks = utils.getIfBlocks();
 	}
 
 	private static interface NodeFactory {
