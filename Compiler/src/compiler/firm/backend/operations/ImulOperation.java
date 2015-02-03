@@ -16,7 +16,7 @@ public class ImulOperation extends SourceSourceDestinationOperation {
 		};
 	}
 
-	private ImulOperation(String comment, Storage source1, RegisterBased source2, RegisterBased destination) {
+	public ImulOperation(String comment, Storage source1, RegisterBased source2, RegisterBased destination) {
 		super(comment, source1, source2, destination);
 	}
 

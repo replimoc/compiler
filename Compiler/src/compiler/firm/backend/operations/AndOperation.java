@@ -10,6 +10,10 @@ public class AndOperation extends SourceSourceDestinationOperation {
 		super(null, source1, source2, destination);
 	}
 
+	public AndOperation(String comment, Storage source1, RegisterBased source2, RegisterBased destination) {
+		super(comment, source1, source2, destination);
+	}
+
 	@Override
 	public String getOperationString() {
 		return String.format("\tand %s, %s", getSource().toString(), getDestination().toString());

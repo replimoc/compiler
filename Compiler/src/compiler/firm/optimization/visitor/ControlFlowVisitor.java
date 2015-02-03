@@ -140,7 +140,7 @@ public class ControlFlowVisitor extends OptimizationVisitor<Node> {
 					Node jump = block.getGraph().newJmp(block);
 					addReplacement(proj, jump);
 				} else {
-					addReplacement(proj, proj.getGraph().newBad(proj.getPred().getMode()));
+					addReplacement(proj, FirmUtils.newBad(proj.getPred()));
 				}
 			}
 		}

@@ -30,6 +30,8 @@ import firm.nodes.Sub;
 
 public class ConstantFoldingVisitor extends OptimizationVisitor<TargetValue> {
 
+	protected boolean fixPoint = true;
+
 	public static final OptimizationVisitorFactory<TargetValue> FACTORY = new OptimizationVisitorFactory<TargetValue>() {
 		@Override
 		public OptimizationVisitor<TargetValue> create() {
@@ -55,8 +57,11 @@ public class ConstantFoldingVisitor extends OptimizationVisitor<TargetValue> {
 			currentGraph = targets.keySet().iterator().next().getGraph();
 
 			BackEdges.enable(currentGraph);
-			FirmOptimizer.walkTopological(currentGraph, workList, visitor);
-			FirmOptimizer.workList(workList, visitor);
+			do {
+				visitor.fixPoint = true;
+				FirmOptimizer.walkTopological(currentGraph, workList, visitor);
+				FirmOptimizer.workList(workList, visitor);
+			} while (!visitor.fixPoint);
 			BackEdges.disable(currentGraph);
 
 			for (Entry<Node, TargetValue> targetEntry : targets.entrySet()) {
@@ -71,6 +76,9 @@ public class ConstantFoldingVisitor extends OptimizationVisitor<TargetValue> {
 	}
 
 	private void setTargetValue(Node node, TargetValue targetValue) {
+		if (!targets.containsKey(node) || !targets.get(node).equals(targetValue)) {
+			fixPoint = false;
+		}
 		targets.put(node, targetValue);
 	}
 
@@ -114,8 +122,8 @@ public class ConstantFoldingVisitor extends OptimizationVisitor<TargetValue> {
 		} else {
 			for (Edge suc : BackEdges.getOuts(node)) {
 				setTargetValue(suc.node, TargetValue.getUnknown());
-			}
 		}
+	}
 	}
 
 	private void modTransferFunction(Node node, TargetValue leftTarget, TargetValue rightTarget, TargetValue newTargetValue) {
@@ -138,8 +146,8 @@ public class ConstantFoldingVisitor extends OptimizationVisitor<TargetValue> {
 		} else {
 			for (Edge suc : BackEdges.getOuts(node)) {
 				setTargetValue(suc.node, TargetValue.getUnknown());
-			}
 		}
+	}
 	}
 
 	private void mulTransferFunction(Node node, TargetValue leftTarget, TargetValue rightTarget, TargetValue newTargetValue) {
@@ -349,7 +357,7 @@ public class ConstantFoldingVisitor extends OptimizationVisitor<TargetValue> {
 					break;
 				}
 			}
-		}
-	}
+				}
+			}
 
 }

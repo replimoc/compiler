@@ -1,11 +1,8 @@
 package compiler.firm.optimization.visitor;
 
-import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
-import java.util.HashSet;
 import java.util.List;
-import java.util.Map;
 import java.util.Set;
 
 import compiler.firm.optimization.evaluation.ProgramDetails;
@@ -47,6 +44,7 @@ public class LoopInvariantVisitor extends OptimizationVisitor<Node> {
 	private HashMap<Node, Node> backedges = new HashMap<>();
 	private HashMap<Block, Set<Block>> dominators = new HashMap<>();
 	private HashMap<Block, Phi> loopPhis = new HashMap<>();
+	private OptimizationUtils utils;
 
 	public LoopInvariantVisitor(ProgramDetails programDetails) {
 		this.programDetails = programDetails;
@@ -55,39 +53,6 @@ public class LoopInvariantVisitor extends OptimizationVisitor<Node> {
 	@Override
 	public HashMap<Node, Node> getLatticeValues() {
 		return nodeReplacements;
-	}
-
-	private Node getInnerMostLoopHeader(Block block) {
-		Set<Block> dominatorBlocks = dominators.get(block);
-		Set<Block> loops = new HashSet<>();
-		for (Block dominatorBlock : dominatorBlocks) {
-			// find loop header that dominates 'block'
-			if (!dominatorBlock.equals(block) && backedges.containsValue(dominatorBlock)) {
-				loops.add(dominatorBlock);
-			}
-		}
-
-		ArrayList<Block> sameLevelLoops = new ArrayList<>();
-		L1: for (Block b : loops) {
-			if (dominators.containsKey(b) && dominators.get(b).containsAll(loops)) {
-				for (Map.Entry<Node, Node> entry : backedges.entrySet()) {
-					if (entry.getValue().equals(b)) {
-						if (dominators.containsKey(entry.getKey()) && !dominators.get(entry.getKey()).contains(block)
-								&& !dominatorBlocks.contains(entry.getKey())) {
-							// b and the loop header are on the same 'level'
-							sameLevelLoops.add(b);
-							continue L1;
-						}
-					}
-				}
-			}
-		}
-		for (Block b : loops) {
-			if (!sameLevelLoops.contains(b) && dominators.containsKey(b) && dominators.get(b).containsAll(loops)) {
-				return b;
-			}
-		}
-		return null;
 	}
 
 	@Override
@@ -266,7 +231,7 @@ public class LoopInvariantVisitor extends OptimizationVisitor<Node> {
 		if (dominators.size() > 0 && dominators.get(node.getBlock()).size() > 2) {
 			Set<Block> doms = dominators.get(node.getBlock());
 			if (doms.containsAll(operandBlocksList)) {
-				Node pred = getInnerMostLoopHeader((Block) node.getBlock());
+				Node pred = utils.getInnerMostLoopHeader((Block) node.getBlock());
 				if (pred == null)
 					return;
 				Block preLoopBlock = (Block) pred.getPred(0).getBlock();
@@ -309,7 +274,7 @@ public class LoopInvariantVisitor extends OptimizationVisitor<Node> {
 
 	@Override
 	public void visit(Start start) {
-		FirmUtils utils = new FirmUtils(start.getGraph());
+		utils = new OptimizationUtils(start.getGraph());
 		dominators = utils.getDominators();
 		backedges = utils.getBackEdges();
 		loopPhis = utils.getLoopPhis();

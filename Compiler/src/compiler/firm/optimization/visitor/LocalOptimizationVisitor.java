@@ -69,6 +69,7 @@ public class LocalOptimizationVisitor extends OptimizationVisitor<Node> {
 
 	@Override
 	public void visit(Div division) {
+		Node left = division.getLeft();
 		Node right = division.getRight();
 
 		if (right instanceof Conv) {
@@ -83,6 +84,19 @@ public class LocalOptimizationVisitor extends OptimizationVisitor<Node> {
 			Node suc = FirmUtils.getFirstSuccessor(division);
 			Node minus = division.getGraph().newMinus(suc.getBlock(), division.getLeft(), suc.getMode());
 			addReplacement(FirmUtils.getFirstSuccessor(division), minus);
+		} else if (isConstant(right) && left instanceof Mul) {
+			Mul mul = (Mul) left;
+			if (isConstant(mul.getLeft()) && isInt(right) && isInt(mul.getLeft()) && BackEdges.getNOuts(mul) == 1) {
+				// (x * _) / y; if x%y == 0 => (_ * (x/y))
+				int x = getTargetValue(mul.getLeft()).asInt();
+				int y = getTargetValue(right).asInt();
+
+				if (y != 0 && x % y == 0) {
+					addReplacement(mul.getLeft(), mul.getGraph().newConst(x / y, mul.getMode()));
+					addReplacement(division, FirmUtils.newBad(mul));
+					addReplacement(FirmUtils.getFirstSuccessor(division), mul);
+				}
+			}
 		}
 	}
 
