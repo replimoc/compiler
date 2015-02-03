@@ -3,6 +3,7 @@ package compiler.firm.backend.operations.templates;
 import java.util.Collections;
 import java.util.Set;
 
+import compiler.firm.backend.registerallocation.ssa.AssemblerOperationsBlock;
 import compiler.firm.backend.storage.RegisterBased;
 import compiler.firm.backend.storage.RegisterBundle;
 
@@ -12,6 +13,8 @@ public abstract class AssemblerOperation {
 
 	private final String comment;
 	private int accumulatorRegister = 0;
+
+	private AssemblerOperationsBlock operationsBlock;
 
 	public AssemblerOperation() {
 		this.comment = null;
@@ -64,5 +67,13 @@ public abstract class AssemblerOperation {
 			throw new RuntimeException("Running out of spill registers");
 		}
 		return ACCUMULATOR_REGISTERS[accumulatorRegister++];
+	}
+
+	public void setOperationsBlock(AssemblerOperationsBlock operationsBlock) {
+		this.operationsBlock = operationsBlock;
+	}
+
+	public AssemblerOperationsBlock getOperationsBlock() {
+		return operationsBlock;
 	}
 }

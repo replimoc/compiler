@@ -9,6 +9,7 @@ import compiler.firm.backend.operations.templates.AssemblerOperation;
 import compiler.firm.backend.storage.RegisterBased;
 import compiler.firm.backend.storage.VirtualRegister;
 
+import firm.bindings.binding_irdom;
 import firm.nodes.Block;
 import firm.nodes.Node;
 
@@ -28,6 +29,10 @@ public class AssemblerOperationsBlock {
 	public AssemblerOperationsBlock(Block block, ArrayList<AssemblerOperation> operations) {
 		this.block = block;
 		this.operations = operations;
+
+		for (AssemblerOperation operation : operations) {
+			operation.setOperationsBlock(this);
+		}
 	}
 
 	public void calculateTree(HashMap<Block, AssemblerOperationsBlock> operationsBlocks) {
@@ -89,6 +94,10 @@ public class AssemblerOperationsBlock {
 		return liveIn;
 	}
 
+	public Set<VirtualRegister> getLiveOut() {
+		return liveOut;
+	}
+
 	@Override
 	public String toString() {
 		StringBuilder builder = new StringBuilder();
@@ -118,4 +127,20 @@ public class AssemblerOperationsBlock {
 	public boolean isLastUsage(VirtualRegister register, AssemblerOperation operation) {
 		return !liveOut.contains(register) && lastUsed.get(register) == operation;
 	}
+
+	public boolean dominates(AssemblerOperationsBlock otherBlock) {
+		return binding_irdom.block_dominates(block.ptr, otherBlock.block.ptr) > 0;
+	}
+
+	public boolean strictlyDominates(AssemblerOperation operation1, AssemblerOperation operation2) {
+		for (AssemblerOperation operation : operations) { // loop over operations to find dominating operation
+			if (operation == operation2) {
+				return false;
+			} else if (operation == operation1) {
+				return true;
+			}
+		}
+		return false;
+	}
+
 }

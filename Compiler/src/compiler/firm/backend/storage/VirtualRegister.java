@@ -6,6 +6,7 @@ import java.util.List;
 import java.util.Set;
 
 import compiler.firm.backend.Bit;
+import compiler.firm.backend.operations.templates.AssemblerOperation;
 import compiler.firm.backend.registerallocation.linear.Interval;
 
 public class VirtualRegister extends RegisterBased {
@@ -20,6 +21,9 @@ public class VirtualRegister extends RegisterBased {
 	private Interval lifetime;
 	private Storage register;
 	private boolean isSpilled;
+
+	private final Set<AssemblerOperation> usages = new HashSet<>();
+	private AssemblerOperation definition;
 
 	public VirtualRegister(Bit mode) {
 		this(mode, (String) null);
@@ -141,4 +145,19 @@ public class VirtualRegister extends RegisterBased {
 		return comment;
 	}
 
+	public void setDefinition(AssemblerOperation operation) {
+		this.definition = operation;
+	}
+
+	public void addUsage(AssemblerOperation operation) {
+		this.usages.add(operation);
+	}
+
+	public AssemblerOperation getDefinition() {
+		return definition;
+	}
+
+	public Set<AssemblerOperation> getUsages() {
+		return usages;
+	}
 }

@@ -116,6 +116,53 @@ public class SsaRegisterAllocator {
 		}
 	}
 
+	/**
+	 * @see Algorithm 4.6 (page 69) of thesis on SSA Register Allocation.
+	 * 
+	 * @param register1
+	 * @param register2
+	 * @return
+	 */
+	private static boolean doVariablesInterfere(VirtualRegister register1, VirtualRegister register2) {
+		AssemblerOperation definition1 = register1.getDefinition();
+		AssemblerOperation definition2 = register2.getDefinition();
+
+		VirtualRegister dominating;
+		VirtualRegister dominated;
+
+		if (dominates(definition1, definition2)) {
+			dominating = register1;
+			dominated = register2;
+		} else if (dominates(definition2, definition1)) {
+			dominating = register2;
+			dominated = register1;
+		} else {
+			return false;
+		}
+
+		if (dominated.getDefinition().getOperationsBlock().getLiveOut().contains(dominating))
+			return true;
+
+		for (AssemblerOperation usage : dominating.getUsages()) {
+			if (dominates(dominated.getDefinition(), usage)) {
+				return true; // if the definition of the dominated dominates a usage of the dominating, they interfere
+			}
+		}
+
+		return false;
+	}
+
+	private static boolean dominates(AssemblerOperation operation1, AssemblerOperation operation2) {
+		AssemblerOperationsBlock operationsBlock1 = operation1.getOperationsBlock();
+		AssemblerOperationsBlock operationsBlock2 = operation2.getOperationsBlock();
+
+		if (operationsBlock1 == operationsBlock2) {
+			return operationsBlock1.strictlyDominates(operation1, operation2);
+		} else {
+			return operationsBlock1.dominates(operationsBlock2);
+		}
+	}
+
 	private RegisterBundle getFreeBundle(Set<RegisterBundle> freeRegisters, Set<RegisterBundle> preferedRegisters) {
 		for (RegisterBundle preferred : preferedRegisters) {
 			if (freeRegisters.contains(preferred)) {
