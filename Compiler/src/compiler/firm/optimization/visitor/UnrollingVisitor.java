@@ -5,15 +5,21 @@ import java.util.HashSet;
 import java.util.Map.Entry;
 import java.util.Set;
 
+import compiler.firm.FirmUtils;
+
 import firm.BackEdges;
+import firm.BackEdges.Edge;
 import firm.Graph;
 import firm.Mode;
 import firm.TargetValue;
+import firm.nodes.Anchor;
 import firm.nodes.Block;
 import firm.nodes.Cmp;
 import firm.nodes.Const;
+import firm.nodes.End;
 import firm.nodes.Node;
 import firm.nodes.Phi;
+import firm.nodes.Proj;
 import firm.nodes.Start;
 
 public class UnrollingVisitor extends OptimizationVisitor<Node> {
@@ -77,12 +83,60 @@ public class UnrollingVisitor extends OptimizationVisitor<Node> {
 				long count = (Integer.MAX_VALUE) - loopInfo.startingValue.getTarval().asLong();
 				long mod = count % loopInfo.incr.getTarval().asLong();
 				long target = (long) Math.ceil((double) (count) / loopInfo.incr.getTarval().asLong() + (mod == 0 ? 1 : 0));
-				unrollFactor = MAX_UNROLL_FACTOR;
-				while (unrollFactor > 1 && (target % unrollFactor) != 0) {
-					unrollFactor -= 1;
-				}
-				if (unrollFactor < 2)
+				if (blockNodes.get(block).size() > 2) {
+					unrollFactor = MAX_UNROLL_FACTOR;
+					while (unrollFactor > 1 && (target % unrollFactor) != 0) {
+						unrollFactor -= 1;
+					}
+					if (unrollFactor < 2)
+						return;
+				} else {
+					// calculate loop result
+					long value = Integer.MIN_VALUE + loopInfo.incr.getTarval().asLong() - mod - 1;
+
+					// collect nodes
+					Node constNode = graph.newConst((int) value, FirmUtils.getModeInteger());
+					Node loopHeader = block.getPred(0).getBlock();
+					Node preLoopJmp = loopHeader.getPred(0);
+					Cmp cmp = compares.get(loopHeader);
+					Node cond = BackEdges.getOuts(cmp).iterator().next().node;
+					Node afterLoopBlock = null;
+					Node loopPhi = loopPhis.get(loopHeader);
+					Node memBeforeLoop = loopPhi.getPred(0);
+					Node phi = loopInfo.loopCounter;
+					for (Edge e : BackEdges.getOuts(phi)) {
+						if (!e.node.equals(inductionVariables.get(phi))) {
+							for (int i = 0; i < e.node.getPredCount(); i++) {
+								if (e.node.getPred(i).equals(phi)) {
+									// set constant predecessor
+									e.node.setPred(i, constNode);
+								}
+							}
+						}
+					}
+					// loop body has no memory node
+					for (Edge e : BackEdges.getOuts(loopPhi)) {
+						if (!(e.node instanceof Anchor) && !(e.node instanceof End)) {
+							for (int i = 0; i < e.node.getPredCount(); i++) {
+								if (e.node.getPred(i).equals(loopPhi))
+									e.node.setPred(i, memBeforeLoop);
+							}
+						}
+					}
+					for (Edge edge : BackEdges.getOuts(cond)) {
+						Proj proj = (Proj) edge.node;
+						if (proj.getNum() == FirmUtils.FALSE) {
+							afterLoopBlock = BackEdges.getOuts(proj).iterator().next().node;
+						}
+					}
+					Node newJmp = graph.newJmp(preLoopJmp.getBlock());
+					afterLoopBlock.setPred(0, newJmp);
+					loopPhi.setPred(0, loopPhi);
+					loopHeader.setPred(0, graph.newBad(Mode.getX()));
+					addReplacement(preLoopJmp, newJmp);
+					finishedLoops.add(block);
 					return;
+				}
 			} else if (loopInfo.cycleCount == Integer.MIN_VALUE) {
 				long count = (Integer.MIN_VALUE) - loopInfo.startingValue.getTarval().asLong();
 				long mod = count % loopInfo.incr.getTarval().asLong();
