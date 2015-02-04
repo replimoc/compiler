@@ -75,7 +75,7 @@ public class ProgramDetails {
 		EntityDetails entityDetail = getEntityDetails(graph.getEntity());
 		GraphEvaluationVisitor.calculateStaticDetails(graph, entityDetail);
 		GraphEvaluationVisitor graphEvaluationVisitor = new GraphEvaluationVisitor(graph, this);
-		graph.walk(graphEvaluationVisitor);
+		graph.walkTopological(graphEvaluationVisitor);
 		entityDetail.setNumberOfNodes(graphEvaluationVisitor.getNumberOfNodes());
 		BackEdges.disable(graph);
 	}
