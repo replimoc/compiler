@@ -12,14 +12,17 @@ import compiler.firm.backend.operations.templates.AssemblerOperation;
 import compiler.firm.backend.storage.RegisterBundle;
 import compiler.firm.backend.storage.VirtualRegister;
 
+import firm.Graph;
 import firm.nodes.Block;
 
 public class AssemblerProgram {
+	private final Block startBlock;
 	private final HashMap<Block, AssemblerOperationsBlock> operationsBlocks;
 	private final Set<VirtualRegister> preAllocatedRegisters = new HashSet<>();
 	private final Set<RegisterBundle> usedRegisters = new HashSet<>();
 
-	public AssemblerProgram(HashMap<Block, ArrayList<AssemblerOperation>> operationsOfBlocks) {
+	public AssemblerProgram(Graph graph, HashMap<Block, ArrayList<AssemblerOperation>> operationsOfBlocks) {
+		this.startBlock = graph.getStartBlock();
 		this.operationsBlocks = createOperationsBlocks(operationsOfBlocks);
 		calculateLiveInAndLiveOut();
 	}
@@ -150,6 +153,10 @@ public class AssemblerProgram {
 
 	public Set<RegisterBundle> getUsedRegisters() {
 		return usedRegisters;
+	}
+
+	public Block getStartBlock() {
+		return startBlock;
 	}
 
 }

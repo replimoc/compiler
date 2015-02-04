@@ -21,6 +21,7 @@ import compiler.firm.backend.registerallocation.linear.InterferenceGraph;
 import compiler.firm.backend.registerallocation.linear.LinearScanRegisterAllocation;
 import compiler.firm.backend.registerallocation.ssa.AssemblerProgram;
 import compiler.firm.backend.registerallocation.ssa.SsaRegisterAllocator;
+import compiler.firm.backend.registerallocation.ssa.SsaSpiller;
 
 import firm.BackEdges;
 import firm.BlockWalker;
@@ -97,10 +98,13 @@ public final class AssemblerGenerator {
 	}
 
 	private static void allocateRegistersSsa(Graph graph, HashMap<Block, ArrayList<AssemblerOperation>> operationsOfBlocks) {
-		AssemblerProgram program = new AssemblerProgram(operationsOfBlocks);
-		SsaRegisterAllocator ssaAllocator = new SsaRegisterAllocator(program);
 		RegisterAllocationPolicy policy = RegisterAllocationPolicy.A_BP_B_12_13_14_15__DI_SI_D_C_8_9_10_11;
-		ssaAllocator.colorGraph(graph, policy);
+
+		AssemblerProgram program = new AssemblerProgram(graph, operationsOfBlocks);
+		SsaSpiller ssaSpiller = new SsaSpiller(program);
+		ssaSpiller.reduceRegisterPressure(policy.getNumberOfRegisters(Bit.BIT64));
+		SsaRegisterAllocator ssaAllocator = new SsaRegisterAllocator(program);
+		ssaAllocator.colorGraph(policy);
 		program.setDummyOperationsInformation(0);
 	}
 

@@ -14,7 +14,6 @@ import compiler.firm.backend.storage.SingleRegister;
 import compiler.firm.backend.storage.VirtualRegister;
 
 import firm.BlockWalker;
-import firm.Graph;
 import firm.nodes.Block;
 
 public class SsaRegisterAllocator {
@@ -25,10 +24,8 @@ public class SsaRegisterAllocator {
 		this.program = program;
 	}
 
-	public void colorGraph(Graph graph, final RegisterAllocationPolicy policy) {
-		Block startBlock = graph.getStartBlock();
-
-		FirmUtils.walkDominanceTree(startBlock, new BlockWalker() {
+	public void colorGraph(final RegisterAllocationPolicy policy) {
+		FirmUtils.walkDominanceTree(program.getStartBlock(), new BlockWalker() {
 			@Override
 			public void visitBlock(Block block) {
 				colorBlock(block, policy);
@@ -41,14 +38,7 @@ public class SsaRegisterAllocator {
 	private void colorBlock(Block block, RegisterAllocationPolicy policy) {
 		AssemblerOperationsBlock operationsBlock = program.getOperationsBlock(block);
 
-		Set<RegisterBundle> freeRegisters = policy.getAllowedBundles(Bit.BIT64);
-
-		for (VirtualRegister curr : operationsBlock.getLiveIn()) { // allocated the already occupied registers
-			RegisterBundle registerBundle = curr.getRegisterBundle();
-			if (registerBundle != null) {
-				freeRegisters.remove(registerBundle);
-			}
-		}
+		Set<RegisterBundle> freeRegisters = calculateFreeRegistersAtStart(policy, operationsBlock);
 
 		for (AssemblerOperation operation : operationsBlock.getOperations()) {
 			for (RegisterBased readRegisterBased : operation.getReadRegisters()) {
@@ -60,13 +50,25 @@ public class SsaRegisterAllocator {
 
 			for (RegisterBased writeRegisterBased : operation.getWriteRegisters()) {
 				VirtualRegister writeRegister = (VirtualRegister) writeRegisterBased;
-				if (writeRegister.getRegister() == null) {
+				if (writeRegister.getRegister() == null && !writeRegister.isSpilled()) {
 					assignFreeRegister(policy, freeRegisters, writeRegister);
 				}
 			}
 
 			checkForOperationAssignments(operation, policy, freeRegisters); // irrelevant for register allocation
 		}
+	}
+
+	private static Set<RegisterBundle> calculateFreeRegistersAtStart(RegisterAllocationPolicy policy, AssemblerOperationsBlock operationsBlock) {
+		Set<RegisterBundle> freeRegisters = policy.getAllowedBundles(Bit.BIT64);
+
+		for (VirtualRegister curr : operationsBlock.getLiveIn()) { // allocated the already occupied registers
+			RegisterBundle registerBundle = curr.getRegisterBundle();
+			if (registerBundle != null) {
+				freeRegisters.remove(registerBundle);
+			}
+		}
+		return freeRegisters;
 	}
 
 	private void assignFreeRegister(RegisterAllocationPolicy policy, Set<RegisterBundle> freeRegisters, VirtualRegister virtualRegister) {
