@@ -13,4 +13,9 @@ public class CltdOperation extends SourceDestinationOperation {
 	public String getOperationString() {
 		return String.format("\tcltd");
 	}
+
+	@Override
+	protected MovOperation getPreOperation() {
+		return null;
+	}
 }
