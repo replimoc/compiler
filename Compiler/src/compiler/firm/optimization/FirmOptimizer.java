@@ -45,7 +45,7 @@ public final class FirmOptimizer {
 			finished &= optimize(LocalOptimizationVisitor.FACTORY);
 			finished &= optimize(ControlFlowVisitor.FACTORY);
 			finished &= optimize(CommonSubexpressionEliminationVisitor.FACTORY);
-			finished &= optimize(LoopFusionVisitor.FACTORY);
+			finished &= optimize(LoopFusionVisitor.FACTORY(evaluateGraphs()));
 			finished &= optimize(LoopInvariantVisitor.FACTORY(evaluateGraphs()));
 			finished &= optimize(StrengthReductionVisitor.FACTORY);
 			finished &= ObsoleteNodesEliminator.eliminateObsoleteParameters(evaluateGraphs());

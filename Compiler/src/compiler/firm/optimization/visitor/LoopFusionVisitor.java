@@ -4,31 +4,44 @@ import java.util.HashMap;
 import java.util.Set;
 
 import compiler.firm.FirmUtils;
+import compiler.firm.optimization.evaluation.BlockInformation;
+import compiler.firm.optimization.evaluation.EntityDetails;
+import compiler.firm.optimization.evaluation.ProgramDetails;
 import compiler.firm.optimization.visitor.OptimizationUtils.LoopInfo;
 
 import firm.BackEdges;
 import firm.BackEdges.Edge;
 import firm.Graph;
+import firm.Mode;
 import firm.nodes.Block;
 import firm.nodes.Cmp;
 import firm.nodes.Cond;
 import firm.nodes.Jmp;
 import firm.nodes.Node;
+import firm.nodes.Phi;
 import firm.nodes.Proj;
 import firm.nodes.Start;
 
 public class LoopFusionVisitor extends OptimizationVisitor<Node> {
 
-	public static final OptimizationVisitorFactory<Node> FACTORY = new OptimizationVisitorFactory<Node>() {
-		@Override
-		public OptimizationVisitor<Node> create() {
-			return new LoopFusionVisitor();
-		}
-	};
+	public static final OptimizationVisitorFactory<Node> FACTORY(final ProgramDetails programDetails) {
+		return new OptimizationVisitorFactory<Node>() {
+			@Override
+			public OptimizationVisitor<Node> create() {
+				return new LoopFusionVisitor(programDetails);
+			}
+		};
+	}
+
+	private final ProgramDetails programDetails;
 
 	private static boolean LOCK = false;
 
 	private OptimizationUtils optimizationUtils;
+
+	public LoopFusionVisitor(ProgramDetails programDetails) {
+		this.programDetails = programDetails;
+	}
 
 	@Override
 	public HashMap<Node, Node> getLatticeValues() {
@@ -88,18 +101,42 @@ public class LoopFusionVisitor extends OptimizationVisitor<Node> {
 					Node newJmpToLoopHead = graph.newJmp(continueInfo2.loopContentBlock);
 					addReplacement(oldJmp, newJmpToLoopHead);
 
+					EntityDetails entityDetails = programDetails.getEntityDetails(graph);
+
+					// Correct mode m between loop bodys
+					Node lastModeM1 = entityDetails.getBlockInformation(continueInfo.loopContentBlock).getLastModeM();
+					BlockInformation loopBlockInfo2 = entityDetails.getBlockInformation(continueInfo2.loopContentBlock);
+					Node firstModeM2 = loopBlockInfo2.getFirstModeM();
+					Node lastModeM2 = loopBlockInfo2.getLastModeM();
+					firstModeM2.setPred(0, lastModeM1);
+
+					// Correct phi in first loop head
+					for (Node node : blockNodes.get(block)) {
+						if (node.getMode().equals(Mode.getM()) && node instanceof Phi) {
+							for (int i = 0; i < node.getPredCount(); i++) {
+								if (node.getPred(i).equals(lastModeM1)) {
+									node.setPred(i, lastModeM2);
+								}
+							}
+						}
+					}
+
+					// Correct mode m in block after loops
+					Node loopHeaderModeM1 = entityDetails.getBlockInformation(block).getLastModeM();
+					Node loopHeaderModeM2 = entityDetails.getBlockInformation(block2).getLastModeM();
+
+					Node continueModeM = entityDetails.getBlockInformation(continueInfo2.continueBlock).getFirstModeM();
+					for (int i = 0; i < continueModeM.getPredCount(); i++) {
+						if (continueModeM.getPred(i).equals(loopHeaderModeM2)) {
+							continueModeM.setPred(i, loopHeaderModeM1);
+						}
+					}
+
+					addReplacement(loopHeaderModeM2, FirmUtils.newBad(loopHeaderModeM2));
+
 					// Move nodes of second loop head in to first loop head
 					for (Node node : blockNodes.get(block2)) {
-						// if (node.getMode().equals(Mode.getM())) {
-						// if (node instanceof Phi) {
-						// // Some shit
-						// addReplacement(node, node.getPred(continueInfo2.));
-						// } else {
-						// node.setBlock(continueInfo2.loopContentBlock);
-						// }
-						// } else {
 						node.setBlock(block);
-						// }
 					}
 
 					// Remove second loop head
@@ -118,7 +155,7 @@ public class LoopFusionVisitor extends OptimizationVisitor<Node> {
 
 		Set<LoopInfo> loopInfos = optimizationUtils.getLoopInfos((Block) loopBlock, compares);
 
-		if (loopInfos.size() > 0) {
+		if (loopInfos != null && loopInfos.size() > 0) {
 			return loopInfos.iterator().next();
 		}
 		return null;
