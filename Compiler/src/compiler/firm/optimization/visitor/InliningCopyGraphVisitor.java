@@ -193,7 +193,11 @@ public class InliningCopyGraphVisitor extends AbstractFirmNodesVisitor {
 			returns.add(buildReturnInfo(endBlock.getPred(i)));
 		}
 
-		methodReturnInfo = buildReturnInfo(returns);
+		if (returns.size() != 0) {
+			methodReturnInfo = buildReturnInfo(returns);
+		} else {
+			methodReturnInfo = new ReturnInfo(null, null, null);
+		}
 	}
 
 	private ReturnInfo buildReturnInfo(List<ReturnInfo> returns) {
@@ -219,6 +223,7 @@ public class InliningCopyGraphVisitor extends AbstractFirmNodesVisitor {
 			if (results[0] != null) {
 				result = graph.newPhi(block, results, results[0].getMode());
 			}
+
 			return new ReturnInfo(block, modeM, result);
 		}
 	}

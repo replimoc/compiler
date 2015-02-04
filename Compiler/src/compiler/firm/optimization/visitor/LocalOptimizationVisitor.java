@@ -55,6 +55,9 @@ public class LocalOptimizationVisitor extends OptimizationVisitor<Node> {
 			addReplacement(add, add.getLeft());
 		} else if (isConstant(left) && right instanceof Add) {
 			Add rightAdd = (Add) right;
+			if (nodeReplacements.containsKey(rightAdd))
+				return;
+
 			if (isConstant(rightAdd.getLeft()) && isInt(left) && isInt(rightAdd.getLeft()) && BackEdges.getNOuts(rightAdd) == 1) {
 				int result = getTargetValue(left).asInt() + getTargetValue(rightAdd.getLeft()).asInt();
 				addReplacement(rightAdd.getLeft(), right.getGraph().newConst(result, left.getMode()));
@@ -86,6 +89,10 @@ public class LocalOptimizationVisitor extends OptimizationVisitor<Node> {
 			addReplacement(FirmUtils.getFirstSuccessor(division), minus);
 		} else if (isConstant(right) && left instanceof Mul) {
 			Mul mul = (Mul) left;
+
+			if (nodeReplacements.containsKey(mul))
+				return;
+
 			if (isConstant(mul.getLeft()) && isInt(right) && isInt(mul.getLeft()) && BackEdges.getNOuts(mul) == 1) {
 				// (x * _) / y; if x%y == 0 => (_ * (x/y))
 				int x = getTargetValue(mul.getLeft()).asInt();
