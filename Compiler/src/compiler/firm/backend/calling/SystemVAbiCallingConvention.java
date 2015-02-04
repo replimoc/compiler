@@ -18,8 +18,8 @@ public class SystemVAbiCallingConvention extends CallingConvention {
 
 	@Override
 	public RegisterBundle[] callerSavedRegisters() {
-		return new RegisterBundle[] { // Not RAX - because restore is not possible - conflict with return type!
-		RegisterBundle._DI, RegisterBundle._SI, RegisterBundle._DX, RegisterBundle._CX,
+		return new RegisterBundle[] {
+				RegisterBundle._AX, RegisterBundle._DI, RegisterBundle._SI, RegisterBundle._DX, RegisterBundle._CX,
 				RegisterBundle._8D, RegisterBundle._9D, RegisterBundle._10D, RegisterBundle._11D
 		};
 	}

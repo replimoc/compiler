@@ -87,6 +87,10 @@ public class AssemblerOperationsBlock {
 			}
 		}
 
+		if (!preallocatedRegisters.isEmpty()) {
+			System.err.println("FOUND PREALLOCATED REGISERS!");
+		}
+
 		return preallocatedRegisters;
 	}
 

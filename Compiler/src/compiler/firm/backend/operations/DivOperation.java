@@ -1,5 +1,6 @@
 package compiler.firm.backend.operations;
 
+import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashSet;
 import java.util.LinkedList;
@@ -66,10 +67,10 @@ public class DivOperation extends AssemblerOperation implements CurrentlyAliveRe
 		commandList.add(getOperationString());
 
 		if (result != null) {
-			commandList.add(new MovOperation(SingleRegister.EAX, result).toString());
+			commandList.addAll(Arrays.asList(new MovOperation(SingleRegister.EAX, result).toStringWithSpillcode()));
 		}
 		if (remainder != null) {
-			commandList.add(new MovOperation(SingleRegister.EDX, remainder).toString());
+			commandList.addAll(Arrays.asList(new MovOperation(SingleRegister.EDX, remainder).toStringWithSpillcode()));
 		}
 
 		if (aliveRegisters.contains(RegisterBundle._DX))

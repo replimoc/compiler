@@ -1,6 +1,8 @@
 package compiler.firm.backend.operations;
 
 import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.LinkedList;
@@ -28,15 +30,21 @@ public class CallOperation extends AssemblerOperation implements CurrentlyAliveR
 	private final String name;
 	private final List<Parameter> parameters;
 	private final CallingConvention callingConvention;
-	private List<RegisterBundle> usedRegisters = new LinkedList<>();
-	private final VirtualRegister result;
+	private final List<RegisterBundle> usedRegisters = new LinkedList<>();
+	private final VirtualRegister resultRegister;
 
-	public CallOperation(Bit mode, String name, List<Parameter> parameters, CallingConvention callingConvention) {
+	public CallOperation(Bit mode, String name, List<Parameter> parameters, CallingConvention callingConvention, boolean hasResult) {
 		this.name = name;
 		this.parameters = parameters;
 		this.callingConvention = callingConvention;
 		this.usedRegisters.add(RegisterBundle._SP);
-		this.result = new VirtualRegister(mode, callingConvention.getReturnRegister());
+
+		if (hasResult) {
+			this.resultRegister = new VirtualRegister(mode);
+			resultRegister.addPreferedRegister(new VirtualRegister(RegisterBundle._AX.getRegister(mode)));
+		} else {
+			this.resultRegister = null;
+		}
 	}
 
 	@Override
@@ -57,11 +65,15 @@ public class CallOperation extends AssemblerOperation implements CurrentlyAliveR
 
 	@Override
 	public Set<RegisterBased> getWriteRegisters() {
-		return Utils.<RegisterBased> unionSet(result);
+		if (resultRegister != null) {
+			return Utils.<RegisterBased> unionSet(resultRegister);
+		} else {
+			return Collections.emptySet();
+		}
 	}
 
 	public VirtualRegister getResult() {
-		return result;
+		return resultRegister;
 	}
 
 	private List<RegisterBundle> getSaveRegisters() {
@@ -139,6 +151,10 @@ public class CallOperation extends AssemblerOperation implements CurrentlyAliveR
 		}
 
 		result.add(toString());
+		if (resultRegister != null) {
+			result.addAll(Arrays.asList(new MovOperation(callingConvention.getReturnRegister().getRegister(resultRegister.getMode()), resultRegister)
+					.toStringWithSpillcode()));
+		}
 
 		if (numberOfStackParameters > 0) {
 			result.add(new AddOperation(stackAllocationSize, SingleRegister.RSP, SingleRegister.RSP).toString());
@@ -163,6 +179,7 @@ public class CallOperation extends AssemblerOperation implements CurrentlyAliveR
 		}
 	}
 
+	@Override
 	public void setAliveRegisters(Set<RegisterBundle> registers) {
 		this.usedRegisters.clear();
 		this.usedRegisters.addAll(registers);
