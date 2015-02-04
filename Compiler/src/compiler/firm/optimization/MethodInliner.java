@@ -21,6 +21,8 @@ import firm.nodes.Node;
 
 public final class MethodInliner {
 
+	private static final Set<Node> CALL_BLACKLIST = new HashSet<>();
+
 	public static boolean inlineCalls(ProgramDetails programDetails) {
 		boolean changes = false;
 		Set<Call> calls = programDetails.getCalls();
@@ -32,10 +34,11 @@ public final class MethodInliner {
 				EntityDetails entityDetails = programDetails.getEntityDetails(call);
 
 				if (entityDetails.isInlinable() && !programDetails.isRecursion(call)) {
-					changes = true;
-
 					BlockInformation blockInformation = entityDetails.getBlockInformation(call.getBlock());
-					inline(call, graph, blockInformation);
+					if (!CALL_BLACKLIST.contains(call)) {
+						changes = true;
+						inline(call, graph, blockInformation);
+					}
 					updateGraph(call, programDetails);
 				}
 			}
@@ -80,6 +83,11 @@ public final class MethodInliner {
 
 		InliningCopyGraphVisitor blockCopyWalker = new InliningCopyGraphVisitor(call, arguments);
 		graph.walkPostorder(blockCopyWalker);
+
+		if (blockCopyWalker.getEndProjM() == null) {
+			CALL_BLACKLIST.add(call);
+			return; // Abort, controlflow missing
+		}
 
 		blockCopyWalker.cleanupNodes();
 
