@@ -26,6 +26,8 @@ import firm.Type;
 import firm.Util;
 import firm.bindings.binding_irdom;
 import firm.bindings.binding_irgopt;
+import firm.nodes.Address;
+import firm.nodes.Call;
 import firm.nodes.Const;
 import firm.nodes.Node;
 
@@ -207,5 +209,10 @@ public final class FirmUtils {
 	public static boolean isConstant(Node node) {
 		return node instanceof Const &&
 				(node.getMode().equals(Mode.getIs()) || node.getMode().equals(Mode.getBu()) || node.getMode().equals(Mode.getLu()));
+	}
+
+	public static Entity getCalledEntity(Call call) {
+		final Address address = (Address) call.getPred(1);
+		return address.getEntity();
 	}
 }

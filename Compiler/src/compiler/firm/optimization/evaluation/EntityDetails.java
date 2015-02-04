@@ -77,6 +77,10 @@ public class EntityDetails {
 		return blockInfo;
 	}
 
+	public HashMap<Node, BlockInformation> getBlockInformations() {
+		return this.blockInformation;
+	}
+
 	public void setNumberOfNodes(int numberOfNodes) {
 		this.numberOfNodes = numberOfNodes;
 	}
