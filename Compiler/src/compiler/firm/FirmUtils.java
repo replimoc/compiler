@@ -8,12 +8,14 @@ import java.util.LinkedList;
 import java.util.List;
 import java.util.Map.Entry;
 
+import com.sun.jna.Pointer;
+
 import compiler.utils.ExecutionFailedException;
 import compiler.utils.Pair;
 import compiler.utils.Utils;
-
 import firm.BackEdges;
 import firm.Backend;
+import firm.BlockWalker;
 import firm.ClassType;
 import firm.Dump;
 import firm.Entity;
@@ -26,6 +28,7 @@ import firm.Type;
 import firm.Util;
 import firm.bindings.binding_irdom;
 import firm.bindings.binding_irgopt;
+import firm.nodes.Block;
 import firm.nodes.Node;
 
 public final class FirmUtils {
@@ -205,5 +208,15 @@ public final class FirmUtils {
 
 	public static boolean blockDominates(Node block, Node block2) {
 		return binding_irdom.block_dominates(block.ptr, block2.ptr) == 1;
+	}
+
+	public static void walkDominanceTree(Block block, BlockWalker walker) {
+		walker.visitBlock(block);
+	
+		for (Pointer dominatedPtr = binding_irdom.get_Block_dominated_first(block.ptr); dominatedPtr != null; dominatedPtr = binding_irdom
+				.get_Block_dominated_next(dominatedPtr)) {
+			Block dominatedBlock = new Block(dominatedPtr);
+			walkDominanceTree(dominatedBlock, walker);
+		}
 	}
 }
