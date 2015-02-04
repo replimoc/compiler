@@ -13,7 +13,6 @@ import firm.nodes.Address;
 import firm.nodes.Call;
 import firm.nodes.Load;
 import firm.nodes.Node;
-import firm.nodes.Phi;
 import firm.nodes.Proj;
 import firm.nodes.Store;
 
@@ -76,10 +75,9 @@ public class LoadStoreOptimiziationVisitor extends OptimizationVisitor<Node> {
 				return node.getPred(i);
 			} else if (node.getPred(i) instanceof Load || node.getPred(i) instanceof Store) {
 				return node.getPred(i);
+			} else if (node.getPred(i) instanceof Call) {
+				return node.getPred(i);
 			}
-			// else if (node.getPred(i) instanceof Call) {
-			// return node.getPred(i);
-			// }
 		}
 		return null;
 	}
@@ -101,8 +99,6 @@ public class LoadStoreOptimiziationVisitor extends OptimizationVisitor<Node> {
 
 		while (currentNode != null && currentNode.equals(memoryNode) == false) {
 			if (currentNode.getBlock().equals(memoryNode.getBlock()) == false) { // nodes are not in the same block
-				return false;
-			} else if (currentNode instanceof Phi) { // phi -> no opt possible
 				return false;
 			} else if (currentNode instanceof Call && isSideEffectFree((Call) currentNode) == false) { // allow only call that are side effect free
 				return false;
@@ -167,10 +163,6 @@ public class LoadStoreOptimiziationVisitor extends OptimizationVisitor<Node> {
 		// third is value
 
 		return true;
-	}
-
-	private String getMethodName(Node node) {
-		return node.getGraph().getEntity().getLdName();
 	}
 
 	private void uniteProjSuccessors(Node node) {
