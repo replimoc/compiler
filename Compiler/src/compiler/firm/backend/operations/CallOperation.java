@@ -11,6 +11,7 @@ import compiler.firm.backend.Bit;
 import compiler.firm.backend.TransferGraphSolver;
 import compiler.firm.backend.calling.CallingConvention;
 import compiler.firm.backend.operations.templates.AssemblerOperation;
+import compiler.firm.backend.operations.templates.CurrentlyAliveRegistersNeeding;
 import compiler.firm.backend.storage.Constant;
 import compiler.firm.backend.storage.MemoryPointer;
 import compiler.firm.backend.storage.RegisterBased;
@@ -21,7 +22,7 @@ import compiler.firm.backend.storage.VirtualRegister;
 import compiler.utils.Pair;
 import compiler.utils.Utils;
 
-public class CallOperation extends AssemblerOperation {
+public class CallOperation extends AssemblerOperation implements CurrentlyAliveRegistersNeeding {
 	private static final int STACK_ITEM_SIZE = 8;
 
 	private final String name;
@@ -162,7 +163,8 @@ public class CallOperation extends AssemblerOperation {
 		}
 	}
 
-	public void addAliveRegisters(Set<RegisterBundle> registers) {
+	public void setAliveRegisters(Set<RegisterBundle> registers) {
+		this.usedRegisters.clear();
 		this.usedRegisters.addAll(registers);
 	}
 

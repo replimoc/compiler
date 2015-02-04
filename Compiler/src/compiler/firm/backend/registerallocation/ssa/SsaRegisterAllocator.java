@@ -5,8 +5,8 @@ import java.util.Set;
 
 import compiler.firm.FirmUtils;
 import compiler.firm.backend.Bit;
-import compiler.firm.backend.operations.CallOperation;
 import compiler.firm.backend.operations.templates.AssemblerOperation;
+import compiler.firm.backend.operations.templates.CurrentlyAliveRegistersNeeding;
 import compiler.firm.backend.registerallocation.RegisterAllocationPolicy;
 import compiler.firm.backend.storage.RegisterBased;
 import compiler.firm.backend.storage.RegisterBundle;
@@ -102,10 +102,10 @@ public class SsaRegisterAllocator {
 	}
 
 	private void checkForOperationAssignments(AssemblerOperation operation, RegisterAllocationPolicy policy, Set<RegisterBundle> freeRegisters) {
-		if (operation instanceof CallOperation) {
+		if (operation instanceof CurrentlyAliveRegistersNeeding) {
 			Set<RegisterBundle> usedBundles = policy.getAllowedBundles(Bit.BIT64);
 			usedBundles.removeAll(freeRegisters);
-			((CallOperation) operation).addAliveRegisters(usedBundles);
+			((CurrentlyAliveRegistersNeeding) operation).setAliveRegisters(usedBundles);
 		}
 	}
 

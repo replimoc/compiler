@@ -1,28 +1,44 @@
 package compiler.firm.backend.operations;
 
 import java.util.Collections;
+import java.util.HashSet;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Set;
 
 import compiler.firm.backend.operations.templates.AssemblerOperation;
+import compiler.firm.backend.operations.templates.CurrentlyAliveRegistersNeeding;
 import compiler.firm.backend.storage.RegisterBased;
+import compiler.firm.backend.storage.RegisterBundle;
 import compiler.firm.backend.storage.SingleRegister;
 import compiler.firm.backend.storage.VirtualRegister;
 import compiler.utils.Utils;
 
-public class DivOperation extends AssemblerOperation {
+public class DivOperation extends AssemblerOperation implements CurrentlyAliveRegistersNeeding {
 
 	private final RegisterBased dividend;
 	private final RegisterBased divisor;
 	private final RegisterBased result;
 	private final RegisterBased remainder;
+	private final Set<RegisterBundle> aliveRegisters = new HashSet<>();
 
 	public DivOperation(RegisterBased dividend, RegisterBased divisor, RegisterBased result, RegisterBased remainder) {
 		this.dividend = dividend;
+		if (dividend instanceof VirtualRegister) {
+			((VirtualRegister) dividend).addPreferedRegister(new VirtualRegister(SingleRegister.RAX));
+		}
+
 		this.divisor = divisor;
+
 		this.result = result;
+		if (result != null && result instanceof VirtualRegister) {
+			((VirtualRegister) result).addPreferedRegister(new VirtualRegister(SingleRegister.RAX));
+		}
+
 		this.remainder = remainder;
+		if (remainder != null && remainder instanceof VirtualRegister) {
+			((VirtualRegister) remainder).addPreferedRegister(new VirtualRegister(SingleRegister.RDX));
+		}
 	}
 
 	@Override
@@ -32,27 +48,34 @@ public class DivOperation extends AssemblerOperation {
 
 	@Override
 	public String[] toStringWithSpillcode() {
+		if (result != null && !result.isSpilled())
+			aliveRegisters.remove(result.getRegisterBundle());
+		if (remainder != null && !remainder.isSpilled())
+			aliveRegisters.remove(remainder.getRegisterBundle());
+
 		List<String> commandList = new LinkedList<String>();
-		commandList.add(new PushOperation(SingleRegister.RAX).toString());
-		commandList.add(new PushOperation(SingleRegister.RDX).toString());
 
-		VirtualRegister raxRegister = new VirtualRegister(SingleRegister.RAX);
-		VirtualRegister rdxRegister = new VirtualRegister(SingleRegister.RDX);
+		if (aliveRegisters.contains(RegisterBundle._AX))
+			commandList.add(new PushOperation(SingleRegister.RAX).toString());
+		if (aliveRegisters.contains(RegisterBundle._DX))
+			commandList.add(new PushOperation(SingleRegister.RDX).toString());
 
-		commandList.add(new MovOperation(dividend, raxRegister).toString());
+		commandList.add(new MovOperation(dividend, SingleRegister.EAX).toString());
 		commandList.add("\tcltd");
 
 		commandList.add(getOperationString());
 
 		if (result != null) {
-			commandList.add(new MovOperation(raxRegister, result).toString());
+			commandList.add(new MovOperation(SingleRegister.EAX, result).toString());
 		}
 		if (remainder != null) {
-			commandList.add(new MovOperation(rdxRegister, remainder).toString());
+			commandList.add(new MovOperation(SingleRegister.EDX, remainder).toString());
 		}
 
-		commandList.add(new PopOperation(SingleRegister.RDX).toString());
-		commandList.add(new PopOperation(SingleRegister.RAX).toString());
+		if (aliveRegisters.contains(RegisterBundle._DX))
+			commandList.add(new PopOperation(SingleRegister.RDX).toString());
+		if (aliveRegisters.contains(RegisterBundle._AX))
+			commandList.add(new PopOperation(SingleRegister.RAX).toString());
 
 		return commandList.toArray(new String[0]);
 	}
@@ -73,5 +96,11 @@ public class DivOperation extends AssemblerOperation {
 		} else {
 			return Utils.unionSet(remainder, dividend);
 		}
+	}
+
+	@Override
+	public void setAliveRegisters(Set<RegisterBundle> registers) {
+		this.aliveRegisters.clear();
+		this.aliveRegisters.addAll(registers);
 	}
 }
