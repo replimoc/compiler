@@ -47,10 +47,8 @@ public class AssemblerProgram {
 			}
 		}
 
-		if (SsaRegisterAllocator.DEBUG) {
-			for (Entry<Block, AssemblerOperationsBlock> entry : operationsBlocks.entrySet()) {
-				System.out.println(entry.getValue());
-			}
+		for (Entry<Block, AssemblerOperationsBlock> entry : operationsBlocks.entrySet()) {
+			SsaRegisterAllocator.debugln(entry.getValue());
 		}
 	}
 

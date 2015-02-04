@@ -20,6 +20,7 @@ import compiler.firm.backend.registerallocation.RegisterAllocationPolicy;
 import compiler.firm.backend.registerallocation.linear.InterferenceGraph;
 import compiler.firm.backend.registerallocation.linear.LinearScanRegisterAllocation;
 import compiler.firm.backend.registerallocation.ssa.AssemblerProgram;
+import compiler.firm.backend.registerallocation.ssa.MustSpillException;
 import compiler.firm.backend.registerallocation.ssa.SsaRegisterAllocator;
 import compiler.firm.backend.registerallocation.ssa.SsaSpiller;
 
@@ -37,6 +38,7 @@ public final class AssemblerGenerator {
 	public static void createAssemblerX8664(Path outputFile, final CallingConvention callingConvention, boolean doPeephole, boolean noRegisters,
 			boolean debugRegisterAllocation) throws IOException {
 		InterferenceGraph.setDebuggingMode(debugRegisterAllocation);
+		SsaRegisterAllocator.setDebuggingMode(debugRegisterAllocation);
 
 		final ArrayList<AssemblerOperation> assembler = new ArrayList<>();
 
@@ -51,6 +53,7 @@ public final class AssemblerGenerator {
 		}
 
 		for (Graph graph : Program.getGraphs()) {
+			graph.check();
 			if (debugRegisterAllocation)
 				System.out.println(graph.getEntity().getLdName());
 
@@ -75,7 +78,7 @@ public final class AssemblerGenerator {
 				generatePlainAssemblerFile(Paths.get(graph.getEntity().getLdName() + ".plain"), operationsBlocksPostOrder);
 
 			// allocateRegistersLinear(graph, operationsBlocksPostOrder, noRegisters, debugRegisterAllocation);
-			allocateRegistersSsa(graph, operationsOfBlocks);
+			allocateRegistersSsa(graph, operationsOfBlocks, noRegisters);
 
 			operationsBlocksPostOrder.clear(); // free some memory
 
@@ -97,15 +100,28 @@ public final class AssemblerGenerator {
 		new LinearScanRegisterAllocation(operationsBlocksPostOrder).allocateRegisters(debugRegisterAllocation, noRegisters);
 	}
 
-	private static void allocateRegistersSsa(Graph graph, HashMap<Block, ArrayList<AssemblerOperation>> operationsOfBlocks) {
-		RegisterAllocationPolicy policy = RegisterAllocationPolicy.A_BP_B_12_13_14_15__DI_SI_D_C_8_9_10_11;
-
+	private static void allocateRegistersSsa(Graph graph, HashMap<Block, ArrayList<AssemblerOperation>> operationsOfBlocks, boolean noRegisters) {
 		AssemblerProgram program = new AssemblerProgram(graph, operationsOfBlocks);
 		SsaSpiller ssaSpiller = new SsaSpiller(program);
-		ssaSpiller.reduceRegisterPressure(policy.getNumberOfRegisters(Bit.BIT64));
+
+		RegisterAllocationPolicy policy;
+		if (noRegisters) {
+			policy = RegisterAllocationPolicy.NO_REGISTERS;
+			ssaSpiller.reduceRegisterPressure(policy.getNumberOfRegisters(Bit.BIT64), true);
+		} else {
+			try {
+				policy = RegisterAllocationPolicy.A_BP_B_12_13_14_15__DI_SI_D_C_8_9_10_11;
+				ssaSpiller.reduceRegisterPressure(policy.getNumberOfRegisters(Bit.BIT64), false);
+			} catch (MustSpillException e) {
+				SsaRegisterAllocator.debugln("Cannot use large policy, using small policy with spilling");
+				policy = RegisterAllocationPolicy.A_BP_B_12_13_14_15__DI_SI_D_C_8;
+				ssaSpiller.reduceRegisterPressure(policy.getNumberOfRegisters(Bit.BIT64), true);
+			}
+		}
+
 		SsaRegisterAllocator ssaAllocator = new SsaRegisterAllocator(program);
 		ssaAllocator.colorGraph(policy);
-		program.setDummyOperationsInformation(0);
+		program.setDummyOperationsInformation(ssaSpiller.getCurrentStackOffset());
 	}
 
 	private static ArrayList<AssemblerOperation> generateOperationsList(Graph graph, HashMap<Block, BlockInfo> blockInfos,

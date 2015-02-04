@@ -1,5 +1,6 @@
 package compiler.firm.backend.operations.dummy;
 
+import java.util.HashSet;
 import java.util.Set;
 
 import compiler.firm.backend.calling.CallingConvention;
@@ -12,7 +13,7 @@ public abstract class MethodStartEndOperation extends AssemblerOperation {
 	private final int stackItemSize;
 	protected final boolean isMain;
 	protected int stackOperationSize;
-	private Set<RegisterBundle> usedRegisters;
+	private Set<RegisterBundle> usedRegisters = new HashSet<>();
 
 	public MethodStartEndOperation(CallingConvention callingConvention, int stackItemSize, boolean isMain) {
 		this.callingConvention = callingConvention;

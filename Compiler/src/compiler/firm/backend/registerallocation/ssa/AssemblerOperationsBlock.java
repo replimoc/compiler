@@ -57,8 +57,7 @@ public class AssemblerOperationsBlock {
 		for (int i = operations.size() - 1; i >= 0; i--) {
 			AssemblerOperation operation = operations.get(i);
 
-			for (RegisterBased readRegisterBased : operation.getReadRegisters()) {
-				VirtualRegister readRegister = (VirtualRegister) readRegisterBased;
+			for (VirtualRegister readRegister : operation.getVirtualReadRegisters()) {
 				uses.add(readRegister);
 
 				if (!lastUsed.containsKey(readRegister)) // keep in mind, we go from the last operation to the first one

@@ -1,5 +1,7 @@
 package compiler.firm.backend.registerallocation.ssa;
 
+import java.util.HashSet;
+import java.util.Iterator;
 import java.util.Set;
 
 import compiler.firm.FirmUtils;
@@ -23,23 +25,32 @@ public class SsaSpiller {
 		this.program = program;
 	}
 
-	public void reduceRegisterPressure(final int availableRegisters) {
+	public void reduceRegisterPressure(final int availableRegisters, final boolean allowSpilling) {
+		currentStackOffset = 0; // reset state
+
 		FirmUtils.walkDominanceTree(program.getStartBlock(), new BlockWalker() {
 			@Override
 			public void visitBlock(Block block) {
-				reduceRegisterPressure(block, availableRegisters);
+				reduceRegisterPressure(block, availableRegisters, allowSpilling);
 			}
 		});
-
 	}
 
-	private void reduceRegisterPressure(Block block, int availableRegisters) {
+	private void reduceRegisterPressure(Block block, int availableRegisters, boolean allowSpilling) {
 		AssemblerOperationsBlock operationsBlock = program.getOperationsBlock(block);
-		Set<VirtualRegister> aliveRegisters = operationsBlock.getLiveIn();
+		if (operationsBlock == null) {
+			return;
+		}
+
+		Set<VirtualRegister> aliveRegisters = new HashSet<>(operationsBlock.getLiveIn());
+		for (Iterator<VirtualRegister> iterator = aliveRegisters.iterator(); iterator.hasNext();) {
+			if (iterator.next().isSpilled()) {
+				iterator.remove();
+			}
+		}
 
 		for (AssemblerOperation operation : operationsBlock.getOperations()) {
-			for (RegisterBased readRegisterBased : operation.getReadRegisters()) {
-				VirtualRegister readRegister = (VirtualRegister) readRegisterBased;
+			for (VirtualRegister readRegister : operation.getVirtualReadRegisters()) {
 				if (operationsBlock.isLastUsage(readRegister, operation)) {
 					aliveRegisters.remove(readRegister);
 				}
@@ -50,7 +61,10 @@ public class SsaSpiller {
 				if (writeRegister.getRegister() == null && !writeRegister.isSpilled()) {
 					aliveRegisters.add(writeRegister);
 
-					if (aliveRegisters.size() > availableRegisters) {
+					if (aliveRegisters.size() >= availableRegisters) {
+						if (!allowSpilling) {
+							throw new MustSpillException();
+						}
 						spillRegisterOf(aliveRegisters);
 					}
 				}
@@ -59,12 +73,25 @@ public class SsaSpiller {
 	}
 
 	private void spillRegisterOf(Set<VirtualRegister> aliveRegisters) {
-		System.err.println("need to spill");
+		VirtualRegister toBeSpilled = aliveRegisters.iterator().next();
+		for (VirtualRegister curr : aliveRegisters) {
+			if (toBeSpilled.getUsages().size() < curr.getUsages().size()) {
+				toBeSpilled = curr;
+			}
+		}
+
+		SsaRegisterAllocator.debugln("spilling register: VR_" + toBeSpilled.getNum());
+		aliveRegisters.remove(toBeSpilled);
+		spillRegister(toBeSpilled);
 	}
 
 	private void spillRegister(VirtualRegister spilledRegister) {
 		spilledRegister.setSpilled(true);
 		currentStackOffset += STACK_ITEM_SIZE;
 		spilledRegister.setStorage(new MemoryPointer(currentStackOffset, SingleRegister.RSP));
+	}
+
+	public int getCurrentStackOffset() {
+		return currentStackOffset;
 	}
 }

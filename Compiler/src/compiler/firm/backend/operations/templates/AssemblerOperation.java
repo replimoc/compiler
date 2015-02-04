@@ -1,11 +1,13 @@
 package compiler.firm.backend.operations.templates;
 
 import java.util.Collections;
+import java.util.HashSet;
 import java.util.Set;
 
 import compiler.firm.backend.registerallocation.ssa.AssemblerOperationsBlock;
 import compiler.firm.backend.storage.RegisterBased;
 import compiler.firm.backend.storage.RegisterBundle;
+import compiler.firm.backend.storage.VirtualRegister;
 
 public abstract class AssemblerOperation {
 
@@ -42,6 +44,17 @@ public abstract class AssemblerOperation {
 
 	public Set<RegisterBased> getReadRegisters() {
 		return Collections.emptySet();
+	}
+
+	public Set<VirtualRegister> getVirtualReadRegisters() {
+		Set<RegisterBased> readRegisters = getReadRegisters();
+		Set<VirtualRegister> virtualRegisters = new HashSet<>();
+		for (RegisterBased register : readRegisters) {
+			if (register instanceof VirtualRegister) {
+				virtualRegisters.add((VirtualRegister) register);
+			}
+		}
+		return virtualRegisters;
 	}
 
 	public Set<RegisterBased> getWriteRegisters() {

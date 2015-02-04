@@ -17,7 +17,7 @@ import firm.BlockWalker;
 import firm.nodes.Block;
 
 public class SsaRegisterAllocator {
-	public static boolean DEBUG = true;
+	private static boolean DEBUG = true;
 	private final AssemblerProgram program;
 
 	public SsaRegisterAllocator(AssemblerProgram program) {
@@ -32,19 +32,22 @@ public class SsaRegisterAllocator {
 			}
 		});
 
-		System.out.println("used registers (" + program.getUsedRegisters().size() + "): " + program.getUsedRegisters());
+		debugln("used registers (" + program.getUsedRegisters().size() + "): " + program.getUsedRegisters());
 	}
 
 	private void colorBlock(Block block, RegisterAllocationPolicy policy) {
 		AssemblerOperationsBlock operationsBlock = program.getOperationsBlock(block);
+		if (operationsBlock == null) {
+			return;
+		}
 
 		Set<RegisterBundle> freeRegisters = calculateFreeRegistersAtStart(policy, operationsBlock);
 
 		for (AssemblerOperation operation : operationsBlock.getOperations()) {
-			for (RegisterBased readRegisterBased : operation.getReadRegisters()) {
-				VirtualRegister readRegister = (VirtualRegister) readRegisterBased;
-				if (operationsBlock.isLastUsage(readRegister, operation)) {
-					freeRegisters.add(readRegister.getRegisterBundle());
+			for (VirtualRegister readRegister : operation.getVirtualReadRegisters()) {
+				if (!readRegister.isSpilled() && operationsBlock.isLastUsage(readRegister, operation)) {
+					if (policy.contains(readRegister.getRegisterBundle()))
+						freeRegisters.add(readRegister.getRegisterBundle());
 				}
 			}
 
@@ -104,6 +107,20 @@ public class SsaRegisterAllocator {
 			usedBundles.removeAll(freeRegisters);
 			((CallOperation) operation).addAliveRegisters(usedBundles);
 		}
+	}
+
+	public static void debugln(Object o) {
+		if (DEBUG)
+			System.out.println("DEBUG IG: " + o);
+	}
+
+	public static void debug(Object o) {
+		if (DEBUG)
+			System.out.print(o);
+	}
+
+	public static void setDebuggingMode(boolean debug) {
+		DEBUG = debug;
 	}
 
 }

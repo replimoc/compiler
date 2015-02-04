@@ -18,10 +18,6 @@ public class MemoryPointer extends Storage {
 		this(offset, register, null, 0);
 	}
 
-	public MemoryPointer(RegisterBased register, RegisterBased factorRegister) {
-		this(0, register, factorRegister, 1);
-	}
-
 	public MemoryPointer(int offset, RegisterBased register, RegisterBased factorRegister, int factor) {
 		this.offset = offset;
 		this.register = register;
