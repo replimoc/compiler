@@ -61,7 +61,7 @@ public class SsaSpiller {
 				if (writeRegister.getRegister() == null && !writeRegister.isSpilled()) {
 					aliveRegisters.add(writeRegister);
 
-					if (aliveRegisters.size() >= availableRegisters) {
+					if (aliveRegisters.size() > availableRegisters) {
 						if (!allowSpilling) {
 							throw new MustSpillException();
 						}
