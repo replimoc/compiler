@@ -74,16 +74,24 @@ public class LoopFusionVisitor extends OptimizationVisitor<Node> {
 			LoopInfo loopInfo1 = calculateLoopInfo(block, content1, condition);
 
 			Node block2 = continueInfo.continueBlock;
-			if (backedges.containsValue(block2)) { // Next is also a loop
+			if (loopInfo1 != null && backedges.containsValue(block2)) { // Next is also a loop
 				HashMap<Block, Set<Node>> blockNodes = optimizationUtils.getBlockNodes();
 				Set<Node> nodes = blockNodes.get(block2);
 				Node condition2 = getLeavingNode(nodes);
 
+				if (!(condition2 instanceof Cond)) {
+					return;
+				}
+
 				LoopHeader continueInfo2 = getLoopContinueBlocks(condition2);
 				LoopInfo loopInfo2 = calculateLoopInfo(block2, continueInfo2.loopContentBlock, condition2);
-				Node content2 = continueInfo2.loopContentBlock;
 
-				if (loopInfo1.cycleCount == loopInfo2.cycleCount) {
+				EntityDetails entityDetails = programDetails.getEntityDetails(graph);
+
+				// TODO: Prove if loop header has side effects.
+				if (loopInfo2 != null && loopInfo1.cycleCount == loopInfo2.cycleCount &&
+						!entityDetails.getBlockInformation(continueInfo.loopContentBlock).hasSideEffects() &&
+						!entityDetails.getBlockInformation(continueInfo2.loopContentBlock).hasSideEffects()) {
 					LOCK = true;
 
 					// Set continue proj to continue after second loop
@@ -101,21 +109,25 @@ public class LoopFusionVisitor extends OptimizationVisitor<Node> {
 					Node newJmpToLoopHead = graph.newJmp(continueInfo2.loopContentBlock);
 					addReplacement(oldJmp, newJmpToLoopHead);
 
-					EntityDetails entityDetails = programDetails.getEntityDetails(graph);
-
 					// Correct mode m between loop bodys
 					Node lastModeM1 = entityDetails.getBlockInformation(continueInfo.loopContentBlock).getLastModeM();
 					BlockInformation loopBlockInfo2 = entityDetails.getBlockInformation(continueInfo2.loopContentBlock);
 					Node firstModeM2 = loopBlockInfo2.getFirstModeM();
 					Node lastModeM2 = loopBlockInfo2.getLastModeM();
-					firstModeM2.setPred(0, lastModeM1);
+					if (firstModeM2 == null) {
+						lastModeM2 = lastModeM1;
+					} else {
+						firstModeM2.setPred(0, lastModeM1);
+					}
 
 					// Correct phi in first loop head
-					for (Node node : blockNodes.get(block)) {
-						if (node.getMode().equals(Mode.getM()) && node instanceof Phi) {
-							for (int i = 0; i < node.getPredCount(); i++) {
-								if (node.getPred(i).equals(lastModeM1)) {
-									node.setPred(i, lastModeM2);
+					if (lastModeM1 != lastModeM2) {
+						for (Node node : blockNodes.get(block)) {
+							if (node.getMode().equals(Mode.getM()) && node instanceof Phi) {
+								for (int i = 0; i < node.getPredCount(); i++) {
+									if (node.getPred(i).equals(lastModeM1)) {
+										node.setPred(i, lastModeM2);
+									}
 								}
 							}
 						}
@@ -126,6 +138,7 @@ public class LoopFusionVisitor extends OptimizationVisitor<Node> {
 					Node loopHeaderModeM2 = entityDetails.getBlockInformation(block2).getLastModeM();
 
 					Node continueModeM = entityDetails.getBlockInformation(continueInfo2.continueBlock).getFirstModeM();
+
 					for (int i = 0; i < continueModeM.getPredCount(); i++) {
 						if (continueModeM.getPred(i).equals(loopHeaderModeM2)) {
 							continueModeM.setPred(i, loopHeaderModeM1);
