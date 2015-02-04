@@ -34,7 +34,7 @@ public class LoadStoreOptimiziationVisitor extends OptimizationVisitor<Node> {
 
 	private final ProgramDetails programDetails;
 
-	private Load lastLodeNode;
+	private Load lastLoadNode;
 	private Store lastStoreNode;
 
 	private boolean isSideEffectFree(Call node) {
@@ -77,6 +77,9 @@ public class LoadStoreOptimiziationVisitor extends OptimizationVisitor<Node> {
 			} else if (node.getPred(i) instanceof Load || node.getPred(i) instanceof Store) {
 				return node.getPred(i);
 			}
+			// else if (node.getPred(i) instanceof Call) {
+			// return node.getPred(i);
+			// }
 		}
 		return null;
 	}
@@ -205,7 +208,7 @@ public class LoadStoreOptimiziationVisitor extends OptimizationVisitor<Node> {
 	@Override
 	public void visit(Load load) {
 		// load - load optimization
-		if (existSavePathToLastMemNode(load, lastLodeNode) && sameMemoryAdress(load, lastLodeNode) && isAdressInSameBlock(load, lastLodeNode)) {
+		if (existSavePathToLastMemNode(load, lastLoadNode) && sameMemoryAdress(load, lastLoadNode) && isAdressInSameBlock(load, lastLoadNode)) {
 			// System.out.println(getMethodName(load) + ":" + load + " to " + lastLodeNode + " optimiziation");
 
 			for (Edge edge : BackEdges.getOuts(load)) {
@@ -213,11 +216,11 @@ public class LoadStoreOptimiziationVisitor extends OptimizationVisitor<Node> {
 					Node memProjPred = getMemProjPred(load);
 					edge.node.setPred(edge.pos, memProjPred);
 				} else {
-					edge.node.setPred(edge.pos, lastLodeNode);
+					edge.node.setPred(edge.pos, lastLoadNode);
 				}
 			}
 
-			uniteProjSuccessors(lastLodeNode);
+			uniteProjSuccessors(lastLoadNode);
 
 			addReplacement(load, load.getGraph().newBad(load.getMode()));
 		}
@@ -242,18 +245,18 @@ public class LoadStoreOptimiziationVisitor extends OptimizationVisitor<Node> {
 			addReplacement(load, load.getGraph().newBad(load.getMode()));
 		}
 
-		lastLodeNode = load;
+		lastLoadNode = load;
 	}
 
 	@Override
 	public void visit(Store store) {
 		// // store - store optimization
 		if (existSavePathToLastMemNode(store, lastStoreNode) && sameMemoryAdress(store, lastStoreNode)) {
-			// System.out.println(getMethodName(store) + ":" + store);
+			// System.out.println(getMethodName(store) + ":" + store + " to " + lastStoreNode);
 
 			store.setPred(0, lastStoreNode.getPred(0));
 
-			addReplacement(lastStoreNode, lastStoreNode.getGraph().newBad(lastStoreNode.getMode()));
+			// addReplacement(lastStoreNode, lastStoreNode.getGraph().newBad(lastStoreNode.getMode()));
 		}
 
 		lastStoreNode = store;
