@@ -1,6 +1,7 @@
 package compiler.firm.optimization.visitor;
 
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.Set;
 
 import compiler.firm.FirmUtils;
@@ -35,12 +36,20 @@ public class LoopFusionVisitor extends OptimizationVisitor<Node> {
 
 	private final ProgramDetails programDetails;
 
-	private static boolean LOCK = false;
+	private static Set<Cond> conditions = new HashSet<>();
 
 	private OptimizationUtils optimizationUtils;
 
 	public LoopFusionVisitor(ProgramDetails programDetails) {
 		this.programDetails = programDetails;
+	}
+
+	@Override
+	public void init(Graph graph) {
+		super.init(graph);
+		optimizationUtils = new OptimizationUtils(graph);
+		optimizationUtils.getInductionVariables();
+		optimizationUtils.getBlockNodes();
 	}
 
 	@Override
@@ -50,9 +59,6 @@ public class LoopFusionVisitor extends OptimizationVisitor<Node> {
 
 	@Override
 	public void visit(Start start) {
-		optimizationUtils = new OptimizationUtils(start.getGraph());
-		optimizationUtils.getInductionVariables(); // TODO: Move this to OptimizationUtils: Calculate induction variables
-		optimizationUtils.getBlockNodes();
 	}
 
 	@Override
@@ -60,15 +66,17 @@ public class LoopFusionVisitor extends OptimizationVisitor<Node> {
 		if (optimizationUtils == null)
 			return;
 
-		if (LOCK)
+		if (conditions.contains(condition))
 			return;
 
 		HashMap<Node, Node> backedges = optimizationUtils.getBackEdges();
 		Node block = condition.getBlock();
-		Graph graph = condition.getGraph();
 
 		if (backedges.containsValue(block)) {
 			LoopHeader continueInfo = getLoopContinueBlocks(condition);
+
+			if (continueInfo == null)
+				return;
 
 			Node content1 = continueInfo.loopContentBlock;
 			LoopInfo loopInfo1 = calculateLoopInfo(block, content1, condition);
@@ -84,15 +92,20 @@ public class LoopFusionVisitor extends OptimizationVisitor<Node> {
 				}
 
 				LoopHeader continueInfo2 = getLoopContinueBlocks(condition2);
+				if (continueInfo2 == null)
+					return;
+
 				LoopInfo loopInfo2 = calculateLoopInfo(block2, continueInfo2.loopContentBlock, condition2);
 
 				EntityDetails entityDetails = programDetails.getEntityDetails(graph);
 
 				// TODO: Prove if loop header has side effects.
 				if (loopInfo2 != null && loopInfo1.cycleCount == loopInfo2.cycleCount &&
+						entityDetails.getBlockInformation(block).getSideEffects() <= 1 &&
 						!entityDetails.getBlockInformation(continueInfo.loopContentBlock).hasSideEffects() &&
+						entityDetails.getBlockInformation(block2).getSideEffects() <= 1 &&
 						!entityDetails.getBlockInformation(continueInfo2.loopContentBlock).hasSideEffects()) {
-					LOCK = true;
+					conditions.add(condition);
 
 					// Set continue proj to continue after second loop
 					Proj oldProj = continueInfo.continueProj;
@@ -137,28 +150,49 @@ public class LoopFusionVisitor extends OptimizationVisitor<Node> {
 					Node loopHeaderModeM1 = entityDetails.getBlockInformation(block).getLastModeM();
 					Node loopHeaderModeM2 = entityDetails.getBlockInformation(block2).getLastModeM();
 
-					Node continueModeM = entityDetails.getBlockInformation(continueInfo2.continueBlock).getFirstModeM();
-
-					for (int i = 0; i < continueModeM.getPredCount(); i++) {
-						if (continueModeM.getPred(i).equals(loopHeaderModeM2)) {
-							continueModeM.setPred(i, loopHeaderModeM1);
+					for (Edge edge : BackEdges.getOuts(loopHeaderModeM2)) {
+						Node continueModeM = edge.node;
+						for (int i = 0; i < continueModeM.getPredCount(); i++) {
+							if (continueModeM.getPred(i).equals(loopHeaderModeM2)) {
+								continueModeM.setPred(i, loopHeaderModeM1);
+							}
 						}
 					}
 
 					addReplacement(loopHeaderModeM2, FirmUtils.newBad(loopHeaderModeM2));
 
+					int phiPredecessor = -1;
+					for (int i = 0; i < block2.getPredCount(); i++) {
+						if (block2.getPred(i).getBlock().equals(continueInfo2.loopContentBlock)) {
+							phiPredecessor = i;
+						}
+					}
+
 					// Move nodes of second loop head in to first loop head
 					for (Node node : blockNodes.get(block2)) {
+						if (node instanceof Phi) {
+							Node predecessor = getNextPredecessorWithOtherBlock(node, phiPredecessor);
+							if (!predecessor.getBlock().equals(continueInfo2.loopContentBlock)) {
+								addReplacement(node, predecessor);
+								continue;
+							}
+						}
 						node.setBlock(block);
 					}
 
 					// Remove second loop head
 					addReplacement(block2, FirmUtils.newBad(block2));
-
-					block2.getGraph().keepAlive(continueInfo2.loopContentBlock);
 				}
 			}
 		}
+	}
+
+	private Node getNextPredecessorWithOtherBlock(Node node, int predNum) {
+		Node block = node.getBlock();
+		while (node.getBlock().equals(block) && node instanceof Phi) {
+			node = node.getPred(predNum);
+		}
+		return node;
 	}
 
 	private LoopInfo calculateLoopInfo(Node block, Node loopBlock, Node condition) {
@@ -192,6 +226,9 @@ public class LoopFusionVisitor extends OptimizationVisitor<Node> {
 
 		for (Edge projEdge : BackEdges.getOuts(condition)) {
 			Proj proj = (Proj) projEdge.node;
+			if (BackEdges.getNOuts(proj) == 0)
+				return null;
+
 			Node successorBlock = FirmUtils.getFirstSuccessor(proj);
 
 			if (FirmUtils.blockPostdominates(condition.getBlock(), successorBlock)) {

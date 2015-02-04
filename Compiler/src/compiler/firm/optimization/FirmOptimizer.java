@@ -69,6 +69,7 @@ public final class FirmOptimizer {
 			OptimizationVisitor<T> visitor = visitorFactory.create();
 
 			BackEdges.enable(graph);
+			visitor.init(graph);
 			walkTopological(graph, workList, visitor);
 			workList(workList, visitor);
 			BackEdges.disable(graph);
