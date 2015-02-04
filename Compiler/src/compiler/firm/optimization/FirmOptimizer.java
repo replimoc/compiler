@@ -47,7 +47,7 @@ public final class FirmOptimizer {
 			finished &= optimize(CommonSubexpressionEliminationVisitor.FACTORY);
 			finished &= optimize(LoopInvariantVisitor.FACTORY(evaluateGraphs()));
 			finished &= optimize(StrengthReductionVisitor.FACTORY);
-			finished &= optimize(LoadStoreOptimiziationVisitor.FACTORY);
+			finished &= optimize(LoadStoreOptimiziationVisitor.FACTORY(evaluateGraphs()));
 			finished &= ObsoleteNodesEliminator.eliminateObsoleteParameters(evaluateGraphs());
 			finished &= ObsoleteNodesEliminator.eliminateObsoleteNodes(evaluateGraphs());
 			finished &= MethodInliner.inlineCalls(evaluateGraphs());
@@ -59,7 +59,7 @@ public final class FirmOptimizer {
 		ProgramDetails programDetails = new ProgramDetails();
 		programDetails.updateGraphs(Program.getGraphs());
 		return programDetails;
-		}
+	}
 
 	public static <T> boolean optimize(OptimizationVisitorFactory<T> visitorFactory) {
 		boolean finished = true;
@@ -140,8 +140,8 @@ public final class FirmOptimizer {
 			if (oldTarget != null && !oldTarget.equals(newTarget)) {
 				for (Edge e : BackEdges.getOuts(node)) {
 					workList.push(e.node);
-		}
-	}
+				}
+			}
 		}
 	}
 
@@ -153,7 +153,7 @@ public final class FirmOptimizer {
 			return targetValues.get(FirmUtils.getFirstSuccessor(node));
 		} else {
 			return targetValues.get(node);
-			}
 		}
-
 	}
+
+}
