@@ -91,7 +91,8 @@ public class AssemblerOperationsBlock {
 	}
 
 	public boolean calculateLiveInAndOut() {
-		int oldLiveInSize = liveOut.size();
+		int oldLiveOutSize = liveOut.size();
+		int oldLiveInSize = liveIn.size();
 
 		calculateLiveOut();
 
@@ -100,7 +101,7 @@ public class AssemblerOperationsBlock {
 		liveIn.addAll(liveOut);
 		liveIn.removeAll(kills);
 
-		return liveIn.size() != oldLiveInSize;
+		return liveOut.size() != oldLiveOutSize || liveIn.size() != oldLiveInSize;
 	}
 
 	private void calculateLiveOut() {
