@@ -82,9 +82,13 @@ public class GraphEvaluationVisitor extends AbstractFirmNodesVisitor {
 		ownDetails.addCallFromEntityInfo(callNode, new CallInformation(calledEntity, constantArguments));
 	}
 
-	private void collectEnd(Node node) {
+	private BlockInformation getBlockInformation(Node node) {
 		EntityDetails entityDetails = programDetails.getEntityDetails(node.getGraph().getEntity());
-		entityDetails.addBlockInfo(node.getBlock(), new BlockInformation(node));
+		return entityDetails.getBlockInformation(node.getBlock());
+	}
+
+	private void collectEnd(Node node) {
+		getBlockInformation(node).setEndNode(node);
 	}
 
 	@Override
@@ -108,12 +112,14 @@ public class GraphEvaluationVisitor extends AbstractFirmNodesVisitor {
 	@Override
 	public void visit(Load load) {
 		super.visit(load);
+		visitModeM(load);
 		ownDetails.setHasMemUsage();
 	}
 
 	@Override
 	public void visit(Store store) {
 		super.visit(store);
+		visitModeM(store);
 		ownDetails.setHasSideEffects();
 		ownDetails.setHasMemUsage();
 	}
@@ -121,12 +127,14 @@ public class GraphEvaluationVisitor extends AbstractFirmNodesVisitor {
 	@Override
 	public void visit(Div div) {
 		super.visit(div);
+		visitModeM(div);
 		ownDetails.setHasMemUsage();
 	}
 
 	@Override
 	public void visit(Mod mod) {
 		super.visit(mod);
+		visitModeM(mod);
 		ownDetails.setHasMemUsage();
 	}
 
@@ -141,6 +149,16 @@ public class GraphEvaluationVisitor extends AbstractFirmNodesVisitor {
 
 	@Override
 	protected void visitNode(Node node) {
+		if (node.getMode().equals(Mode.getM())) {
+			visitModeM(node);
+		}
 		numberOfNodes++;
+	}
+
+	private void visitModeM(Node node) {
+		BlockInformation blockInfo = getBlockInformation(node);
+		if (blockInfo.getFirstModeM() == null) // Set first if nothing is set
+			blockInfo.setFirstModeM(node);
+		blockInfo.setLastModeM(node);
 	}
 }

@@ -69,7 +69,12 @@ public class EntityDetails {
 	}
 
 	public BlockInformation getBlockInformation(Node block) {
-		return blockInformation.get(block);
+		BlockInformation blockInfo = blockInformation.get(block);
+		if (blockInfo == null) {
+			blockInfo = new BlockInformation();
+			blockInformation.put(block, blockInfo);
+		}
+		return blockInfo;
 	}
 
 	public void setNumberOfNodes(int numberOfNodes) {
