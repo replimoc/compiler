@@ -287,23 +287,21 @@ public class X8664AssemblerGenerationVisitor implements BulkPhiNodeVisitor {
 
 		Bit mode = StorageManagement.getMode(node);
 		RegisterBased leftArgument = storageManagement.getValue(left);
-		VirtualRegister eax = new VirtualRegister(mode, RegisterBundle._AX);
 		VirtualRegister temp1 = new VirtualRegister(mode);
 		VirtualRegister temp2 = new VirtualRegister(mode);
 		VirtualRegister temp3 = new VirtualRegister(mode);
 		VirtualRegister temp4 = new VirtualRegister(mode);
 		VirtualRegister temp5 = new VirtualRegister(mode);
 		VirtualRegister temp6 = new VirtualRegister(mode);
+		VirtualRegister temp7 = new VirtualRegister(mode);
 
 		addOperation(new MovOperation(leftArgument, temp1));
 		addOperation(new MovOperation(nodeComment, new Constant(m), temp2));
-		addOperation(new MovOperation(nodeComment, temp1, eax));
 
-		OneOperandImulOperation imull = new OneOperandImulOperation(nodeComment, eax, temp2);
+		OneOperandImulOperation imull = new OneOperandImulOperation(nodeComment, temp1, temp2, null, temp7);
 		addOperation(imull);
-		VirtualRegister edx = imull.getResultHigh();
 
-		addOperation(new AddOperation(nodeComment, temp1, edx, temp3));
+		addOperation(new AddOperation(nodeComment, temp1, temp7, temp3));
 		addOperation(new SarOperation(nodeComment, new Constant(l - 1), temp3, temp4));
 
 		addOperation(new SarOperation(nodeComment, new Constant(31), temp1, temp5));
@@ -433,8 +431,6 @@ public class X8664AssemblerGenerationVisitor implements BulkPhiNodeVisitor {
 
 	@Override
 	public void visit(Call node) {
-		addOperation(new Comment(node.toString()));
-
 		int predCount = node.getPredCount();
 		assert predCount >= 2 && node.getPred(1) instanceof Address : "Minimum for all calls";
 
@@ -461,7 +457,7 @@ public class X8664AssemblerGenerationVisitor implements BulkPhiNodeVisitor {
 			mode = StorageManagement.getMode(resultNode);
 		}
 
-		CallOperation callOperation = new CallOperation(mode, methodName, parameters, callingConvention, resultNode != null);
+		CallOperation callOperation = new CallOperation(node.toString(), mode, methodName, parameters, callingConvention, resultNode != null);
 		addOperation(callOperation);
 
 		if (resultNode != null) {

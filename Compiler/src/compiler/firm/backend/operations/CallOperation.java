@@ -30,18 +30,19 @@ public class CallOperation extends AssemblerOperation implements CurrentlyAliveR
 	private final String name;
 	private final List<Parameter> parameters;
 	private final CallingConvention callingConvention;
-	private final List<RegisterBundle> usedRegisters = new LinkedList<>();
+	private final List<RegisterBundle> aliveRegisters = new LinkedList<>();
 	private final VirtualRegister resultRegister;
 
-	public CallOperation(Bit mode, String name, List<Parameter> parameters, CallingConvention callingConvention, boolean hasResult) {
+	public CallOperation(String comment, Bit mode, String name, List<Parameter> parameters, CallingConvention callingConvention, boolean hasResult) {
+		super(comment);
 		this.name = name;
 		this.parameters = parameters;
 		this.callingConvention = callingConvention;
-		this.usedRegisters.add(RegisterBundle._SP);
+		this.aliveRegisters.add(RegisterBundle._SP);
 
 		if (hasResult) {
 			this.resultRegister = new VirtualRegister(mode);
-			resultRegister.addPreferedRegister(new VirtualRegister(RegisterBundle._AX.getRegister(mode)));
+			resultRegister.addPreferedRegister(new VirtualRegister(callingConvention.getReturnRegister().getRegister(mode)));
 		} else {
 			this.resultRegister = null;
 		}
@@ -78,8 +79,13 @@ public class CallOperation extends AssemblerOperation implements CurrentlyAliveR
 
 	private List<RegisterBundle> getSaveRegisters() {
 		List<RegisterBundle> saveRegisters = new ArrayList<>();
+
+		if (resultRegister != null && !resultRegister.isSpilled() && resultRegister.getRegisterBundle() == callingConvention.getReturnRegister()) {
+			aliveRegisters.remove(callingConvention.getReturnRegister()); // if the result register is the return register, this was not alive before
+		}
+
 		for (RegisterBundle register : callingConvention.callerSavedRegisters()) {
-			if (this.usedRegisters.contains(register)) {
+			if (this.aliveRegisters.contains(register)) {
 				saveRegisters.add(register);
 			}
 		}
@@ -175,14 +181,14 @@ public class CallOperation extends AssemblerOperation implements CurrentlyAliveR
 			if (!(storage instanceof SingleRegister)) {
 				continue;
 			}
-			this.usedRegisters.add(((SingleRegister) storage).getRegisterBundle());
+			this.aliveRegisters.add(((SingleRegister) storage).getRegisterBundle());
 		}
 	}
 
 	@Override
 	public void setAliveRegisters(Set<RegisterBundle> registers) {
-		this.usedRegisters.clear();
-		this.usedRegisters.addAll(registers);
+		this.aliveRegisters.clear();
+		this.aliveRegisters.addAll(registers);
 	}
 
 	public static class Parameter {

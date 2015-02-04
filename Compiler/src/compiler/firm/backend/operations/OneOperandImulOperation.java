@@ -1,32 +1,16 @@
 package compiler.firm.backend.operations;
 
-import compiler.firm.backend.Bit;
-import compiler.firm.backend.operations.templates.DoubleSourceDoubleDestinationOperation;
+import compiler.firm.backend.operations.templates.FixedTwoSourceTwoDestinationOperation;
 import compiler.firm.backend.storage.RegisterBased;
-import compiler.firm.backend.storage.RegisterBundle;
-import compiler.firm.backend.storage.VirtualRegister;
 
-public class OneOperandImulOperation extends DoubleSourceDoubleDestinationOperation {
+public class OneOperandImulOperation extends FixedTwoSourceTwoDestinationOperation {
 
-	public OneOperandImulOperation(String comment, RegisterBased rax, RegisterBased multiplier) {
-		super(comment, rax, multiplier, new VirtualRegister(Bit.BIT32, RegisterBundle._AX), new VirtualRegister(Bit.BIT32, RegisterBundle._DX));
+	public OneOperandImulOperation(String comment, RegisterBased operand, RegisterBased multiplier, RegisterBased resultLow, RegisterBased resultHigh) {
+		super(comment, operand, multiplier, resultLow, resultHigh);
 	}
 
 	@Override
 	public String getOperationString() {
-		return String.format("\timul %s", getMultiplier());
+		return String.format("\timul %s", source2);
 	}
-
-	public RegisterBased getMultiplier() {
-		return source2;
-	}
-
-	public VirtualRegister getResultLow() {
-		return destination1;
-	}
-
-	public VirtualRegister getResultHigh() {
-		return destination2;
-	}
-
 }
