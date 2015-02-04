@@ -261,28 +261,26 @@ public class OptimizationUtils {
 			for (Map.Entry<Node, Node> entry : inductionVariables.entrySet()) {
 				if (entry.getKey().getBlock().equals(block.getPred(0).getBlock())) {
 
-					if (getPhiCount((Block) backedges.get(block)) > 2)
-						return null;
 					// induction variable for this block
 					Node node = entry.getValue();
 					Node loopCounter = entry.getKey();
 
 					Const incr = getIncrementConstantOrNull(node);
 					if (incr == null)
-						return null;
+						continue;
 
 					if (!compares.containsKey(block.getPred(0).getBlock()))
-						return null;
+						continue;
 					Cmp cmp = compares.get(block.getPred(0).getBlock());
 					if (cmp == null)
-						return null;
+						continue;
 					Const constCmp = getConstantCompareNodeOrNull(cmp.getLeft(), cmp.getRight());
 					if (constCmp == null)
-						return null;
+						continue;
 
 					Const startingValue = getStartingValueOrNull(entry);
 					if (startingValue == null)
-						return null;
+						continue;
 
 					// get cycle count for loop
 					int cycleCount = getCycleCount(cmp, constCmp, startingValue, incr);
@@ -374,17 +372,6 @@ public class OptimizationUtils {
 		default:
 			return 0;
 		}
-	}
-
-	private int getPhiCount(Block block) {
-		// count phi's in inside this block
-		int count = 0;
-		for (Node node : blockNodes.get(block)) {
-			if (node instanceof Phi) {
-				count++;
-			}
-		}
-		return count;
 	}
 
 }
