@@ -68,6 +68,9 @@ public class UnrollingVisitor extends OptimizationVisitor<Node> {
 			return;
 
 		for (OptimizationUtils.LoopInfo loopInfo : loopInfos) {
+			if (getPhiCount((Block) backedges.get(block)) > 2)
+				return;
+
 			// negative cycle count means the counter is descending
 			if (!(loopInfo.cycleCount == Integer.MIN_VALUE) && Math.abs(loopInfo.cycleCount) < 2)
 				return;
@@ -134,6 +137,17 @@ public class UnrollingVisitor extends OptimizationVisitor<Node> {
 			finishedLoops.add(block);
 
 		}
+	}
+
+	private int getPhiCount(Block block) {
+		// count phi's in inside this block
+		int count = 0;
+		for (Node node : blockNodes.get(block)) {
+			if (node instanceof Phi) {
+				count++;
+			}
+		}
+		return count;
 	}
 
 	private boolean replaceLoopIfPossible(OptimizationUtils.LoopInfo loopInfo, long value, Block block) {
