@@ -435,6 +435,8 @@ public class X8664AssemblerGenerationVisitor implements BulkPhiNodeVisitor {
 
 	@Override
 	public void visit(Call node) {
+		addOperation(new Comment(node.toString()));
+
 		int predCount = node.getPredCount();
 		assert predCount >= 2 && node.getPred(1) instanceof Address : "Minimum for all calls";
 

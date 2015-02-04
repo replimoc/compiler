@@ -1,4 +1,4 @@
-package compiler.firm.backend.operations.dummy;
+package compiler.firm.backend;
 
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -16,31 +16,28 @@ import compiler.firm.backend.storage.RegisterBased;
 import compiler.firm.backend.storage.Storage;
 import compiler.utils.Pair;
 
-public final class PhiGraphSolver {
+public final class TransferGraphSolver {
 
-	private PhiGraphSolver() {
+	private TransferGraphSolver() {
 	}
 
-	public static List<String> calculateOperations(List<Pair<Storage, RegisterBased>> phiRelations) {
+	public static List<String> calculateOperations(List<Pair<Storage, RegisterBased>> transferFunctions) {
 		List<String> result = new ArrayList<>();
-		List<String> constantResult = new ArrayList<>();
+		List<String> saveMoves = new ArrayList<>();
 
 		HashMap<Key, List<RegisterBased>> phiFromToGraph = new LinkedHashMap<>(); // graph with directed out-edges
 		HashMap<Key, RegisterBased> phiToFromGraph = new LinkedHashMap<>(); // graph with directed in-edges
 
-		for (Pair<Storage, RegisterBased> curr : phiRelations) { // handle constant assignments and calculate graph for register assignments
+		for (Pair<Storage, RegisterBased> curr : transferFunctions) { // handle constant assignments and calculate graph for register assignments
 			Storage source = curr.first;
 			RegisterBased destination = curr.second;
 
 			if (source == destination) {
 				// do nothing for moves from register into itself
 
-			} else if (source instanceof Constant) {
-				constantResult.addAll(Arrays.asList(new MovOperation("phi: " + destination.getComment(),
+			} else if (source instanceof Constant || source instanceof MemoryPointer) {
+				saveMoves.addAll(Arrays.asList(new MovOperation("transfer: " + destination.getComment(),
 						source, destination).toStringWithSpillcode()));
-
-			} else if (source instanceof MemoryPointer) {
-				throw new RuntimeException("No memory pointer expected here!");
 
 			} else { // add this relation to the graph
 				List<RegisterBased> destinations = phiFromToGraph.get(new Key((RegisterBased) source));
@@ -68,7 +65,8 @@ public final class PhiGraphSolver {
 				RegisterBased currentSource = phiToFromGraph.get(destinationKey);
 				Key sourceKey = new Key(currentSource);
 
-				result.addAll(Arrays.asList(new MovOperation("phi: " + currentSource.getComment() + " -> " + destinationKey.register.getComment(),
+				result.addAll(Arrays.asList(new MovOperation("transfer: " + currentSource.getComment() + " -> "
+						+ destinationKey.register.getComment(),
 						currentSource, destinationKey.register).toStringWithSpillcode()));
 				phiToFromGraph.remove(destinationKey); // remove this edge
 				List<RegisterBased> changedTargets = phiFromToGraph.remove(sourceKey);
@@ -102,7 +100,7 @@ public final class PhiGraphSolver {
 			}
 		}
 
-		result.addAll(constantResult);
+		result.addAll(saveMoves);
 
 		return result;
 	}

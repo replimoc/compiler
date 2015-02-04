@@ -8,6 +8,7 @@ import java.util.List;
 import java.util.Set;
 
 import compiler.firm.backend.Bit;
+import compiler.firm.backend.TransferGraphSolver;
 import compiler.firm.backend.calling.CallingConvention;
 import compiler.firm.backend.operations.templates.AssemblerOperation;
 import compiler.firm.backend.storage.Constant;
@@ -17,6 +18,7 @@ import compiler.firm.backend.storage.RegisterBundle;
 import compiler.firm.backend.storage.SingleRegister;
 import compiler.firm.backend.storage.Storage;
 import compiler.firm.backend.storage.VirtualRegister;
+import compiler.utils.Pair;
 import compiler.utils.Utils;
 
 public class CallOperation extends AssemblerOperation {
@@ -116,6 +118,7 @@ public class CallOperation extends AssemblerOperation {
 			}
 		}
 
+		List<Pair<Storage, RegisterBased>> parameterMoves = new LinkedList<>();
 		// Copy parameters in calling registers
 		for (int i = 0; i < parameters.size() && i < callingRegisters.length; i++) {
 			Parameter source = parameters.get(i);
@@ -126,8 +129,12 @@ public class CallOperation extends AssemblerOperation {
 				storage = registerStackLocations.get(storage.getRegisterBundle());
 			}
 			storage.setTemporaryStackOffset(maxStackOffset);
-			result.add(new MovOperation(storage, register.getRegister(source.mode)).toString());
-			storage.setTemporaryStackOffset(0);
+
+			parameterMoves.add(new Pair<Storage, RegisterBased>(storage, register.getRegister(source.mode)));
+		}
+		result.addAll(TransferGraphSolver.calculateOperations(parameterMoves));
+		for (Pair<Storage, RegisterBased> currMove : parameterMoves) {
+			currMove.first.setTemporaryStackOffset(0);
 		}
 
 		result.add(toString());

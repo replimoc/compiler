@@ -5,6 +5,7 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 
+import compiler.firm.backend.TransferGraphSolver;
 import compiler.firm.backend.operations.templates.AssemblerBitOperation;
 import compiler.firm.backend.storage.RegisterBased;
 import compiler.firm.backend.storage.Storage;
@@ -25,7 +26,7 @@ public class PhiReadOperation extends AssemblerBitOperation {
 
 	@Override
 	public String[] toStringWithSpillcode() {
-		List<String> result = PhiGraphSolver.calculateOperations(phiRelations);
+		List<String> result = TransferGraphSolver.calculateOperations(phiRelations);
 		String[] resultString = new String[result.size()];
 		result.toArray(resultString);
 		return resultString;
