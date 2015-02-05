@@ -8,7 +8,6 @@ import compiler.firm.backend.operations.MovOperation;
 import compiler.firm.backend.operations.templates.AssemblerOperation;
 import compiler.firm.backend.storage.Constant;
 import compiler.firm.backend.storage.RegisterBased;
-import compiler.firm.backend.storage.RegisterBundle;
 import compiler.firm.backend.storage.Storage;
 import compiler.firm.backend.storage.VirtualRegister;
 
@@ -100,11 +99,5 @@ public class StorageManagement {
 				storeValue(edgeNode, register);
 			}
 		}
-	}
-
-	public VirtualRegister placeValue(Node node, RegisterBundle register) {
-		VirtualRegister destinationRegister = new VirtualRegister(StorageManagement.getMode(node), register);
-		addOperation(new MovOperation(getStorage(node), destinationRegister));
-		return destinationRegister;
 	}
 }

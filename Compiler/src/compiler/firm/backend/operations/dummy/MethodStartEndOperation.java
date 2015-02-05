@@ -15,7 +15,8 @@ public abstract class MethodStartEndOperation extends AssemblerOperation {
 	protected int stackOperationSize;
 	private Set<RegisterBundle> usedRegisters = new HashSet<>();
 
-	public MethodStartEndOperation(CallingConvention callingConvention, int stackItemSize, boolean isMain) {
+	public MethodStartEndOperation(String comment, CallingConvention callingConvention, int stackItemSize, boolean isMain) {
+		super(comment);
 		this.callingConvention = callingConvention;
 		this.stackItemSize = stackItemSize;
 		this.isMain = isMain;

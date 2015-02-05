@@ -25,7 +25,6 @@ import compiler.firm.backend.operations.MovOperation;
 import compiler.firm.backend.operations.NegOperation;
 import compiler.firm.backend.operations.NotOperation;
 import compiler.firm.backend.operations.OneOperandImulOperation;
-import compiler.firm.backend.operations.RetOperation;
 import compiler.firm.backend.operations.SarOperation;
 import compiler.firm.backend.operations.ShlOperation;
 import compiler.firm.backend.operations.ShrOperation;
@@ -399,26 +398,26 @@ public class X8664AssemblerGenerationVisitor implements BulkPhiNodeVisitor {
 	}
 
 	@Override
-	public void visit(Block node, List<Phi> phis) {
+	public void visit(Block block, List<Phi> phis) {
 		finishOperationsListOfBlock(currentBlock); // finish operations list for old block
-		currentBlock = node;
+		currentBlock = block;
 
-		Graph graph = node.getGraph();
-		String methodName = getMethodName(node);
+		Graph graph = block.getGraph();
+		String methodName = getMethodName(block);
 
-		if (node.equals(graph.getStartBlock())) {
+		if (block.equals(graph.getStartBlock())) {
 			addOperation(new LabelOperation(methodName, true));
-			methodStart(node);
+			methodStart(block);
 		}
 
-		if (node.equals(graph.getEndBlock())) {
+		if (block.equals(graph.getEndBlock())) {
 			if (!Utils.isWindows()) {
 				addOperation(new SizeOperation(methodName));
 			}
 		}
 
 		// prepend a label before each block
-		addOperation(getBlockLabel(node));
+		addOperation(getBlockLabel(block));
 
 		if (!phis.isEmpty()) {
 			Set<RegisterBased> phiRegisters = new HashSet<>();
@@ -642,12 +641,11 @@ public class X8664AssemblerGenerationVisitor implements BulkPhiNodeVisitor {
 
 	@Override
 	public void visit(Return node) {
+		RegisterBased returnValue = null;
 		if (node.getPredCount() > 1) {
-			// Store return value in EAX register
-			storageManagement.placeValue(node.getPred(1), RegisterBundle._AX);
+			returnValue = storageManagement.getValue(node.getPred(1));
 		}
-		addOperation(new MethodEndOperation(callingConvention, STACK_ITEM_SIZE, isMain(node.getGraph())));
-		addOperation(new RetOperation(getMethodName(node)));
+		addOperation(new MethodEndOperation(getMethodName(node), callingConvention, STACK_ITEM_SIZE, returnValue, isMain(node.getGraph())));
 	}
 
 	@Override
@@ -718,7 +716,8 @@ public class X8664AssemblerGenerationVisitor implements BulkPhiNodeVisitor {
 	}
 
 	private void methodStart(Node node) {
-		MethodStartOperation startOperation = new MethodStartOperation(callingConvention, STACK_ITEM_SIZE, isMain(node.getGraph()));
+		MethodStartOperation startOperation = new MethodStartOperation(getMethodName(node), callingConvention, STACK_ITEM_SIZE,
+				isMain(node.getGraph()));
 		addOperation(startOperation);
 
 		Node args = node.getGraph().getArgs();
@@ -732,9 +731,7 @@ public class X8664AssemblerGenerationVisitor implements BulkPhiNodeVisitor {
 
 				if (proj.getNum() < parameterRegisters.length) {
 					RegisterBundle registerBundle = parameterRegisters[proj.getNum()];
-					VirtualRegister storage = new VirtualRegister(mode, registerBundle);
-					startOperation.addWriteRegister(storage);
-					addOperation(new MovOperation(storage, location));
+					startOperation.addWriteRegister(registerBundle.getRegister(mode), (VirtualRegister) location);
 				} else {
 					// + 2 for dynamic link
 					MemoryPointer storage = new StackPointer(startOperation, STACK_ITEM_SIZE * (proj.getNum() - parameterRegisters.length));
