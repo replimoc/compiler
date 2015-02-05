@@ -58,7 +58,9 @@ public class StorageManagement {
 		} else {
 			result = new VirtualRegister(getMode(node), node.toString());
 			addOperation(new MovOperation(node.toString(), storage, result));
-			addStorage(node, result);
+			if (!(storage instanceof Constant)) {
+				addStorage(node, result);
+			}
 		}
 		return result;
 	}
