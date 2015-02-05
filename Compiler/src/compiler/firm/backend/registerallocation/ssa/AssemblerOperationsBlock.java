@@ -129,15 +129,17 @@ public class AssemblerOperationsBlock {
 	@Override
 	public String toString() {
 		StringBuilder builder = new StringBuilder();
-		builder.append(block + ": \t liveOut: ");
 
-		for (VirtualRegister register : liveOut) {
+		builder.append(block);
+		builder.append(":  \t  liveIn: ");
+
+		for (VirtualRegister register : liveIn) {
 			builder.append("VR_" + register.getNum() + ", ");
 		}
 
-		builder.append("     liveIn: ");
+		builder.append("  \t  liveOut: ");
 
-		for (VirtualRegister register : liveIn) {
+		for (VirtualRegister register : liveOut) {
 			builder.append("VR_" + register.getNum() + ", ");
 		}
 
