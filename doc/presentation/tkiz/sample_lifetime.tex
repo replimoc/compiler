@@ -1,0 +1,17 @@
+
+\draw[helplinegrey] (aass)		-- ++ (7.5cm, 0);
+\draw[helplinegrey] (acond)		-- ++ (7.5cm, 0);
+\draw[helplinegrey] (acondjmp1)	-- ++ (7.5cm, 0);
+\draw[helplinegrey] (acondjmp2)	-- ++ (7.5cm, 0);
+\draw[helplinegrey] (ifass)		-- ++ (7.5cm, 0);
+\draw[helplinegrey] (ifjmp)		-- ++ (7.5cm, 0);
+\draw[helplinegrey] (elseass)		-- ++ (7.5cm, 0);
+\draw[helplinegrey] (elsejmp)		-- ++ (7.5cm, 0);
+\draw[helplinegrey] (endnode)		-- ++ (7.5cm, 0);
+
+\draw[reglifetime] ($(reg1.south)+(0,-0.25)$) -- ++ ($(elseass.west)-(aass.west)$);
+\draw[reglifetime] ($(reg2.south)+(0,-0.25)-(aass.west)+(ifass.west)$) -- ++ ($(endnode.west)-(ifass.west)$);
+\draw[reglifetime] ($(reg3.south)+(0,-0.25)-(aass.west)+(elseass.west)$) --	++ ($(endnode.west)-(elseass.west)$);
+\draw[reglifetime] ($(reg4.south)+(0,-0.25)-(aass.west)+(endnode.west)$) -- ++ (0,-0.3);
+\draw[reglifetime,dotted] ($(reg4.south)+(0,-0.25)-(aass.west)+(endnode.west)-(0,0.29)$) -- ++ (0,-0.3);
+

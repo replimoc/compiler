@@ -31,6 +31,7 @@
 
 \usetikzlibrary{shadows,arrows,positioning,matrix,calc}
 \definecolor{kit}{RGB}{0,150,130}
+\definecolor{kitblue}{RGB}{73,48,164}
 \definecolor{firmred}{RGB}{255,153,153}
 \definecolor{firmblue}{RGB}{162,153,246}
 \definecolor{firmgreen}{RGB}{153,255,153}
@@ -72,6 +73,14 @@
 		color=grey
 	},
 	resultregister/.style={ },
+	graphnode/.style={
+		circle,
+		draw=black
+	},
+	colorbox/.style={
+		minimum width=4mm,
+		minimum height=4mm,
+	},
 }
 
 %\usenavigationsymbols
@@ -146,29 +155,11 @@ $R2 \leftarrow add 2, R1$ $\Rightarrow$ $mov\ R1, R2$; $add\ 2, R2$ }
 }
 
 \visible<3-> {
-\node []	at (13,2.5)				(reg1)		{ $R1$ };
-\node [right=5mm of reg1]				(reg2)		{ $R2$ };
-\node [right=5mm of reg2]				(reg3)		{ $R3$ };
-\node [right=5mm of reg3]				(reg4)		{ $R4$ };
+	\input{tkiz/sample_lifetime_headline.tex}
 }
 
 \visible<4-> {
-\draw[helplinegrey] (aass)		-- ++ (7.5cm, 0);
-\draw[helplinegrey] (acond)		-- ++ (7.5cm, 0);
-\draw[helplinegrey] (acondjmp1)	-- ++ (7.5cm, 0);
-\draw[helplinegrey] (acondjmp2)	-- ++ (7.5cm, 0);
-\draw[helplinegrey] (ifass)		-- ++ (7.5cm, 0);
-\draw[helplinegrey] (ifjmp)		-- ++ (7.5cm, 0);
-\draw[helplinegrey] (elseass)		-- ++ (7.5cm, 0);
-\draw[helplinegrey] (elsejmp)		-- ++ (7.5cm, 0);
-\draw[helplinegrey] (endnode)		-- ++ (7.5cm, 0);
-
-\draw[reglifetime] ($(reg1.south)+(0,-0.25)$) -- ++ ($(elseass.west)-(aass.west)$);
-\draw[reglifetime] ($(reg2.south)+(0,-0.25)-(aass.west)+(ifass.west)$) -- ++ ($(endnode.west)-(ifass.west)$);
-\draw[reglifetime] ($(reg3.south)+(0,-0.25)-(aass.west)+(elseass.west)$) --	++ ($(endnode.west)-(elseass.west)$);
-\draw[reglifetime] ($(reg4.south)+(0,-0.25)-(aass.west)+(endnode.west)$) -- ++ (0,-0.3);
-\draw[reglifetime,dotted] ($(reg4.south)+(0,-0.25)-(aass.west)+(endnode.west)-(0,0.29)$) -- ++ (0,-0.3);
-
+	\input{tkiz/sample_lifetime.tex}
 }
 
 \visible<5-> {
@@ -181,4 +172,42 @@ $R2 \leftarrow add 2, R1$ $\Rightarrow$ $mov\ R1, R2$; $add\ 2, R2$ }
 \end{tikzpicture}
 
 \end{frame}
+
+
+\begin{frame}
+  \frametitle{Linear Scan: Extension Graph Coloring}
+
+\begin{tikzpicture}
+	\input{tkiz/sample_lifetime_headline.tex}
+	\input{tkiz/sample_lifetime.tex}
+\visible<2-3> {
+	\node[graphnode,below right=0.5cm and 2cm of reg4]	(graphr1)	{ $R1$ };
+	\node[graphnode,right=2cm of graphr1]			(graphr2)	{ $R2$ };
+	\node[graphnode,below=2cm of graphr1]			(graphr3)	{ $R3$ };
+	\node[graphnode,right=2cm of graphr3]			(graphr4)	{ $R4$ };
+}
+\visible<4-> {
+	\node[graphnode,fill=kit!40,below right=0.5cm and 2cm of reg4]	(graphr1)	{ $R1$ };
+	\node[graphnode,fill=kitblue!40,right=2cm of graphr1]			(graphr2)	{ $R2$ };
+	\node[graphnode,fill=kit!40,below=2cm of graphr1]			(graphr3)	{ $R3$ };
+	\node[graphnode,fill=kit!40,right=2cm of graphr3]			(graphr4)	{ $R4$ };
+}
+
+\visible<3-> {
+	\draw (graphr1) -- (graphr2);
+	\draw (graphr3) -- (graphr2);
+}
+
+\visible<5-> {
+\node[colorbox,fill=kit!40,below=0.5cm of graphr3] (color1)	{ };
+\node[colorbox,fill=kitblue!40,below=0.2cm of color1] (color2)	{ };
+
+\node[right=0.5cm of color1] () { \textbf{\%rax} };
+\node[right=0.5cm of color2] () { \textbf{\%rbx} };
+}
+
+\end{tikzpicture}
+
+\end{frame}
+
 \end{document}
