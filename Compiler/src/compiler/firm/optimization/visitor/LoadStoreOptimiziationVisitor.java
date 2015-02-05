@@ -100,12 +100,9 @@ public class LoadStoreOptimiziationVisitor extends OptimizationVisitor<Node> {
 		while (currentNode != null && currentNode.equals(memoryNode) == false) {
 			if (currentNode.getBlock().equals(memoryNode.getBlock()) == false) { // nodes are not in the same block
 				return false;
-			} else if (currentNode instanceof Call && isSideEffectFree((Call) currentNode) == false) { // allow only call that are side effect free
+			} else if (currentNode instanceof Call && isSideEffectFree((Call) currentNode) == false) { // allow only calls that are side effect free
 				return false;
 			} else if (currentNode instanceof Store) { // if store then no opt possible
-				// if (sameMemoryAdress(node, currentNode)) {
-				// return false;
-				// }
 				return false;
 			}
 
@@ -131,32 +128,6 @@ public class LoadStoreOptimiziationVisitor extends OptimizationVisitor<Node> {
 
 		// second successor is memory adress
 		if (node1.getPred(1).equals(node2.getPred(1)) == false) {
-			return false;
-		}
-
-		// System.out.println("sameMemoryAdress:" + node1.getPred(1) + ":" + node2.getPred(1));
-
-		// third is value
-
-		return true;
-	}
-
-	private boolean isAdressInSameBlock(Node node1, Node node2) {
-		// check if the two memory nodes are dependent on equal nodes
-
-		// if unequal number of nodes, then quit
-		if (node1.getPredCount() < 2 || node2.getPredCount() < 2) {
-			return false;
-		}
-
-		// first node is memory
-
-		// second successor is memory adress
-		if (node1.getPred(1).equals(node2.getPred(1)) == false) {
-			return false;
-		}
-
-		if (node1.getPred(1).getBlock().equals(node1.getBlock()) == false || node2.getPred(1).getBlock().equals(node2.getBlock()) == false) {
 			return false;
 		}
 
@@ -200,7 +171,7 @@ public class LoadStoreOptimiziationVisitor extends OptimizationVisitor<Node> {
 	@Override
 	public void visit(Load load) {
 		// load - load optimization
-		if (existSavePathToLastMemNode(load, lastLoadNode) && sameMemoryAdress(load, lastLoadNode) && isAdressInSameBlock(load, lastLoadNode)) {
+		if (existSavePathToLastMemNode(load, lastLoadNode) && sameMemoryAdress(load, lastLoadNode)) {
 			// System.out.println(getMethodName(load) + ":" + load + " to " + lastLodeNode + " optimiziation");
 
 			for (Edge edge : BackEdges.getOuts(load)) {
@@ -217,7 +188,7 @@ public class LoadStoreOptimiziationVisitor extends OptimizationVisitor<Node> {
 			addReplacement(load, load.getGraph().newBad(load.getMode()));
 		}
 		// store - load optimization
-		else if (existSavePathToLastMemNode(load, lastStoreNode) && sameMemoryAdress(load, lastStoreNode) && isAdressInSameBlock(load, lastStoreNode)) {
+		else if (existSavePathToLastMemNode(load, lastStoreNode) && sameMemoryAdress(load, lastStoreNode)) {
 			// System.out.println(getMethodName(load) + ":" + load + " to " + lastStoreNode + " optimiziation");
 
 			for (Edge edge : BackEdges.getOuts(load)) {
@@ -248,6 +219,7 @@ public class LoadStoreOptimiziationVisitor extends OptimizationVisitor<Node> {
 
 			store.setPred(0, lastStoreNode.getPred(0));
 
+			// we aren't allowed to mark lastStoreNode bad, as some nodes coult be dependent on it
 			// addReplacement(lastStoreNode, lastStoreNode.getGraph().newBad(lastStoreNode.getMode()));
 		}
 
