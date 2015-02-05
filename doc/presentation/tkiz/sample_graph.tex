@@ -1,0 +1,15 @@
+\node [cfn,anchor=south] at (2,2)				(ass)		{ $b \leftarrow 12$ };
+\node [cfn,cond,below=0.75cm of ass]				(cond)		{ $condition$ };
+
+\node [cfn,below left=0.75cm and -0.75cm of cond]		(left)		{ $a_1 \leftarrow 2 + b$ };
+\node [cfn,below right=0.75cm and -0.75cm of cond]		(right)		{ $a_2 \leftarrow 4 + b$ };
+
+\node [cfn,phi,below=2cm of cond]				(phi)		{ $r \leftarrow \Phi(a_1, a_2)$ };
+
+
+\draw[->,cf]	(ass) to (cond);
+\draw[->,cf]	(cond) to (left);
+\draw[->,cf]	(cond) to (right);
+\draw[->,cf]	(left) to (phi);
+\draw[->,cf]	(right) to (phi);
+
