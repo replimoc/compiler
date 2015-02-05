@@ -259,6 +259,70 @@ $R2 \leftarrow add 2, R1$ $\Rightarrow$ $mov\ R1, R2$; $add\ 2, R2$ }
 
 \begin{frame}
   \frametitle{Block Ordering}
+\begin{tikzpicture}
+\node [cfn,anchor=south] at (2,2)				(ass)		{ $x \leftarrow 0$ };
+\node [cfn,cond,below=0.75cm of ass]				(cond)		{ $x < 100$ };
+
+\node [cfn,below right=0.75cm and 0cm of cond]		(right)		{ $x \leftarrow x + 1$ };
+
+\node [cfn,below=2cm of cond]					(print)		{ $print\ x$ };
+
+
+\draw[->,cf]	(ass) to (cond);
+\draw[->,cf]	(cond) to (print);
+\draw[->,cf]	(cond) to (right);
+\draw[<-,cf]	(cond) -- ++(30mm,0) -- ++(0,-20mm) -- ++(-10mm,0) -- (right);
+
+\visible<2-> {
+	\node [left=0mm of ass] {b1:};
+	\node [left=0mm of cond] {b2:};
+	\node [left=0mm of right] {b3:};
+	\node [left=0mm of print] {b4:};
+}
+
+\visible<3-3> {
+\node [ass]	at (10,2)					(aass)		{ $x \leftarrow 0$ };
+\node [ass,below=-0.1cm of aass]				(aajmp)		{ $jmp\ b2$ };
+\node [ass,below=-0.1cm of aajmp]				(acond)		{ $cmp\ x, 100$ };
+\node [ass,below=-0.1cm of acond]				(acondjmp1)	{ $jl\ b3$ };
+\node [ass,below=-0.1cm of acondjmp1]				(acondjmp2)	{ $jmp\ b4$ };
+\node [ass,below=-0.1cm of acondjmp2]				(loopass)	{ $x \leftarrow x + 1$ };
+\node [ass,below=-0.1cm of loopass]				(loopjmp)	{ $jmp\ b2$ };
+\node [ass,below=-0.1cm of loopjmp]				(endnode)	{ $print\ x$ };
+
+\node [asslabel,align=right,left=0 of aass]					(b1label)	{$b1:$};
+\node [asslabel,align=right,left=0 of acond]				(b2label)	{$b2:$};
+\node [asslabel,align=right,left=0 of loopass]				(b3label)	{$b3:$};
+\node [asslabel,align=right,left=0 of endnode]				(b4label)	{$b4:$};
+}
+
+\visible<4-> {
+\node [ass]	at (10,2)					(aass)		{ $x \leftarrow 0$ };
+\node [ass,below=-0.1cm of aass]				(aajmp)		{ $jmp\ b2$ };
+\node [ass,below=-0.1cm of aajmp]				(loopass)	{ $x \leftarrow x + 1$ };
+\node [ass,below=-0.1cm of loopass]				(loopjmp)	{ $jmp\ b2$ };
+\visible<5-> {
+	\draw[color=red,line width=0.3mm]			(loopjmp.west) -- ++(1.35cm,0);
+}
+\node [ass,below=-0.1cm of loopjmp]				(acond)		{ $cmp\ x, 100$ };
+\node [ass,below=-0.1cm of acond]				(acondjmp1)	{ $jl\ b3$ };
+\node [ass,below=-0.1cm of acondjmp1]				(acondjmp2)	{ $jmp\ b4$ };
+\visible<5-> {
+	\draw[color=red,line width=0.3mm]			(acondjmp2.west) -- ++(1.35cm,0);
+}
+\node [ass,below=-0.1cm of acondjmp2]				(endnode)	{ $print\ x$ };
+
+\node [asslabel,align=right,left=0 of aass]					(b1label)	{$b1:$};
+\node [asslabel,align=right,left=0 of acond]				(b2label)	{$b2:$};
+\node [asslabel,align=right,left=0 of loopass]				(b3label)	{$b3:$};
+\node [asslabel,align=right,left=0 of endnode]				(b4label)	{$b4:$};
+}
+
+\end{tikzpicture}
+\begin{itemize}
+\visible<4-> {\item Move condition to the end of the loop}
+\visible<5-> {\item Peephole-Optimizations: Eliminate unneccessary jumps}
+\end{itemize}
 \end{frame}
 
 \begin{frame}
@@ -268,10 +332,11 @@ $R2 \leftarrow add 2, R1$ $\Rightarrow$ $mov\ R1, R2$; $add\ 2, R2$ }
 \begin{itemize}
 	\item Firm makes (good) work!
 	\begin{itemize}
-		\item Especially with Windows
+		\item Especially on Windows
 	\end{itemize}
 	\item Testing is important
-	\item GIT is nice, but its usage can be tricky for beginners
+	\item GIT is nice, but using it can be tricky for beginners
+	\item Team coordination substantially
 \end{itemize}
 
 \visible<2> {
@@ -285,10 +350,17 @@ $R2 \leftarrow add 2, R1$ $\Rightarrow$ $mov\ R1, R2$; $add\ 2, R2$ }
 
 \begin{frame}
   \frametitle{Implemented Optimizations}
+\begin{itemize}
+\item tbd
+\end{itemize}
 \end{frame}
 
 \begin{frame}
   \frametitle{Facts and Numbers}
+Lines of code\\
+Commits\\
+Hours spend (way to much)\\
+tbd
 \end{frame}
 
 \end{document}
