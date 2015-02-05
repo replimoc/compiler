@@ -36,7 +36,7 @@ public class LoopFusionVisitor extends OptimizationVisitor<Node> {
 
 	private final ProgramDetails programDetails;
 
-	private static Set<Cond> conditions = new HashSet<>();
+	private Set<Cond> conditions = new HashSet<>();
 
 	private OptimizationUtils optimizationUtils;
 
