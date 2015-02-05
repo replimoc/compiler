@@ -10,7 +10,7 @@ import compiler.firm.backend.storage.Storage;
 
 public class DivOperation extends FixedTwoSourceTwoDestinationOperation {
 
-	public DivOperation(RegisterBased dividend, RegisterBased divisor, RegisterBased result, RegisterBased remainder) {
+	public DivOperation(Storage dividend, Storage divisor, RegisterBased result, RegisterBased remainder) {
 		super(null, dividend, divisor, result, remainder);
 	}
 

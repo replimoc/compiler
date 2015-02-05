@@ -217,7 +217,6 @@ public class X8664AssemblerGenerationVisitor implements BulkPhiNodeVisitor {
 		addOperation(new TestOperation(nodeComment, temp1, temp1));
 		addOperation(new CmovSignOperation(nodeComment, temp2, temp1, temp3));
 		int pow = 31 - Integer.numberOfLeadingZeros(absDivisor);
-		assert pow > 0;
 		addOperation(new SarOperation(new Constant(pow), temp3, temp4));
 
 		VirtualRegister result = temp4;
@@ -559,7 +558,7 @@ public class X8664AssemblerGenerationVisitor implements BulkPhiNodeVisitor {
 	}
 
 	private void visitDivMod(Node left, Node right, VirtualRegister result, VirtualRegister remainder) {
-		addOperation(new DivOperation(storageManagement.getValue(left), storageManagement.getValue(right), result, remainder));
+		addOperation(new DivOperation(storageManagement.getStorage(left), storageManagement.getStorage(right), result, remainder));
 	}
 
 	@Override

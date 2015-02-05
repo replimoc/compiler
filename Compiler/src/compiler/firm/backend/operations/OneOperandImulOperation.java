@@ -10,7 +10,7 @@ import compiler.firm.backend.storage.Storage;
 
 public class OneOperandImulOperation extends FixedTwoSourceTwoDestinationOperation {
 
-	public OneOperandImulOperation(String comment, RegisterBased operand, RegisterBased multiplier, RegisterBased resultLow, RegisterBased resultHigh) {
+	public OneOperandImulOperation(String comment, Storage operand, Storage multiplier, RegisterBased resultLow, RegisterBased resultHigh) {
 		super(comment, operand, multiplier, resultLow, resultHigh);
 	}
 

@@ -24,13 +24,13 @@ import compiler.utils.Utils;
 
 public abstract class FixedTwoSourceTwoDestinationOperation extends AssemblerOperation implements CurrentlyAliveRegistersNeeding {
 
-	private final RegisterBased source1;
-	private final RegisterBased source2;
+	private final Storage source1;
+	private final Storage source2;
 	private final RegisterBased destination1;
 	private final RegisterBased destination2;
 	private final Set<RegisterBundle> aliveRegisters = new HashSet<>();
 
-	public FixedTwoSourceTwoDestinationOperation(String comment, RegisterBased source1, RegisterBased source2, RegisterBased destination1,
+	public FixedTwoSourceTwoDestinationOperation(String comment, Storage source1, Storage source2, RegisterBased destination1,
 			RegisterBased destination2) {
 		super(comment);
 
@@ -67,18 +67,31 @@ public abstract class FixedTwoSourceTwoDestinationOperation extends AssemblerOpe
 		List<String> commandList = new LinkedList<String>();
 
 		int temporaryStackOffset = 0;
-		if (aliveRegisters.contains(RegisterBundle._AX)) {
+		MemoryPointer raxSaved = null;
+		boolean source2OnRax = !source2.isSpilled() && source2.getRegisterBundle() == RegisterBundle._AX;
+		if (aliveRegisters.contains(RegisterBundle._AX) || source2OnRax) {
 			commandList.add(new PushOperation(SingleRegister.RAX).toString());
 			temporaryStackOffset += CallOperation.STACK_ITEM_SIZE;
+			raxSaved = new MemoryPointer(0, SingleRegister.RSP);
 		}
 		boolean source2OnRdx = !source2.isSpilled() && source2.getRegisterBundle() == RegisterBundle._DX;
-		Storage usedSource2 = source2;
+		MemoryPointer rdxSaved = null;
 		if (aliveRegisters.contains(RegisterBundle._DX) || source2OnRdx) {
 			commandList.add(new PushOperation(SingleRegister.RDX).toString());
 			temporaryStackOffset += CallOperation.STACK_ITEM_SIZE;
-			if (source2OnRdx) {
-				usedSource2 = new MemoryPointer(0, SingleRegister.RSP);
-			}
+			rdxSaved = new MemoryPointer(0, SingleRegister.RSP);
+
+			if (raxSaved != null)
+				raxSaved.setTemporaryStackOffset(CallOperation.STACK_ITEM_SIZE);
+		}
+
+		Storage usedSource2;
+		if (source2OnRax) {
+			usedSource2 = raxSaved;
+		} else if (source2OnRdx) {
+			usedSource2 = rdxSaved;
+		} else {
+			usedSource2 = source2;
 		}
 
 		source1.setTemporaryStackOffset(temporaryStackOffset);
@@ -88,7 +101,7 @@ public abstract class FixedTwoSourceTwoDestinationOperation extends AssemblerOpe
 		commandList.addAll(getOperationString(source2.getMode(), usedSource2));
 		source2.setTemporaryStackOffset(0);
 
-		if (source2OnRdx) {
+		if ((!aliveRegisters.contains(RegisterBundle._AX) && source2OnRax) || (!aliveRegisters.contains(RegisterBundle._DX) && source2OnRdx)) {
 			commandList.add(new AddOperation(new Constant(CallOperation.STACK_ITEM_SIZE), SingleRegister.RSP, SingleRegister.RSP).toString());
 		}
 		if (destination1 != null) {
@@ -114,7 +127,7 @@ public abstract class FixedTwoSourceTwoDestinationOperation extends AssemblerOpe
 
 	@Override
 	public Set<RegisterBased> getReadRegisters() {
-		return Utils.unionSet(source1, source2);
+		return Utils.unionSet(source1.getReadRegisters(), source2.getReadRegisters());
 	}
 
 	@Override
