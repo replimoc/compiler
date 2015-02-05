@@ -9,10 +9,10 @@ import java.util.List;
 import java.util.Map.Entry;
 
 import com.sun.jna.Pointer;
-
 import compiler.utils.ExecutionFailedException;
 import compiler.utils.Pair;
 import compiler.utils.Utils;
+
 import firm.BackEdges;
 import firm.Backend;
 import firm.BlockWalker;
@@ -66,7 +66,10 @@ public final class FirmUtils {
 		for (Entity entity : Program.getGlobalType().getMembers()) {
 			entity.setLdIdent(entity.getLdName().replaceAll("[()\\[\\];]", "_"));
 		}
-		Util.lowerSels();
+
+		for (Graph graph : Program.getGraphs()) {
+			Util.lowerSels(graph);
+		}
 	}
 
 	private static void layoutClass(ClassType cls) {
@@ -212,10 +215,11 @@ public final class FirmUtils {
 
 	public static void walkDominanceTree(Block block, BlockWalker walker) {
 		walker.visitBlock(block);
-	
+
 		for (Pointer dominatedPtr = binding_irdom.get_Block_dominated_first(block.ptr); dominatedPtr != null; dominatedPtr = binding_irdom
 				.get_Block_dominated_next(dominatedPtr)) {
 			Block dominatedBlock = new Block(dominatedPtr);
+			// System.out.println(dominatedBlock);
 			walkDominanceTree(dominatedBlock, walker);
 		}
 	}
