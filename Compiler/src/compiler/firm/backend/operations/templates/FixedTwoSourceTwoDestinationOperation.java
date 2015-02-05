@@ -7,20 +7,25 @@ import java.util.LinkedList;
 import java.util.List;
 import java.util.Set;
 
+import compiler.firm.backend.Bit;
+import compiler.firm.backend.operations.AddOperation;
 import compiler.firm.backend.operations.CallOperation;
 import compiler.firm.backend.operations.MovOperation;
 import compiler.firm.backend.operations.PopOperation;
 import compiler.firm.backend.operations.PushOperation;
+import compiler.firm.backend.storage.Constant;
+import compiler.firm.backend.storage.MemoryPointer;
 import compiler.firm.backend.storage.RegisterBased;
 import compiler.firm.backend.storage.RegisterBundle;
 import compiler.firm.backend.storage.SingleRegister;
+import compiler.firm.backend.storage.Storage;
 import compiler.firm.backend.storage.VirtualRegister;
 import compiler.utils.Utils;
 
-public class FixedTwoSourceTwoDestinationOperation extends AssemblerOperation implements CurrentlyAliveRegistersNeeding {
+public abstract class FixedTwoSourceTwoDestinationOperation extends AssemblerOperation implements CurrentlyAliveRegistersNeeding {
 
 	private final RegisterBased source1;
-	protected final RegisterBased source2;
+	private final RegisterBased source2;
 	private final RegisterBased destination1;
 	private final RegisterBased destination2;
 	private final Set<RegisterBundle> aliveRegisters = new HashSet<>();
@@ -48,8 +53,8 @@ public class FixedTwoSourceTwoDestinationOperation extends AssemblerOperation im
 	}
 
 	@Override
-	public String getOperationString() {
-		return String.format("\tidiv %s", source2);
+	public final String getOperationString() {
+		return null;
 	}
 
 	@Override
@@ -66,18 +71,26 @@ public class FixedTwoSourceTwoDestinationOperation extends AssemblerOperation im
 			commandList.add(new PushOperation(SingleRegister.RAX).toString());
 			temporaryStackOffset += CallOperation.STACK_ITEM_SIZE;
 		}
-		if (aliveRegisters.contains(RegisterBundle._DX)) {
+		boolean source2OnRdx = !source2.isSpilled() && source2.getRegisterBundle() == RegisterBundle._DX;
+		Storage usedSource2 = source2;
+		if (aliveRegisters.contains(RegisterBundle._DX) || source2OnRdx) {
 			commandList.add(new PushOperation(SingleRegister.RDX).toString());
 			temporaryStackOffset += CallOperation.STACK_ITEM_SIZE;
+			if (source2OnRdx) {
+				usedSource2 = new MemoryPointer(0, SingleRegister.RSP);
+			}
 		}
 
 		source1.setTemporaryStackOffset(temporaryStackOffset);
 		commandList.add(new MovOperation(source1, SingleRegister.EAX).toString());
 		source1.setTemporaryStackOffset(0);
 		source2.setTemporaryStackOffset(temporaryStackOffset);
-		commandList.add(getOperationString());
+		commandList.addAll(getOperationString(source2.getMode(), usedSource2));
 		source2.setTemporaryStackOffset(0);
 
+		if (source2OnRdx) {
+			commandList.add(new AddOperation(new Constant(CallOperation.STACK_ITEM_SIZE), SingleRegister.RSP, SingleRegister.RSP).toString());
+		}
 		if (destination1 != null) {
 			destination1.setTemporaryStackOffset(temporaryStackOffset);
 			commandList.addAll(Arrays.asList(new MovOperation(SingleRegister.EAX, destination1).toString()));
@@ -96,6 +109,8 @@ public class FixedTwoSourceTwoDestinationOperation extends AssemblerOperation im
 
 		return commandList.toArray(new String[0]);
 	}
+
+	public abstract List<String> getOperationString(Bit mode, Storage source2);
 
 	@Override
 	public Set<RegisterBased> getReadRegisters() {

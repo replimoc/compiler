@@ -219,7 +219,6 @@ public final class FirmUtils {
 		for (Pointer dominatedPtr = binding_irdom.get_Block_dominated_first(block.ptr); dominatedPtr != null; dominatedPtr = binding_irdom
 				.get_Block_dominated_next(dominatedPtr)) {
 			Block dominatedBlock = new Block(dominatedPtr);
-			// System.out.println(dominatedBlock);
 			walkDominanceTree(dominatedBlock, walker);
 		}
 	}
