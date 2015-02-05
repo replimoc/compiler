@@ -104,14 +104,14 @@ public class FixedTwoSourceTwoDestinationOperation extends AssemblerOperation im
 
 	@Override
 	public Set<RegisterBased> getWriteRegisters() {
-		if (source1 == null && destination2 == null) {
+		if (destination1 == null && destination2 == null) {
 			return Collections.emptySet();
-		} else if (source1 == null) {
+		} else if (destination1 == null) {
 			return Utils.unionSet(destination2);
 		} else if (destination2 == null) {
-			return Utils.unionSet(source1);
+			return Utils.unionSet(destination1);
 		} else {
-			return Utils.unionSet(destination2, source1);
+			return Utils.unionSet(destination2, destination1);
 		}
 	}
 
