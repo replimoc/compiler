@@ -80,8 +80,8 @@ public class CallOperation extends AssemblerOperation implements CurrentlyAliveR
 	private List<RegisterBundle> getSaveRegisters() {
 		List<RegisterBundle> saveRegisters = new ArrayList<>();
 
-		if (resultRegister != null && !resultRegister.isSpilled() && resultRegister.getRegisterBundle() == callingConvention.getReturnRegister()) {
-			aliveRegisters.remove(callingConvention.getReturnRegister()); // if the result register is the return register, this was not alive before
+		if (resultRegister != null && !resultRegister.isSpilled()) {
+			aliveRegisters.remove(resultRegister.getRegisterBundle()); // the result register is only alive because it will be written here
 		}
 
 		for (RegisterBundle register : callingConvention.callerSavedRegisters()) {
