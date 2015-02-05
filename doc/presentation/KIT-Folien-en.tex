@@ -50,6 +50,10 @@
 		color=firmblue,
 		line width=1pt,
 	},
+	cfb/.style={
+		color=firmblue,
+		line width=2pt,
+	},
 	asslabel/.style={
 		rectangle,
 		text width=1.5cm,
@@ -117,7 +121,6 @@
 \begin{tikzpicture}
 % Graph
 \input{tkiz/sample_graph.tex}
-
 
 \visible<2-> {
 % Arrow
@@ -208,6 +211,50 @@ $R2 \leftarrow add 2, R1$ $\Rightarrow$ $mov\ R1, R2$; $add\ 2, R2$ }
 
 \end{tikzpicture}
 
+\end{frame}
+
+\begin{frame}
+  \frametitle{SSA-Based Register Allocation}
+
+\begin{center}
+\begin{tikzpicture}
+% Graph
+\input{tkiz/sample_graph_phi.tex}
+
+\visible<2-> {\node[above right=-3mm and 5mm of ass]	(ass-life-in) {in: \{\} }; }
+\visible<2> {\node[below right=-3mm and 5mm of ass]	(ass-life-out) 		{out: \{$b$\} };}
+\visible<3-> {\node[below right=-3mm and 5mm of ass]	(ass-life-out) 		{out: \{$b \leftarrow$ \%rax\} };}
+
+\visible<2> {\node[above right=-3mm and 5mm of cond]	(cond-life-in) 		{in: \{$b$\} };}
+\visible<3-> {\node[above right=-3mm and 5mm of cond]	(cond-life-in)		{in: \{$b \leftarrow$ \%rax\} };}
+\visible<2> {\node[below right=-3mm and 5mm of cond]	(cond-life-out) 	{out: \{$b$\} };}
+\visible<3-> {\node[below right=-3mm and 5mm of cond]	(cond-life-out) 	{out: \{$b \leftarrow$ \%rax\} };}
+
+\visible<2> {\node[above right=-5mm and -50mm of left]	(left-life-in) 	{in: \{$b$\} };}
+\visible<3-> {\node[above right=-5mm and -50mm of left]	(left-life-in) 	{in: \{$b \leftarrow$ \%rax\} };}
+\visible<2-> {\node[below right=-5mm and -50mm of left]	(left-life-out) 	{out: \{\} }; }
+
+\visible<2> {\node[above right=-5mm and 5mm of right]	(right-life-in) 	{in: \{$b$\} };}
+\visible<3-> {\node[above right=-5mm and 5mm of right]	(right-life-in) 	{in: \{$b \leftarrow$ \%rax\} };}
+\visible<2-> { \node[below right=-5mm and 5mm of right]	(right-life-out) 	{out: \{\} }; }
+
+\visible<2-> { \node[above right=-3mm and 5mm of phi]	(phi-life-in) 		{in: \{\} }; }
+\visible<2-6> {\node[below right=-3mm and 5mm of phi]	(phi-life-out) 		{out: \{$r$\} };}
+\visible<7-> {\node[below right=-3mm and 5mm of phi]	(phi-life-out) 		{out: \{$r \leftarrow$ \%rax\} };}
+
+\visible<3-> { \draw[->,cfb]	(ass) to (cond); }
+\visible<4-> { \draw[->,cfb]	(cond) to (left); }
+\visible<5-> { \draw[->,cfb]	(cond) to (right); }
+\visible<6-> {
+	\draw[->,cfb,dashed]	(cond) to (phi);
+	\draw[->,cfb]	(left) to (phi);
+	\draw[->,cfb]	(right) to (phi);
+}
+
+
+
+\end{tikzpicture}
+\end{center}
 \end{frame}
 
 \end{document}
