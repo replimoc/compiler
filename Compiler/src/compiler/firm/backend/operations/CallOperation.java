@@ -25,7 +25,7 @@ import compiler.utils.Pair;
 import compiler.utils.Utils;
 
 public class CallOperation extends AssemblerOperation implements CurrentlyAliveRegistersNeeding {
-	private static final int STACK_ITEM_SIZE = 8;
+	public static final int STACK_ITEM_SIZE = 8;
 
 	private final String name;
 	private final List<Parameter> parameters;
@@ -158,8 +158,10 @@ public class CallOperation extends AssemblerOperation implements CurrentlyAliveR
 
 		result.add(toString());
 		if (resultRegister != null) {
+			resultRegister.setTemporaryStackOffset(maxStackOffset);
 			result.addAll(Arrays.asList(new MovOperation(callingConvention.getReturnRegister().getRegister(resultRegister.getMode()), resultRegister)
-					.toStringWithSpillcode()));
+					.toString()));
+			resultRegister.setTemporaryStackOffset(0);
 		}
 
 		if (numberOfStackParameters > 0) {

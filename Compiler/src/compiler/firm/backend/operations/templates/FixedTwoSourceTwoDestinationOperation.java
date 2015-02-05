@@ -7,6 +7,7 @@ import java.util.LinkedList;
 import java.util.List;
 import java.util.Set;
 
+import compiler.firm.backend.operations.CallOperation;
 import compiler.firm.backend.operations.MovOperation;
 import compiler.firm.backend.operations.PopOperation;
 import compiler.firm.backend.operations.PushOperation;
@@ -60,20 +61,32 @@ public class FixedTwoSourceTwoDestinationOperation extends AssemblerOperation im
 
 		List<String> commandList = new LinkedList<String>();
 
-		if (aliveRegisters.contains(RegisterBundle._AX))
+		int temporaryStackOffset = 0;
+		if (aliveRegisters.contains(RegisterBundle._AX)) {
 			commandList.add(new PushOperation(SingleRegister.RAX).toString());
-		if (aliveRegisters.contains(RegisterBundle._DX))
+			temporaryStackOffset += CallOperation.STACK_ITEM_SIZE;
+		}
+		if (aliveRegisters.contains(RegisterBundle._DX)) {
 			commandList.add(new PushOperation(SingleRegister.RDX).toString());
+			temporaryStackOffset += CallOperation.STACK_ITEM_SIZE;
+		}
 
+		source1.setTemporaryStackOffset(temporaryStackOffset);
 		commandList.add(new MovOperation(source1, SingleRegister.EAX).toString());
-
+		source1.setTemporaryStackOffset(0);
+		source2.setTemporaryStackOffset(temporaryStackOffset);
 		commandList.add(getOperationString());
+		source2.setTemporaryStackOffset(0);
 
 		if (destination1 != null) {
-			commandList.addAll(Arrays.asList(new MovOperation(SingleRegister.EAX, destination1).toStringWithSpillcode()));
+			destination1.setTemporaryStackOffset(temporaryStackOffset);
+			commandList.addAll(Arrays.asList(new MovOperation(SingleRegister.EAX, destination1).toString()));
+			destination1.setTemporaryStackOffset(0);
 		}
 		if (destination2 != null) {
-			commandList.addAll(Arrays.asList(new MovOperation(SingleRegister.EDX, destination2).toStringWithSpillcode()));
+			destination2.setTemporaryStackOffset(temporaryStackOffset);
+			commandList.addAll(Arrays.asList(new MovOperation(SingleRegister.EDX, destination2).toString()));
+			destination2.setTemporaryStackOffset(0);
 		}
 
 		if (aliveRegisters.contains(RegisterBundle._DX))
