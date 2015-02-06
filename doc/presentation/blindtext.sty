@@ -1,0 +1,553 @@
+%%
+%% This is file `blindtext.sty',
+%% generated with the docstrip utility.
+%%
+%% The original source files were:
+%%
+%% blindtext.dtx  (with options: `package')
+%% blindtext_texts.dtx  (with options: `package')
+%% blindtext.dtx  (with options: `packageend')
+%% ----------------------------------------------------------------------
+%% The original file is loadable from CTAN on:
+%% tex-archive/latex/contrib/blindtext
+%% 
+%% Name of contribution: blindtext
+%% Name and email:       Knut Lickert <knut@lickert.net>
+%% Location on CTAN:     tex-archive/macros/latex/contrib/blindtext
+%% Summary description:  Package for writing text
+%% License type:         Free
+%% 
+%% Announcement text:
+%% blindtext.sty:
+%%     Style to create text.
+%%     Can be used to create examples with a lot text to become a feeling
+%%     for the look of classes, packages...
+%% 
+%%     There are macros to create dummy text, dummy lists and
+%%     dummy documents with sections, text and lists.
+%% 
+%% For more information visit
+%%     http://tex.lickert.net/packages/blindtext/index.html
+%% ----------------------------------------------------------------------
+\def\blindfileversion{V1.9b}
+\def\blindfiledate{2009/06/14}
+%%
+%% \CharacterTable
+%%  {Upper-case    \A\B\C\D\E\F\G\H\I\J\K\L\M\N\O\P\Q\R\S\T\U\V\W\X\Y\Z
+%%   Lower-case    \a\b\c\d\e\f\g\h\i\j\k\l\m\n\o\p\q\r\s\t\u\v\w\x\y\z
+%%   Digits        \0\1\2\3\4\5\6\7\8\9
+%%   Exclamation   \!     Double quote  \"     Hash (number) \#
+%%   Dollar        \$     Percent       \%     Ampersand     \&
+%%   Acute accent  \'     Left paren    \(     Right paren   \)
+%%   Asterisk      \*     Plus          \+     Comma         \,
+%%   Minus         \-     Point         \.     Solidus       \/
+%%   Colon         \:     Semicolon     \;     Less than     \<
+%%   Equals        \=     Greater than  \>     Question mark \?
+%%   Commercial at \@     Left bracket  \[     Backslash     \\
+%%   Right bracket \]     Circumflex    \^     Underscore    \_
+%%   Grave accent  \`     Left brace    \{     Vertical bar  \|
+%%   Right brace   \}     Tilde         \~}
+%%
+\NeedsTeXFormat{LaTeX2e}
+\ProvidesPackage{blindtext}[\blindfiledate\space\blindfileversion\space%
+                 blindtext-Package]
+\RequirePackage{xspace}
+\providecommand{\frqq}{}
+\providecommand{\flqq}{}
+\newcommand{\blind@checklanguage}{%
+  \@ifundefined{blindtext@\languagename}{%
+    \PackageWarning{blindtext}{\languagename\space not
+      defined, using English instead.\MessageBreak
+    }%
+    \selectlanguage{english}%
+  }{}%
+}
+\newcounter{blindtext}\setcounter{blindtext}{1}
+\newcounter{Blindtext}\setcounter{Blindtext}{5}
+\newcount\blind@countxx
+\newcommand{\blindtext}[1][\value{blindtext}]{%
+  \blind@checklanguage
+  \blind@countxx=1 %
+  \loop
+    \blindtext@text\
+  \ifnum\blind@countxx<#1\advance\blind@countxx by 1 %
+  \repeat
+}
+\newcount\blindtext@numBlindtext
+\newcommand{\Blindtext}[1][\value{Blindtext}]{%
+  \blind@checklanguage
+  \blindtext@numBlindtext=#1\relax
+  \blind@Blindtext
+}
+\newcount\blind@countyy
+\newcommand{\blind@Blindtext}[1][\value{blindtext}]{%
+  \blind@countyy=1 %
+  \loop
+    {\blindtext@parstart\blindtext[{#1}]\blindtext@parend\par}%
+  \ifnum\blind@countyy<\blindtext@numBlindtext\advance\blind@countyy by 1 %
+  \repeat
+}
+\newcommand{\blindtext@parstart}{}   % Text at start of paragraph
+\newcommand{\blindtext@parend}{}     % Text at end   of paragraph
+\newcommand{\parstart}[1]{\renewcommand{\blindtext@parstart}{#1}}
+\newcommand{\parend}[1]{\renewcommand{\blindtext@parend}{#1}}
+\newif\ifblind@long\blind@longfalse
+\newif\ifblind@optional\blind@optionalfalse
+\newcounter{blindlist}
+\newcounter{blindlistlevel}% Up tu X level
+\newcounter{blindlist@level}% internal counter
+\newcount\blind@listitem
+%% ^^A-----------------------------------------------------------
+\newcommand{\blindlist}[1]{%
+  \blind@checklanguage
+  \def\blind@listtype{#1}%
+  \setcounter{blind@levelcount}{1}%
+  \blind@list
+}
+\newcommand{\blind@list}[1][5]{%
+  \setcounter{blindlist}{#1}%
+  \stepcounter{blindlist@level}% depth of list
+  \blind@listitem=1 %
+  \begin{\blind@listtype}%
+    \blind@items
+  \end{\blind@listtype}%
+  \blind@longfalse
+  \blind@optionalfalse
+}
+\newcommand{\blindlistlist}[2][4]{%
+  \setcounter{blindlistlevel}{#1}%
+  \setcounter{blindlist@level}{0}% deepest reached level
+  \setcounter{blind@levelcount}{1}% actual level for printout
+  \def\blind@listtype{#2}%
+  \blind@list
+}
+\newcommand{\blindlistlistoptional}{%
+  \blind@optionaltrue
+  \blindlistlist
+}
+\newcommand{\blinditemize}{\blindlist{itemize}}
+\newcommand{\blindenumerate}{\blindlist{enumerate}}
+\newcommand{\Blindlist}[1]{%
+  \blind@longtrue
+  \blindlist{#1}%
+}
+\newcommand{\Blinditemize}{\Blindlist{itemize}}
+\newcommand{\Blindenumerate}{\Blindlist{enumerate}}
+\newcommand{\blindlistoptional}[1]{%
+  \blind@optionaltrue
+  \blindlist{#1}%
+}
+\newcommand{\Blindlistoptional}[1]{%
+  \blind@optionaltrue
+  \blind@longtrue
+  \blindlist{#1}%
+}
+\newcommand{\blinddescription}{\blindlistoptional{description}}
+\newcommand{\Blinddescription}{\Blindlistoptional{description}}
+\newcounter{blind@listcount}
+\newcounter{blind@levelcount}
+\newcommand{\blind@items}{%
+  \setcounter{blind@listcount}{1}%
+  \loop
+  \ifblind@optional
+    \ifblind@long
+      \item[\blindtext@countitem] \blindtext@text
+    \else
+      \item[\blindtext@count] \blindtext@item
+    \fi
+    \else % \blind@optionalfalse
+      \ifblind@long
+        \item \blindtext@text
+      \else
+        \item \blindtext@countitem
+      \fi
+    \fi % \ifblind@optional
+    {%
+      \loop
+      \ifnum\value{blindlistlevel}>\value{blindlist@level}%
+        \stepcounter{blind@levelcount}%
+        \blind@list[\value{blindlist}]\relax
+        \addtocounter{blind@levelcount}{-1}%
+        \setcounter{blind@listcount}{1}%
+      \repeat
+    }%
+  \ifnum\value{blind@listcount}<\value{blindlist}%
+    \stepcounter{blind@listcount}%
+  \repeat
+}
+%% ^^A-----------------------------------------------------------
+  %Finish a sentence with a dot.
+  %This macro is redefined for blind text with inline math/formulas.
+  \def\blindtext@endsentence{.\xspace}%
+  \newcount{\blind@mathformula}\blind@mathformula=0%
+\newif\ifblindmath
+\let\oldblindmathtrue\blindmathtrue
+\renewcommand{\blindmathtrue}{
+    \oldblindmathtrue
+  \def\blindtext@endsentence{%
+    \advance\blind@mathformula by 1%
+    \ifcase\blind@mathformula%
+    \or. \(\sin^2(\alpha) + \cos^2(\beta) = 1\)%
+    \or\xspace\(E = mc^2\)%
+    \or. \(\sqrt[n]{a} \cdot \sqrt[n]{b} =  \sqrt[n]{ab}\)%
+    \or. \(\frac{\sqrt[n]{a}}{\sqrt[n]{b}} =  \sqrt[n]{\frac{a}{b}}\)%
+    \or. \(a\sqrt[n]{b} = \sqrt[n]{a^n b}\)%
+    \or. \(\mathrm{d}\Omega = \sin \vartheta \mathrm{d} \vartheta \mathrm{d}\varphi\)%
+    \else\global\blind@mathformula=0%
+    \fi%
+    .\xspace}%
+  }%\blindmathtrue
+\let\oldblindmathfalse\blindmathfalse
+\renewcommand{\blindmathfalse}{
+    \oldblindmathfalse
+  \def\blindtext@endsentence{.\xspace}%
+}%\includemath
+  \newcount{\blind@Mathformula}
+  \blind@Mathformula=0%
+  \def\blindtext@formula{%
+    \advance\blind@Mathformula by 1%
+    \ifcase\blind@Mathformula%
+        \[\bar x = \frac{1}{n}\sum_{i=1}^{i=n} x_i = \frac{x_1 + x_2 + \dots{} + x_n}{n}\]
+    \or \[ \int_0^\infty e^{-\alpha x^2} \mathrm{d}x =
+            \frac12\sqrt{\int_{-\infty}^\infty e^{-\alpha x^2}}
+            \mathrm{d}x\int_{-\infty}^\infty e^{-\alpha y^2}\mathrm{d}y =
+            \frac12\sqrt{\frac{\pi}{\alpha}} \]
+    \or \[ \sum_{k=0}^\infty a_0q^k = \lim_{n\to\infty}\sum_{k=0}^n a_0q^k =
+            \lim_{n\to\infty} a_0\frac{1-q^{n+1}}{1-q} = \frac{a_0}{1-q}
+        \]
+    \or \[x_{1,2}=\frac{-b \pm \sqrt{b^2-4ac}}{2a} = \frac{-p \pm \sqrt{p^2-4q}}{2}\]
+    \or \[ \frac{\partial^2 \Phi}{\partial x^2} + \frac{\partial^2 \Phi}{\partial y^2} +
+            \frac{\partial^2 \Phi}{\partial z^2} =
+            \frac{1}{c^2}\frac{\partial^2\Phi}{\partial t^2}
+        \]
+    \or \[\sqrt[n]{a} \cdot \sqrt[n]{b} =  \sqrt[n]{ab}\]
+    \or \[\frac{\sqrt[n]{a}}{\sqrt[n]{b}} =  \sqrt[n]{\frac{a}{b}}\]
+    \or \[a\sqrt[n]{b} = \sqrt[n]{a^n b}\]
+    \global\blind@Mathformula=0%
+    \fi%
+}%
+%% ^^A-----------------------------------------------------------
+\newif\ifblindtoc
+\blindtocfalse
+\newcommand{\blinddocument}{%
+  \ifblindtoc\tableofcontents\fi
+  \@ifundefined{chapter}{}{%
+    \chapter{\blindtext@heading 0 (chapter)}%
+    \blindtext
+  }%
+  \section{\blindtext@heading 1 (section)}%
+    \blindtext
+  \subsection{\blindtext@heading 2 (subsection)}%
+    \blindtext
+  \subsubsection{\blindtext@heading 3 (subsubsection)}%
+    \blindtext
+  \paragraph{\blindtext@heading 4 (paragraph)}%
+    \blindtext
+  \section{\blindtext@list}%
+  \subsection{\blindtext@listEx (itemize)}%
+    \blinditemize
+  \subsubsection{\blindtext@listEx (4*itemize)}%
+    \blindlistlist{itemize}[2]%
+  \subsection{\blindtext@listEx (enumerate)}%
+    \blindenumerate
+  \subsubsection{\blindtext@listEx (4*enumerate)}%
+    \blindlistlist{enumerate}[2]%
+  \subsection{\blindtext@listEx (description)}%
+    \blinddescription
+  \subsubsection{\blindtext@listEx (4*description)}%
+    \blindlistlistoptional{description}[2]%
+}
+\newcommand{\Blinddocument}{%
+  \ifblindtoc\tableofcontents\fi
+  \@ifundefined{chapter}{}{%
+    \chapter{\blindtext@heading 0 (chapter)}%
+    \blindtext
+  }%
+  \section{\blindtext@heading 1 (section)}%
+    \Blindtext
+  \subsection{\blindtext@heading 2 (subsection)}%
+    \Blindtext
+  \subsubsection{\blindtext@heading 3 (subsection)}%
+    \Blindtext
+  \paragraph{\blindtext@heading 4 (paragraph)}%
+    \Blindtext
+  \section{\blindtext@list}%
+  \subsection{\blindtext@listEx (itemize)}%
+    \Blinditemize
+  \subsubsection{\blindtext@listEx (4*itemize)}%
+    \blind@longtrue
+    \blindlistlist{itemize}[2]%
+  \subsection{\blindtext@listEx (enumerate)}%
+    \Blindenumerate
+  \subsubsection{\blindtext@listEx (4*enumerate)}%
+    \blind@longtrue
+    \blindlistlist{enumerate}[2]%
+  \subsection{\blindtext@listEx (description)}%
+    \Blinddescription
+  \subsubsection{\blindtext@listEx (4*description)}%
+    \blind@longtrue
+  \blindlistlistoptional{description}[2]%
+  %
+  \ifblindmath
+      \section{\blindtext@blindmath}%
+      \blindmathpaper%
+  \fi%
+}
+\newcommand{\blindmathpaper}{
+\blindtext
+\blindtext@formula
+\blindtext
+\blindtext@formula
+\blindtext
+\blindtext@formula
+\blindtext
+\blindtext@formula
+\blindtext
+\blindtext@formula
+\blindtext
+}%\blindmathpaper
+%% ^^A-----------------------------------------------------------
+\newcommand{\blind@addtext}[2]{%
+    \@ifpackageloaded{babel}{
+        \expandafter\addto\csname extras#1\endcsname{#2}
+    }{}%
+    \@ifpackageloaded{polyglossia}{
+        \expandafter\gappto\csname captions#1\endcsname {#2}
+    }{}%
+    \@ifpackageloaded{ngerman}{
+        \expandafter\g@addto@macro\csname captions#1\endcsname {#2}
+    }{}%
+    \@ifpackageloaded{german}{
+        \expandafter\g@addto@macro\csname captions#1\endcsname {#2}
+    }{}%
+}%\blind@addtext
+\def\blindtext@text{%
+    Lorem ipsum dolor sit amet, consectetuer adipiscing elit. Etiam
+    lobortis facilisis sem. Nullam nec mi et neque pharetra
+    sollicitudin. Praesent imperdiet mi nec ante. Donec ullamcorper,
+    felis non sodales commodo, lectus velit ultrices augue, a
+    dignissim nibh lectus placerat pede. Vivamus nunc nunc, molestie
+    ut, ultricies vel, semper in, velit. Ut porttitor. Praesent in
+    sapien. Lorem ipsum dolor sit amet, consectetuer adipiscing elit.
+    Duis fringilla tristique neque. Sed interdum libero ut metus.
+    Pellentesque placerat. Nam rutrum augue a leo. Morbi sed elit sit
+    amet ante lobortis sollicitudin. Praesent blandit blandit mauris.
+    Praesent lectus tellus, aliquet aliquam, luctus a, egestas a,
+    turpis. Mauris lacinia lorem sit amet ipsum. Nunc quis urna dictum
+    turpis accumsan semper.%
+}
+\def\blindtext@count{%
+  \ifcase\blind@listitem\or
+    First\or Second%...
+  \else
+    Last%
+    \blind@listitem=0 %
+  \fi
+  \global\advance\blind@listitem by 1 %
+}% \blindtext@count
+\def\blindtext@item{itemtext}
+\def\blindtext@countitem{\blindtext@count\ \blindtext@item}
+\def\blindtext@heading{Heading on level\xspace}
+\def\blindtext@list{Lists}
+\def\blindtext@listEx{Example for list\xspace}
+\def\blindtext@blindmath{Some blind text with math formulas}
+\def\blindtext@english{}
+\blind@addtext{english}{%
+  \def\blindtext@text{%
+    Hello, here is some text without a meaning\blindtext@endsentence
+    This text should show, how a printed text will look like
+    at this place\blindtext@endsentence If you read this
+    text, you will get no information\blindtext@endsentence Really? Is there no
+    information? Is there a difference between this text and some
+    nonsense like \frqq Huardest gefburn\flqq\blindtext@endsentence
+    Kjift -- Never mind! A blind text like this gives you information about the selected
+    font, how the letters are written and the impression of the look\blindtext@endsentence
+    This text should contain all letters of the alphabet and it should
+    be written in of the original language\blindtext@endsentence There is no need for a
+    special contents, but the length of words should match to the
+    language\blindtext@endsentence%
+  }% \blindtext@text
+}
+\blind@addtext{english}{%
+  \def\blindtext@count{%
+    \ifcase\value{blind@listcount}\or
+      First\or Second\or Third\or Fourth\or Fifth\or
+      Sixth\or Seventh\or Eighth\or Ninth\or Tenth\or
+      Eleventh\or Twelfth%
+    \else
+      Another%
+    \fi
+  }% \blindtext@count
+  \def\blindtext@item{item in a list}%
+}%\addto\extrasenglish
+\blind@addtext{english}{%
+  \def\blindtext@heading{Heading on level\xspace}%
+  \def\blindtext@list{Lists}%
+  \def\blindtext@listEx{Example for list\xspace}%
+}%\addto\extrasenglish
+\blind@addtext{english}{%
+    \def\blindtext@blindmath{Some blind text with math formulas}%
+}%\addto\extrasenglish
+\def\blindtext@german{}
+\blind@addtext{german}{%
+  \def\blindtext@text{%
+    Dies hier ist ein Blindtext zum Testen von Textausgaben\blindtext@endsentence
+    Wer diesen Text liest, ist selbst schuld\blindtext@endsentence
+    Der Text gibt lediglich den Grauwert der Schrift
+    an\blindtext@endsentence Ist das wirklich so? Ist es
+    gleich\-g\"ul\-tig ob ich schreibe: \frqq Dies ist ein
+    Blindtext\flqq\ oder \frqq Huardest gefburn\flqq?\blindtext@endsentence
+    Kjift -- mitnichten! Ein Blindtext bietet mir wichtige
+    Informationen\blindtext@endsentence An ihm messe ich die
+    Lesbarkeit einer Schrift, ihre Anmutung, wie harmonisch die
+    Figuren zueinander stehen und pr\"u\-fe, wie breit oder
+    schmal sie l\"auft\blindtext@endsentence Ein Blindtext
+    sollte m\"og\-lichst viele verschiedene Buchstaben
+    enthalten und in der Originalsprache gesetzt
+    sein\blindtext@endsentence Er mu\ss\ keinen Sinn ergeben,
+    sollte aber lesbar sein\blindtext@endsentence
+    Fremdsprachige Texte wie \frqq Lorem ipsum\flqq\ dienen
+    nicht dem eigentlichen Zweck, da sie eine falsche Anmutung
+    vermitteln\blindtext@endsentence%
+  }% \blindtext@text
+}
+\blind@addtext{german}{%
+  \def\blindtext@count{%
+    \ifcase\value{blind@listcount}\or
+      Erster\or Zweiter\or Dritter\or Vierter\or F{\"u}nfter\or
+      Sechster\or Siebter\or Achter\or Neunter\or Zehnter\or
+      Elfter\or Zw{\"o}lfter\or Dreizehnter\or Vierzehnter%
+    \else
+      Noch ein%
+    \fi
+  }% \blindtext@count
+  \def\blindtext@item{Listenpunkt, Stufe~\arabic{blind@levelcount}}%
+}%\addto\extrasgerman
+\blind@addtext{german}{%
+  \def\blindtext@heading{{\"U}berschrift auf Ebene\xspace}%
+  \def\blindtext@list{Listen}%
+  \def\blindtext@listEx{Beispiel einer Liste\xspace}%
+}%\addto\extrasgerman
+\blind@addtext{german}{%
+    \def\blindtext@blindmath{Blindtext mit mathematischen Formeln}%
+}%\addto\extrasgerman
+\@ifpackageloaded{german}{\selectlanguage{german}}{}
+\def\blindtext@ngerman{}
+\blind@addtext{ngerman}{%
+  \def\blindtext@text{%
+    Dies hier ist ein Blindtext zum Testen von Textausgaben\blindtext@endsentence
+    Wer diesen Text liest, ist selbst schuld\blindtext@endsentence
+    Der Text gibt lediglich den Grauwert der Schrift
+    an\blindtext@endsentence Ist das wirklich so? Ist es
+    gleich\-g\"ul\-tig ob ich schreibe: \frqq Dies ist ein
+    Blindtext\flqq\ oder \frqq Huardest gefburn\flqq?\blindtext@endsentence
+    Kjift -- mitnichten! Ein Blindtext bietet mir wichtige
+    Informationen\blindtext@endsentence An ihm messe ich die
+    Lesbarkeit einer Schrift, ihre Anmutung, wie harmonisch die
+    Figuren zueinander stehen und pr\"u\-fe, wie breit oder
+    schmal sie l\"auft\blindtext@endsentence Ein Blindtext
+    sollte m\"og\-lichst viele verschiedene Buchstaben
+    enthalten und in der Originalsprache gesetzt
+    sein\blindtext@endsentence Er mu\ss\ keinen Sinn ergeben,
+    sollte aber lesbar sein\blindtext@endsentence
+    Fremdsprachige Texte wie \frqq Lorem ipsum\flqq\ dienen
+    nicht dem eigentlichen Zweck, da sie eine falsche Anmutung
+    vermitteln\blindtext@endsentence%
+  }% \blindtext@text
+}
+\blind@addtext{ngerman}{%
+  \def\blindtext@count{%
+    \ifcase\value{blind@listcount}\or
+      Erster\or Zweiter\or Dritter\or Vierter\or F{\"u}nfter\or
+      Sechster\or Siebter\or Achter\or Neunter\or Zehnter\or
+      Elfter\or Zw{\"o}lfter\or Dreizehnter\or Vierzehnter%
+    \else
+      Noch ein%
+    \fi
+  }% \blindtext@count
+  \def\blindtext@item{Listenpunkt, Stufe~\arabic{blind@levelcount}}%
+}%\addto\extrasngerman
+\blind@addtext{ngerman}{%
+  \def\blindtext@heading{{\"U}berschrift auf Ebene\xspace}%
+  \def\blindtext@list{Listen}%
+  \def\blindtext@listEx{Beispiel einer Liste\xspace}%
+}%\addto\extrasngerman
+\blind@addtext{ngerman}{%
+    \def\blindtext@blindmath{Blindtext mit mathematischen Formeln}%
+}%\addto\extrasngerman
+\@ifpackageloaded{ngerman}{\selectlanguage{ngerman}}{}
+\def\blindtext@latin{}
+\blind@addtext{latin}{%
+  \def\blindtext@text{%
+    Lorem ipsum dolor sit amet, consectetuer adipiscing elit. Etiam
+    lobortis facilisis sem. Nullam nec mi et neque pharetra
+    sollicitudin. Praesent imperdiet mi nec ante. Donec ullamcorper,
+    felis non sodales commodo, lectus velit ultrices augue, a
+    dignissim nibh lectus placerat pede. Vivamus nunc nunc, molestie
+    ut, ultricies vel, semper in, velit. Ut porttitor. Praesent in
+    sapien. Lorem ipsum dolor sit amet, consectetuer adipiscing elit.
+    Duis fringilla tristique neque. Sed interdum libero ut metus.
+    Pellentesque placerat. Nam rutrum augue a leo. Morbi sed elit sit
+    amet ante lobortis sollicitudin. Praesent blandit blandit mauris.
+    Praesent lectus tellus, aliquet aliquam, luctus a, egestas a,
+    turpis. Mauris lacinia lorem sit amet ipsum. Nunc quis urna dictum
+    turpis accumsan semper.%
+  }% \blindtext@text
+}
+\blind@addtext{latin}{%
+  \def\blindtext@count{%
+    \ifcase\value{blind@listcount}\or
+      Primus\or Duo\or Tres\or Quattuor\or Quinque\or
+      Sex\or Septem\or Octo\or Novem\or Decem\\or
+      Undecim\or Duodecim%
+    \else
+      Nova%
+    \fi
+  }% \blindtext@count
+  \def\blindtext@item{, altum~\arabic{blind@levelcount}}%
+}%\addto\extraslatin
+\blind@addtext{latin}{%
+  \def\blindtext@heading{Sectio\xspace}%
+  \def\blindtext@list{Caudex}%
+  \def\blindtext@listEx{Exemplum caudex\xspace}%
+}%\addto\extraslatin
+\blind@addtext{latin}{%
+    \def\blindtext@blindmath{Mathematica}%
+}%\addto\extraslatin
+\def\blindtext@french{}
+\blind@addtext{french}{%
+  \def\blindtext@text{%
+    Qu'est que c'est?\blindtext@endsentence
+    C'est mon premi\`{e}re phrase fran\c{c}ais depuis quince ans\blindtext@endsentence %%
+  }% \blindtext@text
+}
+\blind@addtext{french}{%
+  \def\blindtext@count{%
+    \ifcase\value{blind@listcount}\or
+      Premier\or Deuxi\`eme\or Troisi\`eme\or Quatri\`eme\or Cinqui\`eme\or
+      Sixi\`eme\or Septi\`eme\or Huiti\`eme\or Neuvi\`eme\or Dixi\`eme\or
+      Onzi\`eme\or Douzi\`eme%
+    \else
+      L'autres%
+    \fi
+  }% \blindtext@count
+  \def\blindtext@item{point dans une list}%
+}%\addto\extrasfrench
+\blind@addtext{french}{%
+  \def\blindtext@heading{Titres de niveau\xspace}%
+  \def\blindtext@list{Lists}%
+  \def\blindtext@listEx{Example pour une list\xspace}%
+}%\addto\extrasfrench
+\blind@addtext{french}{%
+    \def\blindtext@blindmath{Quelque text avec des formulas math\´ematique.}%
+}%\addto\extrasfrench
+\DeclareOption{math}{
+    \blindmathtrue
+}
+\DeclareOption{toc}{
+    \blindtoctrue
+}
+\ProcessOptions\relax
+\endinput
+%%
+%% End of file `blindtext.sty'.
