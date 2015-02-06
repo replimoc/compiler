@@ -7,6 +7,7 @@ import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Set;
 
+import compiler.firm.FirmUtils;
 import compiler.firm.backend.operations.templates.AssemblerOperation;
 import compiler.firm.backend.storage.RegisterBased;
 import compiler.firm.backend.storage.VirtualRegister;
@@ -16,6 +17,7 @@ import firm.nodes.Node;
 
 public class AssemblerOperationsBlock {
 	private final Block block;
+	private final boolean isLoopHead;
 	private final ArrayList<AssemblerOperation> operations;
 	private final Set<AssemblerOperationsBlock> predecessors = new HashSet<>();
 	private final Set<AssemblerOperationsBlock> successors = new HashSet<>();
@@ -34,6 +36,8 @@ public class AssemblerOperationsBlock {
 		for (AssemblerOperation operation : operations) {
 			operation.setOperationsBlock(this);
 		}
+
+		this.isLoopHead = FirmUtils.getLoopTailIfHeader(block) != null;
 	}
 
 	public void calculateTree(HashMap<Block, AssemblerOperationsBlock> operationsBlocks) {
@@ -125,7 +129,7 @@ public class AssemblerOperationsBlock {
 		StringBuilder builder = new StringBuilder();
 
 		builder.append(block);
-		builder.append(":  \t  liveIn: ");
+		builder.append("(loop head: " + isLoopHead + "):  \t  liveIn: ");
 
 		for (VirtualRegister register : liveIn.keySet()) {
 			builder.append("VR_" + register.getNum() + ", ");
