@@ -14,6 +14,7 @@ import compiler.utils.Pair;
 import compiler.utils.Utils;
 
 import firm.BackEdges;
+import firm.BackEdges.Edge;
 import firm.Backend;
 import firm.BlockWalker;
 import firm.ClassType;
@@ -28,11 +29,13 @@ import firm.Type;
 import firm.Util;
 import firm.bindings.binding_irdom;
 import firm.bindings.binding_irgopt;
-import firm.nodes.Block;
 import firm.nodes.Address;
+import firm.nodes.Block;
 import firm.nodes.Call;
+import firm.nodes.Cond;
 import firm.nodes.Const;
 import firm.nodes.Node;
+import firm.nodes.Proj;
 
 public final class FirmUtils {
 
@@ -244,4 +247,22 @@ public final class FirmUtils {
 		}
 		return null;
 	}
+
+	public static Block getFirstLoopBlock(Cond condition) {
+		Block loopContentBlock = null;
+
+		for (Edge projEdge : BackEdges.getOuts(condition)) {
+			Proj proj = (Proj) projEdge.node;
+			if (BackEdges.getNOuts(proj) == 0)
+				return null;
+
+			Node successorBlock = FirmUtils.getFirstSuccessor(proj);
+
+			if (FirmUtils.blockPostdominates(condition.getBlock(), successorBlock)) {
+				loopContentBlock = (Block) successorBlock;
+			}
+		}
+		return loopContentBlock;
+	}
+
 }

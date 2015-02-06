@@ -75,7 +75,7 @@ public class LoopFusionVisitor extends OptimizationVisitor<Node> {
 		if (backedges.containsValue(block)) {
 			LoopHeader continueInfo = getLoopContinueBlocks(condition);
 
-			if (continueInfo == null)
+			if (continueInfo == null || continueInfo.loopContentBlock == null)
 				return;
 
 			Node content1 = continueInfo.loopContentBlock;
@@ -197,15 +197,15 @@ public class LoopFusionVisitor extends OptimizationVisitor<Node> {
 
 	private LoopInfo calculateLoopInfo(Node block, Node loopBlock, Node condition) {
 
-		HashMap<Block, Cmp> compares = new HashMap<>();
-		compares.put((Block) block, (Cmp) condition.getPred(0));
+		// HashMap<Block, Cmp> compares = new HashMap<>();
+		// compares.put((Block) block, (Cmp) condition.getPred(0));
 
-		Set<LoopInfo> loopInfos = optimizationUtils.getLoopInfos((Block) loopBlock, compares);
-
-		if (loopInfos != null && loopInfos.size() > 0) {
-			return loopInfos.iterator().next();
-		}
-		return null;
+		Block loopTail = FirmUtils.getLoopTailIfHeader((Block) loopBlock);
+		LoopInfo loopInfo = optimizationUtils.getLoopInfos((Block) loopBlock, loopTail, (Cmp) condition.getPred(0));
+		if (loopInfo == null || !loopInfo.isOneBlockLoop())
+			return null;
+		else
+			return loopInfo;
 	}
 
 	private Node getLeavingNode(Set<Node> nodes) {

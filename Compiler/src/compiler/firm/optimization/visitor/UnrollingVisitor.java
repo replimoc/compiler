@@ -55,91 +55,98 @@ public class UnrollingVisitor extends OptimizationVisitor<Node> {
 	}
 
 	@Override
-	public void visit(Block block) {
-		if (finishedLoops.contains(block))
+	public void visit(Block loopHeader) {
+		if (finishedLoops.contains(loopHeader))
 			return;
 
 		if (utils == null) {
 			return; // Start block
 		}
 
-		Set<OptimizationUtils.LoopInfo> loopInfos = utils.getLoopInfos(block, compares);
-		if (loopInfos == null)
+		Block loopTail = FirmUtils.getLoopTailIfHeader(loopHeader);
+		Cmp cmp = compares.get(loopHeader);
+
+		if (loopTail == null || cmp == null)
+			return; // Not a loop
+
+		OptimizationUtils.LoopInfo loopInfo = utils.getLoopInfos(loopHeader, loopTail, cmp);
+		if (loopInfo == null)
 			return;
 
-		for (OptimizationUtils.LoopInfo loopInfo : loopInfos) {
-			if (getPhiCount((Block) backedges.get(block)) > 2)
-				return;
+		if (getPhiCount(loopHeader) > 2) // TODO: Remove this
+			return;
 
-			int unrollFactor = MAX_UNROLL_FACTOR;
-			while (unrollFactor > 1 && (Math.abs(loopInfo.cycleCount) % unrollFactor) != 0) {
-				unrollFactor -= 1;
-			}
+		if (!loopInfo.isOneBlockLoop()) // TODO: Remove this
+			return;
 
-			Graph graph = block.getGraph();
-			// unroll if block generates overflow
-			if (loopInfo.cycleCount == Integer.MAX_VALUE) {
-				long count = (Integer.MAX_VALUE) - loopInfo.startingValue.getTarval().asLong();
-				long mod = count % loopInfo.incr.getTarval().asLong();
-				long target = (long) Math.ceil((double) (count) / loopInfo.incr.getTarval().asLong() + (mod == 0 ? 1 : 0));
-				if (!isCalculatable(block)) {
-					unrollFactor = MAX_UNROLL_FACTOR;
-					while (unrollFactor > 1 && (target % unrollFactor) != 0) {
-						unrollFactor -= 1;
-					}
-					if (unrollFactor < 2)
-						return;
-				} else {
-					// calculate loop result
-					long value = Integer.MIN_VALUE + loopInfo.incr.getTarval().asLong() - mod - 1;
-					replaceLoopIfPossible(loopInfo, value, block);
-				}
-			} else if (loopInfo.cycleCount == Integer.MIN_VALUE) {
-				long count = (Integer.MIN_VALUE) - loopInfo.startingValue.getTarval().asLong();
-				long mod = count % loopInfo.incr.getTarval().asLong();
-				long target = (long) Math.ceil((double) count / loopInfo.incr.getTarval().asLong()) + (mod == 0 ? 1 : 0);
-				if (!isCalculatable(block)) {
-					unrollFactor = MAX_UNROLL_FACTOR;
-					while (unrollFactor > 1 && (target % unrollFactor) != 0) {
-						unrollFactor -= 1;
-					}
-					if (unrollFactor < 2)
-						return;
-				} else {
-					// calculate loop result
-					long value = Integer.MAX_VALUE + loopInfo.incr.getTarval().asLong() - mod + 1;
-					replaceLoopIfPossible(loopInfo, value, block);
-				}
-			} else if (isCalculatable(block)) {
-				// calculate loop result
-				long value = loopInfo.startingValue.getTarval().asLong() + (Math.abs(loopInfo.cycleCount) * loopInfo.incr.getTarval().asLong());
-				replaceLoopIfPossible(loopInfo, value, block);
-			} else if (Math.abs(loopInfo.cycleCount) < 2 || (Math.abs(loopInfo.cycleCount) % unrollFactor) != 0) {
-				return;
-			}
-
-			if (unrollFactor < 2)
-				return;
-
-			// counter
-			HashMap<Node, Node> changedNodes = new HashMap<>();
-			Node loopPhi = loopPhis.get(backedges.get(block));
-
-			if (loopPhi.getPredCount() > 2)
-				return;
-
-			// don't unroll too big blocks
-			if (blockNodes.get(block).size() > 30)
-				return;
-
-			// replace the increment operation
-			addReplacement(loopInfo.incr, graph.newConst(loopInfo.incr.getTarval().mul(new TargetValue(unrollFactor, loopInfo.incr.getMode()))));
-
-			unroll(block, loopInfo.incr, loopInfo.loopCounter, loopInfo.node, changedNodes, loopInfo.loopCounter, loopPhi, unrollFactor);
-
-			finishedLoops.add(block);
-
+		int unrollFactor = MAX_UNROLL_FACTOR;
+		while (unrollFactor > 1 && (Math.abs(loopInfo.cycleCount) % unrollFactor) != 0) {
+			unrollFactor -= 1;
 		}
+
+		Graph graph = loopHeader.getGraph();
+		// unroll if block generates overflow
+		if (loopInfo.cycleCount == Integer.MAX_VALUE) {
+			long count = (Integer.MAX_VALUE) - loopInfo.startingValue.getTarval().asLong();
+			long mod = count % loopInfo.incr.getTarval().asLong();
+			long target = (long) Math.ceil((double) (count) / loopInfo.incr.getTarval().asLong() + (mod == 0 ? 1 : 0));
+			if (!isCalculatable(loopTail)) {
+				unrollFactor = MAX_UNROLL_FACTOR;
+				while (unrollFactor > 1 && (target % unrollFactor) != 0) {
+					unrollFactor -= 1;
+				}
+				if (unrollFactor < 2)
+					return;
+			} else {
+				// calculate loop result
+				long value = Integer.MIN_VALUE + loopInfo.incr.getTarval().asLong() - mod - 1;
+				replaceLoopIfPossible(loopInfo, value, loopTail);
+			}
+		} else if (loopInfo.cycleCount == Integer.MIN_VALUE) {
+			long count = (Integer.MIN_VALUE) - loopInfo.startingValue.getTarval().asLong();
+			long mod = count % loopInfo.incr.getTarval().asLong();
+			long target = (long) Math.ceil((double) count / loopInfo.incr.getTarval().asLong()) + (mod == 0 ? 1 : 0);
+			if (!isCalculatable(loopTail)) {
+				unrollFactor = MAX_UNROLL_FACTOR;
+				while (unrollFactor > 1 && (target % unrollFactor) != 0) {
+					unrollFactor -= 1;
+				}
+				if (unrollFactor < 2)
+					return;
+			} else {
+				// calculate loop result
+				long value = Integer.MAX_VALUE + loopInfo.incr.getTarval().asLong() - mod + 1;
+				replaceLoopIfPossible(loopInfo, value, loopTail);
+			}
+		} else if (isCalculatable(loopTail)) {
+			// calculate loop result
+			long value = loopInfo.startingValue.getTarval().asLong() + (Math.abs(loopInfo.cycleCount) * loopInfo.incr.getTarval().asLong());
+			replaceLoopIfPossible(loopInfo, value, loopTail);
+		} else if (Math.abs(loopInfo.cycleCount) < 2 || (Math.abs(loopInfo.cycleCount) % unrollFactor) != 0) {
+			return;
+		}
+
+		if (unrollFactor < 2) // TODO: Remove this
+			return;
+
+		// counter
+		HashMap<Node, Node> changedNodes = new HashMap<>();
+		Node loopPhi = loopPhis.get(loopHeader);
+
+		if (loopPhi.getPredCount() > 2)
+			return;
+
+		// don't unroll too big blocks
+		if (blockNodes.get(loopTail).size() > 30) // TODO Do not only use loop tail, use all content blocks
+			return;
+
+		// replace the increment operation
+		addReplacement(loopInfo.incr, graph.newConst(loopInfo.incr.getTarval().mul(new TargetValue(unrollFactor, loopInfo.incr.getMode()))));
+
+		unroll(loopTail, loopInfo.incr, loopInfo.loopCounter, loopInfo.node, changedNodes, loopInfo.loopCounter, loopPhi, unrollFactor);
+
+		finishedLoops.add(loopHeader);
+
 	}
 
 	private int getPhiCount(Block block) {

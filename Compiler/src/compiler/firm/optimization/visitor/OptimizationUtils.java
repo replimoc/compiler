@@ -20,6 +20,7 @@ import firm.nodes.Add;
 import firm.nodes.Anchor;
 import firm.nodes.Block;
 import firm.nodes.Cmp;
+import firm.nodes.Cond;
 import firm.nodes.Const;
 import firm.nodes.Jmp;
 import firm.nodes.Node;
@@ -253,42 +254,63 @@ public class OptimizationUtils {
 		graph.walk(visitor);
 	}
 
-	public Set<LoopInfo> getLoopInfos(Block block, HashMap<Block, Cmp> compares) {
-		Set<LoopInfo> loopInfos = new HashSet<>();
+	public LoopInfo getLoopInfos(Block loopHeader, Block loopTail, Cmp cmp) {
 		// only unroll the innermost loop
-		if (backedges.containsKey(block) && (dominators.get(block).size() == dominators.get(backedges.get(block)).size() + 1)) {
-			// loop body
-			for (Map.Entry<Node, Node> entry : inductionVariables.entrySet()) {
-				if (entry.getKey().getBlock().equals(block.getPred(0).getBlock())) {
+		// if (backedges.containsKey(block) && (dominators.get(block).size() == dominators.get(backedges.get(block)).size() + 1)) {
+		// loop body
 
-					// induction variable for this block
-					Node node = entry.getValue();
-					Node loopCounter = entry.getKey();
+		// TODO: Check if it is the innermost loop!
 
-					Const incr = getIncrementConstantOrNull(node);
-					if (incr == null)
-						continue;
-
-					if (!compares.containsKey(block.getPred(0).getBlock()))
-						continue;
-					Cmp cmp = compares.get(block.getPred(0).getBlock());
-					if (cmp == null)
-						continue;
-					Const constCmp = getConstantCompareNodeOrNull(cmp.getLeft(), cmp.getRight());
-					if (constCmp == null)
-						continue;
-
-					Const startingValue = getStartingValueOrNull(entry);
-					if (startingValue == null)
-						continue;
-
-					// get cycle count for loop
-					int cycleCount = getCycleCount(cmp, constCmp, startingValue, incr);
-					loopInfos.add(new LoopInfo(cycleCount, startingValue, incr, constCmp, node, loopCounter));
-				}
+		Const constant = null;
+		Node conditionalPhi = null;
+		for (Node predecessor : cmp.getPreds()) {
+			if (predecessor instanceof Const) {
+				constant = (Const) predecessor;
+			} else {
+				conditionalPhi = predecessor;
 			}
 		}
-		return loopInfos;
+
+		if (constant == null || conditionalPhi == null)
+			return null; // Nothing found
+
+		int blockPredecessorLoop = -1;
+		for (int i = 0; i < loopHeader.getPredCount(); i++) {
+			if (loopHeader.getPred(i).getBlock().equals(loopTail)) {
+				blockPredecessorLoop = i;
+			}
+		}
+
+		if (conditionalPhi instanceof Phi && blockPredecessorLoop >= 0) {
+			Block firstLoopBlock = FirmUtils.getFirstLoopBlock((Cond) FirmUtils.getFirstSuccessor(cmp));
+
+			Node arithmeticNode = conditionalPhi.getPred(blockPredecessorLoop);
+
+			boolean onlyOneNodeBetweenPhi = false;
+			if (!(arithmeticNode instanceof Phi)) {
+				for (Node arithmeticNodePredecessor : arithmeticNode.getPreds()) {
+					if (arithmeticNodePredecessor.equals(conditionalPhi)) {
+						onlyOneNodeBetweenPhi = true;
+					}
+				}
+			}
+
+			if (arithmeticNode.getBlock() != null && firstLoopBlock != null && onlyOneNodeBetweenPhi &&
+					FirmUtils.blockPostdominates(arithmeticNode.getBlock(), firstLoopBlock)) { // Add is always executed
+				Const incr = getIncrementConstantOrNull(arithmeticNode);
+				if (incr == null)
+					return null;
+
+				Node startingValue = conditionalPhi.getPred(blockPredecessorLoop == 1 ? 0 : 1);
+				if (startingValue == null || !(startingValue instanceof Const))
+					return null;
+
+				// get cycle count for loop
+				int cycleCount = getCycleCount(cmp, constant, (Const) startingValue, incr);
+				return new LoopInfo(cycleCount, (Const) startingValue, incr, constant, arithmeticNode, conditionalPhi, firstLoopBlock, loopTail);
+			}
+		}
+		return null;
 	}
 
 	public class LoopInfo {
@@ -298,14 +320,23 @@ public class OptimizationUtils {
 		public final Const constCmp;
 		public final Node node;
 		public final Node loopCounter;
+		public final Block firstLoopBlock;
+		public final Block lastLoopBlock;
 
-		private LoopInfo(int cycleCount, Const startingValue, Const incr, Const constCmp, Node node, Node loopCounter) {
+		private LoopInfo(int cycleCount, Const startingValue, Const incr, Const constCmp, Node node,
+				Node loopCounter, Block firstLoopBlock, Block lastLoopBlock) {
 			this.cycleCount = cycleCount;
 			this.startingValue = startingValue;
 			this.incr = incr;
 			this.node = node;
 			this.loopCounter = loopCounter;
 			this.constCmp = constCmp;
+			this.firstLoopBlock = firstLoopBlock;
+			this.lastLoopBlock = lastLoopBlock;
+		}
+
+		public boolean isOneBlockLoop() {
+			return this.firstLoopBlock.equals(this.lastLoopBlock);
 		}
 	}
 
@@ -314,27 +345,6 @@ public class OptimizationUtils {
 			return (Const) node.getPred(1);
 		} else if (node.getPredCount() > 1 && FirmUtils.isConstant(node.getPred(0)) && node instanceof Add) {
 			return (Const) node.getPred(0);
-		} else {
-			return null;
-		}
-	}
-
-	private Const getConstantCompareNodeOrNull(Node left, Node right) {
-		if (FirmUtils.isConstant(left) && inductionVariables.containsKey(right)) {
-			return (Const) left;
-		} else if (FirmUtils.isConstant(right) && inductionVariables.containsKey(left)) {
-			return (Const) right;
-		} else {
-			return null;
-		}
-	}
-
-	private Const getStartingValueOrNull(Entry<Node, Node> entry) {
-		// TODO: discover the starting value through other loops as well
-		if (entry.getKey().getPred(0).equals(entry.getValue()) && FirmUtils.isConstant(entry.getKey().getPred(1))) {
-			return (Const) entry.getKey().getPred(1);
-		} else if (entry.getKey().getPred(1).equals(entry.getValue()) && FirmUtils.isConstant(entry.getKey().getPred(0))) {
-			return (Const) entry.getKey().getPred(0);
 		} else {
 			return null;
 		}
