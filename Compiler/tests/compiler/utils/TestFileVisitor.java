@@ -30,7 +30,7 @@ import org.junit.Ignore;
 public class TestFileVisitor extends SimpleFileVisitor<Path> {
 
 	private static final int CHECK_TIMEOUT = 350;
-	private static final int NUMBER_OF_THREADS = 1;
+	private static final int NUMBER_OF_THREADS = 12;
 
 	public interface FileTester {
 		void testSourceFile(TestFileVisitor visitor, Path sourceFilePath, Path expectedResultFilePath) throws Exception;
