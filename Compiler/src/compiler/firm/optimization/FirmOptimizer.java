@@ -10,6 +10,7 @@ import compiler.firm.optimization.visitor.ConstantFoldingVisitor;
 import compiler.firm.optimization.visitor.ControlFlowVisitor;
 import compiler.firm.optimization.visitor.LoadStoreOptimiziationVisitor;
 import compiler.firm.optimization.visitor.LocalOptimizationVisitor;
+import compiler.firm.optimization.visitor.LoopFusionVisitor;
 import compiler.firm.optimization.visitor.LoopInvariantVisitor;
 import compiler.firm.optimization.visitor.NormalizationVisitor;
 import compiler.firm.optimization.visitor.OptimizationVisitor;
@@ -46,6 +47,7 @@ public final class FirmOptimizer {
 			finished &= optimize(LocalOptimizationVisitor.FACTORY);
 			finished &= optimize(ControlFlowVisitor.FACTORY);
 			finished &= optimize(CommonSubexpressionEliminationVisitor.FACTORY);
+			finished &= optimize(LoopFusionVisitor.FACTORY(evaluateGraphs()));
 			finished &= optimize(LoopInvariantVisitor.FACTORY(evaluateGraphs()));
 			finished &= optimize(StrengthReductionVisitor.FACTORY);
 			finished &= optimize(LoadStoreOptimiziationVisitor.FACTORY(evaluateGraphs()));
@@ -70,6 +72,7 @@ public final class FirmOptimizer {
 			OptimizationVisitor<T> visitor = visitorFactory.create();
 
 			BackEdges.enable(graph);
+			visitor.init(graph);
 			walkTopological(graph, workList, visitor);
 			workList(workList, visitor);
 			BackEdges.disable(graph);

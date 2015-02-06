@@ -10,8 +10,8 @@ public class BlockInformation {
 	private Node firstModeM;
 	private Node lastModeM;
 	private Node endNode;
-	private boolean hasMemUsage;
-	private boolean hasSideEffects;
+	private int memUsage = 0;
+	private int sideEffects = 0;
 	private final Set<Call> calls = new HashSet<>();
 
 	public void setEndNode(Node endNode) {
@@ -39,19 +39,27 @@ public class BlockInformation {
 	}
 
 	public boolean hasMemUsage() {
-		return hasMemUsage;
+		return memUsage > 0;
 	}
 
 	public void setHasMemUsage() {
-		this.hasMemUsage = true;
+		this.memUsage++;
+	}
+
+	public int getMemUsage() {
+		return memUsage;
 	}
 
 	public boolean hasSideEffects() {
-		return hasSideEffects;
+		return sideEffects > 0;
 	}
 
 	public void setHasSideEffects() {
-		this.hasSideEffects = true;
+		this.sideEffects++;
+	}
+
+	public int getSideEffects() {
+		return sideEffects;
 	}
 
 	public Set<Call> getCalls() {

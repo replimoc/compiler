@@ -148,6 +148,7 @@ public class GraphEvaluationVisitor extends AbstractFirmNodesVisitor {
 	public void visit(Phi phi) {
 		super.visit(phi);
 		if (phi.getMode().equals(Mode.getM())) {
+			visitModeM(phi);
 			ownDetails.setHasSideEffects();
 			ownDetails.setHasMemUsage();
 			getBlockInformation(phi).setHasSideEffects();
