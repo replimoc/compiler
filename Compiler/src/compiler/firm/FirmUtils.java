@@ -235,4 +235,13 @@ public final class FirmUtils {
 		final Address address = (Address) call.getPred(1);
 		return address.getEntity();
 	}
+
+	public static Block getLoopTailIfHeader(Block block) {
+		for (Node pred : block.getPreds()) {
+			if (blockDominates(block, pred.getBlock())) {
+				return (Block) pred.getBlock();
+			}
+		}
+		return null;
+	}
 }
