@@ -76,15 +76,13 @@ public class MovOperation extends AssemblerBitOperation {
 			return getCommentForOperation().toStringWithSpillcode();
 
 		} else {
-			Bit sourceMode = source.getMode();
-			Bit destinationMode = destination.getMode();
+			if (hasSpilledRegisters()) {
+				if ((!(source instanceof MemoryPointer) || !((MemoryPointer) source).isPartSpilled())
+						&& (!(destination instanceof MemoryPointer) || !((MemoryPointer) destination).isPartSpilled())) {
 
-			if (hasSpilledRegisters() && !isMovslq(sourceMode, destinationMode)) {
-				if ((source.getClass() == VirtualRegister.class || source.getClass() == Constant.class)
-						&& (destination.getClass() == VirtualRegister.class || destination.getClass() == Constant.class)) {
-
-					if ((source.isSpilled() && !destination.isSpilled()) || (!source.isSpilled() && destination.isSpilled())) {
+					if (!(source.isSpilled() && destination.isSpilled())) {
 						return new String[] { toString() };
+
 					} else {
 						Storage oldSource = this.source;
 						this.source = getSpillRegister().getRegister(destination.getMode());
@@ -95,9 +93,12 @@ public class MovOperation extends AssemblerBitOperation {
 						this.source = oldSource;
 						return result;
 					}
+
+				} else {
+					return super.toStringWithSpillcode();
 				}
 			}
-			return super.toStringWithSpillcode();
+			return new String[] { toString() };
 		}
 	}
 

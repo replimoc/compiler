@@ -84,6 +84,10 @@ public class MemoryPointer extends Storage {
 		return true;
 	}
 
+	public boolean isPartSpilled() {
+		return register != null && register.isSpilled() || factorRegister != null && factorRegister.isSpilled();
+	}
+
 	@Override
 	public Bit getMode() {
 		return null;
