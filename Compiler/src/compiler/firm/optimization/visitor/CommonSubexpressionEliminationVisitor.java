@@ -147,12 +147,10 @@ public class CommonSubexpressionEliminationVisitor extends OptimizationVisitor<N
 						replaceDivMod(node, target, suc, sucTarget);
 					}
 				} else if (dominators.get(node.getBlock()).contains(target.getBlock())) {
-					System.out.println(node + " with " + target);
 					addReplacement(node, target);
 					addReplacement(suc.get(0), sucTarget.get(0));
 					// replaceDivMod(node, target, suc, sucTarget);
 				} else if (dominators.get(target.getBlock()).contains(node.getBlock())) {
-					System.out.println(target + " with " + node);
 					addReplacement(target, node);
 					addReplacement(sucTarget.get(0), suc.get(0));
 					// replaceDivMod(target, node, sucTarget, suc);

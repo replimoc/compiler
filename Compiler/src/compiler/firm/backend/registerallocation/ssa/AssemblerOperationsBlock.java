@@ -57,10 +57,6 @@ public class AssemblerOperationsBlock {
 			AssemblerOperation operation = operations.get(i);
 
 			for (VirtualRegister readRegister : operation.getVirtualReadRegisters()) {
-				if (readRegister.getRegister() != null) {
-					System.out.println();
-				}
-
 				uses.add(readRegister);
 
 				if (!lastUsed.containsKey(readRegister)) // keep in mind, we go from the last operation to the first one
@@ -72,10 +68,6 @@ public class AssemblerOperationsBlock {
 				VirtualRegister writeRegister = (VirtualRegister) writeRegisterBased;
 				kills.add(writeRegister);
 				writeRegister.setDefinition(operation);
-
-				if (writeRegister.getRegister() != null) {
-					System.out.println();
-				}
 			}
 		}
 	}
