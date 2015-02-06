@@ -6,12 +6,9 @@ import java.util.List;
 
 import compiler.firm.backend.operations.Comment;
 import compiler.firm.backend.operations.LabelOperation;
-import compiler.firm.backend.operations.MovOperation;
 import compiler.firm.backend.operations.jump.JmpOperation;
 import compiler.firm.backend.operations.templates.AssemblerOperation;
 import compiler.firm.backend.operations.templates.JumpOperation;
-import compiler.firm.backend.storage.MemoryPointer;
-import compiler.firm.backend.storage.SingleRegister;
 
 public class PeepholeOptimizer {
 
@@ -78,21 +75,6 @@ public class PeepholeOptimizer {
 					setAlignment(jump);
 					writeOperation(jump);
 				}
-			} else if (currentOperation instanceof MovOperation) {
-				MovOperation move = (MovOperation) currentOperation;
-				SingleRegister sourceRegister = move.getSource().getSingleRegister();
-				SingleRegister destinationRegister = move.getDestination().getSingleRegister();
-				MemoryPointer sourceMemoryPointer = move.getSource().getMemoryPointer();
-				MemoryPointer destinationMemoryPointer = move.getDestination().getMemoryPointer();
-
-				if ((sourceRegister != null && sourceRegister == destinationRegister) ||
-						(sourceMemoryPointer != null && sourceMemoryPointer == destinationMemoryPointer)) {
-					writeOperation(new Comment(currentOperation)); // discard move between the same register
-				} else {
-					writeOperation();
-				}
-				nextOperation();
-
 			} else { // default case
 				writeOperation();
 				nextOperation();

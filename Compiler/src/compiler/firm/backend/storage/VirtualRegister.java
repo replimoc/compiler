@@ -113,7 +113,7 @@ public class VirtualRegister extends RegisterBased {
 
 	@Override
 	public MemoryPointer getMemoryPointer() {
-		return register.getMemoryPointer();
+		return register == null ? null : register.getMemoryPointer();
 	}
 
 	@Override
