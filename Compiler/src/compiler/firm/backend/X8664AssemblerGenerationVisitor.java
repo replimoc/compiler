@@ -42,8 +42,8 @@ import compiler.firm.backend.operations.jump.JleOperation;
 import compiler.firm.backend.operations.jump.JmpOperation;
 import compiler.firm.backend.operations.jump.JzOperation;
 import compiler.firm.backend.operations.templates.AssemblerOperation;
+import compiler.firm.backend.operations.templates.SourceSourceDesinationOperationFactory;
 import compiler.firm.backend.operations.templates.SourceSourceDestinationOperation;
-import compiler.firm.backend.operations.templates.StorageRegisterRegisterOperationFactory;
 import compiler.firm.backend.storage.Constant;
 import compiler.firm.backend.storage.MemoryPointer;
 import compiler.firm.backend.storage.RegisterBased;
@@ -159,14 +159,11 @@ public class X8664AssemblerGenerationVisitor implements BulkPhiNodeVisitor {
 		operations.add(assemblerOption);
 	}
 
-	private <T extends SourceSourceDestinationOperation> void visitTwoOperandsNode(StorageRegisterRegisterOperationFactory operationFactory,
+	private <T extends SourceSourceDestinationOperation> void visitTwoOperandsNode(SourceSourceDesinationOperationFactory operationFactory,
 			Node parent,
 			Node left, Node right) {
-		// get left node
 		Storage registerLeft = storageManagement.getStorage(left);
-		// get right node
 		RegisterBased registerRight = storageManagement.getValue(right);
-
 		RegisterBased result = new VirtualRegister(StorageManagement.getMode(parent), parent.toString());
 
 		// create operation object

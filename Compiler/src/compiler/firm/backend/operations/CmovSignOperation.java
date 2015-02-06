@@ -7,8 +7,8 @@ import compiler.firm.backend.storage.Storage;
 public class CmovSignOperation extends SourceSourceDestinationOperation {
 	private boolean swapped = false;
 
-	public CmovSignOperation(String comment, Storage source, RegisterBased source2, RegisterBased destination) {
-		super(comment, source, source2, destination);
+	public CmovSignOperation(String comment, Storage source1, RegisterBased source2, RegisterBased destination) {
+		super(comment, source1, source2, destination);
 	}
 
 	@Override

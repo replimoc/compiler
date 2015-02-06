@@ -5,6 +5,7 @@ import java.util.Set;
 import compiler.firm.backend.operations.MovOperation;
 import compiler.firm.backend.storage.RegisterBased;
 import compiler.firm.backend.storage.Storage;
+import compiler.firm.backend.storage.VirtualRegister;
 import compiler.utils.Utils;
 
 public abstract class SourceSourceDestinationOperation extends AssemblerBitOperation {
@@ -18,6 +19,10 @@ public abstract class SourceSourceDestinationOperation extends AssemblerBitOpera
 		this.source = source;
 		this.source2 = source2;
 		this.destination = destination;
+
+		if (source2 instanceof VirtualRegister && destination instanceof VirtualRegister) {
+			((VirtualRegister) destination).addPreferedRegister((VirtualRegister) source2);
+		}
 	}
 
 	@Override
