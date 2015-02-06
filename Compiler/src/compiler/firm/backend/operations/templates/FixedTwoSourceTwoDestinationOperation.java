@@ -8,8 +8,8 @@ import java.util.List;
 import java.util.Set;
 
 import compiler.firm.backend.Bit;
+import compiler.firm.backend.X8664AssemblerGenerationVisitor;
 import compiler.firm.backend.operations.AddOperation;
-import compiler.firm.backend.operations.CallOperation;
 import compiler.firm.backend.operations.MovOperation;
 import compiler.firm.backend.operations.PopOperation;
 import compiler.firm.backend.operations.PushOperation;
@@ -71,18 +71,18 @@ public abstract class FixedTwoSourceTwoDestinationOperation extends AssemblerOpe
 		boolean source2OnRax = !source2.isSpilled() && source2.getRegisterBundle() == RegisterBundle._AX;
 		if (aliveRegisters.contains(RegisterBundle._AX) || source2OnRax) {
 			commandList.add(new PushOperation(SingleRegister.RAX).toString());
-			temporaryStackOffset += CallOperation.STACK_ITEM_SIZE;
+			temporaryStackOffset += X8664AssemblerGenerationVisitor.STACK_ITEM_SIZE;
 			raxSaved = new MemoryPointer(0, SingleRegister.RSP);
 		}
 		boolean source2OnRdx = !source2.isSpilled() && source2.getRegisterBundle() == RegisterBundle._DX;
 		MemoryPointer rdxSaved = null;
 		if (aliveRegisters.contains(RegisterBundle._DX) || source2OnRdx) {
 			commandList.add(new PushOperation(SingleRegister.RDX).toString());
-			temporaryStackOffset += CallOperation.STACK_ITEM_SIZE;
+			temporaryStackOffset += X8664AssemblerGenerationVisitor.STACK_ITEM_SIZE;
 			rdxSaved = new MemoryPointer(0, SingleRegister.RSP);
 
 			if (raxSaved != null)
-				raxSaved.setTemporaryStackOffset(CallOperation.STACK_ITEM_SIZE);
+				raxSaved.setTemporaryStackOffset(X8664AssemblerGenerationVisitor.STACK_ITEM_SIZE);
 		}
 
 		Storage usedSource2;
@@ -102,7 +102,7 @@ public abstract class FixedTwoSourceTwoDestinationOperation extends AssemblerOpe
 		source2.setTemporaryStackOffset(0);
 
 		if ((!aliveRegisters.contains(RegisterBundle._AX) && source2OnRax) || (!aliveRegisters.contains(RegisterBundle._DX) && source2OnRdx)) {
-			commandList.add(new AddOperation(new Constant(CallOperation.STACK_ITEM_SIZE), SingleRegister.RSP, SingleRegister.RSP).toString());
+			commandList.add(new AddOperation(new Constant(X8664AssemblerGenerationVisitor.STACK_ITEM_SIZE), SingleRegister.RSP, SingleRegister.RSP).toString());
 		}
 		if (destination1 != null) {
 			destination1.setTemporaryStackOffset(temporaryStackOffset);

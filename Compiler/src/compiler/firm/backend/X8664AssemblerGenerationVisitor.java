@@ -117,8 +117,6 @@ import firm.nodes.Unknown;
 
 public class X8664AssemblerGenerationVisitor implements BulkPhiNodeVisitor {
 
-	private static final int STACK_ITEM_SIZE = 8;
-
 	private final ArrayList<AssemblerOperation> operations = new ArrayList<>();
 	private final ArrayList<AssemblerOperation> allOperations = new ArrayList<>();
 	private final HashMap<Block, ArrayList<AssemblerOperation>> operationsOfBlocks = new HashMap<>();
@@ -129,6 +127,7 @@ public class X8664AssemblerGenerationVisitor implements BulkPhiNodeVisitor {
 	private final CallingConvention callingConvention;
 
 	private Block currentBlock;
+	public static final int STACK_ITEM_SIZE = 8;
 
 	public X8664AssemblerGenerationVisitor(CallingConvention callingConvention) {
 		this.callingConvention = callingConvention;

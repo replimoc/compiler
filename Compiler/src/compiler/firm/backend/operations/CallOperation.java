@@ -11,6 +11,7 @@ import java.util.Set;
 
 import compiler.firm.backend.Bit;
 import compiler.firm.backend.TransferGraphSolver;
+import compiler.firm.backend.X8664AssemblerGenerationVisitor;
 import compiler.firm.backend.calling.CallingConvention;
 import compiler.firm.backend.operations.templates.AssemblerOperation;
 import compiler.firm.backend.operations.templates.CurrentlyAliveRegistersNeeding;
@@ -25,7 +26,6 @@ import compiler.utils.Pair;
 import compiler.utils.Utils;
 
 public class CallOperation extends AssemblerOperation implements CurrentlyAliveRegistersNeeding {
-	public static final int STACK_ITEM_SIZE = 8;
 
 	private final String name;
 	private final List<Parameter> parameters;
@@ -103,21 +103,21 @@ public class CallOperation extends AssemblerOperation implements CurrentlyAliveR
 		int numberOfStackParameters = parameters.size() - callingRegisters.length;
 
 		HashMap<RegisterBundle, MemoryPointer> registerStackLocations = new HashMap<>();
-		int stackPosition = STACK_ITEM_SIZE * (callerSavedRegisters.size() + Math.max(0, numberOfStackParameters) - 1);
-		int maxStackOffset = stackPosition + STACK_ITEM_SIZE;
+		int stackPosition = X8664AssemblerGenerationVisitor.STACK_ITEM_SIZE * (callerSavedRegisters.size() + Math.max(0, numberOfStackParameters) - 1);
+		int maxStackOffset = stackPosition + X8664AssemblerGenerationVisitor.STACK_ITEM_SIZE;
 
 		// Save all callerSavedRegisters to stack
 		for (RegisterBundle saveRegister : callerSavedRegisters) {
 			result.add(new PushOperation(saveRegister.getRegister(Bit.BIT64)).toString());
 			// maxStackOffset will be added by temporaryStackOffset
 			registerStackLocations.put(saveRegister, new MemoryPointer(stackPosition - maxStackOffset, SingleRegister.RSP));
-			stackPosition -= STACK_ITEM_SIZE;
+			stackPosition -= X8664AssemblerGenerationVisitor.STACK_ITEM_SIZE;
 		}
 
-		Constant stackAllocationSize = new Constant(STACK_ITEM_SIZE * numberOfStackParameters);
+		Constant stackAllocationSize = new Constant(X8664AssemblerGenerationVisitor.STACK_ITEM_SIZE * numberOfStackParameters);
 
 		if (numberOfStackParameters > 0) {
-			stackPosition = STACK_ITEM_SIZE * callerSavedRegisters.size();
+			stackPosition = X8664AssemblerGenerationVisitor.STACK_ITEM_SIZE * callerSavedRegisters.size();
 			// Copy parameters to stack
 			for (int i = numberOfStackParameters - 1; i >= 0; i--) {
 				Parameter source = parameters.get(i + callingRegisters.length);
@@ -133,7 +133,7 @@ public class CallOperation extends AssemblerOperation implements CurrentlyAliveR
 
 				result.add(new PushOperation(sourceStorage).toString());
 				source.storage.setTemporaryStackOffset(0);
-				stackPosition += STACK_ITEM_SIZE;
+				stackPosition += X8664AssemblerGenerationVisitor.STACK_ITEM_SIZE;
 			}
 		}
 

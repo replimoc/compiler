@@ -19,8 +19,6 @@ import firm.nodes.Node;
 
 public class StorageManagement {
 
-	public static final int STACK_ITEM_SIZE = 8;
-
 	private final List<AssemblerOperation> operations;
 	private final HashMap<Node, Storage> nodeStorages = new HashMap<>();
 
@@ -74,7 +72,7 @@ public class StorageManagement {
 		storeValue(node, storage, destination);
 	}
 
-	public void storeValue(Node node, Storage storage, Storage destination) {
+	private void storeValue(Node node, Storage storage, Storage destination) {
 		if (storage != destination) {
 			throw new RuntimeException("storeValue source != destination");
 		}
@@ -94,7 +92,7 @@ public class StorageManagement {
 		}
 	}
 
-	void storeToBackEdges(Node node, RegisterBased register) {
+	public void storeToBackEdges(Node node, RegisterBased register) {
 		for (Edge edge : BackEdges.getOuts(node)) {
 			Node edgeNode = edge.node;
 			if (!edgeNode.getMode().equals(Mode.getM())) {

@@ -5,17 +5,16 @@ import java.util.Iterator;
 import java.util.Set;
 
 import compiler.firm.FirmUtils;
+import compiler.firm.backend.X8664AssemblerGenerationVisitor;
 import compiler.firm.backend.operations.templates.AssemblerOperation;
 import compiler.firm.backend.storage.MemoryPointer;
 import compiler.firm.backend.storage.RegisterBased;
 import compiler.firm.backend.storage.SingleRegister;
 import compiler.firm.backend.storage.VirtualRegister;
-
 import firm.BlockWalker;
 import firm.nodes.Block;
 
 public class SsaSpiller {
-	private static final int STACK_ITEM_SIZE = 8;
 
 	private final AssemblerProgram program;
 
@@ -87,7 +86,7 @@ public class SsaSpiller {
 
 	private void spillRegister(VirtualRegister spilledRegister) {
 		spilledRegister.setSpilled(true);
-		currentStackOffset += STACK_ITEM_SIZE;
+		currentStackOffset += X8664AssemblerGenerationVisitor.STACK_ITEM_SIZE;
 		spilledRegister.setStorage(new MemoryPointer(currentStackOffset, SingleRegister.RSP));
 	}
 
