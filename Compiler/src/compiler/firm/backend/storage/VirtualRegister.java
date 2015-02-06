@@ -7,7 +7,6 @@ import java.util.Set;
 
 import compiler.firm.backend.Bit;
 import compiler.firm.backend.operations.templates.AssemblerOperation;
-import compiler.firm.backend.registerallocation.linear.Interval;
 
 public class VirtualRegister extends RegisterBased {
 
@@ -18,7 +17,6 @@ public class VirtualRegister extends RegisterBased {
 	private final String comment;
 	private final List<VirtualRegister> preferedRegisters = new LinkedList<>();
 
-	private Interval lifetime;
 	private Storage register;
 	private boolean isSpilled;
 
@@ -76,10 +74,6 @@ public class VirtualRegister extends RegisterBased {
 		return mode;
 	}
 
-	public boolean isAliveAt(int line) {
-		return lifetime != null && lifetime.contains(line);
-	}
-
 	public int getNum() {
 		return num;
 	}
@@ -119,25 +113,6 @@ public class VirtualRegister extends RegisterBased {
 	@Override
 	public void setTemporaryStackOffset(int temporaryStackOffset) {
 		register.setTemporaryStackOffset(temporaryStackOffset);
-	}
-
-	public void expandLifetime(int line, boolean read) {
-		if (lifetime == null) {
-			if (read) {
-				throw new RuntimeException("first use of register is not a write: VR_" + this.num);
-			}
-
-			lifetime = new Interval(line);
-			return;
-		} else if (!read) {
-			throw new RuntimeException("second definition of variable: VR_" + this.num);
-		}
-
-		lifetime.expandEnd(line);
-	}
-
-	public Interval getLifetime() {
-		return lifetime;
 	}
 
 	@Override
