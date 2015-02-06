@@ -3,6 +3,8 @@ package compiler.firm.backend.registerallocation.ssa;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.Map;
+import java.util.Map.Entry;
 import java.util.Set;
 
 import compiler.firm.backend.operations.templates.AssemblerOperation;
@@ -18,10 +20,10 @@ public class AssemblerOperationsBlock {
 	private final Set<AssemblerOperationsBlock> predecessors = new HashSet<>();
 	private final Set<AssemblerOperationsBlock> successors = new HashSet<>();
 
-	private final Set<VirtualRegister> uses = new HashSet<>();
+	private final Map<VirtualRegister, Integer> uses = new HashMap<>();
 	private final Set<VirtualRegister> kills = new HashSet<>();
-	private final Set<VirtualRegister> liveIn = new HashSet<>();
-	private final Set<VirtualRegister> liveOut = new HashSet<>();
+	private final Map<VirtualRegister, Integer> liveIn = new HashMap<>();
+	private final Map<VirtualRegister, Integer> liveOut = new HashMap<>();
 
 	private final HashMap<VirtualRegister, AssemblerOperation> lastUsed = new HashMap<>();
 
@@ -57,7 +59,7 @@ public class AssemblerOperationsBlock {
 			AssemblerOperation operation = operations.get(i);
 
 			for (VirtualRegister readRegister : operation.getVirtualReadRegisters()) {
-				uses.add(readRegister);
+				uses.put(readRegister, i);
 
 				if (!lastUsed.containsKey(readRegister)) // keep in mind, we go from the last operation to the first one
 					lastUsed.put(readRegister, operation);
@@ -74,30 +76,48 @@ public class AssemblerOperationsBlock {
 
 	public boolean calculateLiveInAndOut() {
 		int oldLiveOutSize = liveOut.size();
-		int oldLiveInSize = liveIn.size();
+		HashMap<VirtualRegister, Integer> oldLiveIn = new HashMap<>(liveIn);
 
 		calculateLiveOut();
 
 		liveIn.clear();
-		liveIn.addAll(uses);
-		liveIn.addAll(liveOut);
-		liveIn.removeAll(kills);
 
-		return liveOut.size() != oldLiveOutSize || liveIn.size() != oldLiveInSize;
+		int blockLength = operations.size();
+		for (Entry<VirtualRegister, Integer> liveOutEntry : liveOut.entrySet()) {
+			liveIn.put(liveOutEntry.getKey(), liveOutEntry.getValue() + blockLength);
+		}
+		liveIn.putAll(uses); // this overwrites liveouts that are used internally
+
+		for (VirtualRegister kill : kills) { // remove variables defined in this block
+			liveIn.remove(kill);
+		}
+
+		return liveOut.size() != oldLiveOutSize || !liveIn.equals(oldLiveIn);
 	}
 
 	private void calculateLiveOut() {
 		for (AssemblerOperationsBlock succOperationsBlock : successors) {
-			liveOut.addAll(succOperationsBlock.liveIn);
+			mergeNextUseMaps(liveOut, succOperationsBlock.liveIn);
+		}
+	}
+
+	private static void mergeNextUseMaps(Map<VirtualRegister, Integer> result, Map<VirtualRegister, Integer> toBeMerged) {
+		for (Entry<VirtualRegister, Integer> currLiveIn : toBeMerged.entrySet()) {
+			Integer existingLiveOut = result.get(currLiveIn.getKey());
+			if (existingLiveOut != null) { // if this is also live in somewhere else, take the minimum distance
+				result.put(currLiveIn.getKey(), Math.min(existingLiveOut, currLiveIn.getValue()));
+			} else {
+				result.put(currLiveIn.getKey(), currLiveIn.getValue());
+			}
 		}
 	}
 
 	public Set<VirtualRegister> getLiveIn() {
-		return liveIn;
+		return liveIn.keySet();
 	}
 
 	public Set<VirtualRegister> getLiveOut() {
-		return liveOut;
+		return liveOut.keySet();
 	}
 
 	@Override
@@ -107,13 +127,13 @@ public class AssemblerOperationsBlock {
 		builder.append(block);
 		builder.append(":  \t  liveIn: ");
 
-		for (VirtualRegister register : liveIn) {
+		for (VirtualRegister register : liveIn.keySet()) {
 			builder.append("VR_" + register.getNum() + ", ");
 		}
 
 		builder.append("  \t  liveOut: ");
 
-		for (VirtualRegister register : liveOut) {
+		for (VirtualRegister register : liveOut.keySet()) {
 			builder.append("VR_" + register.getNum() + ", ");
 		}
 
@@ -129,6 +149,6 @@ public class AssemblerOperationsBlock {
 	}
 
 	public boolean isLastUsage(VirtualRegister register, AssemblerOperation operation) {
-		return !liveOut.contains(register) && lastUsed.get(register) == operation;
+		return !liveOut.containsKey(register) && lastUsed.get(register) == operation;
 	}
 }
