@@ -57,7 +57,12 @@ public class MovOperation extends AssemblerBitOperation {
 				mode = Bit.BIT64;
 			}
 
-			return String.format("\tmov%s %s, %s", mode, source.toString(), destination.toString());
+			if (source instanceof Constant && ((Constant) source).getConstant() == 0 && destination instanceof VirtualRegister
+					&& !destination.isSpilled()) {
+				return String.format("\txor%s %s, %s", mode, destination.toString(), destination.toString());
+			} else {
+				return String.format("\tmov%s %s, %s", mode, source.toString(), destination.toString());
+			}
 		}
 	}
 
