@@ -105,6 +105,10 @@ public class VirtualRegister extends RegisterBased {
 		return preferredBundles;
 	}
 
+	public List<VirtualRegister> getPreferedRegisters() {
+		return preferedRegisters;
+	}
+
 	@Override
 	public MemoryPointer getMemoryPointer() {
 		return register == null ? null : register.getMemoryPointer();
