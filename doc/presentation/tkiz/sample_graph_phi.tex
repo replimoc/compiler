@@ -1,0 +1,20 @@
+\node [cfn,anchor=south] at (2,2)				(ass)		{ $b \leftarrow 12$ };
+\node [cfn,cond,below=0.75cm of ass]				(cond)		{ $condition$ };
+
+\node [cfn,below left=0.75cm and -0.55cm of cond,minimum height=10mm,minimum width=22mm]	(left)		{  };
+\node [above=-6mm of left]					(leftc)		{ $a_1 \leftarrow 2 + b$ };
+\node [below=-2mm of leftc]					(leftphi)	{ $\Phi_r(a_1)$ };
+
+\node [cfn,below right=0.75cm and -0.55cm of cond,minimum height=10mm,minimum width=22mm]	(right)		{  };
+\node [above=-6mm of right]					(rightc)	{ $a_2 \leftarrow 4 + b$ };
+\node [below=-2mm of rightc]					(rightphi)	{ $\Phi_r(a_2)$ };
+
+\node [cfn,phi,below=2.5cm of cond]				(phi)		{ $r \leftarrow \Phi_w(a_1, a_2)$ };
+
+
+\draw[->,cf]	(ass) to (cond);
+\draw[->,cf]	(cond) to (left);
+\draw[->,cf]	(cond) to (right);
+\draw[->,cf]	(left) to (phi);
+\draw[->,cf]	(right) to (phi);
+
