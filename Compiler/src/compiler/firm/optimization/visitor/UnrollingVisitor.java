@@ -229,7 +229,10 @@ public class UnrollingVisitor extends OptimizationVisitor<Node> {
 		Node lastMemNode = loopPhi.getPred(1);
 		HashMap<Node, Node> inductions = new HashMap<Node, Node>();
 		for (Entry<Node, Node> entry : inductionVariables.entrySet()) {
-			inductions.put(entry.getKey(), entry.getValue());
+			if (entry.getKey().getBlock().equals(loopCounter.getBlock())) {
+				// only all induction variables of this loop
+				inductions.put(entry.getKey(), entry.getValue());
+			}
 		}
 
 		for (int i = 1; i < unrollFactor; i++) {
@@ -273,6 +276,7 @@ public class UnrollingVisitor extends OptimizationVisitor<Node> {
 								lastMemNode = loopPhi.getPred(1);
 							}
 						} else if (inductions.containsKey(blockNode.getPred(j))) {
+							// FIXME: to support more than 2 phis in the loop header
 							Node induction = BackEdges.getOuts(blockNode).iterator().next().node;
 							copy.setPred(j, blockNode);
 							for (int k = 0; k < induction.getPredCount(); k++) {
