@@ -159,10 +159,6 @@ public class LoadStoreOptimiziationVisitor extends OptimizationVisitor<Node> {
 		return true;
 	}
 
-	private String getMethodName(Node node) {
-		return node.getGraph().getEntity().getLdName();
-	}
-
 	private void uniteProjSuccessors(Node node) {
 		Proj memProj = null;
 		Proj nonMemProj = null;
