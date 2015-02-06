@@ -7,6 +7,7 @@ import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Set;
 
+import compiler.firm.FirmUtils;
 import compiler.firm.optimization.AbstractFirmNodesVisitor;
 
 import firm.BackEdges;
@@ -14,8 +15,12 @@ import firm.BackEdges.Edge;
 import firm.BlockWalker;
 import firm.Graph;
 import firm.Mode;
+import firm.bindings.binding_irdom;
+import firm.nodes.Add;
 import firm.nodes.Anchor;
 import firm.nodes.Block;
+import firm.nodes.Cmp;
+import firm.nodes.Const;
 import firm.nodes.Jmp;
 import firm.nodes.Node;
 import firm.nodes.NodeVisitor;
@@ -28,11 +33,19 @@ public class OptimizationUtils {
 	private final HashMap<Node, Node> inductionVariables = new HashMap<>();
 	private final HashMap<Block, Phi> loopPhis = new HashMap<>();
 	private final HashMap<Block, Set<Node>> blockNodes = new HashMap<>();
+	private final HashSet<Block> conditionalBlocks = new HashSet<>();
 	private boolean calculatedPhis = false;
 	private final Graph graph;
 
 	public OptimizationUtils(Graph graph) {
 		this.graph = graph;
+	}
+
+	public HashSet<Block> getIfBlocks() {
+		if (dominators.size() == 0 && backedges.size() == 0 || conditionalBlocks.size() == 0) {
+			calculateDominators();
+		}
+		return conditionalBlocks;
 	}
 
 	public HashMap<Block, Set<Block>> getDominators() {
@@ -93,7 +106,7 @@ public class OptimizationUtils {
 			if (dominators.containsKey(b) && dominators.get(b).containsAll(loops)) {
 				for (Map.Entry<Node, Node> entry : backedges.entrySet()) {
 					if (entry.getValue().equals(b)) {
-						if (dominators.containsKey((Block) entry.getKey()) && !dominators.get((Block) entry.getKey()).contains(block)
+						if (dominators.containsKey(entry.getKey()) && !dominators.get(entry.getKey()).contains(block)
 								&& !dominatorBlocks.contains(entry.getKey())) {
 							// b and the looṕ header are on the same 'level'
 							sameLevelLoops.add(b);
@@ -147,6 +160,8 @@ public class OptimizationUtils {
 
 	private void calculateDominators() {
 		Node start = graph.getStart();
+		binding_irdom.compute_postdoms(graph.ptr);
+		binding_irdom.compute_doms(graph.ptr);
 		final Block startBlock = (Block) start.getBlock();
 
 		BlockWalker walker = new BlockWalker() {
@@ -182,7 +197,7 @@ public class OptimizationUtils {
 						if (((edge.node instanceof Proj && edge.node.getMode().equals(Mode.getX()) || edge.node instanceof Jmp))) {
 							for (Edge backedge : BackEdges.getOuts(edge.node)) {
 								// visit dominated blocks
-								if (dominators.get((Block) backedge.node) != null && dominators.get((Block) backedge.node).contains(block)) {
+								if (dominators.get(backedge.node) != null && dominators.get(backedge.node).contains(block)) {
 									visitBlock((Block) backedge.node);
 								}
 							}
@@ -197,6 +212,17 @@ public class OptimizationUtils {
 							// found back edge to loop header
 							backedges.put(node.getBlock(), block);
 						}
+					}
+					boolean potentialIf = true;
+					for (Node node : block.getPreds()) {
+						if ((potentialIf && binding_irdom.block_postdominates(block.ptr, node.getBlock().ptr) == 1)
+								&& binding_irdom.block_dominates(block.ptr, node.getBlock().ptr) == 0) {
+							// no if
+							potentialIf = false;
+						}
+					}
+					if (potentialIf) {
+						conditionalBlocks.add(block);
 					}
 				}
 			}
@@ -226,4 +252,126 @@ public class OptimizationUtils {
 		};
 		graph.walk(visitor);
 	}
+
+	public Set<LoopInfo> getLoopInfos(Block block, HashMap<Block, Cmp> compares) {
+		Set<LoopInfo> loopInfos = new HashSet<>();
+		// only unroll the innermost loop
+		if (backedges.containsKey(block) && (dominators.get(block).size() == dominators.get(backedges.get(block)).size() + 1)) {
+			// loop body
+			for (Map.Entry<Node, Node> entry : inductionVariables.entrySet()) {
+				if (entry.getKey().getBlock().equals(block.getPred(0).getBlock())) {
+
+					// induction variable for this block
+					Node node = entry.getValue();
+					Node loopCounter = entry.getKey();
+
+					Const incr = getIncrementConstantOrNull(node);
+					if (incr == null)
+						continue;
+
+					if (!compares.containsKey(block.getPred(0).getBlock()))
+						continue;
+					Cmp cmp = compares.get(block.getPred(0).getBlock());
+					if (cmp == null)
+						continue;
+					Const constCmp = getConstantCompareNodeOrNull(cmp.getLeft(), cmp.getRight());
+					if (constCmp == null)
+						continue;
+
+					Const startingValue = getStartingValueOrNull(entry);
+					if (startingValue == null)
+						continue;
+
+					// get cycle count for loop
+					int cycleCount = getCycleCount(cmp, constCmp, startingValue, incr);
+					loopInfos.add(new LoopInfo(cycleCount, startingValue, incr, node, loopCounter));
+				}
+			}
+		}
+		return loopInfos;
+	}
+
+	public class LoopInfo {
+		public final int cycleCount;
+		public final Const startingValue;
+		public final Const incr;
+		public final Node node;
+		public final Node loopCounter;
+
+		private LoopInfo(int cycleCount, Const startingValue, Const incr, Node node, Node loopCounter) {
+			this.cycleCount = cycleCount;
+			this.startingValue = startingValue;
+			this.incr = incr;
+			this.node = node;
+			this.loopCounter = loopCounter;
+		}
+	}
+
+	private Const getIncrementConstantOrNull(Node node) {
+		if (node.getPredCount() > 1 && FirmUtils.isConstant(node.getPred(1)) && node instanceof Add) {
+			return (Const) node.getPred(1);
+		} else if (node.getPredCount() > 1 && FirmUtils.isConstant(node.getPred(0)) && node instanceof Add) {
+			return (Const) node.getPred(0);
+		} else {
+			return null;
+		}
+	}
+
+	private Const getConstantCompareNodeOrNull(Node left, Node right) {
+		if (FirmUtils.isConstant(left) && inductionVariables.containsKey(right)) {
+			return (Const) left;
+		} else if (FirmUtils.isConstant(right) && inductionVariables.containsKey(left)) {
+			return (Const) right;
+		} else {
+			return null;
+		}
+	}
+
+	private Const getStartingValueOrNull(Entry<Node, Node> entry) {
+		// TODO: discover the starting value through other loops as well
+		if (entry.getKey().getPred(0).equals(entry.getValue()) && FirmUtils.isConstant(entry.getKey().getPred(1))) {
+			return (Const) entry.getKey().getPred(1);
+		} else if (entry.getKey().getPred(1).equals(entry.getValue()) && FirmUtils.isConstant(entry.getKey().getPred(0))) {
+			return (Const) entry.getKey().getPred(0);
+		} else {
+			return null;
+		}
+	}
+
+	private int getCycleCount(Cmp cmp, Const constCmp, Const startingValue, Const incr) {
+		int count = 0;
+		switch (cmp.getRelation()) {
+		case Less:
+			count = (int) Math.ceil((double) (constCmp.getTarval().asInt() - startingValue.getTarval().asInt()) / incr.getTarval().asInt());
+			if (incr.getTarval().isNegative()) {
+				return count < 0 ? Integer.MIN_VALUE : count;
+			} else {
+				return count < 0 ? Integer.MAX_VALUE : count;
+			}
+		case LessEqual:
+			count = (int) Math.ceil((double) (constCmp.getTarval().asInt() - startingValue.getTarval().asInt()) / incr.getTarval().asInt());
+			if (incr.getTarval().isNegative()) {
+				return count <= 0 ? Integer.MIN_VALUE : count + 1;
+			} else {
+				return count <= 0 ? Integer.MAX_VALUE : count + 1;
+			}
+		case Greater:
+			count = (int) Math.ceil((double) (startingValue.getTarval().asInt() - constCmp.getTarval().asInt()) / incr.getTarval().asInt());
+			if (incr.getTarval().isNegative()) {
+				return count > 0 ? Integer.MIN_VALUE : count;
+			} else {
+				return count > 0 ? Integer.MAX_VALUE : count;
+			}
+		case GreaterEqual:
+			count = (int) Math.ceil((double) (startingValue.getTarval().asInt() - constCmp.getTarval().asInt()) / incr.getTarval().asInt());
+			if (incr.getTarval().isNegative()) {
+				return count >= 0 ? Integer.MIN_VALUE : count - 1;
+			} else {
+				return count >= 0 ? Integer.MAX_VALUE : count - 1;
+			}
+		default:
+			return 0;
+		}
+	}
+
 }

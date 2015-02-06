@@ -2,6 +2,7 @@ package compiler.firm.optimization.evaluation;
 
 import java.util.HashSet;
 
+import compiler.firm.FirmUtils;
 import compiler.firm.optimization.AbstractFirmNodesVisitor;
 
 import firm.BackEdges;
@@ -10,7 +11,6 @@ import firm.Entity;
 import firm.Graph;
 import firm.MethodType;
 import firm.Mode;
-import firm.nodes.Address;
 import firm.nodes.Call;
 import firm.nodes.Cmp;
 import firm.nodes.Const;
@@ -74,17 +74,22 @@ public class GraphEvaluationVisitor extends AbstractFirmNodesVisitor {
 			}
 		}
 
-		final Address address = (Address) callNode.getPred(1);
-		Entity calledEntity = address.getEntity();
+		Entity calledEntity = FirmUtils.getCalledEntity(callNode);
 		EntityDetails calledEntityDetails = programDetails.getEntityDetails(calledEntity);
 
 		calledEntityDetails.addCallToEntityInfo(callNode, new CallInformation(callNode.getGraph().getEntity(), constantArguments));
 		ownDetails.addCallFromEntityInfo(callNode, new CallInformation(calledEntity, constantArguments));
+		getBlockInformation(callNode).addCall(callNode);
+		visitModeM(callNode);
+	}
+
+	private BlockInformation getBlockInformation(Node node) {
+		EntityDetails entityDetails = programDetails.getEntityDetails(node.getGraph().getEntity());
+		return entityDetails.getBlockInformation(node.getBlock());
 	}
 
 	private void collectEnd(Node node) {
-		EntityDetails entityDetails = programDetails.getEntityDetails(node.getGraph().getEntity());
-		entityDetails.addBlockInfo(node.getBlock(), new BlockInformation(node));
+		getBlockInformation(node).setEndNode(node);
 	}
 
 	@Override
@@ -108,26 +113,35 @@ public class GraphEvaluationVisitor extends AbstractFirmNodesVisitor {
 	@Override
 	public void visit(Load load) {
 		super.visit(load);
+		visitModeM(load);
 		ownDetails.setHasMemUsage();
+		getBlockInformation(load).setHasMemUsage();
 	}
 
 	@Override
 	public void visit(Store store) {
 		super.visit(store);
+		visitModeM(store);
 		ownDetails.setHasSideEffects();
 		ownDetails.setHasMemUsage();
+		getBlockInformation(store).setHasSideEffects();
+		getBlockInformation(store).setHasMemUsage();
 	}
 
 	@Override
 	public void visit(Div div) {
 		super.visit(div);
+		visitModeM(div);
 		ownDetails.setHasMemUsage();
+		getBlockInformation(div).setHasMemUsage();
 	}
 
 	@Override
 	public void visit(Mod mod) {
 		super.visit(mod);
+		visitModeM(mod);
 		ownDetails.setHasMemUsage();
+		getBlockInformation(mod).setHasMemUsage();
 	}
 
 	@Override
@@ -136,11 +150,23 @@ public class GraphEvaluationVisitor extends AbstractFirmNodesVisitor {
 		if (phi.getMode().equals(Mode.getM())) {
 			ownDetails.setHasSideEffects();
 			ownDetails.setHasMemUsage();
+			getBlockInformation(phi).setHasSideEffects();
+			getBlockInformation(phi).setHasMemUsage();
 		}
 	}
 
 	@Override
 	protected void visitNode(Node node) {
+		if (node.getMode().equals(Mode.getM())) {
+			visitModeM(node);
+		}
 		numberOfNodes++;
+	}
+
+	private void visitModeM(Node node) {
+		BlockInformation blockInfo = getBlockInformation(node);
+		if (blockInfo.getFirstModeM() == null) // Set first if nothing is set
+			blockInfo.setFirstModeM(node);
+		blockInfo.setLastModeM(node);
 	}
 }

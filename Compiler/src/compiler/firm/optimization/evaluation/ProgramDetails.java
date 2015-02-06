@@ -68,6 +68,21 @@ public class ProgramDetails {
 			updateGraph(graph);
 		}
 		finishMemoryUsageAndSideEffectCalculation();
+		for (EntityDetails entityDetail : entityDetails.values()) {
+			updateCallMemoryUsageAndSideEffect(entityDetail);
+		}
+	}
+
+	private void updateCallMemoryUsageAndSideEffect(EntityDetails entityDetail) {
+		for (BlockInformation blockInformation : entityDetail.getBlockInformations().values()) {
+			for (Call call : blockInformation.getCalls()) {
+				EntityDetails callEntityDetails = getEntityDetails(FirmUtils.getCalledEntity(call));
+				if (callEntityDetails.hasMemUsage())
+					blockInformation.setHasMemUsage();
+				if (callEntityDetails.hasSideEffects())
+					blockInformation.setHasSideEffects();
+			}
+		}
 	}
 
 	private void updateGraph(Graph graph) {
@@ -75,7 +90,7 @@ public class ProgramDetails {
 		EntityDetails entityDetail = getEntityDetails(graph.getEntity());
 		GraphEvaluationVisitor.calculateStaticDetails(graph, entityDetail);
 		GraphEvaluationVisitor graphEvaluationVisitor = new GraphEvaluationVisitor(graph, this);
-		graph.walk(graphEvaluationVisitor);
+		graph.walkTopological(graphEvaluationVisitor);
 		entityDetail.setNumberOfNodes(graphEvaluationVisitor.getNumberOfNodes());
 		BackEdges.disable(graph);
 	}
