@@ -11,6 +11,7 @@ import compiler.firm.optimization.evaluation.ProgramDetails;
 import firm.BackEdges;
 import firm.BackEdges.Edge;
 import firm.Entity;
+import firm.Graph;
 import firm.Mode;
 import firm.nodes.Add;
 import firm.nodes.Address;
@@ -209,9 +210,23 @@ public class LoopInvariantVisitor extends OptimizationVisitor<Node> {
 			@Override
 			public Node copyNode(Block newBlock) {
 				Node mem = getMemoryBeforeLoop(callNode);
+				Set<Node> memsAfterCall = new HashSet<>();
+				for (Edge edge : BackEdges.getOuts(mem)) {
+					memsAfterCall.add(edge.node);
+				}
 				if (mem == null)
 					return null;
-				return callNode.getGraph().newCall(newBlock, mem, address, parameters, callNode.getType());
+				Graph graph = callNode.getGraph();
+				Node call = graph.newCall(newBlock, mem, address, parameters, callNode.getType());
+				Node projM = graph.newProj(call, Mode.getM(), 0);
+
+				for (Node memAfterCall : memsAfterCall) {
+					for (int i = 0; i < memAfterCall.getPredCount(); i++) {
+						memAfterCall.setPred(i, projM);
+					}
+				}
+				return call;
+
 			}
 		}, callNode, operandBlocks);
 	}

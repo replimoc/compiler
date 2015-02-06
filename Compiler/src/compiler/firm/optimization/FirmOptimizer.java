@@ -38,6 +38,7 @@ public final class FirmOptimizer {
 			// all optimizations should run on the current graph
 			// do not optimize evaluateGraphs out!
 			finished = true;
+
 			finished &= ObsoleteNodesEliminator.eliminateObsoleteGraphs(evaluateGraphs());
 			finished &= optimize(NormalizationVisitor.FACTORY);
 			finished &= optimize(ConstantFoldingVisitor.FACTORY);
@@ -77,6 +78,7 @@ public final class FirmOptimizer {
 
 			compiler.firm.FirmUtils.replaceNodes(targetValues);
 			compiler.firm.FirmUtils.removeBadsAndUnreachable(graph);
+
 		}
 		return finished;
 	}
