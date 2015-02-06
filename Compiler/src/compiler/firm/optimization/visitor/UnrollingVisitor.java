@@ -71,10 +71,6 @@ public class UnrollingVisitor extends OptimizationVisitor<Node> {
 			if (getPhiCount((Block) backedges.get(block)) > 2)
 				return;
 
-			// negative cycle count means the counter is descending
-			if (!(loopInfo.cycleCount == Integer.MIN_VALUE) && Math.abs(loopInfo.cycleCount) < 2)
-				return;
-
 			int unrollFactor = MAX_UNROLL_FACTOR;
 			while (unrollFactor > 1 && (Math.abs(loopInfo.cycleCount) % unrollFactor) != 0) {
 				unrollFactor -= 1;
@@ -86,7 +82,7 @@ public class UnrollingVisitor extends OptimizationVisitor<Node> {
 				long count = (Integer.MAX_VALUE) - loopInfo.startingValue.getTarval().asLong();
 				long mod = count % loopInfo.incr.getTarval().asLong();
 				long target = (long) Math.ceil((double) (count) / loopInfo.incr.getTarval().asLong() + (mod == 0 ? 1 : 0));
-				if (blockNodes.get(block).size() > 2) {
+				if (!isCalculatable(block)) {
 					unrollFactor = MAX_UNROLL_FACTOR;
 					while (unrollFactor > 1 && (target % unrollFactor) != 0) {
 						unrollFactor -= 1;
@@ -102,7 +98,7 @@ public class UnrollingVisitor extends OptimizationVisitor<Node> {
 				long count = (Integer.MIN_VALUE) - loopInfo.startingValue.getTarval().asLong();
 				long mod = count % loopInfo.incr.getTarval().asLong();
 				long target = (long) Math.ceil((double) count / loopInfo.incr.getTarval().asLong()) + (mod == 0 ? 1 : 0);
-				if (blockNodes.get(block).size() > 2) {
+				if (!isCalculatable(block)) {
 					unrollFactor = MAX_UNROLL_FACTOR;
 					while (unrollFactor > 1 && (target % unrollFactor) != 0) {
 						unrollFactor -= 1;
@@ -114,9 +110,16 @@ public class UnrollingVisitor extends OptimizationVisitor<Node> {
 					long value = Integer.MAX_VALUE + loopInfo.incr.getTarval().asLong() - mod + 1;
 					replaceLoopIfPossible(loopInfo, value, block);
 				}
-			} else if (unrollFactor < 2 || (Math.abs(loopInfo.cycleCount) % unrollFactor) != 0) {
+			} else if (isCalculatable(block)) {
+				// calculate loop result
+				long value = loopInfo.startingValue.getTarval().asLong() + (Math.abs(loopInfo.cycleCount) * loopInfo.incr.getTarval().asLong());
+				replaceLoopIfPossible(loopInfo, value, block);
+			} else if (Math.abs(loopInfo.cycleCount) < 2 || (Math.abs(loopInfo.cycleCount) % unrollFactor) != 0) {
 				return;
 			}
+
+			if (unrollFactor < 2)
+				return;
 
 			// counter
 			HashMap<Node, Node> changedNodes = new HashMap<>();
@@ -148,6 +151,10 @@ public class UnrollingVisitor extends OptimizationVisitor<Node> {
 			}
 		}
 		return count;
+	}
+
+	private boolean isCalculatable(Block block) {
+		return blockNodes.containsKey(block) && !(blockNodes.get(block).size() > 2);
 	}
 
 	private boolean replaceLoopIfPossible(OptimizationUtils.LoopInfo loopInfo, long value, Block block) {
@@ -200,12 +207,17 @@ public class UnrollingVisitor extends OptimizationVisitor<Node> {
 		}
 
 		// replace nodes
-		Node newJmp = block.getGraph().newJmp(preLoopJmp.getBlock());
-		afterLoopBlock.setPred(0, newJmp);
+		if (preLoopJmp instanceof Proj && preLoopJmp.getMode().equals(Mode.getX())) {
+			// this loop is inside another loop
+			afterLoopBlock.setPred(0, preLoopJmp);
+		} else {
+			Node newJmp = block.getGraph().newJmp(preLoopJmp.getBlock());
+			afterLoopBlock.setPred(0, newJmp);
+			addReplacement(preLoopJmp, newJmp);
+		}
 
 		// remove the control flow edge
 		loopHeader.setPred(0, block.getGraph().newBad(Mode.getX()));
-		addReplacement(preLoopJmp, newJmp);
 		finishedLoops.add(block);
 		return true;
 	}
