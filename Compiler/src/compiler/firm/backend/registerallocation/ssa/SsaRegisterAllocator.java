@@ -1,6 +1,5 @@
 package compiler.firm.backend.registerallocation.ssa;
 
-import java.util.HashSet;
 import java.util.Set;
 
 import compiler.firm.FirmUtils;
@@ -75,12 +74,7 @@ public class SsaRegisterAllocator {
 	}
 
 	private void assignFreeRegister(RegisterAllocationPolicy policy, Set<RegisterBundle> freeRegisters, VirtualRegister virtualRegister) {
-		Set<RegisterBundle> interferringPreallocated = program.getInterferringPreallocatedBundles(virtualRegister);
-
-		HashSet<RegisterBundle> freeNonInterferringRegisters = new HashSet<>(freeRegisters);
-		freeNonInterferringRegisters.removeAll(interferringPreallocated);
-
-		RegisterBundle freeBundle = getFreeBundle(policy, freeNonInterferringRegisters, virtualRegister.getPreferedRegisterBundles());
+		RegisterBundle freeBundle = getFreeBundle(policy, freeRegisters, virtualRegister.getPreferedRegisterBundles());
 		virtualRegister.setStorage(freeBundle.getRegister(virtualRegister.getMode()));
 		freeRegisters.remove(freeBundle);
 		program.addUsedRegister(freeBundle);

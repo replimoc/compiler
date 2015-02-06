@@ -5,7 +5,6 @@ import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Set;
 
-import compiler.firm.FirmUtils;
 import compiler.firm.backend.operations.templates.AssemblerOperation;
 import compiler.firm.backend.storage.RegisterBased;
 import compiler.firm.backend.storage.VirtualRegister;
@@ -81,23 +80,6 @@ public class AssemblerOperationsBlock {
 		}
 	}
 
-	public Set<VirtualRegister> calculatePreallocatedRegisters() {
-		Set<VirtualRegister> preallocatedRegisters = new HashSet<>();
-
-		for (VirtualRegister use : uses) {
-			if (use.getRegister() != null) {
-				preallocatedRegisters.add(use);
-			}
-		}
-		for (VirtualRegister kill : kills) {
-			if (kill.getRegister() != null) {
-				preallocatedRegisters.add(kill);
-			}
-		}
-
-		return preallocatedRegisters;
-	}
-
 	public boolean calculateLiveInAndOut() {
 		int oldLiveOutSize = liveOut.size();
 		int oldLiveInSize = liveIn.size();
@@ -157,20 +139,4 @@ public class AssemblerOperationsBlock {
 	public boolean isLastUsage(VirtualRegister register, AssemblerOperation operation) {
 		return !liveOut.contains(register) && lastUsed.get(register) == operation;
 	}
-
-	public boolean dominates(AssemblerOperationsBlock otherBlock) {
-		return FirmUtils.blockDominates(block, otherBlock.block);
-	}
-
-	public boolean strictlyDominates(AssemblerOperation operation1, AssemblerOperation operation2) {
-		for (AssemblerOperation operation : operations) { // loop over operations to find dominating operation
-			if (operation == operation2) {
-				return false;
-			} else if (operation == operation1) {
-				return true;
-			}
-		}
-		return false;
-	}
-
 }
