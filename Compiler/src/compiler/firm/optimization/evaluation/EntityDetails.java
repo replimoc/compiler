@@ -7,6 +7,9 @@ import firm.nodes.Call;
 import firm.nodes.Node;
 
 public class EntityDetails {
+
+	private static final int MAX_INLINE_NODES = 100;
+
 	private final HashMap<Call, CallInformation> callsToEntity = new HashMap<>();
 	private final HashMap<Call, CallInformation> callsFromEntity = new HashMap<>();
 	private final HashMap<Node, BlockInformation> blockInformation = new HashMap<>();
@@ -90,6 +93,6 @@ public class EntityDetails {
 	}
 
 	public boolean isInlinable() {
-		return numberOfNodes < 100 || callsToEntity.size() <= 1;
+		return numberOfNodes < MAX_INLINE_NODES || callsToEntity.size() <= 1;
 	}
 }
