@@ -284,7 +284,7 @@ public class OptimizationUtils {
 
 					// get cycle count for loop
 					int cycleCount = getCycleCount(cmp, constCmp, startingValue, incr);
-					loopInfos.add(new LoopInfo(cycleCount, startingValue, incr, node, loopCounter));
+					loopInfos.add(new LoopInfo(cycleCount, startingValue, incr, constCmp, node, loopCounter));
 				}
 			}
 		}
@@ -295,15 +295,17 @@ public class OptimizationUtils {
 		public final int cycleCount;
 		public final Const startingValue;
 		public final Const incr;
+		public final Const constCmp;
 		public final Node node;
 		public final Node loopCounter;
 
-		private LoopInfo(int cycleCount, Const startingValue, Const incr, Node node, Node loopCounter) {
+		private LoopInfo(int cycleCount, Const startingValue, Const incr, Const constCmp, Node node, Node loopCounter) {
 			this.cycleCount = cycleCount;
 			this.startingValue = startingValue;
 			this.incr = incr;
 			this.node = node;
 			this.loopCounter = loopCounter;
+			this.constCmp = constCmp;
 		}
 	}
 
@@ -340,34 +342,42 @@ public class OptimizationUtils {
 
 	private int getCycleCount(Cmp cmp, Const constCmp, Const startingValue, Const incr) {
 		int count = 0;
+		double value = 0;
+		boolean mod = false;
 		switch (cmp.getRelation()) {
 		case Less:
-			count = (int) Math.ceil((double) (constCmp.getTarval().asInt() - startingValue.getTarval().asInt()) / incr.getTarval().asInt());
+			value = (double) (constCmp.getTarval().asInt() - startingValue.getTarval().asInt()) / incr.getTarval().asInt();
+			count = value < 0 ? (int) Math.floor(value) : (int) Math.ceil(value);
 			if (incr.getTarval().isNegative()) {
 				return count < 0 ? Integer.MIN_VALUE : count;
 			} else {
 				return count < 0 ? Integer.MAX_VALUE : count;
 			}
 		case LessEqual:
-			count = (int) Math.ceil((double) (constCmp.getTarval().asInt() - startingValue.getTarval().asInt()) / incr.getTarval().asInt());
+			value = (double) (constCmp.getTarval().asInt() - startingValue.getTarval().asInt()) / incr.getTarval().asInt();
+			count = value < 0 ? (int) Math.floor(value) : (int) Math.ceil(value);
+			mod = Math.ceil(value) == Math.floor(value);
 			if (incr.getTarval().isNegative()) {
-				return count <= 0 ? Integer.MIN_VALUE : count + 1;
+				return count - (mod ? 1 : 0) < 0 ? Integer.MIN_VALUE : count + (mod ? 1 : 0);
 			} else {
-				return count <= 0 ? Integer.MAX_VALUE : count + 1;
+				return count - (mod ? 1 : 0) < 0 ? Integer.MAX_VALUE : count + (mod ? 1 : 0);
 			}
 		case Greater:
-			count = (int) Math.ceil((double) (startingValue.getTarval().asInt() - constCmp.getTarval().asInt()) / incr.getTarval().asInt());
+			value = (double) (startingValue.getTarval().asInt() - constCmp.getTarval().asInt()) / incr.getTarval().asInt();
+			count = value < 0 ? (int) Math.floor(value) : (int) Math.ceil(value);
 			if (incr.getTarval().isNegative()) {
 				return count > 0 ? Integer.MIN_VALUE : count;
 			} else {
 				return count > 0 ? Integer.MAX_VALUE : count;
 			}
 		case GreaterEqual:
-			count = (int) Math.ceil((double) (startingValue.getTarval().asInt() - constCmp.getTarval().asInt()) / incr.getTarval().asInt());
+			value = (double) (startingValue.getTarval().asInt() - constCmp.getTarval().asInt()) / incr.getTarval().asInt();
+			count = value < 0 ? (int) Math.floor(value) : (int) Math.ceil(value);
+			mod = Math.ceil(value) == Math.floor(value);
 			if (incr.getTarval().isNegative()) {
-				return count >= 0 ? Integer.MIN_VALUE : count - 1;
+				return count + (mod ? 1 : 0) > 0 ? Integer.MIN_VALUE : count - (mod ? 1 : 0);
 			} else {
-				return count >= 0 ? Integer.MAX_VALUE : count - 1;
+				return count + (mod ? 1 : 0) > 0 ? Integer.MAX_VALUE : count - (mod ? 1 : 0);
 			}
 		default:
 			return 0;
