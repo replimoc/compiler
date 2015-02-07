@@ -3,14 +3,10 @@ package compiler.firm.backend.registerallocation.ssa;
 import java.util.HashMap;
 import java.util.Map;
 
-import compiler.firm.FirmUtils;
 import compiler.firm.backend.X8664AssemblerGenerationVisitor;
 import compiler.firm.backend.storage.MemoryPointer;
 import compiler.firm.backend.storage.SingleRegister;
 import compiler.firm.backend.storage.VirtualRegister;
-
-import firm.BlockWalker;
-import firm.nodes.Block;
 
 public class SplittingSsaSpiller implements StackInfoSupplier {
 
@@ -26,16 +22,15 @@ public class SplittingSsaSpiller implements StackInfoSupplier {
 	public void reduceRegisterPressure(final int availableRegisters, final boolean allowSpilling) {
 		currentStackOffset = 0; // reset state
 
-		FirmUtils.walkDominanceTree(program.getStartBlock(), new BlockWalker() {
+		program.walkBlocksReversePostorder(new AssemblerOperationsBlockWalker() {
 			@Override
-			public void visitBlock(Block block) {
-				reduceRegisterPressure(block, availableRegisters, allowSpilling);
+			public void visitBlock(AssemblerOperationsBlock operationsBlock) {
+				reduceRegisterPressure(operationsBlock, availableRegisters, allowSpilling);
 			}
 		});
 	}
 
-	private void reduceRegisterPressure(Block block, int availableRegisters, boolean allowSpilling) {
-		AssemblerOperationsBlock operationsBlock = program.getOperationsBlock(block);
+	private void reduceRegisterPressure(AssemblerOperationsBlock operationsBlock, int availableRegisters, boolean allowSpilling) {
 		if (operationsBlock == null) {
 			return;
 		}

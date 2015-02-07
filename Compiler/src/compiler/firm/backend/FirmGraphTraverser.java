@@ -23,7 +23,7 @@ public final class FirmGraphTraverser {
 		traverseBlocksGenerationFriendly(graph.getStartBlock(), blockInfos, walker, true);
 	}
 
-	private static void incrementBlockVisited(Graph graph) {
+	public static void incrementBlockVisited(Graph graph) {
 		binding_irgraph.inc_irg_block_visited(graph.ptr);
 	}
 
@@ -57,7 +57,7 @@ public final class FirmGraphTraverser {
 		return blockInfos;
 	}
 
-	private static void detectLoopHeads(Block block, HashMap<Block, BlockInfo> blockInfos, HashSet<Integer> blockSet) {
+	private static void detectLoopHeads(Block block, HashMap<Block, BlockInfo> blockInfos, HashSet<Integer> blockSet) { // FIXME Replace this
 		BlockInfo blockInfo = blockInfos.get(block);
 
 		if (blockInfo == null || blockInfo.isLoopHead) {

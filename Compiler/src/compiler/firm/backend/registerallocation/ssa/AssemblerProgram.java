@@ -8,6 +8,8 @@ import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Set;
 
+import compiler.firm.FirmUtils;
+import compiler.firm.backend.FirmGraphTraverser;
 import compiler.firm.backend.operations.dummy.MethodStartEndOperation;
 import compiler.firm.backend.operations.templates.AssemblerOperation;
 import compiler.firm.backend.storage.RegisterBundle;
@@ -88,5 +90,46 @@ public class AssemblerProgram {
 
 	public Graph getGraph() {
 		return graph;
+	}
+
+	public void walkBlocksReversePostorder(AssemblerOperationsBlockWalker blockWalker) {
+		final LinkedList<AssemblerOperationsBlock> blocks = new LinkedList<>();
+
+		AssemblerOperationsBlock startOperationsBlock = operationsBlocks.get(graph.getStartBlock());
+		FirmGraphTraverser.incrementBlockVisited(graph);
+		walkBlocksPostorder(startOperationsBlock, new AssemblerOperationsBlockWalker() {
+			@Override
+			public void visitBlock(AssemblerOperationsBlock block) {
+				blocks.push(block);
+			}
+		});
+
+		while (!blocks.isEmpty()) {
+			blockWalker.visitBlock(blocks.pop());
+		}
+	}
+
+	public void walkBlocksPostorder(AssemblerOperationsBlock block, AssemblerOperationsBlockWalker walker) {
+		Block firmBlock = block.getBlock();
+		if (firmBlock.blockVisited())
+			return;
+		firmBlock.markBlockVisited();
+
+		if (!block.isLoopHead()) {
+			for (AssemblerOperationsBlock succesor : block.getSuccessors()) {
+				walkBlocksPostorder(succesor, walker);
+			}
+		} else {
+			AssemblerOperationsBlock loopBody = null;
+			for (AssemblerOperationsBlock succesor : block.getSuccessors()) {
+				if (FirmUtils.blockPostdominates(firmBlock, succesor.getBlock())) {
+					loopBody = succesor;
+				} else {
+					walkBlocksPostorder(succesor, walker);
+				}
+			}
+			walkBlocksPostorder(loopBody, walker); // walk loop body after the other
+		}
+		walker.visitBlock(block);
 	}
 }

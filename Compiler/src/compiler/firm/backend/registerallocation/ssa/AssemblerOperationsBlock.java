@@ -41,6 +41,7 @@ public class AssemblerOperationsBlock {
 	private final Map<VirtualRegister, AssemblerOperation> lastUsed = new HashMap<>();
 
 	private final Set<VirtualRegister> wExit = new HashSet<>();
+	private final Set<VirtualRegister> sExit = new HashSet<>();
 
 	public AssemblerOperationsBlock(Block block, ArrayList<AssemblerOperation> operations) {
 		this.block = block;
@@ -272,21 +273,39 @@ public class AssemblerOperationsBlock {
 
 	}
 
-	public void setWExit(Set<VirtualRegister> aliveRegisters) {
+	private Set<VirtualRegister> calculateSEntry(Set<VirtualRegister> wEntry) {
+		Set<VirtualRegister> sEntry = new HashSet<>();
+
+		for (AssemblerOperationsBlock predecessor : predecessors) {
+			for (VirtualRegister predSExit : predecessor.sExit) {
+				if (wEntry.contains(predSExit)) {
+					sEntry.add(predSExit);
+				}
+			}
+		}
+
+		return sEntry;
+	}
+
+	private void setWExit(Set<VirtualRegister> aliveRegisters) {
 		this.wExit.clear();
 		this.wExit.addAll(aliveRegisters);
+	}
+
+	private void setSExit(Set<VirtualRegister> spilledRegisters) {
+		this.sExit.clear();
+		this.sExit.addAll(spilledRegisters);
 	}
 
 	public void executeMinAlgorithm(int availableRegisters, StackInfoSupplier stackInfoSupplier) {
 		boolean debugMinAlgo = true;
 
 		Set<VirtualRegister> aliveRegisters = this.calculateWEntry(availableRegisters);
-		Set<VirtualRegister> spilledRegisters = new HashSet<>(liveIn.keySet());
-		spilledRegisters.removeAll(aliveRegisters);
+		Set<VirtualRegister> spilledRegisters = this.calculateSEntry(aliveRegisters);
 
 		debugln(debugMinAlgo, block);
 		debugln(debugMinAlgo, "\twEntry: " + aliveRegisters);
-		debugln(debugMinAlgo, "\tspilledEntry: " + spilledRegisters);
+		debugln(debugMinAlgo, "\tsEntry: " + spilledRegisters);
 
 		// Min algorithm; see RegisterSpillAndLiveRangeSplittingForSSA page 3
 		for (AssemblerOperation operation : operations) {
@@ -309,8 +328,9 @@ public class AssemblerOperationsBlock {
 
 		mergeAdditionalOperations();
 		this.setWExit(aliveRegisters);
+		this.setSExit(spilledRegisters);
 
-		debugln(debugMinAlgo, "\tliveOut: " + liveOut.keySet());
+		debugln(debugMinAlgo, "\tsExit: " + sExit);
 		debugln(debugMinAlgo, "\twExit: " + wExit);
 	}
 
