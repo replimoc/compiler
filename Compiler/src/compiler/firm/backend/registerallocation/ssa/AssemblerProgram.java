@@ -4,6 +4,7 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.LinkedList;
+import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Set;
 
@@ -15,13 +16,13 @@ import firm.Graph;
 import firm.nodes.Block;
 
 public class AssemblerProgram {
-	private final Block startBlock;
-	private final HashMap<Block, AssemblerOperationsBlock> operationsBlocks;
+	private final Graph graph;
+	private final Map<Block, AssemblerOperationsBlock> operationsBlocks;
 	private final Set<RegisterBundle> usedRegisters = new HashSet<>();
 
-	public AssemblerProgram(Graph graph, HashMap<Block, ArrayList<AssemblerOperation>> operationsOfBlocks) {
-		this.startBlock = graph.getStartBlock();
-		this.operationsBlocks = createOperationsBlocks(operationsOfBlocks);
+	public AssemblerProgram(Graph graph, HashMap<Block, AssemblerOperationsBlock> operationsBlocks) {
+		this.graph = graph;
+		this.operationsBlocks = operationsBlocks;
 		calculateLiveInAndLiveOut();
 	}
 
@@ -47,16 +48,6 @@ public class AssemblerProgram {
 		for (Entry<Block, AssemblerOperationsBlock> entry : operationsBlocks.entrySet()) {
 			SsaRegisterAllocator.debugln(entry.getValue());
 		}
-	}
-
-	private static HashMap<Block, AssemblerOperationsBlock> createOperationsBlocks(HashMap<Block, ArrayList<AssemblerOperation>> operationsOfBlocks) {
-		HashMap<Block, AssemblerOperationsBlock> operationsBlocks = new HashMap<>();
-
-		for (Entry<Block, ArrayList<AssemblerOperation>> entry : operationsOfBlocks.entrySet()) {
-			operationsBlocks.put(entry.getKey(), new AssemblerOperationsBlock(entry.getKey(), entry.getValue()));
-		}
-
-		return operationsBlocks;
 	}
 
 	public AssemblerOperationsBlock getOperationsBlock(Block block) {
@@ -92,11 +83,10 @@ public class AssemblerProgram {
 	}
 
 	public Block getStartBlock() {
-		return startBlock;
+		return graph.getStartBlock();
 	}
 
 	public Graph getGraph() {
-		return startBlock.getGraph();
+		return graph;
 	}
-
 }

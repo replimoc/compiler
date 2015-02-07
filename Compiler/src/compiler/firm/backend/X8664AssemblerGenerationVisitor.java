@@ -44,6 +44,8 @@ import compiler.firm.backend.operations.jump.JzOperation;
 import compiler.firm.backend.operations.templates.AssemblerOperation;
 import compiler.firm.backend.operations.templates.SourceSourceDesinationOperationFactory;
 import compiler.firm.backend.operations.templates.SourceSourceDestinationOperation;
+import compiler.firm.backend.registerallocation.ssa.AssemblerOperationsBlock;
+import compiler.firm.backend.registerallocation.ssa.AssemblerProgram;
 import compiler.firm.backend.storage.Constant;
 import compiler.firm.backend.storage.MemoryPointer;
 import compiler.firm.backend.storage.RegisterBased;
@@ -117,45 +119,36 @@ import firm.nodes.Unknown;
 
 public class X8664AssemblerGenerationVisitor implements BulkPhiNodeVisitor {
 
-	private final ArrayList<AssemblerOperation> operations = new ArrayList<>();
-	private final ArrayList<AssemblerOperation> allOperations = new ArrayList<>();
-	private final HashMap<Block, ArrayList<AssemblerOperation>> operationsOfBlocks = new HashMap<>();
-
-	private final HashMap<Block, LabelOperation> blockLabels = new HashMap<>();
+	public static final int STACK_ITEM_SIZE = 8;
 
 	private final StorageManagement storageManagement;
 	private final CallingConvention callingConvention;
 
+	private final HashMap<Block, AssemblerOperationsBlock> operationsOfBlocks = new HashMap<>();
+	private final HashMap<Block, LabelOperation> blockLabels = new HashMap<>();
+
+	private ArrayList<AssemblerOperation> currentOperations = new ArrayList<>();
 	private Block currentBlock;
-	public static final int STACK_ITEM_SIZE = 8;
 
 	public X8664AssemblerGenerationVisitor(CallingConvention callingConvention) {
 		this.callingConvention = callingConvention;
-		this.storageManagement = new StorageManagement(operations);
-	}
-
-	public void finishOperationsList() {
-		finishOperationsListOfBlock(currentBlock);
+		this.storageManagement = new StorageManagement(currentOperations);
 	}
 
 	private void finishOperationsListOfBlock(Block block) {
 		if (currentBlock != null) {
-			operationsOfBlocks.put(block, new ArrayList<>(operations));
-			allOperations.addAll(operations);
-			operations.clear();
+			operationsOfBlocks.put(block, new AssemblerOperationsBlock(block, new ArrayList<>(currentOperations)));
+			currentOperations.clear();
 		}
 	}
 
-	public ArrayList<AssemblerOperation> getAllOperations() {
-		return allOperations;
-	}
-
-	public HashMap<Block, ArrayList<AssemblerOperation>> getOperationsOfBlocks() {
-		return operationsOfBlocks;
+	public AssemblerProgram getAssemblerProgram(Graph graph) {
+		finishOperationsListOfBlock(currentBlock);
+		return new AssemblerProgram(graph, operationsOfBlocks);
 	}
 
 	private void addOperation(AssemblerOperation assemblerOption) {
-		operations.add(assemblerOption);
+		currentOperations.add(assemblerOption);
 	}
 
 	private <T extends SourceSourceDestinationOperation> void visitTwoOperandsNode(SourceSourceDesinationOperationFactory operationFactory,

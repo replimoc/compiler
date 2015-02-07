@@ -28,8 +28,8 @@ import firm.Type;
 import firm.Util;
 import firm.bindings.binding_irdom;
 import firm.bindings.binding_irgopt;
-import firm.nodes.Block;
 import firm.nodes.Address;
+import firm.nodes.Block;
 import firm.nodes.Call;
 import firm.nodes.Const;
 import firm.nodes.Node;
@@ -243,5 +243,9 @@ public final class FirmUtils {
 			}
 		}
 		return null;
+	}
+
+	public static boolean isLoopHead(Block block) {
+		return getLoopTailIfHeader(block) != null;
 	}
 }

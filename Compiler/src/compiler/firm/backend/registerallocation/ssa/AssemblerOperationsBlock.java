@@ -6,13 +6,16 @@ import java.util.Comparator;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Iterator;
+import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Set;
 
 import compiler.firm.FirmUtils;
+import compiler.firm.backend.operations.SpillOperation;
 import compiler.firm.backend.operations.templates.AssemblerOperation;
+import compiler.firm.backend.storage.MemoryPointer;
 import compiler.firm.backend.storage.RegisterBased;
 import compiler.firm.backend.storage.VirtualRegister;
 import compiler.utils.Pair;
@@ -23,7 +26,9 @@ import firm.nodes.Node;
 public class AssemblerOperationsBlock {
 	private final Block block;
 	private final boolean isLoopHead;
-	private final ArrayList<AssemblerOperation> operations;
+	private ArrayList<AssemblerOperation> operations;
+	private final HashMap<AssemblerOperation, List<AssemblerOperation>> additionalOperations = new HashMap<>();
+
 	private final Set<AssemblerOperationsBlock> predecessors = new HashSet<>();
 	private final Set<AssemblerOperationsBlock> successors = new HashSet<>();
 
@@ -47,7 +52,7 @@ public class AssemblerOperationsBlock {
 		this.isLoopHead = FirmUtils.getLoopTailIfHeader(block) != null;
 	}
 
-	public void calculateTree(HashMap<Block, AssemblerOperationsBlock> operationsBlocks) {
+	public void calculateTree(Map<Block, AssemblerOperationsBlock> operationsBlocks) {
 		liveOut.clear();
 
 		for (Node pred : block.getPreds()) {
@@ -163,6 +168,18 @@ public class AssemblerOperationsBlock {
 		return !liveOut.containsKey(register) && lastUsed.get(register) == operation;
 	}
 
+	public boolean isLoopHead() {
+		return isLoopHead;
+	}
+
+	public Set<AssemblerOperationsBlock> getSuccessors() {
+		return successors;
+	}
+
+	public Block getBlock() {
+		return block;
+	}
+
 	public int getNextUseDistance(AssemblerOperation operation, VirtualRegister register, boolean exclusive) {
 		int i = 0;
 		int operationIdx = 0;
@@ -259,7 +276,7 @@ public class AssemblerOperationsBlock {
 		this.wExit.addAll(aliveRegisters);
 	}
 
-	public void calculateMinAlgorithm(int availableRegisters) {
+	public void executeMinAlgorithm(int availableRegisters, StackInfoSupplier stackInfoSupplier) {
 		boolean debugMinAlgo = true;
 
 		Set<VirtualRegister> aliveRegisters = this.calculateWEntry(availableRegisters);
@@ -280,18 +297,22 @@ public class AssemblerOperationsBlock {
 			aliveRegisters.addAll(reloadRequiringRegisters); // add read registers to alive registers
 			spilledRegisters.addAll(reloadRequiringRegisters);
 
-			limit(aliveRegisters, spilledRegisters, operation, availableRegisters, false); // limit with read registers
-			limit(aliveRegisters, spilledRegisters, operation, availableRegisters - writeRegisters.size(), true); // free space for write registers
-			aliveRegisters.addAll(writeRegisters);
+			// limit the pressure with read registers loaded
+			limit(stackInfoSupplier, aliveRegisters, spilledRegisters, operation, availableRegisters, false);
+			// free space for write registers
+			limit(stackInfoSupplier, aliveRegisters, spilledRegisters, operation, availableRegisters - writeRegisters.size(), true);
+			aliveRegisters.addAll(writeRegisters); // add the written registers
 
 			addReloads(reloadRequiringRegisters, operation);
 		}
 
+		// mergeAdditionalOperations();
 		this.setWExit(aliveRegisters);
 	}
 
 	/**
 	 * 
+	 * @param stackInfoSupplier
 	 * @param aliveRegisters
 	 * @param spilledRegisters
 	 * @param operation
@@ -299,7 +320,8 @@ public class AssemblerOperationsBlock {
 	 * @param exclusive
 	 *            if true, the live distances are calculated from the operation after the given one.
 	 */
-	private void limit(Set<VirtualRegister> aliveRegisters, Set<VirtualRegister> spilledRegisters, AssemblerOperation operation, int limit,
+	private void limit(StackInfoSupplier stackInfoSupplier, Set<VirtualRegister> aliveRegisters, Set<VirtualRegister> spilledRegisters,
+			AssemblerOperation operation, int limit,
 			boolean exclusive) {
 		ArrayList<Pair<VirtualRegister, Integer>> alivesWithNextUse = getRegistersWithNextUse(aliveRegisters, operation, exclusive);
 		Collections.sort(alivesWithNextUse, Pair.<Integer> secondOperator());
@@ -307,7 +329,7 @@ public class AssemblerOperationsBlock {
 		for (int i = alivesWithNextUse.size() - 1; i >= limit; i--) {
 			Pair<VirtualRegister, Integer> registerWithNextUse = alivesWithNextUse.get(i);
 			if (!spilledRegisters.contains(registerWithNextUse.first) && registerWithNextUse.second != Integer.MAX_VALUE) {
-				addSpill(registerWithNextUse.first, operation);
+				addSpill(stackInfoSupplier, registerWithNextUse.first, operation);
 			}
 
 			spilledRegisters.remove(registerWithNextUse.first);
@@ -341,8 +363,37 @@ public class AssemblerOperationsBlock {
 		}
 	}
 
-	private void addSpill(VirtualRegister register, AssemblerOperation operation) {
-		System.out.println("add spill for " + register + " before " + operation);
+	private void addSpill(StackInfoSupplier stackInfoSupplier, VirtualRegister register, AssemblerOperation operation) {
+		MemoryPointer spillLocation = stackInfoSupplier.allocateStackLocation(register);
+		System.out.println("add spill for " + register + " to " + spillLocation + " before " + operation);
+		SpillOperation spillOperation = new SpillOperation(register, spillLocation);
+		addAddtionalOperation(operation, spillOperation);
+	}
+
+	private void addAddtionalOperation(AssemblerOperation operation, AssemblerOperation additionalOperation) {
+		List<AssemblerOperation> additionals = additionalOperations.get(operation);
+		if (additionals == null) {
+			additionals = new LinkedList<>();
+			additionalOperations.put(operation, additionals);
+		}
+		additionals.add(additionalOperation);
+	}
+
+	private void mergeAdditionalOperations() {
+		if (additionalOperations.isEmpty()) {
+			return;
+		}
+
+		ArrayList<AssemblerOperation> oldOperations = operations;
+		operations = new ArrayList<>(oldOperations.size());
+		for (AssemblerOperation operation : oldOperations) {
+			List<AssemblerOperation> additionals = additionalOperations.get(operation);
+			if (additionals != null) {
+				operations.addAll(additionals);
+			}
+			operations.add(operation);
+		}
+		additionalOperations.clear();
 	}
 
 	private static void debugln(boolean debug, Object o) {

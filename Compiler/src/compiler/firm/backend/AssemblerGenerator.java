@@ -17,10 +17,10 @@ import compiler.firm.backend.operations.P2AlignOperation;
 import compiler.firm.backend.operations.TextOperation;
 import compiler.firm.backend.operations.templates.AssemblerOperation;
 import compiler.firm.backend.registerallocation.RegisterAllocationPolicy;
+import compiler.firm.backend.registerallocation.ssa.AssemblerOperationsBlock;
 import compiler.firm.backend.registerallocation.ssa.AssemblerProgram;
 import compiler.firm.backend.registerallocation.ssa.MustSpillException;
 import compiler.firm.backend.registerallocation.ssa.SimpleSsaSpiller;
-import compiler.firm.backend.registerallocation.ssa.SplittingSsaSpiller;
 import compiler.firm.backend.registerallocation.ssa.SsaRegisterAllocator;
 
 import firm.BackEdges;
@@ -72,20 +72,14 @@ public final class AssemblerGenerator {
 			FirmGraphTraverser.walkBlocksAllocationFriendly(graph, blockInfos, new BlockNodesWalker(visitor, nodesPerBlockMap));
 			BackEdges.disable(graph);
 
-			visitor.finishOperationsList();
-			ArrayList<AssemblerOperation> operationsBlocksPostOrder = visitor.getAllOperations();
-			final HashMap<Block, ArrayList<AssemblerOperation>> operationsOfBlocks = visitor.getOperationsOfBlocks();
+			AssemblerProgram assemblerProgram = visitor.getAssemblerProgram(graph);
 
 			if (debugRegisterAllocation)
-				generatePlainAssemblerFile(Paths.get(graph.getEntity().getLdName() + ".plain"), operationsBlocksPostOrder);
+				generatePlainAssemblerFile(Paths.get(graph.getEntity().getLdName() + ".plain"), assemblerProgram, blockInfos);
 
-			// allocateRegistersLinear(graph, operationsBlocksPostOrder, noRegisters, debugRegisterAllocation);
-			allocateRegistersSsa(graph, operationsOfBlocks, noRegisters);
+			allocateRegistersSsa(graph, assemblerProgram, noRegisters);
 
-			operationsBlocksPostOrder.clear(); // free some memory
-
-			ArrayList<AssemblerOperation> operationsList = generateOperationsList(graph, blockInfos, operationsOfBlocks);
-
+			ArrayList<AssemblerOperation> operationsList = generateOperationsList(assemblerProgram, blockInfos);
 			if (doPeephole) {
 				PeepholeOptimizer peepholeOptimizer = new PeepholeOptimizer(operationsList, assembler);
 				peepholeOptimizer.optimize();
@@ -97,11 +91,9 @@ public final class AssemblerGenerator {
 		generateAssemblerFile(outputFile, assembler);
 	}
 
-	private static void allocateRegistersSsa(Graph graph, HashMap<Block, ArrayList<AssemblerOperation>> operationsOfBlocks, boolean noRegisters) {
-		AssemblerProgram program = new AssemblerProgram(graph, operationsOfBlocks);
-		SplittingSsaSpiller splittingSsaSpiller = new SplittingSsaSpiller(program);
-
-		splittingSsaSpiller.reduceRegisterPressure(2, true);
+	private static void allocateRegistersSsa(Graph graph, AssemblerProgram program, boolean noRegisters) {
+		// SplittingSsaSpiller splittingSsaSpiller = new SplittingSsaSpiller(program);
+		// splittingSsaSpiller.reduceRegisterPressure(2, true);
 
 		SimpleSsaSpiller ssaSpiller = new SimpleSsaSpiller(program);
 		RegisterAllocationPolicy policy;
@@ -124,14 +116,13 @@ public final class AssemblerGenerator {
 		program.setDummyOperationsInformation(ssaSpiller.getCurrentStackOffset());
 	}
 
-	private static ArrayList<AssemblerOperation> generateOperationsList(Graph graph, HashMap<Block, BlockInfo> blockInfos,
-			final HashMap<Block, ArrayList<AssemblerOperation>> operationsOfBlocks) {
+	private static ArrayList<AssemblerOperation> generateOperationsList(final AssemblerProgram program, HashMap<Block, BlockInfo> blockInfos) {
 		final ArrayList<AssemblerOperation> operationsList = new ArrayList<>();
 
-		FirmGraphTraverser.walkLoopOptimizedPostorder(graph, blockInfos, new BlockWalker() {
+		FirmGraphTraverser.walkLoopOptimizedPostorder(program.getGraph(), blockInfos, new BlockWalker() {
 			@Override
 			public void visitBlock(Block block) {
-				operationsList.addAll(operationsOfBlocks.get(block));
+				operationsList.addAll(program.getOperationsBlock(block).getOperations());
 			}
 		});
 
@@ -150,15 +141,33 @@ public final class AssemblerGenerator {
 		writer.close();
 	}
 
-	private static void generatePlainAssemblerFile(Path outputFile, List<AssemblerOperation> operations) {
+	private static void generatePlainAssemblerFile(Path outputFile, final AssemblerProgram assemblerProgram, HashMap<Block, BlockInfo> blockInfos) {
 		try {
-			BufferedWriter writer = Files.newBufferedWriter(outputFile, StandardCharsets.US_ASCII);
-			for (AssemblerOperation operation : operations) {
-				writer.write(operation.toString() + " # r:" + operation.getReadRegisters() + "; w:" + operation.getWriteRegisters());
-				writer.newLine();
-			}
+			final BufferedWriter writer = Files.newBufferedWriter(outputFile, StandardCharsets.US_ASCII);
+
+			FirmGraphTraverser.walkBlocksAllocationFriendly(assemblerProgram.getGraph(), blockInfos, new BlockWalker() {
+				@Override
+				public void visitBlock(Block block) {
+					try {
+						AssemblerOperationsBlock operationsBlock = assemblerProgram.getOperationsBlock(block);
+						if (operationsBlock == null)
+							return;
+
+						for (AssemblerOperation operation : operationsBlock.getOperations()) {
+
+							writer.write(operation.toString() + " # r:" + operation.getReadRegisters() + "; w:" + operation.getWriteRegisters());
+							writer.newLine();
+
+						}
+					} catch (IOException e) {
+						throw new RuntimeException(e);
+					}
+				}
+			});
+
 			writer.close();
-		} catch (IOException e) {
+
+		} catch (IOException | RuntimeException e) {
 			e.printStackTrace();
 		}
 	}
