@@ -70,16 +70,16 @@ public class LoopFusionVisitor extends OptimizationVisitor<Node> {
 			return;
 
 		HashMap<Node, Node> backedges = optimizationUtils.getBackEdges();
-		Node block = condition.getBlock();
+		Block block = (Block) condition.getBlock();
+		Block loopTail = FirmUtils.getLoopTailIfHeader(block);
 
-		if (backedges.containsValue(block)) {
+		if (loopTail != null) {
 			LoopHeader continueInfo = getLoopContinueBlocks(condition);
 
 			if (continueInfo == null || continueInfo.loopContentBlock == null)
 				return;
 
-			Node content1 = continueInfo.loopContentBlock;
-			LoopInfo loopInfo1 = calculateLoopInfo(block, content1, condition);
+			LoopInfo loopInfo1 = calculateLoopInfo(condition);
 
 			Node block2 = continueInfo.continueBlock;
 			if (loopInfo1 != null && backedges.containsValue(block2)) { // Next is also a loop
@@ -95,7 +95,7 @@ public class LoopFusionVisitor extends OptimizationVisitor<Node> {
 				if (continueInfo2 == null)
 					return;
 
-				LoopInfo loopInfo2 = calculateLoopInfo(block2, continueInfo2.loopContentBlock, condition2);
+				LoopInfo loopInfo2 = calculateLoopInfo(condition2);
 
 				EntityDetails entityDetails = programDetails.getEntityDetails(graph);
 
@@ -195,13 +195,8 @@ public class LoopFusionVisitor extends OptimizationVisitor<Node> {
 		return node;
 	}
 
-	private LoopInfo calculateLoopInfo(Node block, Node loopBlock, Node condition) {
-
-		// HashMap<Block, Cmp> compares = new HashMap<>();
-		// compares.put((Block) block, (Cmp) condition.getPred(0));
-
-		Block loopTail = FirmUtils.getLoopTailIfHeader((Block) loopBlock);
-		LoopInfo loopInfo = optimizationUtils.getLoopInfos((Block) loopBlock, loopTail, (Cmp) condition.getPred(0));
+	private LoopInfo calculateLoopInfo(Node condition) {
+		LoopInfo loopInfo = OptimizationUtils.getLoopInfos((Cmp) condition.getPred(0));
 		if (loopInfo == null || !loopInfo.isOneBlockLoop())
 			return null;
 		else

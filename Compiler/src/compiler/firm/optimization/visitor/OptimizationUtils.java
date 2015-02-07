@@ -254,12 +254,12 @@ public class OptimizationUtils {
 		graph.walk(visitor);
 	}
 
-	public LoopInfo getLoopInfos(Block loopHeader, Block loopTail, Cmp cmp) {
-		// only unroll the innermost loop
-		// if (backedges.containsKey(block) && (dominators.get(block).size() == dominators.get(backedges.get(block)).size() + 1)) {
-		// loop body
+	public static LoopInfo getLoopInfos(Cmp cmp) {
+		Block loopHeader = (Block) cmp.getBlock();
+		Block loopTail = FirmUtils.getLoopTailIfHeader(loopHeader);
 
-		// TODO: Check if it is the innermost loop!
+		if (loopTail == null)
+			return null;
 
 		Const constant = null;
 		Node conditionalPhi = null;
@@ -297,9 +297,14 @@ public class OptimizationUtils {
 
 			if (arithmeticNode.getBlock() != null && firstLoopBlock != null && onlyOneNodeBetweenPhi &&
 					FirmUtils.blockPostdominates(arithmeticNode.getBlock(), firstLoopBlock)) { // Add is always executed
-				Const incr = getIncrementConstantOrNull(arithmeticNode);
-				if (incr == null)
+				Const incr = null;
+				if (arithmeticNode.getPredCount() > 1 && FirmUtils.isConstant(arithmeticNode.getPred(1)) && arithmeticNode instanceof Add) {
+					incr = (Const) arithmeticNode.getPred(1);
+				} else if (arithmeticNode.getPredCount() > 1 && FirmUtils.isConstant(arithmeticNode.getPred(0)) && arithmeticNode instanceof Add) {
+					incr = (Const) arithmeticNode.getPred(0);
+				} else {
 					return null;
+				}
 
 				Node startingValue = conditionalPhi.getPred(blockPredecessorLoop == 1 ? 0 : 1);
 				if (startingValue == null || !(startingValue instanceof Const))
@@ -313,22 +318,22 @@ public class OptimizationUtils {
 		return null;
 	}
 
-	public class LoopInfo {
+	public static class LoopInfo {
 		public final int cycleCount;
 		public final Const startingValue;
 		public final Const incr;
 		public final Const constCmp;
-		public final Node node;
+		public final Node arithmeticNode;
 		public final Node loopCounter;
 		public final Block firstLoopBlock;
 		public final Block lastLoopBlock;
 
-		private LoopInfo(int cycleCount, Const startingValue, Const incr, Const constCmp, Node node,
+		private LoopInfo(int cycleCount, Const startingValue, Const incr, Const constCmp, Node arithmeticNode,
 				Node loopCounter, Block firstLoopBlock, Block lastLoopBlock) {
 			this.cycleCount = cycleCount;
 			this.startingValue = startingValue;
 			this.incr = incr;
-			this.node = node;
+			this.arithmeticNode = arithmeticNode;
 			this.loopCounter = loopCounter;
 			this.constCmp = constCmp;
 			this.firstLoopBlock = firstLoopBlock;
@@ -340,17 +345,7 @@ public class OptimizationUtils {
 		}
 	}
 
-	private Const getIncrementConstantOrNull(Node node) {
-		if (node.getPredCount() > 1 && FirmUtils.isConstant(node.getPred(1)) && node instanceof Add) {
-			return (Const) node.getPred(1);
-		} else if (node.getPredCount() > 1 && FirmUtils.isConstant(node.getPred(0)) && node instanceof Add) {
-			return (Const) node.getPred(0);
-		} else {
-			return null;
-		}
-	}
-
-	private int getCycleCount(Cmp cmp, Const constCmp, Const startingValue, Const incr) {
+	private static int getCycleCount(Cmp cmp, Const constCmp, Const startingValue, Const incr) {
 		int count = 0;
 		double value = 0;
 		boolean mod = false;
