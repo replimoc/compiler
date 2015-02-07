@@ -129,8 +129,6 @@ public class LoopUnrolling {
 		if (unrollFactor < 2) // TODO: Remove this
 			return;
 
-		// counter
-		HashMap<Node, Node> changedNodes = new HashMap<>();
 		Node memoryPhi = entityDetails.getBlockInformation(loopHeader).getMemoryPhi();
 
 		if (memoryPhi.getPredCount() > 2)
@@ -145,7 +143,7 @@ public class LoopUnrolling {
 		nodeReplacements.put(loopInfo.getIncr(),
 				graph.newConst(loopInfo.getIncr().getTarval().mul(new TargetValue(unrollFactor, loopInfo.getIncr().getMode()))));
 
-		unroll(entityDetails, loopInfo, changedNodes, memoryPhi, unrollFactor);
+		unroll(entityDetails, loopInfo, unrollFactor);
 		finishedLoops.add(loopHeader);
 
 	}
@@ -229,14 +227,15 @@ public class LoopUnrolling {
 		return true;
 	}
 
-	private static void unroll(EntityDetails entityDetails, LoopInfo loopInfo, HashMap<Node, Node> changedNodes, Node loopPhi,
-			int unrollFactor) {
+	private static void unroll(EntityDetails entityDetails, LoopInfo loopInfo, int unrollFactor) {
+		HashMap<Node, Node> changedNodes = new HashMap<>();
 		Block block = loopInfo.getLastLoopBlock();
 		Const incr = loopInfo.getIncr();
 		Node loopCounter = loopInfo.getConditionalPhi();
 		Node arithmeticNode = loopInfo.getArithmeticNode();
 		Node counter = loopInfo.getConditionalPhi();
 		Graph graph = block.getGraph();
+		Node loopPhi = entityDetails.getBlockInformation(loopInfo.getCmp().getBlock()).getMemoryPhi();
 		Node firstMemNode = loopPhi;
 		Node lastMemNode = loopPhi.getPred(1);
 		HashMap<Node, Node> inductions = new HashMap<Node, Node>();
