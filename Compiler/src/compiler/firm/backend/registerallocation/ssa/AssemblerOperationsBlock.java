@@ -13,6 +13,7 @@ import java.util.Map.Entry;
 import java.util.Set;
 
 import compiler.firm.FirmUtils;
+import compiler.firm.backend.operations.ReloadOperation;
 import compiler.firm.backend.operations.SpillOperation;
 import compiler.firm.backend.operations.templates.AssemblerOperation;
 import compiler.firm.backend.storage.MemoryPointer;
@@ -303,7 +304,7 @@ public class AssemblerOperationsBlock {
 			limit(stackInfoSupplier, aliveRegisters, spilledRegisters, operation, availableRegisters - writeRegisters.size(), true);
 			aliveRegisters.addAll(writeRegisters); // add the written registers
 
-			addReloads(reloadRequiringRegisters, operation);
+			addReloads(stackInfoSupplier, reloadRequiringRegisters, operation);
 		}
 
 		mergeAdditionalOperations();
@@ -360,9 +361,12 @@ public class AssemblerOperationsBlock {
 		return result;
 	}
 
-	private void addReloads(Set<VirtualRegister> reloadRequiringRegisters, AssemblerOperation operation) {
+	private void addReloads(StackInfoSupplier stackInfoSupplier, Set<VirtualRegister> reloadRequiringRegisters, AssemblerOperation operation) {
 		for (VirtualRegister register : reloadRequiringRegisters) {
-			System.out.println("add reload for " + register + " before " + operation);
+			MemoryPointer reloadLocation = stackInfoSupplier.getStackLocation(register);
+			System.out.println("add reload for " + register + " from " + reloadLocation + " before " + operation);
+			ReloadOperation reloadOperation = new ReloadOperation(reloadLocation, register);
+			addAddtionalOperation(operation, reloadOperation);
 		}
 	}
 
