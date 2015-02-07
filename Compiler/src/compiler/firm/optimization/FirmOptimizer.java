@@ -55,7 +55,7 @@ public final class FirmOptimizer {
 			finished &= ObsoleteNodesEliminator.eliminateObsoleteNodes(evaluateGraphs());
 			finished &= MethodInliner.inlineCalls(evaluateGraphs());
 		} while (!finished);
-		optimize(UnrollingVisitor.FACTORY);
+		optimize(UnrollingVisitor.FACTORY(evaluateGraphs()));
 	}
 
 	private static ProgramDetails evaluateGraphs() {

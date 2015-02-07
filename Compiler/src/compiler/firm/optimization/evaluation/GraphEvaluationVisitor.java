@@ -153,6 +153,8 @@ public class GraphEvaluationVisitor extends AbstractFirmNodesVisitor {
 			ownDetails.setHasMemUsage();
 			getBlockInformation(phi).setHasSideEffects();
 			getBlockInformation(phi).setHasMemUsage();
+
+			getBlockInformation(phi).setMemoryPhi(phi);
 		}
 	}
 

@@ -9,10 +9,10 @@ import java.util.List;
 import java.util.Map.Entry;
 
 import com.sun.jna.Pointer;
-
 import compiler.utils.ExecutionFailedException;
 import compiler.utils.Pair;
 import compiler.utils.Utils;
+
 import firm.BackEdges;
 import firm.BackEdges.Edge;
 import firm.Backend;
@@ -315,10 +315,10 @@ public final class FirmUtils {
 	public static LoopInfo getLoopInfos(Cmp cmp) {
 		Block loopHeader = (Block) cmp.getBlock();
 		Block loopTail = getLoopTailIfHeader(loopHeader);
-	
+
 		if (loopTail == null)
 			return null;
-	
+
 		Const constant = null;
 		Node conditionalPhi = null;
 		for (Node predecessor : cmp.getPreds()) {
@@ -328,22 +328,22 @@ public final class FirmUtils {
 				conditionalPhi = predecessor;
 			}
 		}
-	
+
 		if (constant == null || conditionalPhi == null)
 			return null; // Nothing found
-	
+
 		int blockPredecessorLoop = -1;
 		for (int i = 0; i < loopHeader.getPredCount(); i++) {
 			if (loopHeader.getPred(i).getBlock().equals(loopTail)) {
 				blockPredecessorLoop = i;
 			}
 		}
-	
+
 		if (conditionalPhi instanceof Phi && blockPredecessorLoop >= 0) {
 			Block firstLoopBlock = getFirstLoopBlock((Cond) getFirstSuccessor(cmp));
-	
+
 			Node arithmeticNode = conditionalPhi.getPred(blockPredecessorLoop);
-	
+
 			boolean onlyOneNodeBetweenPhi = false;
 			if (!(arithmeticNode instanceof Phi)) {
 				for (Node arithmeticNodePredecessor : arithmeticNode.getPreds()) {
@@ -352,7 +352,7 @@ public final class FirmUtils {
 					}
 				}
 			}
-	
+
 			if (arithmeticNode.getBlock() != null && firstLoopBlock != null && onlyOneNodeBetweenPhi &&
 					blockPostdominates(arithmeticNode.getBlock(), firstLoopBlock)) { // Add is always executed
 				Const incr = null;
@@ -363,14 +363,14 @@ public final class FirmUtils {
 				} else {
 					return null;
 				}
-	
+
 				Node startingValue = conditionalPhi.getPred(blockPredecessorLoop == 1 ? 0 : 1);
 				if (startingValue == null || !(startingValue instanceof Const))
 					return null;
-	
+
 				// get cycle count for loop
 				int cycleCount = getCycleCount(cmp, constant, (Const) startingValue, incr);
-				return new LoopInfo(cycleCount, (Const) startingValue, incr, constant, arithmeticNode, conditionalPhi, firstLoopBlock, loopTail);
+				return new LoopInfo(cycleCount, (Const) startingValue, incr, constant, arithmeticNode, conditionalPhi, firstLoopBlock, loopTail, cmp);
 			}
 		}
 		return null;

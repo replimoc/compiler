@@ -27,10 +27,8 @@ public class OptimizationUtils {
 	private final HashMap<Block, Set<Block>> dominators = new HashMap<>();
 	private final HashMap<Node, Node> backedges = new HashMap<>();
 	private final HashMap<Node, Node> inductionVariables = new HashMap<>();
-	private final HashMap<Block, Phi> loopPhis = new HashMap<>();
 	private final HashMap<Block, Set<Node>> blockNodes = new HashMap<>();
 	private final HashSet<Block> conditionalBlocks = new HashSet<>();
-	private boolean calculatedPhis = false;
 	private final Graph graph;
 
 	public OptimizationUtils(Graph graph) {
@@ -63,17 +61,7 @@ public class OptimizationUtils {
 			calculateDominators();
 		}
 		calculateInductionVariables();
-		calculatedPhis = true;
 		return inductionVariables;
-	}
-
-	public HashMap<Block, Phi> getLoopPhis() {
-		if (backedges.size() == 0) {
-			calculateDominators();
-		}
-		if (!calculatedPhis)
-			calculateInductionVariables();
-		return loopPhis;
 	}
 
 	public HashMap<Block, Set<Node>> getBlockNodes() {
@@ -142,10 +130,6 @@ public class OptimizationUtils {
 							// found operation inside loop
 							inductionVariables.put(phi, node);
 						}
-					}
-				} else if (phi.getMode().equals(Mode.getM())) {
-					if (backedges.containsValue(phi.getBlock())) {
-						loopPhis.put((Block) phi.getBlock(), phi);
 					}
 				}
 

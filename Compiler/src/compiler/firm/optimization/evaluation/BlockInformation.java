@@ -5,6 +5,7 @@ import java.util.Set;
 
 import firm.nodes.Call;
 import firm.nodes.Node;
+import firm.nodes.Phi;
 
 public class BlockInformation {
 	private Node firstModeM;
@@ -13,6 +14,7 @@ public class BlockInformation {
 	private int memUsage = 0;
 	private int sideEffects = 0;
 	private final Set<Call> calls = new HashSet<>();
+	private Phi memoryPhi = null;
 
 	public void setEndNode(Node endNode) {
 		this.endNode = endNode;
@@ -68,5 +70,13 @@ public class BlockInformation {
 
 	public void addCall(Call call) {
 		this.calls.add(call);
+	}
+
+	public void setMemoryPhi(Phi memoryPhi) {
+		this.memoryPhi = memoryPhi;
+	}
+
+	public Phi getMemoryPhi() {
+		return memoryPhi;
 	}
 }

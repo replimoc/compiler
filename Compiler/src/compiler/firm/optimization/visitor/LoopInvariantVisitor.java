@@ -298,7 +298,6 @@ public class LoopInvariantVisitor extends OptimizationVisitor<Node> {
 		utils = new OptimizationUtils(start.getGraph());
 		dominators = utils.getDominators();
 		backedges = utils.getBackEdges();
-		loopPhis = utils.getLoopPhis();
 		ifBlocks = utils.getIfBlocks();
 	}
 

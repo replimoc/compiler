@@ -7,6 +7,8 @@ import java.util.Set;
 
 import compiler.firm.FirmUtils;
 import compiler.firm.LoopInfo;
+import compiler.firm.optimization.evaluation.EntityDetails;
+import compiler.firm.optimization.evaluation.ProgramDetails;
 
 import firm.BackEdges;
 import firm.BackEdges.Edge;
@@ -25,20 +27,26 @@ import firm.nodes.Start;
 
 public class UnrollingVisitor extends OptimizationVisitor<Node> {
 
-	public static final OptimizationVisitorFactory<Node> FACTORY = new OptimizationVisitorFactory<Node>() {
-		@Override
-		public OptimizationVisitor<Node> create() {
-			return new UnrollingVisitor();
-		}
-	};
+	public static final OptimizationVisitorFactory<Node> FACTORY(final ProgramDetails programDetails) {
+		return new OptimizationVisitorFactory<Node>() {
+			@Override
+			public OptimizationVisitor<Node> create() {
+				return new UnrollingVisitor(programDetails);
+			}
+		};
+	}
 
+	public UnrollingVisitor(ProgramDetails programDetails) {
+		this.programDetails = programDetails;
+	}
+
+	private final ProgramDetails programDetails;
+	private EntityDetails entityDetails;
 	private static final Set<Block> finishedLoops = new HashSet<>();
 
 	private HashMap<Node, Node> backedges = new HashMap<>();
 	private HashMap<Node, Node> inductionVariables = new HashMap<>();
-	private final HashMap<Block, Cmp> compares = new HashMap<>();
 	private HashMap<Block, Set<Node>> blockNodes = new HashMap<>();
-	private HashMap<Block, Phi> loopPhis = new HashMap<>();
 	private static final int MAX_UNROLL_FACTOR = 8;
 	private OptimizationUtils utils;
 
@@ -48,26 +56,23 @@ public class UnrollingVisitor extends OptimizationVisitor<Node> {
 	}
 
 	@Override
-	public void visit(Cmp cmp) {
-		if (!compares.containsKey(cmp.getBlock())) {
-			compares.put((Block) cmp.getBlock(), cmp);
-			cmp.getBlock().accept(this);
-		}
+	public void visit(Start start) {
+		utils = new OptimizationUtils(start.getGraph());
+		backedges = utils.getBackEdges();
+		inductionVariables = utils.getInductionVariables();
+		blockNodes = utils.getBlockNodes();
+		entityDetails = programDetails.getEntityDetails(start.getGraph());
 	}
 
 	@Override
-	public void visit(Block loopHeader) {
+	public void visit(Cmp cmp) {
+		Block loopHeader = (Block) cmp.getBlock();
 		if (finishedLoops.contains(loopHeader))
 			return;
 
 		if (utils == null) {
 			return; // Start block
 		}
-
-		Cmp cmp = compares.get(loopHeader);
-
-		if (cmp == null)
-			return; // Not a loop
 
 		LoopInfo loopInfo = FirmUtils.getLoopInfos(cmp);
 
@@ -134,9 +139,9 @@ public class UnrollingVisitor extends OptimizationVisitor<Node> {
 
 		// counter
 		HashMap<Node, Node> changedNodes = new HashMap<>();
-		Node loopPhi = loopPhis.get(loopHeader);
+		Node memoryPhi = entityDetails.getBlockInformation(loopHeader).getMemoryPhi();
 
-		if (loopPhi.getPredCount() > 2)
+		if (memoryPhi.getPredCount() > 2)
 			return;
 
 		// don't unroll too big blocks
@@ -147,7 +152,7 @@ public class UnrollingVisitor extends OptimizationVisitor<Node> {
 		addReplacement(loopInfo.getIncr(),
 				graph.newConst(loopInfo.getIncr().getTarval().mul(new TargetValue(unrollFactor, loopInfo.getIncr().getMode()))));
 
-		unroll(loopInfo, changedNodes, loopPhi, unrollFactor);
+		unroll(loopInfo, changedNodes, memoryPhi, unrollFactor);
 		finishedLoops.add(loopHeader);
 
 	}
@@ -172,16 +177,16 @@ public class UnrollingVisitor extends OptimizationVisitor<Node> {
 		Node constNode = block.getGraph().newConst((int) value, FirmUtils.getModeInteger());
 		Node loopHeader = block.getPred(0).getBlock();
 		Node preLoopJmp = loopHeader.getPred(0);
-		Cmp cmp = compares.get(loopHeader);
+		Cmp cmp = loopInfo.getCmp();
 		if (cmp == null || !backedges.containsValue(loopHeader))
 			return false;
 
 		// there should only be one condition node
 		Node cond = BackEdges.getOuts(cmp).iterator().next().node;
-		Node loopPhi = loopPhis.get(loopHeader); // memory phi in loop header
-		if (loopPhi.getPredCount() > 2 || !loopPhi.getPred(1).equals(loopPhi))
+		Node memoryPhi = entityDetails.getBlockInformation(loopHeader).getMemoryPhi(); // memory phi in loop header
+		if (memoryPhi.getPredCount() > 2 || !memoryPhi.getPred(1).equals(memoryPhi))
 			return false;
-		Node memBeforeLoop = loopPhi.getPred(0);
+		Node memBeforeLoop = memoryPhi.getPred(0);
 
 		Node loopCounter = loopInfo.getLoopCounter();
 		for (Edge e : BackEdges.getOuts(loopCounter)) {
@@ -196,10 +201,10 @@ public class UnrollingVisitor extends OptimizationVisitor<Node> {
 		}
 
 		// loop body has no memory node
-		for (Edge e : BackEdges.getOuts(loopPhi)) {
+		for (Edge e : BackEdges.getOuts(memoryPhi)) {
 			if (!(e.node instanceof Anchor) && !(e.node instanceof End)) {
 				for (int i = 0; i < e.node.getPredCount(); i++) {
-					if (e.node.getPred(i).equals(loopPhi)) {
+					if (e.node.getPred(i).equals(memoryPhi)) {
 						// alter memory flow
 						e.node.setPred(i, memBeforeLoop);
 					}
@@ -330,14 +335,5 @@ public class UnrollingVisitor extends OptimizationVisitor<Node> {
 				changedNodes.put(blockNode, graph.copyNode(blockNode));
 			}
 		}
-	}
-
-	@Override
-	public void visit(Start start) {
-		utils = new OptimizationUtils(start.getGraph());
-		backedges = utils.getBackEdges();
-		inductionVariables = utils.getInductionVariables();
-		blockNodes = utils.getBlockNodes();
-		loopPhis = utils.getLoopPhis();
 	}
 }
