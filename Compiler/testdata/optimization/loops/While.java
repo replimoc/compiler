@@ -1,8 +1,4 @@
 class Test {
-	public static void main(String[] args) {
-		method(5, 6);
-	}
-	
 	public static void method(int x, int y) {
 		int z = 0;
 		
@@ -10,5 +6,9 @@ class Test {
 			System.out.println(x + y);
 			z = z + 1;
 		}
+	}
+	
+	public static void main(String[] args) {
+		method(5, 6);
 	}
 }
