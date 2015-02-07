@@ -91,7 +91,7 @@ public final class AssemblerGenerator {
 
 	private static void allocateRegistersSsa(Graph graph, AssemblerProgram program, boolean noRegisters) {
 		// SplittingSsaSpiller splittingSsaSpiller = new SplittingSsaSpiller(program);
-		// splittingSsaSpiller.reduceRegisterPressure(2, true);
+		// splittingSsaSpiller.reduceRegisterPressure(15, true);
 
 		SimpleSsaSpiller ssaSpiller = new SimpleSsaSpiller(program);
 		RegisterAllocationPolicy policy;

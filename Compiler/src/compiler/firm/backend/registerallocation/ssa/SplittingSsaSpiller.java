@@ -3,6 +3,7 @@ package compiler.firm.backend.registerallocation.ssa;
 import java.util.HashMap;
 import java.util.Map;
 
+import compiler.firm.FirmUtils;
 import compiler.firm.backend.X8664AssemblerGenerationVisitor;
 import compiler.firm.backend.storage.MemoryPointer;
 import compiler.firm.backend.storage.SingleRegister;
@@ -25,7 +26,7 @@ public class SplittingSsaSpiller implements StackInfoSupplier {
 	public void reduceRegisterPressure(final int availableRegisters, final boolean allowSpilling) {
 		currentStackOffset = 0; // reset state
 
-		program.getGraph().walkBlocksPostorder(new BlockWalker() {
+		FirmUtils.walkDominanceTree(program.getStartBlock(), new BlockWalker() {
 			@Override
 			public void visitBlock(Block block) {
 				reduceRegisterPressure(block, availableRegisters, allowSpilling);

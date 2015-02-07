@@ -306,8 +306,11 @@ public class AssemblerOperationsBlock {
 			addReloads(reloadRequiringRegisters, operation);
 		}
 
-		// mergeAdditionalOperations();
+		mergeAdditionalOperations();
 		this.setWExit(aliveRegisters);
+
+		debugln(debugMinAlgo, "\tliveOut: " + liveOut.keySet());
+		debugln(debugMinAlgo, "\twExit: " + wExit);
 	}
 
 	/**
@@ -321,8 +324,8 @@ public class AssemblerOperationsBlock {
 	 *            if true, the live distances are calculated from the operation after the given one.
 	 */
 	private void limit(StackInfoSupplier stackInfoSupplier, Set<VirtualRegister> aliveRegisters, Set<VirtualRegister> spilledRegisters,
-			AssemblerOperation operation, int limit,
-			boolean exclusive) {
+			AssemblerOperation operation, int limit, boolean exclusive) {
+
 		ArrayList<Pair<VirtualRegister, Integer>> alivesWithNextUse = getRegistersWithNextUse(aliveRegisters, operation, exclusive);
 		Collections.sort(alivesWithNextUse, Pair.<Integer> secondOperator());
 
