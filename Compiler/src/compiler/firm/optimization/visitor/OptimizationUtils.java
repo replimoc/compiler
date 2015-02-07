@@ -7,7 +7,6 @@ import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Set;
 
-import compiler.firm.FirmUtils;
 import compiler.firm.optimization.AbstractFirmNodesVisitor;
 
 import firm.BackEdges;
@@ -16,12 +15,8 @@ import firm.BlockWalker;
 import firm.Graph;
 import firm.Mode;
 import firm.bindings.binding_irdom;
-import firm.nodes.Add;
 import firm.nodes.Anchor;
 import firm.nodes.Block;
-import firm.nodes.Cmp;
-import firm.nodes.Cond;
-import firm.nodes.Const;
 import firm.nodes.Jmp;
 import firm.nodes.Node;
 import firm.nodes.NodeVisitor;
@@ -252,141 +247,6 @@ public class OptimizationUtils {
 			}
 		};
 		graph.walk(visitor);
-	}
-
-	public static LoopInfo getLoopInfos(Cmp cmp) {
-		Block loopHeader = (Block) cmp.getBlock();
-		Block loopTail = FirmUtils.getLoopTailIfHeader(loopHeader);
-
-		if (loopTail == null)
-			return null;
-
-		Const constant = null;
-		Node conditionalPhi = null;
-		for (Node predecessor : cmp.getPreds()) {
-			if (predecessor instanceof Const) {
-				constant = (Const) predecessor;
-			} else {
-				conditionalPhi = predecessor;
-			}
-		}
-
-		if (constant == null || conditionalPhi == null)
-			return null; // Nothing found
-
-		int blockPredecessorLoop = -1;
-		for (int i = 0; i < loopHeader.getPredCount(); i++) {
-			if (loopHeader.getPred(i).getBlock().equals(loopTail)) {
-				blockPredecessorLoop = i;
-			}
-		}
-
-		if (conditionalPhi instanceof Phi && blockPredecessorLoop >= 0) {
-			Block firstLoopBlock = FirmUtils.getFirstLoopBlock((Cond) FirmUtils.getFirstSuccessor(cmp));
-
-			Node arithmeticNode = conditionalPhi.getPred(blockPredecessorLoop);
-
-			boolean onlyOneNodeBetweenPhi = false;
-			if (!(arithmeticNode instanceof Phi)) {
-				for (Node arithmeticNodePredecessor : arithmeticNode.getPreds()) {
-					if (arithmeticNodePredecessor.equals(conditionalPhi)) {
-						onlyOneNodeBetweenPhi = true;
-					}
-				}
-			}
-
-			if (arithmeticNode.getBlock() != null && firstLoopBlock != null && onlyOneNodeBetweenPhi &&
-					FirmUtils.blockPostdominates(arithmeticNode.getBlock(), firstLoopBlock)) { // Add is always executed
-				Const incr = null;
-				if (arithmeticNode.getPredCount() > 1 && FirmUtils.isConstant(arithmeticNode.getPred(1)) && arithmeticNode instanceof Add) {
-					incr = (Const) arithmeticNode.getPred(1);
-				} else if (arithmeticNode.getPredCount() > 1 && FirmUtils.isConstant(arithmeticNode.getPred(0)) && arithmeticNode instanceof Add) {
-					incr = (Const) arithmeticNode.getPred(0);
-				} else {
-					return null;
-				}
-
-				Node startingValue = conditionalPhi.getPred(blockPredecessorLoop == 1 ? 0 : 1);
-				if (startingValue == null || !(startingValue instanceof Const))
-					return null;
-
-				// get cycle count for loop
-				int cycleCount = getCycleCount(cmp, constant, (Const) startingValue, incr);
-				return new LoopInfo(cycleCount, (Const) startingValue, incr, constant, arithmeticNode, conditionalPhi, firstLoopBlock, loopTail);
-			}
-		}
-		return null;
-	}
-
-	public static class LoopInfo {
-		public final int cycleCount;
-		public final Const startingValue;
-		public final Const incr;
-		public final Const constCmp;
-		public final Node arithmeticNode;
-		public final Node loopCounter;
-		public final Block firstLoopBlock;
-		public final Block lastLoopBlock;
-
-		private LoopInfo(int cycleCount, Const startingValue, Const incr, Const constCmp, Node arithmeticNode,
-				Node loopCounter, Block firstLoopBlock, Block lastLoopBlock) {
-			this.cycleCount = cycleCount;
-			this.startingValue = startingValue;
-			this.incr = incr;
-			this.arithmeticNode = arithmeticNode;
-			this.loopCounter = loopCounter;
-			this.constCmp = constCmp;
-			this.firstLoopBlock = firstLoopBlock;
-			this.lastLoopBlock = lastLoopBlock;
-		}
-
-		public boolean isOneBlockLoop() {
-			return this.firstLoopBlock.equals(this.lastLoopBlock);
-		}
-	}
-
-	private static int getCycleCount(Cmp cmp, Const constCmp, Const startingValue, Const incr) {
-		int count = 0;
-		double value = 0;
-		boolean mod = false;
-		switch (cmp.getRelation()) {
-		case Less:
-			value = (double) (constCmp.getTarval().asInt() - startingValue.getTarval().asInt()) / incr.getTarval().asInt();
-			count = value < 0 ? (int) Math.floor(value) : (int) Math.ceil(value);
-			if (incr.getTarval().isNegative()) {
-				return count < 0 ? Integer.MIN_VALUE : count;
-			} else {
-				return count < 0 ? Integer.MAX_VALUE : count;
-			}
-		case LessEqual:
-			value = (double) (constCmp.getTarval().asInt() - startingValue.getTarval().asInt()) / incr.getTarval().asInt();
-			count = value < 0 ? (int) Math.floor(value) : (int) Math.ceil(value);
-			mod = Math.ceil(value) == Math.floor(value);
-			if (incr.getTarval().isNegative()) {
-				return count - (mod ? 1 : 0) < 0 ? Integer.MIN_VALUE : count + (mod ? 1 : 0);
-			} else {
-				return count - (mod ? 1 : 0) < 0 ? Integer.MAX_VALUE : count + (mod ? 1 : 0);
-			}
-		case Greater:
-			value = (double) (startingValue.getTarval().asInt() - constCmp.getTarval().asInt()) / incr.getTarval().asInt();
-			count = value < 0 ? (int) Math.floor(value) : (int) Math.ceil(value);
-			if (incr.getTarval().isNegative()) {
-				return count > 0 ? Integer.MIN_VALUE : count;
-			} else {
-				return count > 0 ? Integer.MAX_VALUE : count;
-			}
-		case GreaterEqual:
-			value = (double) (startingValue.getTarval().asInt() - constCmp.getTarval().asInt()) / incr.getTarval().asInt();
-			count = value < 0 ? (int) Math.floor(value) : (int) Math.ceil(value);
-			mod = Math.ceil(value) == Math.floor(value);
-			if (incr.getTarval().isNegative()) {
-				return count + (mod ? 1 : 0) > 0 ? Integer.MIN_VALUE : count - (mod ? 1 : 0);
-			} else {
-				return count + (mod ? 1 : 0) > 0 ? Integer.MAX_VALUE : count - (mod ? 1 : 0);
-			}
-		default:
-			return 0;
-		}
 	}
 
 }

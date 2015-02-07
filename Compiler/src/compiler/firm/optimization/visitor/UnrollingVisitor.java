@@ -68,7 +68,7 @@ public class UnrollingVisitor extends OptimizationVisitor<Node> {
 		if (cmp == null)
 			return; // Not a loop
 
-		OptimizationUtils.LoopInfo loopInfo = OptimizationUtils.getLoopInfos(cmp);
+		FirmUtils.LoopInfo loopInfo = FirmUtils.getLoopInfos(cmp);
 
 		if (loopInfo == null)
 			return;
@@ -165,7 +165,7 @@ public class UnrollingVisitor extends OptimizationVisitor<Node> {
 		return blockNodes.containsKey(block) && !(blockNodes.get(block).size() > 2);
 	}
 
-	private boolean replaceLoopIfPossible(OptimizationUtils.LoopInfo loopInfo, long value, Block block) {
+	private boolean replaceLoopIfPossible(FirmUtils.LoopInfo loopInfo, long value, Block block) {
 		// collect nodes that need to be altered
 		Node constNode = block.getGraph().newConst((int) value, FirmUtils.getModeInteger());
 		Node loopHeader = block.getPred(0).getBlock();
