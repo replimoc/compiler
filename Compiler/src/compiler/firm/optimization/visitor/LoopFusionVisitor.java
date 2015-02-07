@@ -171,7 +171,7 @@ public class LoopFusionVisitor extends OptimizationVisitor<Node> {
 					// Move nodes of second loop head in to first loop head
 					for (Node node : blockNodes.get(block2)) {
 						if (node instanceof Phi) {
-							Node predecessor = getNextPredecessorWithOtherBlock(node, phiPredecessor);
+							Node predecessor = FirmUtils.getNextPredecessorWithOtherBlock(node, phiPredecessor);
 							if (!predecessor.getBlock().equals(continueInfo2.loopContentBlock)) {
 								addReplacement(node, predecessor);
 								continue;
@@ -185,14 +185,6 @@ public class LoopFusionVisitor extends OptimizationVisitor<Node> {
 				}
 			}
 		}
-	}
-
-	private Node getNextPredecessorWithOtherBlock(Node node, int predNum) {
-		Node block = node.getBlock();
-		while (node.getBlock().equals(block) && node instanceof Phi) {
-			node = node.getPred(predNum);
-		}
-		return node;
 	}
 
 	private LoopInfo calculateLoopInfo(Node condition) {

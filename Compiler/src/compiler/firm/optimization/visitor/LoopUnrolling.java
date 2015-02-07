@@ -42,15 +42,22 @@ public class LoopUnrolling {
 			if (graph == null)
 				continue;
 
-			BackEdges.enable(graph);
+			Set<Cmp> cmps = new HashSet<>();
 			for (Entry<Node, BlockInformation> blockInformation : entityDetail.getValue().getBlockInformations().entrySet()) {
 				if (blockInformation.getValue().getEndNode() instanceof Cmp) {
-					binding_irdom.compute_postdoms(graph.ptr);
-					binding_irdom.compute_doms(graph.ptr);
-
-					checkAndUnrollLoop((Cmp) blockInformation.getValue().getEndNode(), entityDetail.getValue(), replacements);
+					cmps.add((Cmp) blockInformation.getValue().getEndNode());
 				}
 			}
+
+			BackEdges.enable(graph);
+
+			for (Cmp cmp : cmps) {
+				binding_irdom.compute_postdoms(graph.ptr);
+				binding_irdom.compute_doms(graph.ptr);
+
+				checkAndUnrollLoop(cmp, entityDetail.getValue(), replacements);
+			}
+
 			BackEdges.disable(graph);
 			compiler.firm.FirmUtils.replaceNodes(replacements);
 			compiler.firm.FirmUtils.removeBadsAndUnreachable(graph);
@@ -86,6 +93,7 @@ public class LoopUnrolling {
 		}
 
 		Graph graph = loopHeader.getGraph();
+		int phiCount = getPhiCount(entityDetails, loopHeader);
 		// unroll if block generates overflow
 		if (loopInfo.getCycleCount() == Integer.MAX_VALUE) {
 			long count = (Integer.MAX_VALUE) - loopInfo.getStartingValue().getTarval().asLong();
@@ -98,10 +106,11 @@ public class LoopUnrolling {
 				}
 				if (unrollFactor < 2)
 					return;
-			} else {
+			} else if (phiCount <= 2) {
 				// calculate loop result
 				long value = Integer.MIN_VALUE + loopInfo.getIncr().getTarval().asLong() - mod - 1;
-				replaceLoopIfPossible(entityDetails, loopInfo, value, loopInfo.getLastLoopBlock(), nodeReplacements);
+				// replaceLoopIfPossible(entityDetails, loopInfo, value, loopInfo.getLastLoopBlock(), nodeReplacements);
+				return; // FIXME
 			}
 		} else if (loopInfo.getCycleCount() == Integer.MIN_VALUE) {
 			long count = (Integer.MIN_VALUE) - loopInfo.getStartingValue().getTarval().asLong();
@@ -114,16 +123,18 @@ public class LoopUnrolling {
 				}
 				if (unrollFactor < 2)
 					return;
-			} else {
+			} else if (phiCount <= 2) {
 				// calculate loop result
 				long value = Integer.MAX_VALUE + loopInfo.getIncr().getTarval().asLong() - mod + 1;
-				replaceLoopIfPossible(entityDetails, loopInfo, value, loopInfo.getLastLoopBlock(), nodeReplacements);
+				// replaceLoopIfPossible(entityDetails, loopInfo, value, loopInfo.getLastLoopBlock(), nodeReplacements);
+				return; // FIXME
 			}
-		} else if (isCalculatable(entityDetails, loopInfo.getLastLoopBlock())) {
+		} else if (phiCount <= 2 && isCalculatable(entityDetails, loopInfo.getLastLoopBlock())) {
 			// calculate loop result
 			long value = loopInfo.getStartingValue().getTarval().asLong()
 					+ (Math.abs(loopInfo.getCycleCount()) * loopInfo.getIncr().getTarval().asLong());
-			replaceLoopIfPossible(entityDetails, loopInfo, value, loopInfo.getLastLoopBlock(), nodeReplacements);
+			// replaceLoopIfPossible(entityDetails, loopInfo, value, loopInfo.getLastLoopBlock(), nodeReplacements);
+			return; // FIXME
 		} else if (Math.abs(loopInfo.getCycleCount()) < 2 || (Math.abs(loopInfo.getCycleCount()) % unrollFactor) != 0) {
 			return;
 		}
@@ -228,8 +239,8 @@ public class LoopUnrolling {
 	}
 
 	private static void unroll(EntityDetails entityDetails, LoopInfo loopInfo, int unrollFactor, HashMap<Node, Node> nodeReplacements) {
-
-		if (unrollFactor % 2 == 1) {
+		System.out.println(unrollFactor);
+		if (unrollFactor % 2 == 1 || unrollFactor <= 0) {
 			return;
 		}
 
@@ -237,6 +248,12 @@ public class LoopUnrolling {
 		Graph graph = loopHeader.getGraph();
 
 		Set<Block> loopBlocks = FirmUtils.getBlocksBetween(loopInfo.getLoopHeader(), loopInfo.getLastLoopBlock());
+
+		for (Block loopBlock : loopBlocks) {
+			if (!loopBlock.equals(loopHeader) && FirmUtils.getLoopTailIfHeader(loopBlock) != null) {
+				return; // This loop contains another loop
+			}
+		}
 
 		HashMap<Node, Node> blockPredecessors = new HashMap<>();
 		HashMap<Node, Node> nodeMapping = new HashMap<>();
@@ -248,7 +265,6 @@ public class LoopUnrolling {
 			dummyPredecessors[i] = dummyJump;
 
 			if (loopBlocks.contains(predecessor.getBlock())) {
-				System.out.println(predecessor);
 				blockPredecessors.put(predecessor, dummyJump);
 			} else {
 				nodeMapping.put(predecessor, dummyJump);
@@ -311,12 +327,9 @@ public class LoopUnrolling {
 			Node newPhi = nodeMapping.get(phi);
 			for (int j = 0; j < phi.getPredCount(); j++) {
 				Node predecessor = phi.getPred(j);
-				System.out.println(predecessor.getBlock() + " -> " + loopBlocks.contains(predecessor.getBlock()));
-				if (predecessor.getMode().equals(Mode.getM()) && predecessor instanceof Phi) {
-					// TODO
-				} else if (loopBlocks.contains(predecessor.getBlock())) {
+				if (loopBlocks.contains(predecessor.getBlock())) {
 					Node newPredecessor = nodeMapping.get(predecessor);
-					Graph.exchange(newPhi, predecessor);
+					nodeReplacements.put(newPhi, predecessor);
 					phi.setPred(j, newPredecessor);
 				} else {
 					nodeMapping.get(phi).setPred(j, predecessor);
@@ -334,8 +347,7 @@ public class LoopUnrolling {
 		FirmUtils.removeKeepAlive(oldProjJmp.getBlock());
 		Graph.exchange(oldProjJmp, graph.newJmp(oldProjJmp.getBlock()));
 
-		System.out.println(lastModeM);
-		System.out.println(nodeMapping.get(lastModeM));
+		// graph.keepAlive(nodeMapping.get(loopInfo.getLastLoopBlock()));
 	}
 
 	private static void unrollOld(EntityDetails entityDetails, LoopInfo loopInfo, int unrollFactor, HashMap<Node, Node> nodeReplacements) {

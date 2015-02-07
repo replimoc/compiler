@@ -408,4 +408,12 @@ public final class FirmUtils {
 	public static void removeKeepAlive(Node node) {
 		binding_irnode.add_End_keepalive(node.getGraph().getEnd().ptr, node.ptr);
 	}
+
+	public static Node getNextPredecessorWithOtherBlock(Node node, int predNum) {
+		Node block = node.getBlock();
+		while (node.getBlock().equals(block) && node instanceof Phi) {
+			node = node.getPred(predNum);
+		}
+		return node;
+	}
 }
