@@ -16,6 +16,8 @@ import compiler.firm.FirmUtils;
 import compiler.firm.backend.operations.CmpOperation;
 import compiler.firm.backend.operations.ReloadOperation;
 import compiler.firm.backend.operations.SpillOperation;
+import compiler.firm.backend.operations.dummy.PhiReadOperation;
+import compiler.firm.backend.operations.dummy.PhiWriteOperation;
 import compiler.firm.backend.operations.templates.AssemblerOperation;
 import compiler.firm.backend.operations.templates.JumpOperation;
 import compiler.firm.backend.storage.RegisterBased;
@@ -31,6 +33,9 @@ public class AssemblerOperationsBlock {
 	private final boolean isLoopHead;
 	private ArrayList<AssemblerOperation> operations;
 	private final AssemblerOperation conditionOrJump;
+	private final PhiReadOperation phiRead;
+	private final PhiWriteOperation phiWrite;
+
 	private final HashMap<AssemblerOperation, List<AssemblerOperation>> additionalOperations = new HashMap<>();
 
 	private final Set<AssemblerOperationsBlock> predecessors = new HashSet<>();
@@ -46,11 +51,16 @@ public class AssemblerOperationsBlock {
 	private final Set<VirtualRegister> wExit = new HashSet<>();
 	private final Set<VirtualRegister> sExit = new HashSet<>();
 
+	private final Set<AssemblerOperationsBlock> dominanceFrontier = new HashSet<>();
+
 	public AssemblerOperationsBlock(Block block, ArrayList<AssemblerOperation> operations) {
 		this.block = block;
 		this.operations = operations;
 
 		AssemblerOperation conditionOrJump = null;
+		PhiReadOperation phiRead = null;
+		PhiWriteOperation phiWrite = null;
+
 		for (AssemblerOperation operation : operations) {
 			operation.setOperationsBlock(this);
 
@@ -60,9 +70,15 @@ public class AssemblerOperationsBlock {
 				} else if (operation instanceof CmpOperation) {
 					conditionOrJump = operation;
 				}
+			} else if (operation instanceof PhiReadOperation) {
+				phiRead = (PhiReadOperation) operation;
+			} else if (operation instanceof PhiWriteOperation) {
+				phiWrite = (PhiWriteOperation) operation;
 			}
 		}
 		this.conditionOrJump = conditionOrJump;
+		this.phiRead = phiRead;
+		this.phiWrite = phiWrite;
 
 		this.isLoopHead = FirmUtils.getLoopTailIfHeader(block) != null;
 	}
@@ -309,13 +325,14 @@ public class AssemblerOperationsBlock {
 		this.sExit.addAll(spilledRegisters);
 	}
 
-	public void executeMinAlgorithm(int availableRegisters, StackInfoSupplier stackInfoSupplier) {
-		boolean debugMinAlgo = true;
+	public void executeMinAlgorithm(Map<VirtualRegister, List<ReloadOperation>> insertedReloads, int availableRegisters,
+			StackInfoSupplier stackInfoSupplier) {
+		boolean debugMinAlgo = false;
 
 		Set<VirtualRegister> aliveRegisters = this.calculateWEntry(availableRegisters);
 		Set<VirtualRegister> spilledRegisters = this.calculateSEntry(aliveRegisters);
 
-		insertCupplingCode(stackInfoSupplier, aliveRegisters, spilledRegisters);
+		insertCupplingCode(insertedReloads, stackInfoSupplier, aliveRegisters, spilledRegisters);
 
 		debugln(debugMinAlgo, block);
 		debugln(debugMinAlgo, "\twEntry: " + aliveRegisters);
@@ -337,7 +354,7 @@ public class AssemblerOperationsBlock {
 			limit(stackInfoSupplier, aliveRegisters, spilledRegisters, operation, availableRegisters - writeRegisters.size(), true);
 			aliveRegisters.addAll(writeRegisters); // add the written registers
 
-			addReloads(stackInfoSupplier, reloadRequiringRegisters, operation);
+			addReloads(insertedReloads, stackInfoSupplier, reloadRequiringRegisters, operation);
 		}
 
 		mergeAdditionalOperations();
@@ -348,7 +365,8 @@ public class AssemblerOperationsBlock {
 		debugln(debugMinAlgo, "\twExit: " + wExit);
 	}
 
-	private void insertCupplingCode(StackInfoSupplier stackInfoSupplier, Set<VirtualRegister> wEntry, Set<VirtualRegister> sEntry) {
+	private void insertCupplingCode(Map<VirtualRegister, List<ReloadOperation>> insertedReloads, StackInfoSupplier stackInfoSupplier,
+			Set<VirtualRegister> wEntry, Set<VirtualRegister> sEntry) {
 		for (AssemblerOperationsBlock predecessor : predecessors) {
 			Set<VirtualRegister> reloads = new HashSet<>(wEntry);
 			reloads.removeAll(predecessor.wExit);
@@ -358,11 +376,13 @@ public class AssemblerOperationsBlock {
 			Utils.cutSet(spills, predecessor.wExit);
 
 			List<AssemblerOperation> couplingOperations = new LinkedList<>();
-			for (VirtualRegister spill : spills) {
-				couplingOperations.add(createSpillOperation(stackInfoSupplier, spill));
+			for (VirtualRegister spilledRegister : spills) {
+				couplingOperations.add(createSpillOperation(stackInfoSupplier, spilledRegister));
 			}
-			for (VirtualRegister reload : reloads) {
-				couplingOperations.add(createReloadOperation(stackInfoSupplier, reload));
+			for (VirtualRegister reloadedRegister : reloads) {
+				ReloadOperation reloadOperation = createReloadOperation(stackInfoSupplier, reloadedRegister);
+				couplingOperations.add(reloadOperation);
+				Utils.appendToKey(insertedReloads, reloadedRegister, reloadOperation);
 			}
 			predecessor.additionalOperations.put(predecessor.conditionOrJump, couplingOperations);
 			predecessor.mergeAdditionalOperations();
@@ -416,10 +436,12 @@ public class AssemblerOperationsBlock {
 		return result;
 	}
 
-	private void addReloads(StackInfoSupplier stackInfoSupplier, Set<VirtualRegister> reloadRequiringRegisters, AssemblerOperation operation) {
-		for (VirtualRegister register : reloadRequiringRegisters) {
-			ReloadOperation reloadOperation = createReloadOperation(stackInfoSupplier, register);
-			System.out.println("add reload for " + register + " from " + stackInfoSupplier.getStackLocation(register) + " before " + operation);
+	private void addReloads(Map<VirtualRegister, List<ReloadOperation>> insertedReloads, StackInfoSupplier stackInfoSupplier,
+			Set<VirtualRegister> reloadedRegisters, AssemblerOperation operation) {
+
+		for (VirtualRegister reloadedRegister : reloadedRegisters) {
+			ReloadOperation reloadOperation = createReloadOperation(stackInfoSupplier, reloadedRegister);
+			Utils.appendToKey(insertedReloads, reloadedRegister, reloadOperation);
 			Utils.appendToKey(additionalOperations, operation, reloadOperation);
 		}
 	}
@@ -430,7 +452,6 @@ public class AssemblerOperationsBlock {
 
 	private void addSpill(StackInfoSupplier stackInfoSupplier, VirtualRegister register, AssemblerOperation operation) {
 		SpillOperation spillOperation = createSpillOperation(stackInfoSupplier, register);
-		System.out.println("add spill for " + register + " to " + stackInfoSupplier.getStackLocation(register) + " before " + operation);
 		Utils.appendToKey(additionalOperations, operation, spillOperation);
 	}
 
@@ -463,5 +484,21 @@ public class AssemblerOperationsBlock {
 	private static void debug(boolean debug, Object o) {
 		if (debug)
 			System.out.print(o);
+	}
+
+	public void calculateDominanceFrontier() {
+		dominanceFrontier.clear();
+		for (AssemblerOperationsBlock succ : successors) {
+			if (FirmUtils.blockDominates(block, succ.block)) {
+				for (AssemblerOperationsBlock succFrontierBlock : succ.dominanceFrontier) {
+					if (!FirmUtils.blockDominates(block, succFrontierBlock.block)) {
+						dominanceFrontier.add(succFrontierBlock);
+					}
+				}
+			} else {
+				dominanceFrontier.add(succ);
+			}
+		}
+		System.out.println("dominance frontier of " + block + ": " + dominanceFrontier);
 	}
 }

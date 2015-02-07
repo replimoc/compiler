@@ -95,9 +95,7 @@ public class AssemblerProgram {
 	public void walkBlocksReversePostorder(AssemblerOperationsBlockWalker blockWalker) {
 		final LinkedList<AssemblerOperationsBlock> blocks = new LinkedList<>();
 
-		AssemblerOperationsBlock startOperationsBlock = operationsBlocks.get(graph.getStartBlock());
-		FirmGraphTraverser.incrementBlockVisited(graph);
-		walkBlocksPostorder(startOperationsBlock, new AssemblerOperationsBlockWalker() {
+		walkBlocksPostorder(new AssemblerOperationsBlockWalker() {
 			@Override
 			public void visitBlock(AssemblerOperationsBlock block) {
 				blocks.push(block);
@@ -107,6 +105,11 @@ public class AssemblerProgram {
 		while (!blocks.isEmpty()) {
 			blockWalker.visitBlock(blocks.pop());
 		}
+	}
+
+	public void walkBlocksPostorder(AssemblerOperationsBlockWalker assemblerOperationsBlockWalker) {
+		FirmGraphTraverser.incrementBlockVisited(graph);
+		walkBlocksPostorder(getStartOperationsBlock(), assemblerOperationsBlockWalker);
 	}
 
 	public void walkBlocksPostorder(AssemblerOperationsBlock block, AssemblerOperationsBlockWalker walker) {
@@ -132,4 +135,9 @@ public class AssemblerProgram {
 		}
 		walker.visitBlock(block);
 	}
+
+	public AssemblerOperationsBlock getStartOperationsBlock() {
+		return operationsBlocks.get(graph.getStartBlock());
+	}
+
 }
