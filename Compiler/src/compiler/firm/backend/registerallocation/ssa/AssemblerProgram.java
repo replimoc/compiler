@@ -9,11 +9,9 @@ import java.util.Map.Entry;
 import java.util.Set;
 
 import compiler.firm.FirmUtils;
-import compiler.firm.backend.FirmGraphTraverser;
 import compiler.firm.backend.operations.dummy.MethodStartEndOperation;
 import compiler.firm.backend.operations.templates.AssemblerOperation;
 import compiler.firm.backend.storage.RegisterBundle;
-
 import firm.Graph;
 import firm.nodes.Block;
 
@@ -108,7 +106,7 @@ public class AssemblerProgram {
 	}
 
 	public void walkBlocksPostorder(AssemblerOperationsBlockWalker assemblerOperationsBlockWalker) {
-		FirmGraphTraverser.incrementBlockVisited(graph);
+		FirmUtils.incrementBlockVisited(graph);
 		walkBlocksPostorder(getStartOperationsBlock(), assemblerOperationsBlockWalker);
 	}
 

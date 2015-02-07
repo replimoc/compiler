@@ -9,10 +9,10 @@ import java.util.List;
 import java.util.Map.Entry;
 
 import com.sun.jna.Pointer;
+
 import compiler.utils.ExecutionFailedException;
 import compiler.utils.Pair;
 import compiler.utils.Utils;
-
 import firm.BackEdges;
 import firm.Backend;
 import firm.BlockWalker;
@@ -28,6 +28,7 @@ import firm.Type;
 import firm.Util;
 import firm.bindings.binding_irdom;
 import firm.bindings.binding_irgopt;
+import firm.bindings.binding_irgraph;
 import firm.nodes.Address;
 import firm.nodes.Block;
 import firm.nodes.Call;
@@ -247,5 +248,9 @@ public final class FirmUtils {
 
 	public static boolean isLoopHead(Block block) {
 		return getLoopTailIfHeader(block) != null;
+	}
+
+	public static void incrementBlockVisited(Graph graph) {
+		binding_irgraph.inc_irg_block_visited(graph.ptr);
 	}
 }

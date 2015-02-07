@@ -1,9 +1,14 @@
 package compiler.firm.backend.registerallocation.ssa;
 
 import java.util.HashMap;
+import java.util.HashSet;
+import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
+import java.util.Map.Entry;
+import java.util.Set;
 
+import compiler.firm.FirmUtils;
 import compiler.firm.backend.X8664AssemblerGenerationVisitor;
 import compiler.firm.backend.operations.ReloadOperation;
 import compiler.firm.backend.storage.MemoryPointer;
@@ -40,6 +45,18 @@ public class SplittingSsaSpiller implements StackInfoSupplier {
 		});
 
 		System.out.println(insertedReloads);
+
+		for (Entry<VirtualRegister, List<ReloadOperation>> reloadEntry : insertedReloads.entrySet()) {
+			Set<AssemblerOperationsBlock> labelBlocks = new HashSet<>();
+			labelBlocks.add(reloadEntry.getKey().getDefinition().getOperationsBlock());
+			for (ReloadOperation reloadOperation : reloadEntry.getValue()) {
+				labelBlocks.add(reloadOperation.getOperationsBlock());
+			}
+
+			Set<AssemblerOperationsBlock> iteratedDominanceFrontier = calculateIteratedDominanceFrontier(labelBlocks);
+			System.out.println("iterated dominance border for " + reloadEntry.getKey() + " with blocks " + labelBlocks + "    is: "
+					+ iteratedDominanceFrontier);
+		}
 	}
 
 	private void reduceRegisterPressure(AssemblerOperationsBlock operationsBlock, int availableRegisters, boolean allowSpilling) {
@@ -65,5 +82,26 @@ public class SplittingSsaSpiller implements StackInfoSupplier {
 		stackLocations.put(register, newStackLocation);
 		currentStackOffset += X8664AssemblerGenerationVisitor.STACK_ITEM_SIZE;
 		return newStackLocation;
+	}
+
+	private Set<AssemblerOperationsBlock> calculateIteratedDominanceFrontier(Set<AssemblerOperationsBlock> blocks) {
+		Set<AssemblerOperationsBlock> result = new HashSet<>();
+
+		FirmUtils.incrementBlockVisited(program.getGraph());
+		LinkedList<AssemblerOperationsBlock> workList = new LinkedList<>(blocks);
+		while (!workList.isEmpty()) {
+			AssemblerOperationsBlock curr = workList.pop();
+			result.addAll(curr.getDominanceFrontier());
+
+			for (AssemblerOperationsBlock frontierElement : curr.getDominanceFrontier()) {
+				if (frontierElement.getBlock().blockVisited())
+					continue;
+
+				frontierElement.getBlock().markBlockVisited();
+				workList.push(frontierElement);
+			}
+		}
+
+		return result;
 	}
 }

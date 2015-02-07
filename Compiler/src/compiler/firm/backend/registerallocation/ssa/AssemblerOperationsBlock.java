@@ -171,18 +171,19 @@ public class AssemblerOperationsBlock {
 	public String toString() {
 		StringBuilder builder = new StringBuilder();
 
+		builder.append("AOB: ");
 		builder.append(block);
-		builder.append("(loop head: " + isLoopHead + "):  \t  liveIn: ");
-
-		for (VirtualRegister register : liveIn.keySet()) {
-			builder.append("VR_" + register.getNum() + ", ");
-		}
-
-		builder.append("  \t  liveOut: ");
-
-		for (VirtualRegister register : liveOut.keySet()) {
-			builder.append("VR_" + register.getNum() + ", ");
-		}
+		// builder.append("(loop head: " + isLoopHead + "):  \t  liveIn: ");
+		//
+		// for (VirtualRegister register : liveIn.keySet()) {
+		// builder.append("VR_" + register.getNum() + ", ");
+		// }
+		//
+		// builder.append("  \t  liveOut: ");
+		//
+		// for (VirtualRegister register : liveOut.keySet()) {
+		// builder.append("VR_" + register.getNum() + ", ");
+		// }
 
 		return builder.toString();
 	}
@@ -377,10 +378,10 @@ public class AssemblerOperationsBlock {
 
 			List<AssemblerOperation> couplingOperations = new LinkedList<>();
 			for (VirtualRegister spilledRegister : spills) {
-				couplingOperations.add(createSpillOperation(stackInfoSupplier, spilledRegister));
+				couplingOperations.add(predecessor.createSpillOperation(stackInfoSupplier, spilledRegister));
 			}
 			for (VirtualRegister reloadedRegister : reloads) {
-				ReloadOperation reloadOperation = createReloadOperation(stackInfoSupplier, reloadedRegister);
+				ReloadOperation reloadOperation = predecessor.createReloadOperation(stackInfoSupplier, reloadedRegister);
 				couplingOperations.add(reloadOperation);
 				Utils.appendToKey(insertedReloads, reloadedRegister, reloadOperation);
 			}
@@ -447,7 +448,9 @@ public class AssemblerOperationsBlock {
 	}
 
 	private ReloadOperation createReloadOperation(StackInfoSupplier stackInfoSupplier, VirtualRegister register) {
-		return new ReloadOperation(stackInfoSupplier.getStackLocation(register), register);
+		ReloadOperation reloadOperation = new ReloadOperation(stackInfoSupplier.getStackLocation(register), register);
+		reloadOperation.setOperationsBlock(this);
+		return reloadOperation;
 	}
 
 	private void addSpill(StackInfoSupplier stackInfoSupplier, VirtualRegister register, AssemblerOperation operation) {
@@ -456,7 +459,9 @@ public class AssemblerOperationsBlock {
 	}
 
 	private SpillOperation createSpillOperation(StackInfoSupplier stackInfoSupplier, VirtualRegister register) {
-		return new SpillOperation(register, stackInfoSupplier.allocateStackLocation(register));
+		SpillOperation spillOperation = new SpillOperation(register, stackInfoSupplier.allocateStackLocation(register));
+		spillOperation.setOperationsBlock(this);
+		return spillOperation;
 	}
 
 	private void mergeAdditionalOperations() {
@@ -499,6 +504,9 @@ public class AssemblerOperationsBlock {
 				dominanceFrontier.add(succ);
 			}
 		}
-		System.out.println("dominance frontier of " + block + ": " + dominanceFrontier);
+	}
+
+	public Set<AssemblerOperationsBlock> getDominanceFrontier() {
+		return dominanceFrontier;
 	}
 }

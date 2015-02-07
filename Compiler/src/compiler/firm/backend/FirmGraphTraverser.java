@@ -5,10 +5,8 @@ import java.util.HashSet;
 import java.util.LinkedList;
 
 import compiler.firm.FirmUtils;
-
 import firm.BlockWalker;
 import firm.Graph;
-import firm.bindings.binding_irgraph;
 import firm.nodes.Block;
 import firm.nodes.Node;
 import firm.nodes.Proj;
@@ -19,12 +17,8 @@ public final class FirmGraphTraverser {
 	}
 
 	public static void walkLoopOptimizedPostorder(Graph graph, HashMap<Block, BlockInfo> blockInfos, BlockWalker walker) {
-		incrementBlockVisited(graph);
+		FirmUtils.incrementBlockVisited(graph);
 		traverseBlocksGenerationFriendly(graph.getStartBlock(), blockInfos, walker, true);
-	}
-
-	public static void incrementBlockVisited(Graph graph) {
-		binding_irgraph.inc_irg_block_visited(graph.ptr);
 	}
 
 	public static HashMap<Block, BlockInfo> calculateBlockInfos(Graph graph) {
@@ -51,7 +45,7 @@ public final class FirmGraphTraverser {
 			}
 		});
 
-		incrementBlockVisited(graph);
+		FirmUtils.incrementBlockVisited(graph);
 		detectLoopHeads(graph.getStartBlock(), blockInfos, new HashSet<Integer>());
 
 		return blockInfos;
@@ -133,7 +127,7 @@ public final class FirmGraphTraverser {
 	}
 
 	public static void walkBlocksAllocationFriendly(Graph graph, HashMap<Block, BlockInfo> blockInfos, BlockWalker walker) {
-		incrementBlockVisited(graph);
+		FirmUtils.incrementBlockVisited(graph);
 		traverseBlocksGenerationFriendly(graph.getStartBlock(), blockInfos, walker, false);
 	}
 
