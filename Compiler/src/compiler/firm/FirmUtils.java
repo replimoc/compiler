@@ -4,9 +4,11 @@ import java.io.File;
 import java.io.IOException;
 import java.util.Arrays;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map.Entry;
+import java.util.Set;
 
 import com.sun.jna.Pointer;
 import compiler.utils.ExecutionFailedException;
@@ -29,6 +31,7 @@ import firm.Type;
 import firm.Util;
 import firm.bindings.binding_irdom;
 import firm.bindings.binding_irgopt;
+import firm.bindings.binding_irnode;
 import firm.nodes.Add;
 import firm.nodes.Address;
 import firm.nodes.Block;
@@ -370,10 +373,39 @@ public final class FirmUtils {
 
 				// get cycle count for loop
 				int cycleCount = getCycleCount(cmp, constant, (Const) startingValue, incr);
-				return new LoopInfo(cycleCount, (Const) startingValue, incr, constant, arithmeticNode, conditionalPhi, firstLoopBlock, loopTail, cmp);
+				return new LoopInfo(cycleCount, (Const) startingValue, incr, constant, arithmeticNode,
+						conditionalPhi, firstLoopBlock, loopTail, cmp, loopHeader);
 			}
 		}
 		return null;
 	}
 
+	/**
+	 * Walk from last to first and search all blocks.
+	 * 
+	 * @param first
+	 * @param last
+	 * @return
+	 */
+	public static final Set<Block> getBlocksBetween(Block first, Block last) {
+		Set<Block> loopBlocks = new HashSet<>();
+		LinkedList<Block> worklist = new LinkedList<>();
+		worklist.add(last);
+		while (!worklist.isEmpty()) {
+			Block block = worklist.pop();
+			if (!loopBlocks.contains(block)) {
+				loopBlocks.add(block);
+				if (!block.equals(first)) {
+					for (Node predecessor : block.getPreds()) {
+						worklist.add((Block) predecessor.getBlock());
+					}
+				}
+			}
+		}
+		return loopBlocks;
+	}
+
+	public static void removeKeepAlive(Node node) {
+		binding_irnode.add_End_keepalive(node.getGraph().getEnd().ptr, node.ptr);
+	}
 }

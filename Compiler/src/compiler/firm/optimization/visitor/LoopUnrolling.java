@@ -2,6 +2,7 @@ package compiler.firm.optimization.visitor;
 
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.LinkedList;
 import java.util.Map.Entry;
 import java.util.Set;
 
@@ -19,6 +20,7 @@ import firm.Mode;
 import firm.TargetValue;
 import firm.bindings.binding_irdom;
 import firm.nodes.Anchor;
+import firm.nodes.Bad;
 import firm.nodes.Block;
 import firm.nodes.Cmp;
 import firm.nodes.Const;
@@ -71,11 +73,11 @@ public class LoopUnrolling {
 		if (loopInfo == null)
 			return;
 
-		if (getPhiCount(entityDetails, loopHeader) > 2) // TODO: Remove this
-			return;
+		// if (getPhiCount(entityDetails, loopHeader) > 2) // TODO: Remove this
+		// return;
 
-		if (!loopInfo.isOneBlockLoop()) // TODO: Remove this
-			return;
+		// if (!loopInfo.isOneBlockLoop()) // TODO: Remove this
+		// return;
 		// TODO: Check if it is the innermost loop!
 
 		int unrollFactor = MAX_UNROLL_FACTOR;
@@ -140,10 +142,8 @@ public class LoopUnrolling {
 			return;
 
 		// replace the increment operation
-		nodeReplacements.put(loopInfo.getIncr(),
-				graph.newConst(loopInfo.getIncr().getTarval().mul(new TargetValue(unrollFactor, loopInfo.getIncr().getMode()))));
 
-		unroll(entityDetails, loopInfo, unrollFactor);
+		unroll(entityDetails, loopInfo, unrollFactor, nodeReplacements);
 		finishedLoops.add(loopHeader);
 
 	}
@@ -227,7 +227,118 @@ public class LoopUnrolling {
 		return true;
 	}
 
-	private static void unroll(EntityDetails entityDetails, LoopInfo loopInfo, int unrollFactor) {
+	private static void unroll(EntityDetails entityDetails, LoopInfo loopInfo, int unrollFactor, HashMap<Node, Node> nodeReplacements) {
+
+		if (unrollFactor % 2 == 1) {
+			return;
+		}
+
+		Block loopHeader = loopInfo.getLoopHeader();
+		Graph graph = loopHeader.getGraph();
+
+		Set<Block> loopBlocks = FirmUtils.getBlocksBetween(loopInfo.getLoopHeader(), loopInfo.getLastLoopBlock());
+
+		HashMap<Node, Node> blockPredecessors = new HashMap<>();
+		HashMap<Node, Node> nodeMapping = new HashMap<>();
+
+		Node[] dummyPredecessors = new Node[loopHeader.getPredCount()];
+		for (int i = 0; i < loopHeader.getPredCount(); i++) {
+			Node predecessor = loopHeader.getPred(i);
+			Node dummyJump = graph.newBad(Mode.getX());
+			dummyPredecessors[i] = dummyJump;
+
+			if (loopBlocks.contains(predecessor.getBlock())) {
+				System.out.println(predecessor);
+				blockPredecessors.put(predecessor, dummyJump);
+			} else {
+				nodeMapping.put(predecessor, dummyJump);
+			}
+		}
+
+		Node lastModeM = null;
+		Node memoryPhi = entityDetails.getBlockInformation(loopHeader).getMemoryPhi();
+		for (int i = 0; i < memoryPhi.getPredCount(); i++) {
+			if (!loopBlocks.contains(memoryPhi.getPred(i).getBlock())) {
+				nodeMapping.put(memoryPhi.getPred(i), graph.newNoMem());
+			} else {
+				lastModeM = memoryPhi.getPred(i);
+			}
+		}
+
+		// Add all nodes outside the loop to known predecessor. Avoid copy of them
+		for (Block block : loopBlocks) {
+			for (Node node : entityDetails.getBlockInformation(block).getNodes()) {
+				for (Node predecessor : node.getPreds()) {
+					if (!loopBlocks.contains(predecessor.getBlock())) {
+						nodeMapping.put(predecessor, predecessor);
+					}
+				}
+			}
+		}
+
+		Block newBlock = (Block) graph.newBlock(dummyPredecessors);
+
+		nodeMapping.put(loopHeader, newBlock);
+		nodeMapping.put(graph.getStartBlock(), graph.getStartBlock());
+
+		graph.keepAlive(newBlock);
+
+		InliningCopyGraphVisitor copyVisitor = new InliningCopyGraphVisitor(newBlock, new LinkedList<Node>(), nodeMapping, blockPredecessors);
+
+		BlockFilterVisitor visitProxy = new BlockFilterVisitor(copyVisitor, loopBlocks);
+		graph.walkPostorder(visitProxy);
+		copyVisitor.cleanupNodes();
+
+		graph.keepAlive(copyVisitor.getNodeMapping().get(loopInfo.getLastLoopBlock()));
+
+		// TODO: Split here
+
+		int startBlockPredecessorNum = 0;
+		for (Node predecessor : dummyPredecessors) {// TODO: This should not be a loop
+			if (predecessor instanceof Bad) {
+				Node jmp = graph.newJmp(loopInfo.getLastLoopBlock());
+				Graph.exchange(predecessor, jmp);
+				break;
+			}
+			startBlockPredecessorNum++;
+		}
+
+		// TODO: More than two predecessors?
+		// nodeMapping.get(lastModeM).setPred(startBlockPredecessorNum == 0 ? 1 : 0, lastModeM);
+
+		BlockInformation loopHeaderInformation = entityDetails.getBlockInformation(loopHeader);
+		for (Phi phi : loopHeaderInformation.getPhis()) {
+			Node newPhi = nodeMapping.get(phi);
+			for (int j = 0; j < phi.getPredCount(); j++) {
+				Node predecessor = phi.getPred(j);
+				System.out.println(predecessor.getBlock() + " -> " + loopBlocks.contains(predecessor.getBlock()));
+				if (predecessor.getMode().equals(Mode.getM()) && predecessor instanceof Phi) {
+					// TODO
+				} else if (loopBlocks.contains(predecessor.getBlock())) {
+					Node newPredecessor = nodeMapping.get(predecessor);
+					Graph.exchange(newPhi, predecessor);
+					phi.setPred(j, newPredecessor);
+				} else {
+					nodeMapping.get(phi).setPred(j, predecessor);
+				}
+			}
+		}
+
+		Node endNode = entityDetails.getBlockInformation(loopInfo.getLastLoopBlock()).getEndNode();
+
+		Node newJmp = graph.newJmp(nodeMapping.get(loopInfo.getLastLoopBlock()));
+		Graph.exchange(endNode, newJmp);
+		Graph.exchange(nodeMapping.get(endNode), FirmUtils.newBad(nodeMapping.get(endNode)));
+
+		Node oldProjJmp = nodeMapping.get(loopInfo.getFirstLoopBlock()).getPred(0);
+		FirmUtils.removeKeepAlive(oldProjJmp.getBlock());
+		Graph.exchange(oldProjJmp, graph.newJmp(oldProjJmp.getBlock()));
+
+		System.out.println(lastModeM);
+		System.out.println(nodeMapping.get(lastModeM));
+	}
+
+	private static void unrollOld(EntityDetails entityDetails, LoopInfo loopInfo, int unrollFactor, HashMap<Node, Node> nodeReplacements) {
 		HashMap<Node, Node> changedNodes = new HashMap<>();
 		Block block = loopInfo.getLastLoopBlock();
 		Const incr = loopInfo.getIncr();
@@ -240,6 +351,9 @@ public class LoopUnrolling {
 		Node lastMemNode = loopPhi.getPred(1);
 		HashMap<Node, Node> inductions = new HashMap<Node, Node>();
 		inductions.put(loopInfo.getConditionalPhi(), loopInfo.getArithmeticNode());
+
+		nodeReplacements.put(loopInfo.getIncr(),
+				graph.newConst(loopInfo.getIncr().getTarval().mul(new TargetValue(unrollFactor, loopInfo.getIncr().getMode()))));
 
 		for (int i = 1; i < unrollFactor; i++) {
 			// create the 'i + 1' increment node for the new iteration

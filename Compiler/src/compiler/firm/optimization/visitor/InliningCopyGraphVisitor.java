@@ -24,18 +24,24 @@ import firm.nodes.Start;
 public class InliningCopyGraphVisitor extends AbstractFirmNodesVisitor {
 
 	private final Graph graph;
-	private HashMap<Node, Node> nodeMapping = new HashMap<>();
+	private HashMap<Node, Node> nodeMapping;
 	private final Node startNode;
 	private List<Node> arguments;
-	private HashMap<Node, Node> blockPredecessors = new HashMap<>();
+	private final HashMap<Node, Node> blockPredecessors;
 	private LinkedList<Phi> phis = new LinkedList<Phi>();
 	private Node startProjM;
 	private ReturnInfo methodReturnInfo;
 
 	public InliningCopyGraphVisitor(Node startNode, List<Node> arguments) {
+		this(startNode, arguments, new HashMap<Node, Node>(), new HashMap<Node, Node>());
+	}
+
+	public InliningCopyGraphVisitor(Node startNode, List<Node> arguments, HashMap<Node, Node> nodeMapping, HashMap<Node, Node> blockPredecessors) {
 		this.graph = startNode.getGraph();
 		this.startNode = startNode;
 		this.arguments = arguments;
+		this.nodeMapping = nodeMapping;
+		this.blockPredecessors = blockPredecessors;
 	}
 
 	public void cleanupNodes() {
@@ -53,8 +59,8 @@ public class InliningCopyGraphVisitor extends AbstractFirmNodesVisitor {
 
 			Phi newPhi = (Phi) graph.newPhi(getMappedNode(phi.getBlock()), predecessors, phi.getMode());
 			newPhi.setLoop(phi.getLoop());
-
 			Graph.exchange(getMappedNode(phi), newPhi);
+			nodeMapping.put(phi, newPhi);
 		}
 	}
 
@@ -246,6 +252,10 @@ public class InliningCopyGraphVisitor extends AbstractFirmNodesVisitor {
 			result = nodeMapping.get(ret.getPred(1));
 		}
 		return new ReturnInfo(nodeMapping.get(ret.getBlock()), nodeMapping.get(ret.getPred(0)), result);
+	}
+
+	public HashMap<Node, Node> getNodeMapping() {
+		return nodeMapping;
 	}
 
 }
