@@ -62,8 +62,6 @@ public final class AssemblerGenerator {
 			BlockNodesCollectingVisitor collectorVisitor = new BlockNodesCollectingVisitor();
 			graph.walkTopological(collectorVisitor);
 
-			// final NodeNumberPrintingVisitor printer = new NodeNumberPrintingVisitor();
-
 			HashMap<Block, BlockNodes> nodesPerBlockMap = collectorVisitor.getNodesPerBlockMap();
 			X8664AssemblerGenerationVisitor visitor = new X8664AssemblerGenerationVisitor(callingConvention);
 
