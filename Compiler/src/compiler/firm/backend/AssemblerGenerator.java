@@ -72,6 +72,9 @@ public final class AssemblerGenerator {
 
 			AssemblerProgram assemblerProgram = visitor.getAssemblerProgram(graph);
 
+			// SplittingSsaSpiller splittingSsaSpiller = new SplittingSsaSpiller(assemblerProgram);
+			// splittingSsaSpiller.reduceRegisterPressure(2, true);
+
 			if (debugRegisterAllocation)
 				generatePlainAssemblerFile(Paths.get(graph.getEntity().getLdName() + ".plain"), assemblerProgram, blockInfos);
 
@@ -90,8 +93,6 @@ public final class AssemblerGenerator {
 	}
 
 	private static void allocateRegistersSsa(Graph graph, AssemblerProgram program, boolean noRegisters) {
-		// SplittingSsaSpiller splittingSsaSpiller = new SplittingSsaSpiller(program);
-		// splittingSsaSpiller.reduceRegisterPressure(2, true);
 
 		SimpleSsaSpiller ssaSpiller = new SimpleSsaSpiller(program);
 		RegisterAllocationPolicy policy;

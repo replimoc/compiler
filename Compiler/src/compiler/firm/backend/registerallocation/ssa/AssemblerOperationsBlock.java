@@ -13,13 +13,15 @@ import java.util.Map.Entry;
 import java.util.Set;
 
 import compiler.firm.FirmUtils;
+import compiler.firm.backend.operations.CmpOperation;
 import compiler.firm.backend.operations.ReloadOperation;
 import compiler.firm.backend.operations.SpillOperation;
 import compiler.firm.backend.operations.templates.AssemblerOperation;
-import compiler.firm.backend.storage.MemoryPointer;
+import compiler.firm.backend.operations.templates.JumpOperation;
 import compiler.firm.backend.storage.RegisterBased;
 import compiler.firm.backend.storage.VirtualRegister;
 import compiler.utils.Pair;
+import compiler.utils.Utils;
 
 import firm.nodes.Block;
 import firm.nodes.Node;
@@ -28,6 +30,7 @@ public class AssemblerOperationsBlock {
 	private final Block block;
 	private final boolean isLoopHead;
 	private ArrayList<AssemblerOperation> operations;
+	private final AssemblerOperation conditionOrJump;
 	private final HashMap<AssemblerOperation, List<AssemblerOperation>> additionalOperations = new HashMap<>();
 
 	private final Set<AssemblerOperationsBlock> predecessors = new HashSet<>();
@@ -47,9 +50,19 @@ public class AssemblerOperationsBlock {
 		this.block = block;
 		this.operations = operations;
 
+		AssemblerOperation conditionOrJump = null;
 		for (AssemblerOperation operation : operations) {
 			operation.setOperationsBlock(this);
+
+			if (conditionOrJump == null) {
+				if (operation instanceof JumpOperation) {
+					conditionOrJump = operation;
+				} else if (operation instanceof CmpOperation) {
+					conditionOrJump = operation;
+				}
+			}
 		}
+		this.conditionOrJump = conditionOrJump;
 
 		this.isLoopHead = FirmUtils.getLoopTailIfHeader(block) != null;
 	}
@@ -268,10 +281,9 @@ public class AssemblerOperationsBlock {
 		return wEntry;
 	}
 
-	private void calculateWLoopHead(int availableRegisters) {
-		// TODO Auto-generated method stub
-
-	}
+	// private void calculateWLoopHead(int availableRegisters) {
+	// // TODO Auto-generated method stub
+	// }
 
 	private Set<VirtualRegister> calculateSEntry(Set<VirtualRegister> wEntry) {
 		Set<VirtualRegister> sEntry = new HashSet<>();
@@ -303,6 +315,8 @@ public class AssemblerOperationsBlock {
 		Set<VirtualRegister> aliveRegisters = this.calculateWEntry(availableRegisters);
 		Set<VirtualRegister> spilledRegisters = this.calculateSEntry(aliveRegisters);
 
+		insertCupplingCode(stackInfoSupplier, aliveRegisters, spilledRegisters);
+
 		debugln(debugMinAlgo, block);
 		debugln(debugMinAlgo, "\twEntry: " + aliveRegisters);
 		debugln(debugMinAlgo, "\tsEntry: " + spilledRegisters);
@@ -332,6 +346,27 @@ public class AssemblerOperationsBlock {
 
 		debugln(debugMinAlgo, "\tsExit: " + sExit);
 		debugln(debugMinAlgo, "\twExit: " + wExit);
+	}
+
+	private void insertCupplingCode(StackInfoSupplier stackInfoSupplier, Set<VirtualRegister> wEntry, Set<VirtualRegister> sEntry) {
+		for (AssemblerOperationsBlock predecessor : predecessors) {
+			Set<VirtualRegister> reloads = new HashSet<>(wEntry);
+			reloads.removeAll(predecessor.wExit);
+
+			Set<VirtualRegister> spills = new HashSet<>(sEntry);
+			spills.removeAll(predecessor.sExit);
+			Utils.cutSet(spills, predecessor.wExit);
+
+			List<AssemblerOperation> couplingOperations = new LinkedList<>();
+			for (VirtualRegister spill : spills) {
+				couplingOperations.add(createSpillOperation(stackInfoSupplier, spill));
+			}
+			for (VirtualRegister reload : reloads) {
+				couplingOperations.add(createReloadOperation(stackInfoSupplier, reload));
+			}
+			predecessor.additionalOperations.put(predecessor.conditionOrJump, couplingOperations);
+			predecessor.mergeAdditionalOperations();
+		}
 	}
 
 	/**
@@ -383,18 +418,24 @@ public class AssemblerOperationsBlock {
 
 	private void addReloads(StackInfoSupplier stackInfoSupplier, Set<VirtualRegister> reloadRequiringRegisters, AssemblerOperation operation) {
 		for (VirtualRegister register : reloadRequiringRegisters) {
-			MemoryPointer reloadLocation = stackInfoSupplier.getStackLocation(register);
-			System.out.println("add reload for " + register + " from " + reloadLocation + " before " + operation);
-			ReloadOperation reloadOperation = new ReloadOperation(reloadLocation, register);
+			ReloadOperation reloadOperation = createReloadOperation(stackInfoSupplier, register);
+			System.out.println("add reload for " + register + " from " + stackInfoSupplier.getStackLocation(register) + " before " + operation);
 			addAddtionalOperation(operation, reloadOperation);
 		}
 	}
 
+	private ReloadOperation createReloadOperation(StackInfoSupplier stackInfoSupplier, VirtualRegister register) {
+		return new ReloadOperation(stackInfoSupplier.getStackLocation(register), register);
+	}
+
 	private void addSpill(StackInfoSupplier stackInfoSupplier, VirtualRegister register, AssemblerOperation operation) {
-		MemoryPointer spillLocation = stackInfoSupplier.allocateStackLocation(register);
-		System.out.println("add spill for " + register + " to " + spillLocation + " before " + operation);
-		SpillOperation spillOperation = new SpillOperation(register, spillLocation);
+		SpillOperation spillOperation = createSpillOperation(stackInfoSupplier, register);
+		System.out.println("add spill for " + register + " to " + stackInfoSupplier.getStackLocation(register) + " before " + operation);
 		addAddtionalOperation(operation, spillOperation);
+	}
+
+	private SpillOperation createSpillOperation(StackInfoSupplier stackInfoSupplier, VirtualRegister register) {
+		return new SpillOperation(register, stackInfoSupplier.allocateStackLocation(register));
 	}
 
 	private void addAddtionalOperation(AssemblerOperation operation, AssemblerOperation additionalOperation) {

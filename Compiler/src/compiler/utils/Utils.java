@@ -9,6 +9,7 @@ import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.HashSet;
+import java.util.Iterator;
 import java.util.List;
 import java.util.Scanner;
 import java.util.Set;
@@ -119,5 +120,13 @@ public class Utils {
 			result.add(inputs[i]);
 		}
 		return result;
+	}
+
+	public static <T> void cutSet(Set<T> result, Set<T> secondSet) {
+		for (Iterator<T> iterator = result.iterator(); iterator.hasNext();) {
+			if (!secondSet.contains(iterator.next())) {
+				iterator.remove();
+			}
+		}
 	}
 }
