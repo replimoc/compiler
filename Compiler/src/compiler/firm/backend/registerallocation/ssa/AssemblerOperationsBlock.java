@@ -420,7 +420,7 @@ public class AssemblerOperationsBlock {
 		for (VirtualRegister register : reloadRequiringRegisters) {
 			ReloadOperation reloadOperation = createReloadOperation(stackInfoSupplier, register);
 			System.out.println("add reload for " + register + " from " + stackInfoSupplier.getStackLocation(register) + " before " + operation);
-			addAddtionalOperation(operation, reloadOperation);
+			Utils.appendToKey(additionalOperations, operation, reloadOperation);
 		}
 	}
 
@@ -431,20 +431,11 @@ public class AssemblerOperationsBlock {
 	private void addSpill(StackInfoSupplier stackInfoSupplier, VirtualRegister register, AssemblerOperation operation) {
 		SpillOperation spillOperation = createSpillOperation(stackInfoSupplier, register);
 		System.out.println("add spill for " + register + " to " + stackInfoSupplier.getStackLocation(register) + " before " + operation);
-		addAddtionalOperation(operation, spillOperation);
+		Utils.appendToKey(additionalOperations, operation, spillOperation);
 	}
 
 	private SpillOperation createSpillOperation(StackInfoSupplier stackInfoSupplier, VirtualRegister register) {
 		return new SpillOperation(register, stackInfoSupplier.allocateStackLocation(register));
-	}
-
-	private void addAddtionalOperation(AssemblerOperation operation, AssemblerOperation additionalOperation) {
-		List<AssemblerOperation> additionals = additionalOperations.get(operation);
-		if (additionals == null) {
-			additionals = new LinkedList<>();
-			additionalOperations.put(operation, additionals);
-		}
-		additionals.add(additionalOperation);
 	}
 
 	private void mergeAdditionalOperations() {

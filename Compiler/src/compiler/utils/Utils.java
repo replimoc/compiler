@@ -10,7 +10,9 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.HashSet;
 import java.util.Iterator;
+import java.util.LinkedList;
 import java.util.List;
+import java.util.Map;
 import java.util.Scanner;
 import java.util.Set;
 import java.util.concurrent.ThreadFactory;
@@ -128,5 +130,14 @@ public class Utils {
 				iterator.remove();
 			}
 		}
+	}
+
+	public static <K, T> void appendToKey(Map<K, List<T>> map, K key, T element) {
+		List<T> list = map.get(key);
+		if (list == null) {
+			list = new LinkedList<>();
+			map.put(key, list);
+		}
+		list.add(element);
 	}
 }
