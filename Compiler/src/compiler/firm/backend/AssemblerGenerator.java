@@ -19,13 +19,15 @@ import compiler.firm.backend.operations.templates.AssemblerOperation;
 import compiler.firm.backend.registerallocation.RegisterAllocationPolicy;
 import compiler.firm.backend.registerallocation.ssa.AssemblerProgram;
 import compiler.firm.backend.registerallocation.ssa.MustSpillException;
+import compiler.firm.backend.registerallocation.ssa.SimpleSsaSpiller;
+import compiler.firm.backend.registerallocation.ssa.SplittingSsaSpiller;
 import compiler.firm.backend.registerallocation.ssa.SsaRegisterAllocator;
-import compiler.firm.backend.registerallocation.ssa.SsaSpiller;
 
 import firm.BackEdges;
 import firm.BlockWalker;
 import firm.Graph;
 import firm.Program;
+import firm.bindings.binding_irdom;
 import firm.nodes.Block;
 
 public final class AssemblerGenerator {
@@ -51,6 +53,9 @@ public final class AssemblerGenerator {
 
 		for (Graph graph : Program.getGraphs()) {
 			graph.check();
+			binding_irdom.compute_doms(graph.ptr);
+			binding_irdom.compute_postdoms(graph.ptr);
+
 			if (debugRegisterAllocation)
 				System.out.println(graph.getEntity().getLdName());
 
@@ -94,8 +99,11 @@ public final class AssemblerGenerator {
 
 	private static void allocateRegistersSsa(Graph graph, HashMap<Block, ArrayList<AssemblerOperation>> operationsOfBlocks, boolean noRegisters) {
 		AssemblerProgram program = new AssemblerProgram(graph, operationsOfBlocks);
-		SsaSpiller ssaSpiller = new SsaSpiller(program);
+		SplittingSsaSpiller splittingSsaSpiller = new SplittingSsaSpiller(program);
 
+		splittingSsaSpiller.reduceRegisterPressure(2, true);
+
+		SimpleSsaSpiller ssaSpiller = new SimpleSsaSpiller(program);
 		RegisterAllocationPolicy policy;
 		if (noRegisters) {
 			policy = RegisterAllocationPolicy.NO_REGISTERS;

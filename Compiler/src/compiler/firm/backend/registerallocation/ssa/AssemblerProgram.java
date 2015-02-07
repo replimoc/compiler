@@ -95,4 +95,8 @@ public class AssemblerProgram {
 		return startBlock;
 	}
 
+	public Graph getGraph() {
+		return startBlock.getGraph();
+	}
+
 }

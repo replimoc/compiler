@@ -14,13 +14,13 @@ import compiler.firm.backend.storage.VirtualRegister;
 import firm.BlockWalker;
 import firm.nodes.Block;
 
-public class SsaSpiller {
+public class SimpleSsaSpiller {
 
 	private final AssemblerProgram program;
 
 	private int currentStackOffset = 0;
 
-	public SsaSpiller(AssemblerProgram program) {
+	public SimpleSsaSpiller(AssemblerProgram program) {
 		this.program = program;
 	}
 
