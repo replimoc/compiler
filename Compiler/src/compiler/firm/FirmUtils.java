@@ -109,33 +109,6 @@ public final class FirmUtils {
 		public void create(String file) throws IOException;
 	}
 
-	public static class LoopInfo {
-		public final int cycleCount;
-		public final Const startingValue;
-		public final Const incr;
-		public final Const constCmp;
-		public final Node arithmeticNode;
-		public final Node loopCounter;
-		public final Block firstLoopBlock;
-		public final Block lastLoopBlock;
-
-		public LoopInfo(int cycleCount, Const startingValue, Const incr, Const constCmp, Node arithmeticNode,
-				Node loopCounter, Block firstLoopBlock, Block lastLoopBlock) {
-			this.cycleCount = cycleCount;
-			this.startingValue = startingValue;
-			this.incr = incr;
-			this.arithmeticNode = arithmeticNode;
-			this.loopCounter = loopCounter;
-			this.constCmp = constCmp;
-			this.firstLoopBlock = firstLoopBlock;
-			this.lastLoopBlock = lastLoopBlock;
-		}
-
-		public boolean isOneBlockLoop() {
-			return this.firstLoopBlock.equals(this.lastLoopBlock);
-		}
-	}
-
 	/**
 	 * Expect escaped outputFileName.
 	 * 

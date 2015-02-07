@@ -6,6 +6,7 @@ import java.util.Map.Entry;
 import java.util.Set;
 
 import compiler.firm.FirmUtils;
+import compiler.firm.LoopInfo;
 
 import firm.BackEdges;
 import firm.BackEdges.Edge;
@@ -68,7 +69,7 @@ public class UnrollingVisitor extends OptimizationVisitor<Node> {
 		if (cmp == null)
 			return; // Not a loop
 
-		FirmUtils.LoopInfo loopInfo = FirmUtils.getLoopInfos(cmp);
+		LoopInfo loopInfo = FirmUtils.getLoopInfos(cmp);
 
 		if (loopInfo == null)
 			return;
@@ -81,17 +82,17 @@ public class UnrollingVisitor extends OptimizationVisitor<Node> {
 		// TODO: Check if it is the innermost loop!
 
 		int unrollFactor = MAX_UNROLL_FACTOR;
-		while (unrollFactor > 1 && (Math.abs(loopInfo.cycleCount) % unrollFactor) != 0) {
+		while (unrollFactor > 1 && (Math.abs(loopInfo.getCycleCount()) % unrollFactor) != 0) {
 			unrollFactor -= 1;
 		}
 
 		Graph graph = loopHeader.getGraph();
 		// unroll if block generates overflow
-		if (loopInfo.cycleCount == Integer.MAX_VALUE) {
-			long count = (Integer.MAX_VALUE) - loopInfo.startingValue.getTarval().asLong();
-			long mod = count % loopInfo.incr.getTarval().asLong();
-			long target = (long) Math.ceil((double) (count) / loopInfo.incr.getTarval().asLong() + (mod == 0 ? 1 : 0));
-			if (!isCalculatable(loopInfo.lastLoopBlock)) {
+		if (loopInfo.getCycleCount() == Integer.MAX_VALUE) {
+			long count = (Integer.MAX_VALUE) - loopInfo.getStartingValue().getTarval().asLong();
+			long mod = count % loopInfo.getIncr().getTarval().asLong();
+			long target = (long) Math.ceil((double) (count) / loopInfo.getIncr().getTarval().asLong() + (mod == 0 ? 1 : 0));
+			if (!isCalculatable(loopInfo.getLastLoopBlock())) {
 				unrollFactor = MAX_UNROLL_FACTOR;
 				while (unrollFactor > 1 && (target % unrollFactor) != 0) {
 					unrollFactor -= 1;
@@ -100,14 +101,14 @@ public class UnrollingVisitor extends OptimizationVisitor<Node> {
 					return;
 			} else {
 				// calculate loop result
-				long value = Integer.MIN_VALUE + loopInfo.incr.getTarval().asLong() - mod - 1;
-				replaceLoopIfPossible(loopInfo, value, loopInfo.lastLoopBlock);
+				long value = Integer.MIN_VALUE + loopInfo.getIncr().getTarval().asLong() - mod - 1;
+				replaceLoopIfPossible(loopInfo, value, loopInfo.getLastLoopBlock());
 			}
-		} else if (loopInfo.cycleCount == Integer.MIN_VALUE) {
-			long count = (Integer.MIN_VALUE) - loopInfo.startingValue.getTarval().asLong();
-			long mod = count % loopInfo.incr.getTarval().asLong();
-			long target = (long) Math.ceil((double) count / loopInfo.incr.getTarval().asLong()) + (mod == 0 ? 1 : 0);
-			if (!isCalculatable(loopInfo.lastLoopBlock)) {
+		} else if (loopInfo.getCycleCount() == Integer.MIN_VALUE) {
+			long count = (Integer.MIN_VALUE) - loopInfo.getStartingValue().getTarval().asLong();
+			long mod = count % loopInfo.getIncr().getTarval().asLong();
+			long target = (long) Math.ceil((double) count / loopInfo.getIncr().getTarval().asLong()) + (mod == 0 ? 1 : 0);
+			if (!isCalculatable(loopInfo.getLastLoopBlock())) {
 				unrollFactor = MAX_UNROLL_FACTOR;
 				while (unrollFactor > 1 && (target % unrollFactor) != 0) {
 					unrollFactor -= 1;
@@ -116,14 +117,15 @@ public class UnrollingVisitor extends OptimizationVisitor<Node> {
 					return;
 			} else {
 				// calculate loop result
-				long value = Integer.MAX_VALUE + loopInfo.incr.getTarval().asLong() - mod + 1;
-				replaceLoopIfPossible(loopInfo, value, loopInfo.lastLoopBlock);
+				long value = Integer.MAX_VALUE + loopInfo.getIncr().getTarval().asLong() - mod + 1;
+				replaceLoopIfPossible(loopInfo, value, loopInfo.getLastLoopBlock());
 			}
-		} else if (isCalculatable(loopInfo.lastLoopBlock)) {
+		} else if (isCalculatable(loopInfo.getLastLoopBlock())) {
 			// calculate loop result
-			long value = loopInfo.startingValue.getTarval().asLong() + (Math.abs(loopInfo.cycleCount) * loopInfo.incr.getTarval().asLong());
-			replaceLoopIfPossible(loopInfo, value, loopInfo.lastLoopBlock);
-		} else if (Math.abs(loopInfo.cycleCount) < 2 || (Math.abs(loopInfo.cycleCount) % unrollFactor) != 0) {
+			long value = loopInfo.getStartingValue().getTarval().asLong()
+					+ (Math.abs(loopInfo.getCycleCount()) * loopInfo.getIncr().getTarval().asLong());
+			replaceLoopIfPossible(loopInfo, value, loopInfo.getLastLoopBlock());
+		} else if (Math.abs(loopInfo.getCycleCount()) < 2 || (Math.abs(loopInfo.getCycleCount()) % unrollFactor) != 0) {
 			return;
 		}
 
@@ -138,14 +140,14 @@ public class UnrollingVisitor extends OptimizationVisitor<Node> {
 			return;
 
 		// don't unroll too big blocks
-		if (blockNodes.get(loopInfo.lastLoopBlock).size() > 30) // TODO Do not only use loop tail, use all content blocks
+		if (blockNodes.get(loopInfo.getLastLoopBlock()).size() > 30) // TODO Do not only use loop tail, use all content blocks
 			return;
 
 		// replace the increment operation
-		addReplacement(loopInfo.incr, graph.newConst(loopInfo.incr.getTarval().mul(new TargetValue(unrollFactor, loopInfo.incr.getMode()))));
+		addReplacement(loopInfo.getIncr(),
+				graph.newConst(loopInfo.getIncr().getTarval().mul(new TargetValue(unrollFactor, loopInfo.getIncr().getMode()))));
 
-		unroll(loopInfo.lastLoopBlock, loopInfo.incr, loopInfo.loopCounter, loopInfo.arithmeticNode, changedNodes, loopInfo.loopCounter, loopPhi, unrollFactor);
-
+		unroll(loopInfo, changedNodes, loopPhi, unrollFactor);
 		finishedLoops.add(loopHeader);
 
 	}
@@ -165,7 +167,7 @@ public class UnrollingVisitor extends OptimizationVisitor<Node> {
 		return blockNodes.containsKey(block) && !(blockNodes.get(block).size() > 2);
 	}
 
-	private boolean replaceLoopIfPossible(FirmUtils.LoopInfo loopInfo, long value, Block block) {
+	private boolean replaceLoopIfPossible(LoopInfo loopInfo, long value, Block block) {
 		// collect nodes that need to be altered
 		Node constNode = block.getGraph().newConst((int) value, FirmUtils.getModeInteger());
 		Node loopHeader = block.getPred(0).getBlock();
@@ -181,7 +183,7 @@ public class UnrollingVisitor extends OptimizationVisitor<Node> {
 			return false;
 		Node memBeforeLoop = loopPhi.getPred(0);
 
-		Node loopCounter = loopInfo.loopCounter;
+		Node loopCounter = loopInfo.getLoopCounter();
 		for (Edge e : BackEdges.getOuts(loopCounter)) {
 			if (!e.node.equals(inductionVariables.get(loopCounter))) {
 				for (int i = 0; i < e.node.getPredCount(); i++) {
@@ -230,8 +232,13 @@ public class UnrollingVisitor extends OptimizationVisitor<Node> {
 		return true;
 	}
 
-	private void unroll(Block block, Const incr, Node loopCounter, Node node, HashMap<Node, Node> changedNodes, Node counter, Node loopPhi,
+	private void unroll(LoopInfo loopInfo, HashMap<Node, Node> changedNodes, Node loopPhi,
 			int unrollFactor) {
+		Block block = loopInfo.getLastLoopBlock();
+		Const incr = loopInfo.getIncr();
+		Node loopCounter = loopInfo.getLoopCounter();
+		Node arithmeticNode = loopInfo.getArithmeticNode();
+		Node counter = loopInfo.getLoopCounter();
 		Graph graph = block.getGraph();
 		Node firstMemNode = loopPhi;
 		Node lastMemNode = loopPhi.getPred(1);
@@ -249,11 +256,11 @@ public class UnrollingVisitor extends OptimizationVisitor<Node> {
 					graph.newConst(incr.getTarval().mul(new TargetValue(i, incr.getMode()))), loopCounter.getMode());
 			count.setBlock(block);
 
-			copyBlockNodes(changedNodes, block, node);
+			copyBlockNodes(changedNodes, block, arithmeticNode);
 
 			// adjust all predecessors
 			for (Entry<Node, Node> nodeEntry : changedNodes.entrySet()) {
-				if (!nodeEntry.getKey().equals(node)) {
+				if (!nodeEntry.getKey().equals(arithmeticNode)) {
 					Node blockNode = nodeEntry.getKey();
 					Node copy = nodeEntry.getValue();
 
@@ -262,7 +269,7 @@ public class UnrollingVisitor extends OptimizationVisitor<Node> {
 						if (blockNode.getPred(j).equals(counter)) {
 							// node is before the loop increment
 							copy.setPred(j, count);
-						} else if (blockNode.getPred(j).equals(node)) {
+						} else if (blockNode.getPred(j).equals(arithmeticNode)) {
 							// node is after the loop increment
 							blockNode.setPred(j, count);
 						} else if (changedNodes.containsKey(blockNode.getPred(j))) {

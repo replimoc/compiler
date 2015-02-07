@@ -5,10 +5,11 @@ import java.util.HashSet;
 import java.util.Set;
 
 import compiler.firm.FirmUtils;
-import compiler.firm.FirmUtils.LoopInfo;
+import compiler.firm.LoopInfo;
 import compiler.firm.optimization.evaluation.BlockInformation;
 import compiler.firm.optimization.evaluation.EntityDetails;
 import compiler.firm.optimization.evaluation.ProgramDetails;
+
 import firm.BackEdges;
 import firm.BackEdges.Edge;
 import firm.Graph;
@@ -78,7 +79,7 @@ public class LoopFusionVisitor extends OptimizationVisitor<Node> {
 			if (continueInfo == null || continueInfo.loopContentBlock == null)
 				return;
 
-			FirmUtils.LoopInfo loopInfo1 = calculateLoopInfo(condition);
+			LoopInfo loopInfo1 = calculateLoopInfo(condition);
 
 			Node block2 = continueInfo.continueBlock;
 			if (loopInfo1 != null && backedges.containsValue(block2)) { // Next is also a loop
@@ -94,12 +95,12 @@ public class LoopFusionVisitor extends OptimizationVisitor<Node> {
 				if (continueInfo2 == null)
 					return;
 
-				FirmUtils.LoopInfo loopInfo2 = calculateLoopInfo(condition2);
+				LoopInfo loopInfo2 = calculateLoopInfo(condition2);
 
 				EntityDetails entityDetails = programDetails.getEntityDetails(graph);
 
 				// TODO: Prove if loop header has side effects.
-				if (loopInfo2 != null && loopInfo1.cycleCount == loopInfo2.cycleCount &&
+				if (loopInfo2 != null && loopInfo1.getCycleCount() == loopInfo2.getCycleCount() &&
 						entityDetails.getBlockInformation(block).getSideEffects() <= 1 &&
 						!entityDetails.getBlockInformation(continueInfo.loopContentBlock).hasSideEffects() &&
 						entityDetails.getBlockInformation(block2).getSideEffects() <= 1 &&
@@ -194,8 +195,8 @@ public class LoopFusionVisitor extends OptimizationVisitor<Node> {
 		return node;
 	}
 
-	private FirmUtils.LoopInfo calculateLoopInfo(Node condition) {
-		FirmUtils.LoopInfo loopInfo = FirmUtils.getLoopInfos((Cmp) condition.getPred(0));
+	private LoopInfo calculateLoopInfo(Node condition) {
+		LoopInfo loopInfo = FirmUtils.getLoopInfos((Cmp) condition.getPred(0));
 		if (loopInfo == null || !loopInfo.isOneBlockLoop())
 			return null;
 		else
