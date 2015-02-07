@@ -11,18 +11,18 @@ public class LoopInfo {
 	private final Const incr;
 	private final Const constCmp;
 	private final Node arithmeticNode;
-	private final Node loopCounter;
+	private final Node conditionalPhi;
 	private final Block firstLoopBlock;
 	private final Block lastLoopBlock;
 	private final Cmp cmp;
 
 	public LoopInfo(int cycleCount, Const startingValue, Const incr, Const constCmp, Node arithmeticNode,
-			Node loopCounter, Block firstLoopBlock, Block lastLoopBlock, Cmp cmp) {
+			Node conditionalPhi, Block firstLoopBlock, Block lastLoopBlock, Cmp cmp) {
 		this.cycleCount = cycleCount;
 		this.startingValue = startingValue;
 		this.incr = incr;
 		this.arithmeticNode = arithmeticNode;
-		this.loopCounter = loopCounter;
+		this.conditionalPhi = conditionalPhi;
 		this.constCmp = constCmp;
 		this.firstLoopBlock = firstLoopBlock;
 		this.lastLoopBlock = lastLoopBlock;
@@ -41,8 +41,8 @@ public class LoopInfo {
 		return firstLoopBlock;
 	}
 
-	public Node getLoopCounter() {
-		return loopCounter;
+	public Node getConditionalPhi() {
+		return conditionalPhi;
 	}
 
 	public Node getArithmeticNode() {

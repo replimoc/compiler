@@ -138,7 +138,7 @@ public class OptimizationUtils {
 		graph.walk(visitor);
 	}
 
-	private void calculateDominators() {
+	public void calculateDominators() {
 		Node start = graph.getStart();
 		binding_irdom.compute_postdoms(graph.ptr);
 		binding_irdom.compute_doms(graph.ptr);

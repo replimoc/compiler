@@ -12,11 +12,11 @@ import compiler.firm.optimization.visitor.LoadStoreOptimiziationVisitor;
 import compiler.firm.optimization.visitor.LocalOptimizationVisitor;
 import compiler.firm.optimization.visitor.LoopFusionVisitor;
 import compiler.firm.optimization.visitor.LoopInvariantVisitor;
+import compiler.firm.optimization.visitor.LoopUnrolling;
 import compiler.firm.optimization.visitor.NormalizationVisitor;
 import compiler.firm.optimization.visitor.OptimizationVisitor;
 import compiler.firm.optimization.visitor.OptimizationVisitorFactory;
 import compiler.firm.optimization.visitor.StrengthReductionVisitor;
-import compiler.firm.optimization.visitor.UnrollingVisitor;
 
 import firm.BackEdges;
 import firm.BackEdges.Edge;
@@ -55,7 +55,7 @@ public final class FirmOptimizer {
 			finished &= ObsoleteNodesEliminator.eliminateObsoleteNodes(evaluateGraphs());
 			finished &= MethodInliner.inlineCalls(evaluateGraphs());
 		} while (!finished);
-		optimize(UnrollingVisitor.FACTORY(evaluateGraphs()));
+		LoopUnrolling.unrollLoops(evaluateGraphs());
 	}
 
 	private static ProgramDetails evaluateGraphs() {

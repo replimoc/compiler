@@ -7,14 +7,17 @@ import java.util.Set;
 
 import compiler.firm.FirmUtils;
 import compiler.firm.LoopInfo;
+import compiler.firm.optimization.evaluation.BlockInformation;
 import compiler.firm.optimization.evaluation.EntityDetails;
 import compiler.firm.optimization.evaluation.ProgramDetails;
 
 import firm.BackEdges;
 import firm.BackEdges.Edge;
+import firm.Entity;
 import firm.Graph;
 import firm.Mode;
 import firm.TargetValue;
+import firm.bindings.binding_irdom;
 import firm.nodes.Anchor;
 import firm.nodes.Block;
 import firm.nodes.Cmp;
@@ -23,63 +26,52 @@ import firm.nodes.End;
 import firm.nodes.Node;
 import firm.nodes.Phi;
 import firm.nodes.Proj;
-import firm.nodes.Start;
 
-public class UnrollingVisitor extends OptimizationVisitor<Node> {
+public class LoopUnrolling {
 
-	public static final OptimizationVisitorFactory<Node> FACTORY(final ProgramDetails programDetails) {
-		return new OptimizationVisitorFactory<Node>() {
-			@Override
-			public OptimizationVisitor<Node> create() {
-				return new UnrollingVisitor(programDetails);
-			}
-		};
-	}
-
-	public UnrollingVisitor(ProgramDetails programDetails) {
-		this.programDetails = programDetails;
-	}
-
-	private final ProgramDetails programDetails;
-	private EntityDetails entityDetails;
 	private static final Set<Block> finishedLoops = new HashSet<>();
-
-	private HashMap<Node, Node> backedges = new HashMap<>();
-	private HashMap<Node, Node> inductionVariables = new HashMap<>();
-	private HashMap<Block, Set<Node>> blockNodes = new HashMap<>();
 	private static final int MAX_UNROLL_FACTOR = 8;
-	private OptimizationUtils utils;
 
-	@Override
-	public HashMap<Node, Node> getLatticeValues() {
-		return nodeReplacements;
+	public static void unrollLoops(ProgramDetails programDetails) {
+		for (Entry<Entity, EntityDetails> entityDetail : programDetails.getEntityDetails().entrySet()) {
+			HashMap<Node, Node> replacements = new HashMap<>();
+
+			Graph graph = entityDetail.getKey().getGraph();
+			if (graph == null)
+				continue;
+
+			BackEdges.enable(graph);
+			for (Entry<Node, BlockInformation> blockInformation : entityDetail.getValue().getBlockInformations().entrySet()) {
+				if (blockInformation.getValue().getEndNode() instanceof Cmp) {
+					binding_irdom.compute_postdoms(graph.ptr);
+					binding_irdom.compute_doms(graph.ptr);
+
+					checkAndUnrollLoop((Cmp) blockInformation.getValue().getEndNode(), entityDetail.getValue(), replacements);
+				}
+			}
+			BackEdges.disable(graph);
+			compiler.firm.FirmUtils.replaceNodes(replacements);
+			compiler.firm.FirmUtils.removeBadsAndUnreachable(graph);
+			binding_irdom.compute_postdoms(graph.ptr);
+			binding_irdom.compute_doms(graph.ptr);
+
+		}
 	}
 
-	@Override
-	public void visit(Start start) {
-		utils = new OptimizationUtils(start.getGraph());
-		backedges = utils.getBackEdges();
-		inductionVariables = utils.getInductionVariables();
-		blockNodes = utils.getBlockNodes();
-		entityDetails = programDetails.getEntityDetails(start.getGraph());
-	}
-
-	@Override
-	public void visit(Cmp cmp) {
+	public static void checkAndUnrollLoop(Cmp cmp, EntityDetails entityDetails, HashMap<Node, Node> nodeReplacements) {
 		Block loopHeader = (Block) cmp.getBlock();
 		if (finishedLoops.contains(loopHeader))
 			return;
 
-		if (utils == null) {
-			return; // Start block
-		}
+		if (entityDetails == null || entityDetails.getBlockInformation(loopHeader) == null)
+			return;
 
 		LoopInfo loopInfo = FirmUtils.getLoopInfos(cmp);
 
 		if (loopInfo == null)
 			return;
 
-		if (getPhiCount(loopHeader) > 2) // TODO: Remove this
+		if (getPhiCount(entityDetails, loopHeader) > 2) // TODO: Remove this
 			return;
 
 		if (!loopInfo.isOneBlockLoop()) // TODO: Remove this
@@ -97,7 +89,7 @@ public class UnrollingVisitor extends OptimizationVisitor<Node> {
 			long count = (Integer.MAX_VALUE) - loopInfo.getStartingValue().getTarval().asLong();
 			long mod = count % loopInfo.getIncr().getTarval().asLong();
 			long target = (long) Math.ceil((double) (count) / loopInfo.getIncr().getTarval().asLong() + (mod == 0 ? 1 : 0));
-			if (!isCalculatable(loopInfo.getLastLoopBlock())) {
+			if (!isCalculatable(entityDetails, loopInfo.getLastLoopBlock())) {
 				unrollFactor = MAX_UNROLL_FACTOR;
 				while (unrollFactor > 1 && (target % unrollFactor) != 0) {
 					unrollFactor -= 1;
@@ -107,13 +99,13 @@ public class UnrollingVisitor extends OptimizationVisitor<Node> {
 			} else {
 				// calculate loop result
 				long value = Integer.MIN_VALUE + loopInfo.getIncr().getTarval().asLong() - mod - 1;
-				replaceLoopIfPossible(loopInfo, value, loopInfo.getLastLoopBlock());
+				replaceLoopIfPossible(entityDetails, loopInfo, value, loopInfo.getLastLoopBlock(), nodeReplacements);
 			}
 		} else if (loopInfo.getCycleCount() == Integer.MIN_VALUE) {
 			long count = (Integer.MIN_VALUE) - loopInfo.getStartingValue().getTarval().asLong();
 			long mod = count % loopInfo.getIncr().getTarval().asLong();
 			long target = (long) Math.ceil((double) count / loopInfo.getIncr().getTarval().asLong()) + (mod == 0 ? 1 : 0);
-			if (!isCalculatable(loopInfo.getLastLoopBlock())) {
+			if (!isCalculatable(entityDetails, loopInfo.getLastLoopBlock())) {
 				unrollFactor = MAX_UNROLL_FACTOR;
 				while (unrollFactor > 1 && (target % unrollFactor) != 0) {
 					unrollFactor -= 1;
@@ -123,13 +115,13 @@ public class UnrollingVisitor extends OptimizationVisitor<Node> {
 			} else {
 				// calculate loop result
 				long value = Integer.MAX_VALUE + loopInfo.getIncr().getTarval().asLong() - mod + 1;
-				replaceLoopIfPossible(loopInfo, value, loopInfo.getLastLoopBlock());
+				replaceLoopIfPossible(entityDetails, loopInfo, value, loopInfo.getLastLoopBlock(), nodeReplacements);
 			}
-		} else if (isCalculatable(loopInfo.getLastLoopBlock())) {
+		} else if (isCalculatable(entityDetails, loopInfo.getLastLoopBlock())) {
 			// calculate loop result
 			long value = loopInfo.getStartingValue().getTarval().asLong()
 					+ (Math.abs(loopInfo.getCycleCount()) * loopInfo.getIncr().getTarval().asLong());
-			replaceLoopIfPossible(loopInfo, value, loopInfo.getLastLoopBlock());
+			replaceLoopIfPossible(entityDetails, loopInfo, value, loopInfo.getLastLoopBlock(), nodeReplacements);
 		} else if (Math.abs(loopInfo.getCycleCount()) < 2 || (Math.abs(loopInfo.getCycleCount()) % unrollFactor) != 0) {
 			return;
 		}
@@ -145,22 +137,23 @@ public class UnrollingVisitor extends OptimizationVisitor<Node> {
 			return;
 
 		// don't unroll too big blocks
-		if (blockNodes.get(loopInfo.getLastLoopBlock()).size() > 30) // TODO Do not only use loop tail, use all content blocks
+		// TODO Do not only use loop tail, use all content blocks
+		if (entityDetails.getBlockInformation(loopInfo.getLastLoopBlock()).getNumberOfNodes() > 30)
 			return;
 
 		// replace the increment operation
-		addReplacement(loopInfo.getIncr(),
+		nodeReplacements.put(loopInfo.getIncr(),
 				graph.newConst(loopInfo.getIncr().getTarval().mul(new TargetValue(unrollFactor, loopInfo.getIncr().getMode()))));
 
-		unroll(loopInfo, changedNodes, memoryPhi, unrollFactor);
+		unroll(entityDetails, loopInfo, changedNodes, memoryPhi, unrollFactor);
 		finishedLoops.add(loopHeader);
 
 	}
 
-	private int getPhiCount(Block block) {
+	private static int getPhiCount(EntityDetails entityDetails, Block block) {
 		// count phi's in inside this block
 		int count = 0;
-		for (Node node : blockNodes.get(block)) {
+		for (Node node : entityDetails.getBlockInformation(block).getNodes()) {
 			if (node instanceof Phi) {
 				count++;
 			}
@@ -168,18 +161,17 @@ public class UnrollingVisitor extends OptimizationVisitor<Node> {
 		return count;
 	}
 
-	private boolean isCalculatable(Block block) {
-		return blockNodes.containsKey(block) && !(blockNodes.get(block).size() > 2);
+	private static boolean isCalculatable(EntityDetails entityDetails, Block block) {
+		return entityDetails.getBlockInformation(block).getNumberOfNodes() <= 2;
 	}
 
-	private boolean replaceLoopIfPossible(LoopInfo loopInfo, long value, Block block) {
+	private static boolean replaceLoopIfPossible(EntityDetails entityDetails, LoopInfo loopInfo, long value, Block block,
+			HashMap<Node, Node> nodeReplacements) {
 		// collect nodes that need to be altered
 		Node constNode = block.getGraph().newConst((int) value, FirmUtils.getModeInteger());
 		Node loopHeader = block.getPred(0).getBlock();
 		Node preLoopJmp = loopHeader.getPred(0);
 		Cmp cmp = loopInfo.getCmp();
-		if (cmp == null || !backedges.containsValue(loopHeader))
-			return false;
 
 		// there should only be one condition node
 		Node cond = BackEdges.getOuts(cmp).iterator().next().node;
@@ -188,9 +180,9 @@ public class UnrollingVisitor extends OptimizationVisitor<Node> {
 			return false;
 		Node memBeforeLoop = memoryPhi.getPred(0);
 
-		Node loopCounter = loopInfo.getLoopCounter();
+		Node loopCounter = loopInfo.getConditionalPhi();
 		for (Edge e : BackEdges.getOuts(loopCounter)) {
-			if (!e.node.equals(inductionVariables.get(loopCounter))) {
+			if (!e.node.equals(loopInfo.getArithmeticNode())) {
 				for (int i = 0; i < e.node.getPredCount(); i++) {
 					if (e.node.getPred(i).equals(loopCounter)) {
 						// set constant predecessor for each successor of the loop counter
@@ -228,7 +220,7 @@ public class UnrollingVisitor extends OptimizationVisitor<Node> {
 		} else {
 			Node newJmp = block.getGraph().newJmp(preLoopJmp.getBlock());
 			afterLoopBlock.setPred(0, newJmp);
-			addReplacement(preLoopJmp, newJmp);
+			nodeReplacements.put(preLoopJmp, newJmp);
 		}
 
 		// remove the control flow edge
@@ -237,23 +229,18 @@ public class UnrollingVisitor extends OptimizationVisitor<Node> {
 		return true;
 	}
 
-	private void unroll(LoopInfo loopInfo, HashMap<Node, Node> changedNodes, Node loopPhi,
+	private static void unroll(EntityDetails entityDetails, LoopInfo loopInfo, HashMap<Node, Node> changedNodes, Node loopPhi,
 			int unrollFactor) {
 		Block block = loopInfo.getLastLoopBlock();
 		Const incr = loopInfo.getIncr();
-		Node loopCounter = loopInfo.getLoopCounter();
+		Node loopCounter = loopInfo.getConditionalPhi();
 		Node arithmeticNode = loopInfo.getArithmeticNode();
-		Node counter = loopInfo.getLoopCounter();
+		Node counter = loopInfo.getConditionalPhi();
 		Graph graph = block.getGraph();
 		Node firstMemNode = loopPhi;
 		Node lastMemNode = loopPhi.getPred(1);
 		HashMap<Node, Node> inductions = new HashMap<Node, Node>();
-		for (Entry<Node, Node> entry : inductionVariables.entrySet()) {
-			if (entry.getKey().getBlock().equals(loopCounter.getBlock())) {
-				// only all induction variables of this loop
-				inductions.put(entry.getKey(), entry.getValue());
-			}
-		}
+		inductions.put(loopInfo.getConditionalPhi(), loopInfo.getArithmeticNode());
 
 		for (int i = 1; i < unrollFactor; i++) {
 			// create the 'i + 1' increment node for the new iteration
@@ -261,7 +248,7 @@ public class UnrollingVisitor extends OptimizationVisitor<Node> {
 					graph.newConst(incr.getTarval().mul(new TargetValue(i, incr.getMode()))), loopCounter.getMode());
 			count.setBlock(block);
 
-			copyBlockNodes(changedNodes, block, arithmeticNode);
+			copyBlockNodes(entityDetails, changedNodes, block, arithmeticNode);
 
 			// adjust all predecessors
 			for (Entry<Node, Node> nodeEntry : changedNodes.entrySet()) {
@@ -317,7 +304,7 @@ public class UnrollingVisitor extends OptimizationVisitor<Node> {
 			}
 
 			// clear maps for new unroll iteration
-			Set<Node> nodes = blockNodes.get(block);
+			Set<Node> nodes = entityDetails.getBlockInformation(block).getNodes();
 			nodes.clear();
 			for (Node n : changedNodes.values()) {
 				nodes.add(n);
@@ -327,10 +314,10 @@ public class UnrollingVisitor extends OptimizationVisitor<Node> {
 		}
 	}
 
-	private void copyBlockNodes(HashMap<Node, Node> changedNodes, Block block, Node node) {
+	private static void copyBlockNodes(EntityDetails entityDetails, HashMap<Node, Node> changedNodes, Block block, Node node) {
 		Graph graph = block.getGraph();
 		// copy the whole block
-		for (Node blockNode : blockNodes.get(block)) {
+		for (Node blockNode : entityDetails.getBlockInformation(block).getNodes()) {
 			if (!blockNode.equals(node)) {
 				changedNodes.put(blockNode, graph.copyNode(blockNode));
 			}

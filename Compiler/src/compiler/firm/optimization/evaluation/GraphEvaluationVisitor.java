@@ -163,6 +163,8 @@ public class GraphEvaluationVisitor extends AbstractFirmNodesVisitor {
 		if (node.getMode().equals(Mode.getM())) {
 			visitModeM(node);
 		}
+		getBlockInformation(node).addNode(node);
+		getBlockInformation(node).incrementNumberOfNodes();
 		numberOfNodes++;
 	}
 

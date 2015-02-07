@@ -15,6 +15,8 @@ public class BlockInformation {
 	private int sideEffects = 0;
 	private final Set<Call> calls = new HashSet<>();
 	private Phi memoryPhi = null;
+	private int numberOfNodes = 0;
+	private final Set<Node> nodes = new HashSet<>();
 
 	public void setEndNode(Node endNode) {
 		this.endNode = endNode;
@@ -78,5 +80,21 @@ public class BlockInformation {
 
 	public Phi getMemoryPhi() {
 		return memoryPhi;
+	}
+
+	public void incrementNumberOfNodes() {
+		numberOfNodes++;
+	}
+
+	public int getNumberOfNodes() {
+		return numberOfNodes;
+	}
+
+	public void addNode(Node node) {
+		this.nodes.add(node);
+	}
+
+	public Set<Node> getNodes() {
+		return nodes;
 	}
 }
