@@ -140,4 +140,14 @@ public class Utils {
 		}
 		list.add(element);
 	}
+
+	public static void debugln(boolean debug, Object o) {
+		if (debug)
+			System.out.println(o);
+	}
+
+	public static void debug(boolean debug, Object o) {
+		if (debug)
+			System.out.print(o);
+	}
 }

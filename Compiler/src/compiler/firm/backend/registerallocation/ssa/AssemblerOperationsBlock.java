@@ -282,18 +282,18 @@ public class AssemblerOperationsBlock {
 		});
 
 		boolean debugW = false;
-		debugln(debugW, "\n" + block);
-		debug(debugW, "\tCandiates: ");
+		Utils.debugln(debugW, "\n" + block);
+		Utils.debug(debugW, "\tCandiates: ");
 		for (VirtualRegister curr : candidatesList) {
-			debug(debugW, "\tVR_" + curr.getNum());
+			Utils.debug(debugW, "\tVR_" + curr.getNum());
 		}
-		debugln(debugW, "");
+		Utils.debugln(debugW, "");
 
 		Iterator<VirtualRegister> iterator = candidatesList.iterator();
 		for (int i = wEntry.size(); i < availableRegisters && iterator.hasNext(); i++) {
 			wEntry.add(iterator.next());
 		}
-		debugln(debugW, "\tw: " + wEntry);
+		Utils.debugln(debugW, "\tw: " + wEntry);
 
 		return wEntry;
 	}
@@ -335,9 +335,9 @@ public class AssemblerOperationsBlock {
 
 		insertCupplingCode(insertedReloads, stackInfoSupplier, aliveRegisters, spilledRegisters);
 
-		debugln(debugMinAlgo, block);
-		debugln(debugMinAlgo, "\twEntry: " + aliveRegisters);
-		debugln(debugMinAlgo, "\tsEntry: " + spilledRegisters);
+		Utils.debugln(debugMinAlgo, block);
+		Utils.debugln(debugMinAlgo, "\twEntry: " + aliveRegisters);
+		Utils.debugln(debugMinAlgo, "\tsEntry: " + spilledRegisters);
 
 		// Min algorithm; see RegisterSpillAndLiveRangeSplittingForSSA page 3
 		for (AssemblerOperation operation : operations) {
@@ -362,8 +362,8 @@ public class AssemblerOperationsBlock {
 		this.setWExit(aliveRegisters);
 		this.setSExit(spilledRegisters);
 
-		debugln(debugMinAlgo, "\tsExit: " + sExit);
-		debugln(debugMinAlgo, "\twExit: " + wExit);
+		Utils.debugln(debugMinAlgo, "\tsExit: " + sExit);
+		Utils.debugln(debugMinAlgo, "\twExit: " + wExit);
 	}
 
 	private void insertCupplingCode(Map<VirtualRegister, List<ReloadOperation>> insertedReloads, StackInfoSupplier stackInfoSupplier,
@@ -479,16 +479,6 @@ public class AssemblerOperationsBlock {
 			operations.add(operation);
 		}
 		additionalOperations.clear();
-	}
-
-	private static void debugln(boolean debug, Object o) {
-		if (debug)
-			System.out.println(o);
-	}
-
-	private static void debug(boolean debug, Object o) {
-		if (debug)
-			System.out.print(o);
 	}
 
 	public void calculateDominanceFrontier() {

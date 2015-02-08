@@ -98,5 +98,4 @@ public abstract class AssemblerOperation {
 	public AssemblerOperationsBlock getOperationsBlock() {
 		return operationsBlock;
 	}
-
 }

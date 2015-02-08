@@ -11,6 +11,7 @@ import compiler.firm.backend.storage.MemoryPointer;
 import compiler.firm.backend.storage.RegisterBased;
 import compiler.firm.backend.storage.SingleRegister;
 import compiler.firm.backend.storage.VirtualRegister;
+
 import firm.BlockWalker;
 import firm.nodes.Block;
 

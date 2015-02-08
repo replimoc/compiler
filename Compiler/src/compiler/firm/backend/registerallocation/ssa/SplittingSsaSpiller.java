@@ -1,5 +1,6 @@
 package compiler.firm.backend.registerallocation.ssa;
 
+import java.lang.reflect.Field;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.LinkedList;
@@ -14,8 +15,12 @@ import compiler.firm.backend.operations.ReloadOperation;
 import compiler.firm.backend.storage.MemoryPointer;
 import compiler.firm.backend.storage.SingleRegister;
 import compiler.firm.backend.storage.VirtualRegister;
+import compiler.utils.Utils;
 
 public class SplittingSsaSpiller implements StackInfoSupplier {
+
+	private static final boolean DEBUG_I_DOMINANCE_FRONTIER = true;
+	private static final boolean DEBUG_VR_REPLACING = false;
 
 	private final AssemblerProgram program;
 	private final Map<VirtualRegister, MemoryPointer> stackLocations = new HashMap<>();
@@ -44,18 +49,30 @@ public class SplittingSsaSpiller implements StackInfoSupplier {
 			}
 		});
 
-		System.out.println(insertedReloads);
+		Utils.debugln(false, insertedReloads);
 
 		for (Entry<VirtualRegister, List<ReloadOperation>> reloadEntry : insertedReloads.entrySet()) {
 			Set<AssemblerOperationsBlock> labelBlocks = new HashSet<>();
-			labelBlocks.add(reloadEntry.getKey().getDefinition().getOperationsBlock());
+			VirtualRegister originalRegister = reloadEntry.getKey();
+			labelBlocks.add(originalRegister.getDefinition().getOperationsBlock());
 			for (ReloadOperation reloadOperation : reloadEntry.getValue()) {
 				labelBlocks.add(reloadOperation.getOperationsBlock());
 			}
 
 			Set<AssemblerOperationsBlock> iteratedDominanceFrontier = calculateIteratedDominanceFrontier(labelBlocks);
-			System.out.println("iterated dominance border for " + reloadEntry.getKey() + " with blocks " + labelBlocks + "    is: "
-					+ iteratedDominanceFrontier);
+			Utils.debugln(DEBUG_I_DOMINANCE_FRONTIER, "iterated dominance border for " + originalRegister + " with blocks " + labelBlocks
+					+ "    is: " + iteratedDominanceFrontier);
+
+			HashMap<ReloadOperation, VirtualRegister> registerReplacements = new HashMap<>();
+
+			Utils.debugln(DEBUG_VR_REPLACING, "replacing " + originalRegister + " definined in " + originalRegister.getDefinition());
+			for (ReloadOperation currReload : reloadEntry.getValue()) {
+				VirtualRegister newRegister = new VirtualRegister(originalRegister.getMode());
+				registerReplacements.put(currReload, newRegister);
+				Utils.debugln(DEBUG_VR_REPLACING, currReload);
+				replaceVirtualRegister(currReload, originalRegister, newRegister);
+				Utils.debugln(DEBUG_VR_REPLACING, currReload);
+			}
 		}
 	}
 
@@ -103,5 +120,25 @@ public class SplittingSsaSpiller implements StackInfoSupplier {
 		}
 
 		return result;
+	}
+
+	private static void replaceVirtualRegister(Object object, VirtualRegister originalRegister, VirtualRegister replacementRegister) {
+		try {
+			Class<?> classType = object.getClass();
+			while (classType != null) {
+				for (Field field : classType.getDeclaredFields()) {
+					field.setAccessible(true);
+					Object fieldObject = field.get(object);
+					if (fieldObject == originalRegister) {
+						field.set(object, replacementRegister);
+					} else if (fieldObject instanceof MemoryPointer) {
+						replaceVirtualRegister(fieldObject, originalRegister, replacementRegister);
+					}
+				}
+				classType = classType.getSuperclass();
+			}
+		} catch (Exception e) {
+			e.printStackTrace();
+		}
 	}
 }
