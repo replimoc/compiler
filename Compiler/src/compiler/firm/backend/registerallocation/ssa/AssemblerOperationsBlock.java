@@ -457,7 +457,7 @@ public class AssemblerOperationsBlock {
 	}
 
 	private SpillOperation createSpillOperation(StackInfoSupplier stackInfoSupplier, VirtualRegister register) {
-		SpillOperation spillOperation = new SpillOperation(register, stackInfoSupplier.allocateStackLocation(register));
+		SpillOperation spillOperation = new SpillOperation(register, stackInfoSupplier.getStackLocation(register));
 		spillOperation.setOperationsBlock(this);
 		return spillOperation;
 	}
@@ -528,5 +528,13 @@ public class AssemblerOperationsBlock {
 
 	public PhiReadOperation getPhiRead() {
 		return phiRead;
+	}
+
+	public void removeDeadPhiWrites() {
+		HashSet<VirtualRegister> deadPhiWrites = new HashSet<>(phiWrite.getVirtualWriteRegisters());
+		deadPhiWrites.removeAll(uses.keySet());
+		deadPhiWrites.removeAll(liveOut.keySet());
+
+		phiWrite.removeWritesTo(deadPhiWrites);
 	}
 }

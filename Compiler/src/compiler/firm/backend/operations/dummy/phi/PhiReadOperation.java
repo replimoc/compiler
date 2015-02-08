@@ -2,6 +2,7 @@ package compiler.firm.backend.operations.dummy.phi;
 
 import java.util.Collections;
 import java.util.HashSet;
+import java.util.Iterator;
 import java.util.List;
 import java.util.Set;
 
@@ -22,7 +23,7 @@ public class PhiReadOperation extends AssemblerBitOperation {
 
 	@Override
 	public String getOperationString() {
-		return "\t# phi read ";
+		return "\t# phi read " + phiRelations;
 	}
 
 	public void addPhiRelation(Storage source, VirtualRegister destination) {
@@ -49,5 +50,14 @@ public class PhiReadOperation extends AssemblerBitOperation {
 	@Override
 	public Set<RegisterBased> getWriteRegisters() {
 		return Collections.emptySet();
+	}
+
+	public void removeWritesNotIn(Set<VirtualRegister> liveOuts) {
+		for (Iterator<Pair<Storage, RegisterBased>> iterator = phiRelations.iterator(); iterator.hasNext();) {
+			Pair<Storage, RegisterBased> relation = iterator.next();
+			if (!liveOuts.contains(relation.second)) {
+				iterator.remove();
+			}
+		}
 	}
 }

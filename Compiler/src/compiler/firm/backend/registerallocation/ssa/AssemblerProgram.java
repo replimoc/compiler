@@ -231,4 +231,10 @@ public class AssemblerProgram {
 			e.printStackTrace();
 		}
 	}
+
+	public void removeDeadPhiWrites() {
+		for (Entry<Block, AssemblerOperationsBlock> blockEntry : operationsBlocks.entrySet()) {
+			blockEntry.getValue().removeDeadPhiWrites();
+		}
+	}
 }

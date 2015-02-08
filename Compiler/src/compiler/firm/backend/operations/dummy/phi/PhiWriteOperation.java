@@ -40,4 +40,8 @@ public class PhiWriteOperation extends AssemblerBitOperation {
 		return registers;
 	}
 
+	public void removeWritesTo(Set<VirtualRegister> registers) {
+		this.registers.removeAll(registers);
+	}
+
 }

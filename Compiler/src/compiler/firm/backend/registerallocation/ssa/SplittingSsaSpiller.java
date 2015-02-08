@@ -35,6 +35,8 @@ public class SplittingSsaSpiller implements StackInfoSupplier {
 	}
 
 	public void reduceRegisterPressure(final int availableRegisters, final boolean allowSpilling) {
+		program.generatePlainAssemblerFile(".vregs");
+
 		Map<VirtualRegister, List<ReloadOperation>> insertedReloads = program.executeMinAlgorithm(this, availableRegisters, allowSpilling);
 		program.calculateDominanceFrontiers();
 
@@ -86,6 +88,7 @@ public class SplittingSsaSpiller implements StackInfoSupplier {
 		}
 
 		program.calculateLiveInAndLiveOut();
+		program.removeDeadPhiWrites();
 	}
 
 	private VirtualRegister findDefinition(AssemblerOperation useInBlock, AssemblerOperationsBlock block,
@@ -127,15 +130,13 @@ public class SplittingSsaSpiller implements StackInfoSupplier {
 
 	@Override
 	public MemoryPointer getStackLocation(VirtualRegister register) {
-		return stackLocations.get(register);
-	}
-
-	@Override
-	public MemoryPointer allocateStackLocation(VirtualRegister register) {
-		MemoryPointer newStackLocation = new MemoryPointer(currentStackOffset, SingleRegister.RSP);
-		stackLocations.put(register, newStackLocation);
-		currentStackOffset += X8664AssemblerGenerationVisitor.STACK_ITEM_SIZE;
-		return newStackLocation;
+		MemoryPointer stackLocation = stackLocations.get(register);
+		if (stackLocation == null) {
+			stackLocation = new MemoryPointer(currentStackOffset, SingleRegister.RSP);
+			stackLocations.put(register, stackLocation);
+			currentStackOffset += X8664AssemblerGenerationVisitor.STACK_ITEM_SIZE;
+		}
+		return stackLocation;
 	}
 
 	private static void replaceVirtualRegister(Object object, VirtualRegister originalRegister, VirtualRegister replacementRegister) {

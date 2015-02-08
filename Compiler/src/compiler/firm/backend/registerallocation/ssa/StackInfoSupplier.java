@@ -5,6 +5,4 @@ import compiler.firm.backend.storage.VirtualRegister;
 
 public interface StackInfoSupplier {
 	MemoryPointer getStackLocation(VirtualRegister register);
-
-	MemoryPointer allocateStackLocation(VirtualRegister register);
 }
