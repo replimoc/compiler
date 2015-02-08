@@ -122,6 +122,7 @@ public class LoopUnrolling {
 
 		}
 
+		unrollFactor = 0;
 		if (unrollFactor < 2) // TODO: Remove this
 			return;
 

@@ -278,48 +278,68 @@ public final class FirmUtils {
 		long change = incr.getTarval().asLong();
 
 		Relation relation = cmp.getRelation();
-		int minIntOffset = change < 0 ? 1 : 0;
-		if (change == 0) {
+		boolean addition = change > 0;
+		if (change == 0)
 			return null; // Endless loop
-		} else if (change < 0) {
-			relation = relation.inversed();
-			change = -change;
-			start = -start;
-			border = -border;
-		}
+		// } else if (change < 0) {
+		// relation = relation.inversed();
+		// change = -change;
+		// start = -start;
+		// border = -border;
+		// }
+
+		System.out.println("relation: " + relation);
+		System.out.println("change: " + change);
+		System.out.println("start: " + start);
+		System.out.println("border: " + border);
+		System.out.println("diff: " + (border - start));
 
 		switch (relation) {
 		case Greater:
 		case UnorderedGreater:
-			if ((border - start) >= 0) {
-				return (long) 0;
-			} else if (start < border) {
-				return (long) Math.max(0, Math.ceil((double) (border - start) / change));
-			} else {
-				return (long) Math.ceil((Integer.MAX_VALUE - start + minIntOffset) / change) + 1;
+			if (start <= border) {
+				return (long) 0; // Runs never
+			} else { // start > border
+				if (addition) {
+					return (long) Math.ceil((Integer.MAX_VALUE - start) / change) + 1;
+				} else {
+					return (long) Math.ceil((double) Math.abs(border - start) / -change);
+				}
 			}
 		case GreaterEqual:
 		case UnorderedGreaterEqual:
-			if ((border - start) > 0) {
-				return (long) 0;
-			} else if (start < border) {
-				return (long) Math.ceil((double) Math.abs(border - start + 1) / change);
-			} else {
-				return (long) Math.ceil((Integer.MAX_VALUE - start + minIntOffset) / change) + 1;
+			if (start < border) {
+				return (long) 0; // Runs never
+			} else {// start >= border
+				if (addition) {
+					return (long) Math.ceil((Integer.MAX_VALUE - start) / change) + 1;
+				} else {
+					return (long) Math.ceil((double) Math.abs(border - start - 1) / -change);
+				}
+
 			}
 		case Less:
 		case UnorderedLess:
-			if ((border - start) <= 0) {
-				return (long) 0;
-			} else {
-				return (long) Math.ceil((double) Math.abs(border - start) / change);
+			if (start >= border) {
+				return (long) 0; // Runs never
+			} else { // start > border
+				if (addition) {
+					return (long) Math.ceil((double) Math.abs(border - start) / change);
+				} else {
+					return (long) Math.ceil((Integer.MIN_VALUE - start) / change) + 1;
+				}
 			}
 		case LessEqual:
 		case UnorderedLessEqual:
-			if ((border - start) < 0) {
-				return (long) 0;
-			} else {
-				return (long) Math.ceil((double) Math.abs(border - start + 1) / change);
+			if (start > border) {
+				return (long) 0; // Runs never
+			} else {// start >= border
+				if (addition) {
+					return (long) Math.ceil((double) Math.abs(border - start + 1) / change);
+				} else {
+					return (long) Math.ceil((Integer.MIN_VALUE - start) / change) + 1;
+				}
+
 			}
 		default:
 			return null;
