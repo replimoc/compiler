@@ -83,7 +83,7 @@ public class MovOperation extends AssemblerBitOperation {
 					if (!(source.isSpilled() && destination.isSpilled())) {
 						return new String[] { toString() };
 
-					} else {
+					} else if (!(destination instanceof MemoryPointer)) {
 						Storage oldSource = this.source;
 						this.source = getSpillRegister().getRegister(destination.getMode());
 						String[] result = new String[] {
@@ -92,6 +92,8 @@ public class MovOperation extends AssemblerBitOperation {
 						};
 						this.source = oldSource;
 						return result;
+					} else {
+						return super.toStringWithSpillcode();
 					}
 
 				} else {
