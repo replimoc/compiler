@@ -287,6 +287,10 @@ public final class FirmUtils {
 			start = -start;
 			border = -border;
 		}
+		System.out.println(relation);
+		System.out.println("change: " + change);
+		System.out.println("start: " + start);
+		System.out.println("border: " + border);
 
 		switch (relation) {
 		case Greater:
@@ -298,16 +302,17 @@ public final class FirmUtils {
 			}
 		case GreaterEqual:
 		case UnorderedGreaterEqual:
-			if (start <= border) {
-				return (long) Math.ceil((double) Math.abs(border - start) / change);
+			if (start < border) {
+				return (long) Math.ceil((double) Math.abs(border - start + 1) / change);
 			} else {
 				return (long) Math.ceil((Integer.MAX_VALUE - start + minIntOffset) / change) + 1;
 			}
 		case Less:
 		case UnorderedLess:
+			return (long) Math.ceil((double) Math.abs(border - start) / change);
 		case LessEqual:
 		case UnorderedLessEqual:
-			return (long) Math.ceil((double) Math.abs(border - start) / change);
+			return (long) Math.ceil((double) Math.abs(border - start + 1) / change);
 		default:
 			return null;
 		}
