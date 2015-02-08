@@ -11,6 +11,7 @@ import compiler.firm.backend.storage.MemoryPointer;
 import compiler.firm.backend.storage.RegisterBased;
 import compiler.firm.backend.storage.SingleRegister;
 import compiler.firm.backend.storage.VirtualRegister;
+
 import firm.BlockWalker;
 import firm.nodes.Block;
 
@@ -64,18 +65,22 @@ public class SsaSpiller {
 						if (!allowSpilling) {
 							throw new MustSpillException();
 						}
-						spillRegisterOf(aliveRegisters);
+						spillRegisterOf(operation, aliveRegisters);
 					}
 				}
 			}
 		}
 	}
 
-	private void spillRegisterOf(Set<VirtualRegister> aliveRegisters) {
+	private void spillRegisterOf(AssemblerOperation operation, Set<VirtualRegister> aliveRegisters) {
 		VirtualRegister toBeSpilled = aliveRegisters.iterator().next();
+		int spilledUseDistance = operation.getOperationsBlock().getNextUseDistance(operation, toBeSpilled, true);
+
 		for (VirtualRegister curr : aliveRegisters) {
-			if (toBeSpilled.getUsages().size() < curr.getUsages().size()) {
+			int currUseDistance = operation.getOperationsBlock().getNextUseDistance(operation, curr, true);
+			if (spilledUseDistance < currUseDistance) {
 				toBeSpilled = curr;
+				spilledUseDistance = currUseDistance;
 			}
 		}
 

@@ -151,4 +151,28 @@ public class AssemblerOperationsBlock {
 	public boolean isLastUsage(VirtualRegister register, AssemblerOperation operation) {
 		return !liveOut.containsKey(register) && lastUsed.get(register) == operation;
 	}
+
+	public int getNextUseDistance(AssemblerOperation operation, VirtualRegister register, boolean exclusive) {
+		int i = 0;
+		int operationIdx = 0;
+		for (AssemblerOperation currOperation : operations) {
+			if (currOperation == operation) {
+				operationIdx = i;
+				if (exclusive) {
+					i++;
+					continue;
+				}
+			}
+			if (operationIdx >= 0 && currOperation.getVirtualReadRegisters().contains(register)) {
+				return i - operationIdx;
+			}
+			i++;
+		}
+
+		if (liveOut.containsKey(register)) {
+			return liveOut.get(register) + operations.size() - operationIdx;
+		} else {
+			return Integer.MAX_VALUE;
+		}
+	}
 }

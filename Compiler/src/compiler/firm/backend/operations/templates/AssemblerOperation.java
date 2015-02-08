@@ -61,6 +61,15 @@ public abstract class AssemblerOperation {
 		return Collections.emptySet();
 	}
 
+	public Set<VirtualRegister> getVirtualWriteRegisters() {
+		Set<RegisterBased> writeRegsiterBased = getWriteRegisters();
+		Set<VirtualRegister> result = new HashSet<>();
+		for (RegisterBased curr : writeRegsiterBased) {
+			result.add((VirtualRegister) curr);
+		}
+		return result;
+	}
+
 	public boolean hasSpilledRegisters() {
 		for (RegisterBased register : getReadRegisters()) {
 			if (register.isSpilled()) {
