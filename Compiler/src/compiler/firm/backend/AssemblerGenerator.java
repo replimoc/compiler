@@ -102,11 +102,11 @@ public final class AssemblerGenerator {
 			ssaSpiller.reduceRegisterPressure(policy.getNumberOfRegisters(Bit.BIT64), true);
 		} else {
 			try {
-				policy = RegisterAllocationPolicy.BP_B_12_13_14_15_A__DI_SI_D_C_8_9_10_11;
+				policy = RegisterAllocationPolicy.BP_B_12_13_14_15__DI_SI_C_8_9_10_11_A_D;
 				ssaSpiller.reduceRegisterPressure(policy.getNumberOfRegisters(Bit.BIT64), false);
 			} catch (MustSpillException e) {
 				SsaRegisterAllocator.debugln("Cannot use large policy, using small policy with spilling");
-				policy = RegisterAllocationPolicy.BP_B_12_13_14_15_A__DI_SI_D_C_8;
+				policy = RegisterAllocationPolicy.BP_B_12_13_14_15__DI_SI_C_8_A_D;
 				ssaSpiller.reduceRegisterPressure(policy.getNumberOfRegisters(Bit.BIT64), true);
 			}
 		}
