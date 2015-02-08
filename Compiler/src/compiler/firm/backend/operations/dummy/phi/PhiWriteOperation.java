@@ -1,4 +1,4 @@
-package compiler.firm.backend.operations.dummy;
+package compiler.firm.backend.operations.dummy.phi;
 
 import java.util.Collections;
 import java.util.Set;

@@ -11,7 +11,7 @@ import java.util.Set;
 
 import compiler.firm.FirmUtils;
 import compiler.firm.backend.operations.ReloadOperation;
-import compiler.firm.backend.operations.dummy.MethodStartEndOperation;
+import compiler.firm.backend.operations.dummy.method.MethodStartEndOperation;
 import compiler.firm.backend.operations.templates.AssemblerOperation;
 import compiler.firm.backend.storage.RegisterBundle;
 import compiler.firm.backend.storage.VirtualRegister;

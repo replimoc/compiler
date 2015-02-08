@@ -1,6 +1,6 @@
 package compiler.firm.backend.storage;
 
-import compiler.firm.backend.operations.dummy.MethodStartEndOperation;
+import compiler.firm.backend.operations.dummy.method.MethodStartEndOperation;
 
 public class StackPointer extends MemoryPointer {
 

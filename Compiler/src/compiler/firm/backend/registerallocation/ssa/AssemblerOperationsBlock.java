@@ -16,15 +16,14 @@ import compiler.firm.FirmUtils;
 import compiler.firm.backend.operations.CmpOperation;
 import compiler.firm.backend.operations.ReloadOperation;
 import compiler.firm.backend.operations.SpillOperation;
-import compiler.firm.backend.operations.dummy.PhiReadOperation;
-import compiler.firm.backend.operations.dummy.PhiWriteOperation;
+import compiler.firm.backend.operations.dummy.phi.PhiReadOperation;
+import compiler.firm.backend.operations.dummy.phi.PhiWriteOperation;
 import compiler.firm.backend.operations.templates.AssemblerOperation;
 import compiler.firm.backend.operations.templates.JumpOperation;
 import compiler.firm.backend.storage.RegisterBased;
 import compiler.firm.backend.storage.VirtualRegister;
 import compiler.utils.Pair;
 import compiler.utils.Utils;
-
 import firm.nodes.Block;
 import firm.nodes.Node;
 

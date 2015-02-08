@@ -1,4 +1,4 @@
-package compiler.firm.backend.operations.dummy;
+package compiler.firm.backend.operations.dummy.method;
 
 import java.util.HashSet;
 import java.util.LinkedList;
