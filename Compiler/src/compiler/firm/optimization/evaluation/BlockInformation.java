@@ -87,6 +87,10 @@ public class BlockInformation {
 		numberOfNodes++;
 	}
 
+	public void incrementNumberOfNodesExpensive() {
+		numberOfNodes += 10;
+	}
+
 	public int getNumberOfNodes() {
 		return numberOfNodes;
 	}

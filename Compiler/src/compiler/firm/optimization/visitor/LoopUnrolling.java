@@ -33,6 +33,7 @@ public class LoopUnrolling {
 
 	private static final Set<Block> finishedLoops = new HashSet<>();
 	private static final int MAX_UNROLL_FACTOR = 8;
+	private static final int MAX_NODES = 30;
 
 	public static void unrollLoops(ProgramDetails programDetails) {
 		HashMap<Graph, EntityDetails> entityDetails = new HashMap<>();
@@ -118,7 +119,7 @@ public class LoopUnrolling {
 			nodeCount += entityDetails.getBlockInformation(loopBlock).getNumberOfNodes();
 		}
 
-		if (nodeCount > 50)
+		if (nodeCount > MAX_NODES)
 			return;
 
 		if (loopHeader.getPredCount() != 2)

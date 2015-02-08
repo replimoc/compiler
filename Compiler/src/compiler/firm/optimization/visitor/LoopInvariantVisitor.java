@@ -232,12 +232,13 @@ public class LoopInvariantVisitor extends OptimizationVisitor<Node> {
 	}
 
 	private Node getMemoryBeforeLoop(Call callNode) {
-		if (backedges.containsKey(callNode.getBlock())) {
-			Block loopBlock = (Block) backedges.get(callNode.getBlock());
-			if (loopPhis.containsKey(loopBlock)) {
-				Phi loopPhi = loopPhis.get(loopBlock);
-				return loopPhi.getPred(0);
-			}
+		Node pred = utils.getInnerMostLoopHeader((Block) callNode.getBlock());
+		if (pred == null)
+			return null;
+		Block loopBlock = (Block) backedges.get(callNode.getBlock());
+		if (loopPhis.containsKey(loopBlock)) {
+			Phi loopPhi = loopPhis.get(loopBlock);
+			return loopPhi.getPred(0);
 		}
 		return null;
 	}

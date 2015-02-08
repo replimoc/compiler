@@ -81,6 +81,7 @@ public class GraphEvaluationVisitor extends AbstractFirmNodesVisitor {
 		ownDetails.addCallFromEntityInfo(callNode, new CallInformation(calledEntity, constantArguments));
 		getBlockInformation(callNode).addCall(callNode);
 		visitModeM(callNode);
+		getBlockInformation(callNode).incrementNumberOfNodesExpensive();
 	}
 
 	private BlockInformation getBlockInformation(Node node) {
@@ -116,6 +117,7 @@ public class GraphEvaluationVisitor extends AbstractFirmNodesVisitor {
 		visitModeM(load);
 		ownDetails.setHasMemUsage();
 		getBlockInformation(load).setHasMemUsage();
+		getBlockInformation(load).incrementNumberOfNodesExpensive();
 	}
 
 	@Override
@@ -126,6 +128,7 @@ public class GraphEvaluationVisitor extends AbstractFirmNodesVisitor {
 		ownDetails.setHasMemUsage();
 		getBlockInformation(store).setHasSideEffects();
 		getBlockInformation(store).setHasMemUsage();
+		getBlockInformation(store).incrementNumberOfNodesExpensive();
 	}
 
 	@Override

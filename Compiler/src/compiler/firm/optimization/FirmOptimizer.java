@@ -47,15 +47,14 @@ public final class FirmOptimizer {
 			finished &= optimize(LocalOptimizationVisitor.FACTORY);
 			finished &= optimize(ControlFlowVisitor.FACTORY);
 			finished &= optimize(CommonSubexpressionEliminationVisitor.FACTORY);
-			finished &= optimize(LoopFusionVisitor.FACTORY(evaluateGraphs()));
 			finished &= optimize(LoopInvariantVisitor.FACTORY(evaluateGraphs()));
 			finished &= optimize(StrengthReductionVisitor.FACTORY);
 			finished &= optimize(LoadStoreOptimiziationVisitor.FACTORY(evaluateGraphs()));
 			finished &= ObsoleteNodesEliminator.eliminateObsoleteParameters(evaluateGraphs());
 			finished &= ObsoleteNodesEliminator.eliminateObsoleteNodes(evaluateGraphs());
 			finished &= MethodInliner.inlineCalls(evaluateGraphs());
+			finished &= optimize(LoopFusionVisitor.FACTORY(evaluateGraphs()));
 		} while (!finished);
-
 	}
 
 	private static ProgramDetails evaluateGraphs() {
