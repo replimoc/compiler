@@ -32,7 +32,7 @@ import firm.nodes.Proj;
 public class LoopUnrolling {
 
 	private static final Set<Block> finishedLoops = new HashSet<>();
-	private static final int MAX_UNROLL_FACTOR = 4;
+	private static final int MAX_UNROLL_FACTOR = 8;
 
 	public static void unrollLoops(ProgramDetails programDetails) {
 		HashMap<Graph, EntityDetails> entityDetails = new HashMap<>();
@@ -133,10 +133,10 @@ public class LoopUnrolling {
 		System.out.println(loopInfo.getCycleCount() % MAX_UNROLL_FACTOR);
 		int unrollFactor = 0;
 		int correction = 0;
-		if (loopInfo.getCycleCount() > MAX_UNROLL_FACTOR) {
+		if (loopInfo.getCycleCount() >= MAX_UNROLL_FACTOR) {
 			unrollFactor = MAX_UNROLL_FACTOR;
-			correction = (int) (loopInfo.getCycleCount() % MAX_UNROLL_FACTOR);
 		}
+		correction = (int) (loopInfo.getCycleCount() % MAX_UNROLL_FACTOR);
 
 		for (Block loopBlock : loopBlocks) {
 			if (!loopBlock.equals(loopHeader) && FirmUtils.getLoopTailIfHeader(loopBlock) != null) {

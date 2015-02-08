@@ -40,6 +40,7 @@ public final class FirmOptimizer {
 			// all optimizations should run on the current graph
 			// do not optimize evaluateGraphs out!
 			finished = true;
+			LoopUnrolling.unrollLoops(evaluateGraphs());
 			finished &= ObsoleteNodesEliminator.eliminateObsoleteGraphs(evaluateGraphs());
 			finished &= optimize(NormalizationVisitor.FACTORY);
 			finished &= optimize(ConstantFoldingVisitor.FACTORY);
@@ -54,7 +55,6 @@ public final class FirmOptimizer {
 			finished &= ObsoleteNodesEliminator.eliminateObsoleteNodes(evaluateGraphs());
 			finished &= MethodInliner.inlineCalls(evaluateGraphs());
 		} while (!finished);
-		LoopUnrolling.unrollLoops(evaluateGraphs());
 
 	}
 
