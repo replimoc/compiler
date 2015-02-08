@@ -122,20 +122,35 @@ public class LoopUnrolling {
 
 		// replace the increment operation
 
-		System.out.println(loopInfo.getCycleCount());
-		int unrollFactor = 0;
-		if (unrollFactor < 2 || unrollFactor % 2 == 1) // TODO: Remove this
-			return;
+		System.out.println(loopInfo.getCycleCount() % MAX_UNROLL_FACTOR);
+		int unrollFactor = 16;
+		if (loopInfo.getCycleCount() > 16) {
+			unrollFactor = 2;
+		}
+
+		Graph g = cmp.getGraph();
+
+		// Append not unrolled content
+
+		HashMap<Node, Node> replacements = new HashMap<>();
+		entityDetails = programDetails.getEntityDetails(g);
+
+		for (int i = 0; i < 5; i++) { // FIXME
+			unroll(entityDetails, loopInfo, 2, replacements, true);
+			compiler.firm.FirmUtils.replaceNodes(replacements);
+			compiler.firm.FirmUtils.removeBadsAndUnreachable(graph);
+		}
+		binding_irdom.compute_postdoms(graph.ptr);
+		binding_irdom.compute_doms(graph.ptr);
 
 		for (int i = unrollFactor; i > 0 && i % 2 == 0; i = i / 2) {
-			Graph g = cmp.getGraph();
 			BackEdges.disable(g);
 			programDetails.updateGraphs(Arrays.asList(g));
 			BackEdges.enable(g);
 
-			HashMap<Node, Node> replacements = new HashMap<>();
+			replacements = new HashMap<>();
 			entityDetails = programDetails.getEntityDetails(g);
-			unroll(entityDetails, loopInfo, 2, replacements);
+			unroll(entityDetails, loopInfo, 2, replacements, false);
 			compiler.firm.FirmUtils.replaceNodes(replacements);
 			compiler.firm.FirmUtils.removeBadsAndUnreachable(graph);
 			binding_irdom.compute_postdoms(graph.ptr);
@@ -227,7 +242,8 @@ public class LoopUnrolling {
 		return true;
 	}
 
-	private static void unroll(EntityDetails entityDetails, LoopInfo loopInfo, int unrollFactor, HashMap<Node, Node> nodeReplacements) {
+	private static void unroll(EntityDetails entityDetails, LoopInfo loopInfo, int unrollFactor, HashMap<Node, Node> nodeReplacements,
+			boolean afterLoop) {
 		System.out.println(unrollFactor);
 		if (unrollFactor % 2 == 1 || unrollFactor <= 0) {
 			return;
@@ -277,6 +293,7 @@ public class LoopUnrolling {
 					if (!loopBlocks.contains(predecessor.getBlock())) {
 						nodeMapping.put(predecessor, predecessor);
 					}
+
 				}
 			}
 		}
@@ -295,40 +312,138 @@ public class LoopUnrolling {
 		copyVisitor.cleanupNodes();
 
 		graph.keepAlive(copyVisitor.getNodeMapping().get(loopInfo.getLastLoopBlock()));
+		Proj oldProjJmp = (Proj) nodeMapping.get(loopInfo.getFirstLoopBlock()).getPred(0);
 
-		for (Node predecessor : dummyPredecessors) {// TODO: This should not be a loop
-			if (predecessor instanceof Bad) {
-				Node jmp = graph.newJmp(loopInfo.getLastLoopBlock());
-				Graph.exchange(predecessor, jmp);
-				break;
+		if (afterLoop) {
+			int loopHead = 0;
+			int loopBody = 1;
+
+			// TODO: Loop if not loop tail
+			Node oldPredJmp = loopHeader.getPred(loopHead); // TODO: Fix this 0
+			System.out.println(oldPredJmp.getBlock());
+			Node newJmp = graph.newJmp(oldPredJmp.getBlock());
+			Graph.exchange(nodeMapping.get(oldPredJmp), newJmp);
+			// else
+			Node loopEndBlock = loopHeader.getPred(loopBody).getBlock();
+			// Loop End
+
+			Node successorLoop = graph.newJmp(nodeMapping.get(loopEndBlock));
+			System.out.println("oldPredJmp: " + oldPredJmp);
+			System.out.println("loopEndBlock: " + loopEndBlock);
+			Graph.exchange(oldPredJmp, successorLoop);
+
+			System.out.println(oldPredJmp);
+
+			for (Phi phi : entityDetails.getBlockInformation(loopHeader).getPhis()) {
+				nodeMapping.get(phi).setPred(loopHead, phi.getPred(loopHead));
+				phi.setPred(loopHead, nodeMapping.get(phi.getPred(loopBody)));
 			}
-		}
 
-		BlockInformation loopHeaderInformation = entityDetails.getBlockInformation(loopHeader);
-		for (Phi phi : loopHeaderInformation.getPhis()) {
-			Node newPhi = nodeMapping.get(phi);
-			for (int j = 0; j < phi.getPredCount(); j++) {
-				Node predecessor = phi.getPred(j);
-				if (loopBlocks.contains(predecessor.getBlock())) {
-					Node newPredecessor = nodeMapping.get(predecessor);
-					nodeReplacements.put(newPhi, predecessor);
-					phi.setPred(j, newPredecessor);
-				} else {
-					nodeMapping.get(phi).setPred(j, predecessor);
+			Node unneccessaryJump = nodeMapping.get(loopHeader.getPred(loopBody));
+			Graph.exchange(unneccessaryJump, FirmUtils.newBad(unneccessaryJump));
+
+			// Kill old condition
+			Node loopConditionProj = nodeMapping.get(loopInfo.getFirstLoopBlock().getPred(0));
+			Graph.exchange(loopConditionProj, graph.newJmp(loopConditionProj.getBlock()));
+
+			// int required = oldProjJmp.getNum() == FirmUtils.TRUE ? FirmUtils.FALSE : FirmUtils.TRUE;
+			// Node condition = FirmUtils.getFirstSuccessor(loopInfo.getCmp());
+			//
+			// Proj projReplace = null;
+			// for (Edge edge : BackEdges.getOuts(condition)) {
+			// Proj proj = ((Proj) edge.node);
+			// if (proj.getNum() == required) {
+			// projReplace = proj;
+			// }
+			// }
+			//
+			// Node newLoopHeaderSuccessor = FirmUtils.getFirstSuccessor(projReplace);
+			// int newLoopHeaderSuccessorNum = 0;
+			// for (int i = 0; i < newLoopHeaderSuccessor.getPredCount(); i++) {
+			// if (newLoopHeaderSuccessor.getPred(i).equals(projReplace)) {
+			// newLoopHeaderSuccessorNum = i;
+			// }
+			// }
+			//
+			// oldProjJmp.setNum(projReplace.getNum());
+			// Graph.exchange(oldProjJmp, projReplace);
+			//
+			// Node newJmpNode = graph.newJmp(nodeMapping.get(loopHeader));
+			// System.out.println("newLoopHeaderSuccessor: " + newLoopHeaderSuccessor);
+			// System.out.println("newJmpNode: " + newJmpNode);
+			//
+			// newLoopHeaderSuccessor.setPred(newLoopHeaderSuccessorNum, newJmpNode);
+			//
+			// for (Block loopBlock : loopBlocks) {
+			// if (!loopBlock.equals(loopHeader)) {
+			// System.out.println("Fix block: " + loopBlock);
+			// }
+			// }
+			//
+			// for (Entry<Phi, Set<Node>> mapping : phiSuccessorRepairs.entrySet()) {
+			// Node oldPhi = mapping.getKey();
+			// Node newPhi = nodeMapping.get(oldPhi);
+			// for (Node successor : mapping.getValue()) {
+			// for (int i = 0; i < successor.getPredCount(); i++) {
+			// if (successor.getPred(i).equals(oldPhi)) {
+			// System.out.println("Replace pred " + oldPhi + " -> " + newPhi);
+			// successor.setPred(i, newPhi);
+			// }
+			// }
+			// }
+			// }
+			//
+			// System.out.println(oldProjJmp);
+			//
+			// System.out.println(projReplace);
+		} else {
+
+			for (Node predecessor : dummyPredecessors) {// TODO: This should not be a loop
+				if (predecessor instanceof Bad) {
+					Node jmp = graph.newJmp(loopInfo.getLastLoopBlock());
+					Graph.exchange(predecessor, jmp);
+					break;
 				}
 			}
+
+			BlockInformation loopHeaderInformation = entityDetails.getBlockInformation(loopHeader);
+			for (Phi phi : loopHeaderInformation.getPhis()) {
+				Node newPhi = nodeMapping.get(phi);
+				for (int j = 0; j < phi.getPredCount(); j++) {
+					Node predecessor = phi.getPred(j);
+					if (loopBlocks.contains(predecessor.getBlock())) {
+						Node newPredecessor = nodeMapping.get(predecessor);
+						nodeReplacements.put(newPhi, predecessor);
+						phi.setPred(j, newPredecessor);
+					} else {
+						nodeMapping.get(phi).setPred(j, predecessor);
+					}
+				}
+			}
+
+			// TODO Place for append
+			Node newJmp = graph.newJmp(nodeMapping.get(loopInfo.getLastLoopBlock()));
+			System.out.println(newJmp);
+
+			Node endNode = entityDetails.getBlockInformation(loopInfo.getLastLoopBlock()).getEndNode();
+			Graph.exchange(endNode, newJmp);
+			Graph.exchange(nodeMapping.get(endNode), FirmUtils.newBad(nodeMapping.get(endNode)));
+
+			FirmUtils.removeKeepAlive(oldProjJmp.getBlock());
+			Graph.exchange(oldProjJmp, graph.newJmp(oldProjJmp.getBlock()));
 		}
-
-		Node endNode = entityDetails.getBlockInformation(loopInfo.getLastLoopBlock()).getEndNode();
-
-		Node newJmp = graph.newJmp(nodeMapping.get(loopInfo.getLastLoopBlock()));
-		Graph.exchange(endNode, newJmp);
-		Graph.exchange(nodeMapping.get(endNode), FirmUtils.newBad(nodeMapping.get(endNode)));
-
-		Node oldProjJmp = nodeMapping.get(loopInfo.getFirstLoopBlock()).getPred(0);
-		FirmUtils.removeKeepAlive(oldProjJmp.getBlock());
-		Graph.exchange(oldProjJmp, graph.newJmp(oldProjJmp.getBlock()));
-
 		// graph.keepAlive(nodeMapping.get(loopInfo.getLastLoopBlock()));
+		//
+		// if (afterLoop) {
+		// int required = oldProjJmp.getNum() == FirmUtils.TRUE ? FirmUtils.FALSE : FirmUtils.TRUE;
+		// Node condition = FirmUtils.getFirstSuccessor(loopInfo.getCmp());
+		// for (Edge edge : BackEdges.getOuts(condition)) {
+		// Proj proj = ((Proj) edge.node);
+		// if (proj.getNum() == required) {
+		// oldProjJmp = proj;
+		// }
+		// }
+		// }
+		// System.out.println(oldProjJmp);
 	}
 }
