@@ -130,7 +130,7 @@ public class AssemblerProgram {
 			return;
 		firmBlock.markBlockVisited();
 
-		if (!block.isLoopHead()) {
+		if (!block.isLoopHead() || block.getSuccessors().size() < 2) {
 			for (AssemblerOperationsBlock succesor : block.getSuccessors()) {
 				walkBlocksPostorder(succesor, walker);
 			}
