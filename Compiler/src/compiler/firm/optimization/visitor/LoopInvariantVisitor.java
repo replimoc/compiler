@@ -210,12 +210,12 @@ public class LoopInvariantVisitor extends OptimizationVisitor<Node> {
 			@Override
 			public Node copyNode(Block newBlock) {
 				Node mem = getMemoryBeforeLoop(callNode);
+				if (mem == null)
+					return null;
 				Set<Node> memsAfterCall = new HashSet<>();
 				for (Edge edge : BackEdges.getOuts(mem)) {
 					memsAfterCall.add(edge.node);
 				}
-				if (mem == null)
-					return null;
 				Graph graph = callNode.getGraph();
 				Node call = graph.newCall(newBlock, mem, address, parameters, callNode.getType());
 				Node projM = graph.newProj(call, Mode.getM(), 0);
@@ -260,6 +260,8 @@ public class LoopInvariantVisitor extends OptimizationVisitor<Node> {
 				Set<Block> domBorder = dominators.get(preLoopBlock);
 				if (domBorder.containsAll(operandBlocksList)) {
 					Node copy = factory.copyNode(preLoopBlock);
+					if (copy == null)
+						return;
 					addReplacement(node, copy);
 					if (node instanceof Call) {
 						for (Edge backEdge : BackEdges.getOuts(node)) {
