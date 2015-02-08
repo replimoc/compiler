@@ -6,7 +6,7 @@ import firm.nodes.Const;
 import firm.nodes.Node;
 
 public class LoopInfo {
-	private final int cycleCount;
+	private final long cycleCount;
 	private final Const startingValue;
 	private final Const incr;
 	private final Const constCmp;
@@ -18,9 +18,9 @@ public class LoopInfo {
 	private final Block loopHeader;
 	private boolean negative;
 
-	public LoopInfo(int cycleCount, Const startingValue, Const incr, Const constCmp, Node arithmeticNode,
+	public LoopInfo(long cycleCount, Const startingValue, Const incr, Const constCmp, Node arithmeticNode,
 			Node conditionalPhi, Block firstLoopBlock, Block lastLoopBlock, Cmp cmp, Block loopHeader) {
-		this.cycleCount = Math.abs(cycleCount);
+		this.cycleCount = cycleCount; // Also allow MIN_INT
 		this.startingValue = startingValue;
 		this.incr = incr;
 		this.arithmeticNode = arithmeticNode;
@@ -65,8 +65,12 @@ public class LoopInfo {
 		return startingValue;
 	}
 
-	public int getCycleCount() {
+	public long getCycleCount() {
 		return cycleCount;
+	}
+
+	public long getSignedCycleCount() {
+		return cycleCount * (negative ? -1 : 1);
 	}
 
 	public Cmp getCmp() {

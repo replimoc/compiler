@@ -27,6 +27,7 @@ import firm.Graph;
 import firm.MethodType;
 import firm.Mode;
 import firm.Program;
+import firm.Relation;
 import firm.Type;
 import firm.Util;
 import firm.bindings.binding_irdom;
@@ -271,48 +272,46 @@ public final class FirmUtils {
 		return loopContentBlock;
 	}
 
-	private static int getCycleCount(Cmp cmp, Const constCmp, Const startingValue, Const incr) {
-		int count = 0;
-		double value = 0;
-		boolean mod = false;
-		switch (cmp.getRelation()) {
-		case Less:
-			value = (double) (constCmp.getTarval().asInt() - startingValue.getTarval().asInt()) / incr.getTarval().asInt();
-			count = value < 0 ? (int) Math.floor(value) : (int) Math.ceil(value);
-			if (incr.getTarval().isNegative()) {
-				return count < 0 ? Integer.MIN_VALUE : count;
-			} else {
-				return count < 0 ? Integer.MAX_VALUE : count;
-			}
-		case LessEqual:
-			value = (double) (constCmp.getTarval().asInt() - startingValue.getTarval().asInt()) / incr.getTarval().asInt();
-			count = value < 0 ? (int) Math.floor(value) : (int) Math.ceil(value);
-			mod = Math.ceil(value) == Math.floor(value);
-			if (incr.getTarval().isNegative()) {
-				return count - (mod ? 1 : 0) < 0 ? Integer.MIN_VALUE : count + (mod ? 1 : 0);
-			} else {
-				return count - (mod ? 1 : 0) < 0 ? Integer.MAX_VALUE : count + (mod ? 1 : 0);
-			}
+	private static Long getCycleCount(Cmp cmp, Const constCmp, Const startingValue, Const incr) {
+		long start = startingValue.getTarval().asLong();
+		long border = constCmp.getTarval().asLong();
+		long change = incr.getTarval().asLong();
+
+		Relation relation = cmp.getRelation();
+		int minIntOffset = change < 0 ? 1 : 0;
+		if (change == 0) {
+			return null; // Endless loop
+		} else if (change < 0) {
+			relation = relation.inversed();
+			change = -change;
+			start = -start;
+			border = -border;
+		}
+
+		switch (relation) {
 		case Greater:
-			value = (double) (startingValue.getTarval().asInt() - constCmp.getTarval().asInt()) / incr.getTarval().asInt();
-			count = value < 0 ? (int) Math.floor(value) : (int) Math.ceil(value);
-			if (incr.getTarval().isNegative()) {
-				return count > 0 ? Integer.MIN_VALUE : count;
+		case UnorderedGreater:
+			if (start < border) {
+				return (long) Math.ceil((double) Math.abs(border - start) / change);
 			} else {
-				return count > 0 ? Integer.MAX_VALUE : count;
+				return (long) Math.ceil((Integer.MAX_VALUE - start + minIntOffset) / change) + 1;
 			}
 		case GreaterEqual:
-			value = (double) (startingValue.getTarval().asInt() - constCmp.getTarval().asInt()) / incr.getTarval().asInt();
-			count = value < 0 ? (int) Math.floor(value) : (int) Math.ceil(value);
-			mod = Math.ceil(value) == Math.floor(value);
-			if (incr.getTarval().isNegative()) {
-				return count + (mod ? 1 : 0) > 0 ? Integer.MIN_VALUE : count - (mod ? 1 : 0);
+		case UnorderedGreaterEqual:
+			if (start <= border) {
+				return (long) Math.ceil((double) Math.abs(border - start) / change);
 			} else {
-				return count + (mod ? 1 : 0) > 0 ? Integer.MAX_VALUE : count - (mod ? 1 : 0);
+				return (long) Math.ceil((Integer.MAX_VALUE - start + minIntOffset) / change) + 1;
 			}
+		case Less:
+		case UnorderedLess:
+		case LessEqual:
+		case UnorderedLessEqual:
+			return (long) Math.ceil((double) Math.abs(border - start) / change);
 		default:
-			return 0;
+			return null;
 		}
+
 	}
 
 	public static LoopInfo getLoopInfos(Cmp cmp) {
@@ -372,7 +371,13 @@ public final class FirmUtils {
 					return null;
 
 				// get cycle count for loop
-				int cycleCount = getCycleCount(cmp, constant, (Const) startingValue, incr);
+				Long cycleCount = getCycleCount(cmp, constant, (Const) startingValue, incr);
+				if (cycleCount == null)
+					return null;
+
+				System.out.println("start: " + ((Const) startingValue).getTarval().asInt());
+				System.out.println("cyclecount: " + cycleCount);
+
 				return new LoopInfo(cycleCount, (Const) startingValue, incr, constant, arithmeticNode,
 						conditionalPhi, firstLoopBlock, loopTail, cmp, loopHeader);
 			}

@@ -87,6 +87,7 @@ public class LoopUnrolling {
 
 		if (loopInfo == null)
 			return;
+		System.out.println("unroll: " + loopInfo.getSignedCycleCount());
 
 		// if (getPhiCount(entityDetails, loopHeader) > 2) // TODO: Remove this
 		// return;
@@ -96,56 +97,56 @@ public class LoopUnrolling {
 		// TODO: Check if it is the innermost loop!
 
 		int unrollFactor = MAX_UNROLL_FACTOR;
-		while (unrollFactor > 1 && (Math.abs(loopInfo.getCycleCount()) % unrollFactor) != 0) {
+		while (unrollFactor > 1 && (loopInfo.getCycleCount() % unrollFactor) != 0) {
 			unrollFactor -= 1;
 		}
 
 		Graph graph = loopHeader.getGraph();
-		int phiCount = getPhiCount(entityDetails, loopHeader);
-		// unroll if block generates overflow
-		if (loopInfo.getCycleCount() == Integer.MAX_VALUE) {
-			long count = (Integer.MAX_VALUE) - loopInfo.getStartingValue().getTarval().asLong();
-			long mod = count % loopInfo.getIncr().getTarval().asLong();
-			long target = (long) Math.ceil((double) (count) / loopInfo.getIncr().getTarval().asLong() + (mod == 0 ? 1 : 0));
-			if (!isCalculatable(entityDetails, loopInfo.getLastLoopBlock())) {
-				unrollFactor = MAX_UNROLL_FACTOR;
-				while (unrollFactor > 1 && (target % unrollFactor) != 0) {
-					unrollFactor -= 1;
-				}
-				if (unrollFactor < 2)
-					return;
-			} else if (phiCount <= 2) {
-				// calculate loop result
-				long value = Integer.MIN_VALUE + loopInfo.getIncr().getTarval().asLong() - mod - 1;
-				// replaceLoopIfPossible(entityDetails, loopInfo, value, loopInfo.getLastLoopBlock(), nodeReplacements);
-				return; // FIXME
-			}
-		} else if (loopInfo.getCycleCount() == Integer.MIN_VALUE) {
-			long count = (Integer.MIN_VALUE) - loopInfo.getStartingValue().getTarval().asLong();
-			long mod = count % loopInfo.getIncr().getTarval().asLong();
-			long target = (long) Math.ceil((double) count / loopInfo.getIncr().getTarval().asLong()) + (mod == 0 ? 1 : 0);
-			if (!isCalculatable(entityDetails, loopInfo.getLastLoopBlock())) {
-				unrollFactor = MAX_UNROLL_FACTOR;
-				while (unrollFactor > 1 && (target % unrollFactor) != 0) {
-					unrollFactor -= 1;
-				}
-				if (unrollFactor < 2)
-					return;
-			} else if (phiCount <= 2) {
-				// calculate loop result
-				long value = Integer.MAX_VALUE + loopInfo.getIncr().getTarval().asLong() - mod + 1;
-				// replaceLoopIfPossible(entityDetails, loopInfo, value, loopInfo.getLastLoopBlock(), nodeReplacements);
-				return; // FIXME
-			}
-		} else if (phiCount <= 2 && isCalculatable(entityDetails, loopInfo.getLastLoopBlock())) {
-			// calculate loop result
-			long value = loopInfo.getStartingValue().getTarval().asLong()
-					+ (Math.abs(loopInfo.getCycleCount()) * loopInfo.getIncr().getTarval().asLong());
-			// replaceLoopIfPossible(entityDetails, loopInfo, value, loopInfo.getLastLoopBlock(), nodeReplacements);
-			return; // FIXME
-		} else if (Math.abs(loopInfo.getCycleCount()) < 2 || (Math.abs(loopInfo.getCycleCount()) % unrollFactor) != 0) {
-			return;
-		}
+		// int phiCount = getPhiCount(entityDetails, loopHeader);
+		// // unroll if block generates overflow
+		// if (loopInfo.getSignedCycleCount() == Integer.MAX_VALUE) {
+		// long count = (Integer.MAX_VALUE) - loopInfo.getStartingValue().getTarval().asLong();
+		// long mod = count % loopInfo.getIncr().getTarval().asLong();
+		// long target = (long) Math.ceil((double) (count) / loopInfo.getIncr().getTarval().asLong() + (mod == 0 ? 1 : 0));
+		// if (!isCalculatable(entityDetails, loopInfo.getLastLoopBlock())) {
+		// unrollFactor = MAX_UNROLL_FACTOR;
+		// while (unrollFactor > 1 && (target % unrollFactor) != 0) {
+		// unrollFactor -= 1;
+		// }
+		// if (unrollFactor < 2)
+		// return;
+		// } else if (phiCount <= 2) {
+		// // calculate loop result
+		// long value = Integer.MIN_VALUE + loopInfo.getIncr().getTarval().asLong() - mod - 1;
+		// // replaceLoopIfPossible(entityDetails, loopInfo, value, loopInfo.getLastLoopBlock(), nodeReplacements);
+		// // return; // FIXME
+		// }
+		// } else if (loopInfo.getSignedCycleCount() == Integer.MIN_VALUE) {
+		// long count = (Integer.MIN_VALUE) - loopInfo.getStartingValue().getTarval().asLong();
+		// long mod = count % loopInfo.getIncr().getTarval().asLong();
+		// long target = (long) Math.ceil((double) count / loopInfo.getIncr().getTarval().asLong()) + (mod == 0 ? 1 : 0);
+		// if (!isCalculatable(entityDetails, loopInfo.getLastLoopBlock())) {
+		// unrollFactor = MAX_UNROLL_FACTOR;
+		// while (unrollFactor > 1 && (target % unrollFactor) != 0) {
+		// unrollFactor -= 1;
+		// }
+		// if (unrollFactor < 2)
+		// return;
+		// } else if (phiCount <= 2) {
+		// // calculate loop result
+		// long value = Integer.MAX_VALUE + loopInfo.getIncr().getTarval().asLong() - mod + 1;
+		// // replaceLoopIfPossible(entityDetails, loopInfo, value, loopInfo.getLastLoopBlock(), nodeReplacements);
+		// // return; // FIXME
+		// }
+		// } else if (phiCount <= 2 && isCalculatable(entityDetails, loopInfo.getLastLoopBlock())) {
+		// // calculate loop result
+		// long value = loopInfo.getStartingValue().getTarval().asLong()
+		// + (loopInfo.getCycleCount() * loopInfo.getIncr().getTarval().asLong());
+		// // replaceLoopIfPossible(entityDetails, loopInfo, value, loopInfo.getLastLoopBlock(), nodeReplacements);
+		// // return; // FIXME
+		// } else if (loopInfo.getCycleCount() < 2 || (loopInfo.getCycleCount() % unrollFactor) != 0) {
+		// return;
+		// }
 
 		if (unrollFactor < 2) // TODO: Remove this
 			return;
