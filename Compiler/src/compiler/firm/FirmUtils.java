@@ -281,11 +281,11 @@ public final class FirmUtils {
 		if (change == 0)
 			return null; // Endless loop
 
-		// System.out.println("relation: " + relation);
-		// System.out.println("change: " + change);
-		// System.out.println("start: " + start);
-		// System.out.println("border: " + border);
-		// System.out.println("diff: " + (border - start));
+		System.out.println("relation: " + relation);
+		System.out.println("change: " + change);
+		System.out.println("start: " + start);
+		System.out.println("border: " + border);
+		System.out.println("diff: " + (border - start));
 
 		switch (relation) {
 		case Greater:
@@ -402,7 +402,7 @@ public final class FirmUtils {
 				Relation relation = cmp.getRelation();
 
 				if (cmp.getLeft().equals(constant)) {
-					relation = relation.negated();
+					relation = relation.inversed();
 				}
 
 				// get cycle count for loop

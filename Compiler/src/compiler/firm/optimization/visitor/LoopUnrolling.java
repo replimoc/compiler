@@ -138,6 +138,8 @@ public class LoopUnrolling {
 			correction = (int) (loopInfo.getCycleCount() % MAX_UNROLL_FACTOR);
 		}
 
+		System.out.println("loop cycle count: " + loopInfo.getCycleCount());
+
 		System.out.println("unroll factor: " + unrollFactor);
 
 		Graph g = cmp.getGraph();
@@ -398,8 +400,8 @@ public class LoopUnrolling {
 
 			// System.out.println("first mode m: " + );
 
-			nodeMapping.get(firstModeM).setPred(loopHead, connectModeMStart);
-			firstModeM.setPred(loopHead, nodeMapping.get(lastConnectModeM));
+			// nodeMapping.get(firstModeM).setPred(loopHead, connectModeMStart);
+			// firstModeM.setPred(loopHead, nodeMapping.get(lastConnectModeM));
 			System.out.println("first mode m: " + lastConnectModeM);
 
 		} else {
