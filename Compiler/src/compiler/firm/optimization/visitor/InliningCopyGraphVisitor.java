@@ -187,7 +187,12 @@ public class InliningCopyGraphVisitor extends AbstractFirmNodesVisitor {
 		if (nodeMapping.containsKey(node))
 			return;
 
-		copyNode(node).setBlock(graph.getStartBlock());
+		if (!graph.equals(node.getGraph())) {
+			nodeMapping.put(node, graph.newConst(node.getTarval()));
+			// copyedNode.setBlock(graph.getStartBlock());
+		} else {
+			nodeMapping.put(node, node);
+		}
 	}
 
 	@Override

@@ -13,7 +13,7 @@ public class LoopInfo {
 	private final Node arithmeticNode;
 	private final Node conditionalPhi;
 	private final Block firstLoopBlock;
-	private final Block lastLoopBlock;
+	private Block lastLoopBlock;
 	private final Cmp cmp;
 	private final Block loopHeader;
 
@@ -73,6 +73,10 @@ public class LoopInfo {
 
 	public Block getLoopHeader() {
 		return loopHeader;
+	}
+
+	public void setLastLoopBlock(Block lastLoopBlock) {
+		this.lastLoopBlock = lastLoopBlock;
 	}
 
 }

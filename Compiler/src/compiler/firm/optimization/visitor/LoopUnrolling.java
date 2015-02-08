@@ -1,5 +1,6 @@
 package compiler.firm.optimization.visitor;
 
+import java.util.Arrays;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.LinkedList;
@@ -35,30 +36,37 @@ public class LoopUnrolling {
 	private static final int MAX_UNROLL_FACTOR = 8;
 
 	public static void unrollLoops(ProgramDetails programDetails) {
+		HashMap<Graph, EntityDetails> entityDetails = new HashMap<>();
 		for (Entry<Entity, EntityDetails> entityDetail : programDetails.getEntityDetails().entrySet()) {
-			HashMap<Node, Node> replacements = new HashMap<>();
 
 			Graph graph = entityDetail.getKey().getGraph();
 			if (graph == null)
 				continue;
 
+			entityDetails.put(graph, entityDetail.getValue());
+		}
+
+		for (Entry<Graph, EntityDetails> entity : entityDetails.entrySet()) {
+			HashMap<Node, Node> replacements = new HashMap<>();
+
+			Graph graph = entity.getKey();
+			EntityDetails entityDetail = entity.getValue();
 			Set<Cmp> cmps = new HashSet<>();
-			for (Entry<Node, BlockInformation> blockInformation : entityDetail.getValue().getBlockInformations().entrySet()) {
+			for (Entry<Node, BlockInformation> blockInformation : entityDetail.getBlockInformations().entrySet()) {
 				if (blockInformation.getValue().getEndNode() instanceof Cmp) {
 					cmps.add((Cmp) blockInformation.getValue().getEndNode());
 				}
 			}
 
-			BackEdges.enable(graph);
-
 			for (Cmp cmp : cmps) {
 				binding_irdom.compute_postdoms(graph.ptr);
 				binding_irdom.compute_doms(graph.ptr);
+				BackEdges.enable(graph);
 
-				checkAndUnrollLoop(cmp, entityDetail.getValue(), replacements);
+				checkAndUnrollLoop(cmp, programDetails, entityDetail, replacements);
+				BackEdges.disable(graph);
 			}
 
-			BackEdges.disable(graph);
 			compiler.firm.FirmUtils.replaceNodes(replacements);
 			compiler.firm.FirmUtils.removeBadsAndUnreachable(graph);
 			binding_irdom.compute_postdoms(graph.ptr);
@@ -67,7 +75,7 @@ public class LoopUnrolling {
 		}
 	}
 
-	public static void checkAndUnrollLoop(Cmp cmp, EntityDetails entityDetails, HashMap<Node, Node> nodeReplacements) {
+	public static void checkAndUnrollLoop(Cmp cmp, ProgramDetails programDetails, EntityDetails entityDetails, HashMap<Node, Node> nodeReplacements) {
 		Block loopHeader = (Block) cmp.getBlock();
 		if (finishedLoops.contains(loopHeader))
 			return;
@@ -154,7 +162,26 @@ public class LoopUnrolling {
 
 		// replace the increment operation
 
-		unroll(entityDetails, loopInfo, unrollFactor, nodeReplacements);
+		System.out.println(unrollFactor);
+		if (unrollFactor % 2 == 1)
+			return;
+
+		for (int i = unrollFactor; i > 0 && i % 2 == 0; i = i / 2) {
+			Graph g = cmp.getGraph();
+			BackEdges.disable(g);
+			programDetails.updateGraphs(Arrays.asList(g));
+			BackEdges.enable(g);
+
+			HashMap<Node, Node> replacements = new HashMap<>();
+			entityDetails = programDetails.getEntityDetails(g);
+			unroll(entityDetails, loopInfo, 2, replacements);
+			compiler.firm.FirmUtils.replaceNodes(replacements);
+			compiler.firm.FirmUtils.removeBadsAndUnreachable(graph);
+			binding_irdom.compute_postdoms(graph.ptr);
+			binding_irdom.compute_doms(graph.ptr);
+
+			loopInfo.setLastLoopBlock(FirmUtils.getLoopTailIfHeader(loopHeader));
+		}
 		finishedLoops.add(loopHeader);
 
 	}

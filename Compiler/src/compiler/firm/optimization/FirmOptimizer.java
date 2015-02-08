@@ -40,7 +40,6 @@ public final class FirmOptimizer {
 			// all optimizations should run on the current graph
 			// do not optimize evaluateGraphs out!
 			finished = true;
-
 			finished &= ObsoleteNodesEliminator.eliminateObsoleteGraphs(evaluateGraphs());
 			finished &= optimize(NormalizationVisitor.FACTORY);
 			finished &= optimize(ConstantFoldingVisitor.FACTORY);
@@ -70,7 +69,6 @@ public final class FirmOptimizer {
 			LinkedList<Node> workList = new LinkedList<>();
 
 			OptimizationVisitor<T> visitor = visitorFactory.create();
-
 			BackEdges.enable(graph);
 			visitor.init(graph);
 			walkTopological(graph, workList, visitor);
