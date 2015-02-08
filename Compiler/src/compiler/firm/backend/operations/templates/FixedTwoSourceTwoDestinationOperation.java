@@ -101,9 +101,6 @@ public abstract class FixedTwoSourceTwoDestinationOperation extends AssemblerOpe
 		commandList.addAll(getOperationString(source2.getMode(), usedSource2));
 		source2.setTemporaryStackOffset(0);
 
-		if ((!aliveRegisters.contains(RegisterBundle._AX) && source2OnRax) || (!aliveRegisters.contains(RegisterBundle._DX) && source2OnRdx)) {
-			commandList.add(new AddOperation(new Constant(X8664AssemblerGenerationVisitor.STACK_ITEM_SIZE), SingleRegister.RSP, SingleRegister.RSP).toString());
-		}
 		if (destination1 != null) {
 			destination1.setTemporaryStackOffset(temporaryStackOffset);
 			commandList.addAll(Arrays.asList(new MovOperation(SingleRegister.EAX, destination1).toString()));
@@ -117,8 +114,15 @@ public abstract class FixedTwoSourceTwoDestinationOperation extends AssemblerOpe
 
 		if (aliveRegisters.contains(RegisterBundle._DX))
 			commandList.add(new PopOperation(SingleRegister.RDX).toString());
+		else if (source2OnRdx)
+			commandList.add(new AddOperation(new Constant(X8664AssemblerGenerationVisitor.STACK_ITEM_SIZE), SingleRegister.RSP, SingleRegister.RSP)
+					.toString());
+
 		if (aliveRegisters.contains(RegisterBundle._AX))
 			commandList.add(new PopOperation(SingleRegister.RAX).toString());
+		else if (source2OnRax)
+			commandList.add(new AddOperation(new Constant(X8664AssemblerGenerationVisitor.STACK_ITEM_SIZE), SingleRegister.RSP, SingleRegister.RSP)
+					.toString());
 
 		return commandList.toArray(new String[0]);
 	}
