@@ -163,8 +163,13 @@ public class LoopUnrolling {
 		// replace the increment operation
 
 		System.out.println(unrollFactor);
+
 		if (unrollFactor % 2 == 1)
 			return;
+
+		if (loopInfo.getCycleCount() > 0) {
+			System.out.println(loopInfo.getCycleCount());
+		}
 
 		for (int i = unrollFactor; i > 0 && i % 2 == 0; i = i / 2) {
 			Graph g = cmp.getGraph();

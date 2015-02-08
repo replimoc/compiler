@@ -16,10 +16,11 @@ public class LoopInfo {
 	private Block lastLoopBlock;
 	private final Cmp cmp;
 	private final Block loopHeader;
+	private boolean negative;
 
 	public LoopInfo(int cycleCount, Const startingValue, Const incr, Const constCmp, Node arithmeticNode,
 			Node conditionalPhi, Block firstLoopBlock, Block lastLoopBlock, Cmp cmp, Block loopHeader) {
-		this.cycleCount = cycleCount;
+		this.cycleCount = Math.abs(cycleCount);
 		this.startingValue = startingValue;
 		this.incr = incr;
 		this.arithmeticNode = arithmeticNode;
@@ -29,6 +30,7 @@ public class LoopInfo {
 		this.firstLoopBlock = firstLoopBlock;
 		this.lastLoopBlock = lastLoopBlock;
 		this.loopHeader = loopHeader;
+		this.negative = cycleCount < 0;
 	}
 
 	public boolean isOneBlockLoop() {
