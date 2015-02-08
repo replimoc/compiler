@@ -189,13 +189,13 @@ public class AssemblerProgram {
 		walkBlocksReversePostorder(new AssemblerOperationsBlockWalker() {
 			@Override
 			public void visitBlock(AssemblerOperationsBlock operationsBlock) {
-				if (operationsBlock == null) {
-					return;
-				}
-
 				operationsBlock.executeMinAlgorithm(insertedReloads, availableRegisters, stackInfoSupplier);
 			}
 		});
+
+		for (Entry<Block, AssemblerOperationsBlock> operationsBlock : operationsBlocks.entrySet()) {
+			operationsBlock.getValue().insertCupplingCode(insertedReloads, stackInfoSupplier);
+		}
 
 		return insertedReloads;
 	}

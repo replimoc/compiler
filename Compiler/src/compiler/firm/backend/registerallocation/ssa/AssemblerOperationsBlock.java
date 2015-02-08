@@ -48,7 +48,9 @@ public class AssemblerOperationsBlock {
 
 	private final Map<VirtualRegister, AssemblerOperation> lastUsed = new HashMap<>();
 
+	private final Set<VirtualRegister> wEntry = new HashSet<>();
 	private final Set<VirtualRegister> wExit = new HashSet<>();
+	private final Set<VirtualRegister> sEntry = new HashSet<>();
 	private final Set<VirtualRegister> sExit = new HashSet<>();
 
 	private final Set<AssemblerOperationsBlock> dominanceFrontier = new HashSet<>();
@@ -237,11 +239,13 @@ public class AssemblerOperationsBlock {
 		}
 	}
 
-	public Set<VirtualRegister> calculateWEntry(int availableRegisters) {
+	public void calculateWEntry(int availableRegisters) {
+		this.wEntry.clear();
+
 		// if (isLoopHead) {
 		// calculateWLoopHead(availableRegisters);
 		// } else {
-		return calculateWNormalBlock(availableRegisters);
+		this.wEntry.addAll(calculateWNormalBlock(availableRegisters));
 		// }
 	}
 
@@ -302,8 +306,8 @@ public class AssemblerOperationsBlock {
 	// // TODO Auto-generated method stub
 	// }
 
-	private Set<VirtualRegister> calculateSEntry(Set<VirtualRegister> wEntry) {
-		Set<VirtualRegister> sEntry = new HashSet<>();
+	private void calculateSEntry() {
+		sEntry.clear();
 
 		for (AssemblerOperationsBlock predecessor : predecessors) {
 			for (VirtualRegister predSExit : predecessor.sExit) {
@@ -312,8 +316,6 @@ public class AssemblerOperationsBlock {
 				}
 			}
 		}
-
-		return sEntry;
 	}
 
 	private void setWExit(Set<VirtualRegister> aliveRegisters) {
@@ -328,10 +330,13 @@ public class AssemblerOperationsBlock {
 
 	public void executeMinAlgorithm(Map<VirtualRegister, List<ReloadOperation>> insertedReloads, int availableRegisters,
 			StackInfoSupplier stackInfoSupplier) {
-		Set<VirtualRegister> aliveRegisters = this.calculateWEntry(availableRegisters);
-		Set<VirtualRegister> spilledRegisters = this.calculateSEntry(aliveRegisters);
+		System.out.println(this);
 
-		insertCupplingCode(insertedReloads, stackInfoSupplier, aliveRegisters, spilledRegisters);
+		this.calculateWEntry(availableRegisters);
+		this.calculateSEntry();
+
+		Set<VirtualRegister> aliveRegisters = new HashSet<>(wEntry);
+		Set<VirtualRegister> spilledRegisters = new HashSet<>(sEntry);
 
 		Utils.debugln(DEBUG_MIN_ALGORITHM, block);
 		Utils.debugln(DEBUG_MIN_ALGORITHM, "\twEntry: " + aliveRegisters);
@@ -364,11 +369,11 @@ public class AssemblerOperationsBlock {
 		Utils.debugln(DEBUG_MIN_ALGORITHM, "\twExit: " + wExit);
 	}
 
-	private void insertCupplingCode(Map<VirtualRegister, List<ReloadOperation>> insertedReloads, StackInfoSupplier stackInfoSupplier,
-			Set<VirtualRegister> wEntry, Set<VirtualRegister> sEntry) {
+	public void insertCupplingCode(Map<VirtualRegister, List<ReloadOperation>> insertedReloads, StackInfoSupplier stackInfoSupplier) {
 		for (AssemblerOperationsBlock predecessor : predecessors) {
 			Set<VirtualRegister> reloads = new HashSet<>(wEntry);
 			reloads.removeAll(predecessor.wExit);
+			reloads.removeAll(predecessor.kills);
 
 			Set<VirtualRegister> spills = new HashSet<>(sEntry);
 			spills.removeAll(predecessor.sExit);

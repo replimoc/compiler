@@ -17,10 +17,8 @@ import compiler.firm.backend.operations.TextOperation;
 import compiler.firm.backend.operations.templates.AssemblerOperation;
 import compiler.firm.backend.registerallocation.RegisterAllocationPolicy;
 import compiler.firm.backend.registerallocation.ssa.AssemblerProgram;
-import compiler.firm.backend.registerallocation.ssa.MustSpillException;
-import compiler.firm.backend.registerallocation.ssa.SimpleSsaSpiller;
+import compiler.firm.backend.registerallocation.ssa.SplittingSsaSpiller;
 import compiler.firm.backend.registerallocation.ssa.SsaRegisterAllocator;
-import compiler.utils.Utils;
 
 import firm.BackEdges;
 import firm.BlockWalker;
@@ -86,28 +84,28 @@ public final class AssemblerGenerator {
 	}
 
 	private static void allocateRegistersSsa(Graph graph, AssemblerProgram program, boolean noRegisters, boolean debugRegisterAllocation) {
-		// RegisterAllocationPolicy policy = RegisterAllocationPolicy.A_B;
-		// SplittingSsaSpiller ssaSpiller = new SplittingSsaSpiller(program);
-		// ssaSpiller.reduceRegisterPressure(2, true);
+		RegisterAllocationPolicy policy = RegisterAllocationPolicy.A_B_C;
+		SplittingSsaSpiller ssaSpiller = new SplittingSsaSpiller(program);
+		ssaSpiller.reduceRegisterPressure(policy.getNumberOfRegisters(Bit.BIT64), true);
 
 		if (debugRegisterAllocation)
 			program.generatePlainAssemblerFile(".plain");
 
-		SimpleSsaSpiller ssaSpiller = new SimpleSsaSpiller(program);
-		RegisterAllocationPolicy policy;
-		if (noRegisters) {
-			policy = RegisterAllocationPolicy.NO_REGISTERS;
-			ssaSpiller.reduceRegisterPressure(policy.getNumberOfRegisters(Bit.BIT64), true);
-		} else {
-			try {
-				policy = RegisterAllocationPolicy.BP_B_12_13_14_15_A__DI_SI_D_C_8_9_10_11;
-				ssaSpiller.reduceRegisterPressure(policy.getNumberOfRegisters(Bit.BIT64), false);
-			} catch (MustSpillException e) {
-				Utils.debugln(true, "Cannot use large policy, using small policy with spilling");
-				policy = RegisterAllocationPolicy.BP_B_12_13_14_15_A__DI_SI_D_C_8;
-				ssaSpiller.reduceRegisterPressure(policy.getNumberOfRegisters(Bit.BIT64), true);
-			}
-		}
+		// SimpleSsaSpiller ssaSpiller = new SimpleSsaSpiller(program);
+		// RegisterAllocationPolicy policy;
+		// if (noRegisters) {
+		// policy = RegisterAllocationPolicy.NO_REGISTERS;
+		// ssaSpiller.reduceRegisterPressure(policy.getNumberOfRegisters(Bit.BIT64), true);
+		// } else {
+		// try {
+		// policy = RegisterAllocationPolicy.BP_B_12_13_14_15_A__DI_SI_D_C_8_9_10_11;
+		// ssaSpiller.reduceRegisterPressure(policy.getNumberOfRegisters(Bit.BIT64), false);
+		// } catch (MustSpillException e) {
+		// Utils.debugln(true, "Cannot use large policy, using small policy with spilling");
+		// policy = RegisterAllocationPolicy.BP_B_12_13_14_15_A__DI_SI_D_C_8;
+		// ssaSpiller.reduceRegisterPressure(policy.getNumberOfRegisters(Bit.BIT64), true);
+		// }
+		// }
 
 		SsaRegisterAllocator ssaAllocator = new SsaRegisterAllocator(program);
 		ssaAllocator.colorGraph(policy);
