@@ -272,12 +272,11 @@ public final class FirmUtils {
 		return loopContentBlock;
 	}
 
-	private static Long getCycleCount(Cmp cmp, Const constCmp, Const startingValue, Const incr) {
+	private static Long getCycleCount(Relation relation, Const constCmp, Const startingValue, Const incr) {
 		long start = startingValue.getTarval().asLong();
 		long border = constCmp.getTarval().asLong();
 		long change = incr.getTarval().asLong();
 
-		Relation relation = cmp.getRelation();
 		boolean addition = change > 0;
 		if (change == 0)
 			return null; // Endless loop
@@ -403,8 +402,19 @@ public final class FirmUtils {
 				if (startingValue == null || !(startingValue instanceof Const))
 					return null;
 
+				if (!(arithmeticNode instanceof Add))
+					return null;
+
+				Relation relation = cmp.getRelation();
+				System.out.println(relation);
+				if (cmp.getLeft().equals(constant)) {
+					relation = relation.negated();
+				}
+				System.out.println("left: " + cmp.getLeft());
+				System.out.println("right: " + cmp.getRight());
+
 				// get cycle count for loop
-				Long cycleCount = getCycleCount(cmp, constant, (Const) startingValue, incr);
+				Long cycleCount = getCycleCount(relation, constant, (Const) startingValue, incr);
 				if (cycleCount == null)
 					return null;
 
