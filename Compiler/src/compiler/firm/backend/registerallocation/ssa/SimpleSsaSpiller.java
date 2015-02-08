@@ -11,11 +11,14 @@ import compiler.firm.backend.storage.MemoryPointer;
 import compiler.firm.backend.storage.RegisterBased;
 import compiler.firm.backend.storage.SingleRegister;
 import compiler.firm.backend.storage.VirtualRegister;
+import compiler.utils.Utils;
 
 import firm.BlockWalker;
 import firm.nodes.Block;
 
 public class SimpleSsaSpiller {
+
+	private static final boolean DEBUG_SPILLED_REGISTERS = false;
 
 	private final AssemblerProgram program;
 
@@ -80,7 +83,7 @@ public class SimpleSsaSpiller {
 			}
 		}
 
-		SsaRegisterAllocator.debugln("spilling register: VR_" + toBeSpilled.getNum());
+		Utils.debugln(DEBUG_SPILLED_REGISTERS, "spilling register: VR_" + toBeSpilled.getNum());
 		aliveRegisters.remove(toBeSpilled);
 		spillRegister(toBeSpilled);
 	}

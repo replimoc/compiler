@@ -29,6 +29,9 @@ import firm.nodes.Block;
 import firm.nodes.Node;
 
 public class AssemblerOperationsBlock {
+	private static final boolean DEBUG_MIN_ALGORITHM = false;
+	private static final boolean DEBUG_W_ENTRY_CALCULATION = false;
+
 	private final Block block;
 	private final boolean isLoopHead;
 	private ArrayList<AssemblerOperation> operations;
@@ -281,19 +284,18 @@ public class AssemblerOperationsBlock {
 			}
 		});
 
-		boolean debugW = false;
-		Utils.debugln(debugW, "\n" + block);
-		Utils.debug(debugW, "\tCandiates: ");
+		Utils.debugln(DEBUG_W_ENTRY_CALCULATION, "\n" + block);
+		Utils.debug(DEBUG_W_ENTRY_CALCULATION, "\tCandiates: ");
 		for (VirtualRegister curr : candidatesList) {
-			Utils.debug(debugW, "\tVR_" + curr.getNum());
+			Utils.debug(DEBUG_W_ENTRY_CALCULATION, "\tVR_" + curr.getNum());
 		}
-		Utils.debugln(debugW, "");
+		Utils.debugln(DEBUG_W_ENTRY_CALCULATION, "");
 
 		Iterator<VirtualRegister> iterator = candidatesList.iterator();
 		for (int i = wEntry.size(); i < availableRegisters && iterator.hasNext(); i++) {
 			wEntry.add(iterator.next());
 		}
-		Utils.debugln(debugW, "\tw: " + wEntry);
+		Utils.debugln(DEBUG_W_ENTRY_CALCULATION, "\tw: " + wEntry);
 
 		return wEntry;
 	}
@@ -328,16 +330,14 @@ public class AssemblerOperationsBlock {
 
 	public void executeMinAlgorithm(Map<VirtualRegister, List<ReloadOperation>> insertedReloads, int availableRegisters,
 			StackInfoSupplier stackInfoSupplier) {
-		boolean debugMinAlgo = false;
-
 		Set<VirtualRegister> aliveRegisters = this.calculateWEntry(availableRegisters);
 		Set<VirtualRegister> spilledRegisters = this.calculateSEntry(aliveRegisters);
 
 		insertCupplingCode(insertedReloads, stackInfoSupplier, aliveRegisters, spilledRegisters);
 
-		Utils.debugln(debugMinAlgo, block);
-		Utils.debugln(debugMinAlgo, "\twEntry: " + aliveRegisters);
-		Utils.debugln(debugMinAlgo, "\tsEntry: " + spilledRegisters);
+		Utils.debugln(DEBUG_MIN_ALGORITHM, block);
+		Utils.debugln(DEBUG_MIN_ALGORITHM, "\twEntry: " + aliveRegisters);
+		Utils.debugln(DEBUG_MIN_ALGORITHM, "\tsEntry: " + spilledRegisters);
 
 		// Min algorithm; see RegisterSpillAndLiveRangeSplittingForSSA page 3
 		for (AssemblerOperation operation : operations) {
@@ -362,8 +362,8 @@ public class AssemblerOperationsBlock {
 		this.setWExit(aliveRegisters);
 		this.setSExit(spilledRegisters);
 
-		Utils.debugln(debugMinAlgo, "\tsExit: " + sExit);
-		Utils.debugln(debugMinAlgo, "\twExit: " + wExit);
+		Utils.debugln(DEBUG_MIN_ALGORITHM, "\tsExit: " + sExit);
+		Utils.debugln(DEBUG_MIN_ALGORITHM, "\twExit: " + wExit);
 	}
 
 	private void insertCupplingCode(Map<VirtualRegister, List<ReloadOperation>> insertedReloads, StackInfoSupplier stackInfoSupplier,

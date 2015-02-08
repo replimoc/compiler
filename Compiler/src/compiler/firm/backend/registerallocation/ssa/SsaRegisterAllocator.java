@@ -11,6 +11,7 @@ import compiler.firm.backend.storage.RegisterBased;
 import compiler.firm.backend.storage.RegisterBundle;
 import compiler.firm.backend.storage.SingleRegister;
 import compiler.firm.backend.storage.VirtualRegister;
+import compiler.utils.Utils;
 
 import firm.BlockWalker;
 import firm.nodes.Block;
@@ -31,7 +32,7 @@ public class SsaRegisterAllocator {
 			}
 		});
 
-		debugln("used registers (" + program.getUsedRegisters().size() + "): " + program.getUsedRegisters());
+		Utils.debugln(DEBUG, "used registers (" + program.getUsedRegisters().size() + "): " + program.getUsedRegisters());
 	}
 
 	private void colorBlock(Block block, RegisterAllocationPolicy policy) {
@@ -101,16 +102,6 @@ public class SsaRegisterAllocator {
 			usedBundles.removeAll(freeRegisters);
 			((CurrentlyAliveRegistersNeeding) operation).setAliveRegisters(usedBundles);
 		}
-	}
-
-	public static void debugln(Object o) {
-		if (DEBUG)
-			System.out.println("DEBUG IG: " + o);
-	}
-
-	public static void debug(Object o) {
-		if (DEBUG)
-			System.out.print(o);
 	}
 
 	public static void setDebuggingMode(boolean debug) {

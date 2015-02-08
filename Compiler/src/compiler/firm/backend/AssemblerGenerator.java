@@ -21,7 +21,9 @@ import compiler.firm.backend.registerallocation.ssa.AssemblerOperationsBlock;
 import compiler.firm.backend.registerallocation.ssa.AssemblerProgram;
 import compiler.firm.backend.registerallocation.ssa.MustSpillException;
 import compiler.firm.backend.registerallocation.ssa.SimpleSsaSpiller;
+import compiler.firm.backend.registerallocation.ssa.SplittingSsaSpiller;
 import compiler.firm.backend.registerallocation.ssa.SsaRegisterAllocator;
+import compiler.utils.Utils;
 
 import firm.BackEdges;
 import firm.BlockWalker;
@@ -72,8 +74,8 @@ public final class AssemblerGenerator {
 
 			AssemblerProgram assemblerProgram = visitor.getAssemblerProgram(graph);
 
-			// SplittingSsaSpiller splittingSsaSpiller = new SplittingSsaSpiller(assemblerProgram);
-			// splittingSsaSpiller.reduceRegisterPressure(2, true);
+	//		SplittingSsaSpiller splittingSsaSpiller = new SplittingSsaSpiller(assemblerProgram);
+	//		splittingSsaSpiller.reduceRegisterPressure(2, true);
 
 			if (debugRegisterAllocation)
 				generatePlainAssemblerFile(Paths.get(graph.getEntity().getLdName() + ".plain"), assemblerProgram, blockInfos);
@@ -104,7 +106,7 @@ public final class AssemblerGenerator {
 				policy = RegisterAllocationPolicy.BP_B_12_13_14_15_A__DI_SI_D_C_8_9_10_11;
 				ssaSpiller.reduceRegisterPressure(policy.getNumberOfRegisters(Bit.BIT64), false);
 			} catch (MustSpillException e) {
-				SsaRegisterAllocator.debugln("Cannot use large policy, using small policy with spilling");
+				Utils.debugln(true, "Cannot use large policy, using small policy with spilling");
 				policy = RegisterAllocationPolicy.BP_B_12_13_14_15_A__DI_SI_D_C_8;
 				ssaSpiller.reduceRegisterPressure(policy.getNumberOfRegisters(Bit.BIT64), true);
 			}

@@ -12,10 +12,14 @@ import compiler.firm.FirmUtils;
 import compiler.firm.backend.operations.dummy.MethodStartEndOperation;
 import compiler.firm.backend.operations.templates.AssemblerOperation;
 import compiler.firm.backend.storage.RegisterBundle;
+import compiler.utils.Utils;
+
 import firm.Graph;
 import firm.nodes.Block;
 
 public class AssemblerProgram {
+	private static final boolean DEBUG_LIVE_IN_LIVE_OUT = false;
+
 	private final Graph graph;
 	private final Map<Block, AssemblerOperationsBlock> operationsBlocks;
 	private final Set<RegisterBundle> usedRegisters = new HashSet<>();
@@ -46,7 +50,7 @@ public class AssemblerProgram {
 		}
 
 		for (Entry<Block, AssemblerOperationsBlock> entry : operationsBlocks.entrySet()) {
-			SsaRegisterAllocator.debugln(entry.getValue());
+			Utils.debugln(DEBUG_LIVE_IN_LIVE_OUT, entry.getValue());
 		}
 	}
 
