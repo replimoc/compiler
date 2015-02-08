@@ -9,6 +9,7 @@ import compiler.firm.backend.TransferGraphSolver;
 import compiler.firm.backend.operations.templates.AssemblerBitOperation;
 import compiler.firm.backend.storage.RegisterBased;
 import compiler.firm.backend.storage.Storage;
+import compiler.firm.backend.storage.VirtualRegister;
 import compiler.utils.Pair;
 
 public class PhiReadOperation extends AssemblerBitOperation {
@@ -22,6 +23,10 @@ public class PhiReadOperation extends AssemblerBitOperation {
 	@Override
 	public String getOperationString() {
 		return "\t# phi read ";
+	}
+
+	public void addPhiRelation(Storage source, VirtualRegister destination) {
+		phiRelations.add(new Pair<Storage, RegisterBased>(source, destination));
 	}
 
 	@Override

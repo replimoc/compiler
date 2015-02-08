@@ -5,6 +5,7 @@ import java.util.Set;
 
 import compiler.firm.backend.operations.templates.AssemblerBitOperation;
 import compiler.firm.backend.storage.RegisterBased;
+import compiler.firm.backend.storage.VirtualRegister;
 
 public class PhiWriteOperation extends AssemblerBitOperation {
 
@@ -23,6 +24,10 @@ public class PhiWriteOperation extends AssemblerBitOperation {
 	@Override
 	public String[] toStringWithSpillcode() {
 		return new String[] { toString() };
+	}
+
+	public void addWriteRegister(VirtualRegister register) {
+		registers.add(register);
 	}
 
 	@Override

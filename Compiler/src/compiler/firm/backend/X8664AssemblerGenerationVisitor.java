@@ -56,6 +56,7 @@ import compiler.firm.backend.storage.VirtualRegister;
 import compiler.utils.MathUtils;
 import compiler.utils.Pair;
 import compiler.utils.Utils;
+
 import firm.BackEdges;
 import firm.BackEdges.Edge;
 import firm.Graph;
@@ -406,13 +407,11 @@ public class X8664AssemblerGenerationVisitor implements BulkPhiNodeVisitor {
 		// prepend a label before each block
 		addOperation(getBlockLabel(block));
 
-		if (!phis.isEmpty()) {
-			Set<RegisterBased> phiRegisters = new HashSet<>();
-			for (Phi phi : phis) {
-				phiRegisters.add(storageManagement.getValue(phi));
-			}
-			addOperation(new PhiWriteOperation(phiRegisters));
+		Set<RegisterBased> phiRegisters = new HashSet<>();
+		for (Phi phi : phis) {
+			phiRegisters.add(storageManagement.getValue(phi));
 		}
+		addOperation(new PhiWriteOperation(phiRegisters));
 	}
 
 	@Override
@@ -739,11 +738,8 @@ public class X8664AssemblerGenerationVisitor implements BulkPhiNodeVisitor {
 
 	@Override
 	public void visit(List<Phi> phis) {
-		if (phis.isEmpty()) {
-			return;
-		}
-
 		List<Pair<Storage, RegisterBased>> phiRelations = new LinkedList<>();
+
 		for (Phi phi : phis) {
 			Storage source = storageManagement.getStorage(getRelevantPredecessor(phi));
 			RegisterBased destination = storageManagement.getValue(phi);

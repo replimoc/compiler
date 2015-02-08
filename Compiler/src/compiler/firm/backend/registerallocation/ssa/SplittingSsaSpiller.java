@@ -1,6 +1,7 @@
 package compiler.firm.backend.registerallocation.ssa;
 
 import java.lang.reflect.Field;
+import java.util.Collection;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
@@ -8,8 +9,11 @@ import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Set;
 
+import compiler.firm.backend.Bit;
 import compiler.firm.backend.X8664AssemblerGenerationVisitor;
 import compiler.firm.backend.operations.ReloadOperation;
+import compiler.firm.backend.operations.dummy.phi.PhiReadOperation;
+import compiler.firm.backend.operations.dummy.phi.PhiWriteOperation;
 import compiler.firm.backend.operations.templates.AssemblerOperation;
 import compiler.firm.backend.storage.MemoryPointer;
 import compiler.firm.backend.storage.SingleRegister;
@@ -23,7 +27,6 @@ public class SplittingSsaSpiller implements StackInfoSupplier {
 
 	private final AssemblerProgram program;
 	private final Map<VirtualRegister, MemoryPointer> stackLocations = new HashMap<>();
-	private final Map<VirtualRegister, List<ReloadOperation>> insertedReloads = new HashMap<>();
 
 	private int currentStackOffset = 0;
 
@@ -32,11 +35,15 @@ public class SplittingSsaSpiller implements StackInfoSupplier {
 	}
 
 	public void reduceRegisterPressure(final int availableRegisters, final boolean allowSpilling) {
-		program.executeMinAlgorithm(this, availableRegisters, allowSpilling);
+		Map<VirtualRegister, List<ReloadOperation>> insertedReloads = program.executeMinAlgorithm(this, availableRegisters, allowSpilling);
 		program.calculateDominanceFrontiers();
 
 		Utils.debugln(false, insertedReloads);
 
+		reestablishSsaProperty(insertedReloads);
+	}
+
+	private void reestablishSsaProperty(Map<VirtualRegister, List<ReloadOperation>> insertedReloads) {
 		for (Entry<VirtualRegister, List<ReloadOperation>> reloadEntry : insertedReloads.entrySet()) {
 			Set<AssemblerOperationsBlock> labelBlocks = new HashSet<>();
 			VirtualRegister spilledRegister = reloadEntry.getKey();
@@ -49,29 +56,65 @@ public class SplittingSsaSpiller implements StackInfoSupplier {
 			Utils.debugln(DEBUG_I_DOMINANCE_FRONTIER, "iterated dominance border for " + spilledRegister + " with blocks " + labelBlocks
 					+ "    is: " + iteratedDominanceFrontier);
 
-			Set<VirtualRegister> definitions = new HashSet<>();
+			Map<AssemblerOperation, VirtualRegister> definitions = new HashMap<>();
+			Set<AssemblerOperationsBlock> definitionsBlocks = new HashSet<>();
 
 			Utils.debugln(DEBUG_VR_REPLACING, "replacing " + spilledRegister + " definined in " + spilledRegister.getDefinition());
+			Bit mode = spilledRegister.getMode();
 			for (ReloadOperation currReload : reloadEntry.getValue()) {
-				VirtualRegister newRegister = new VirtualRegister(spilledRegister.getMode());
 				Utils.debugln(DEBUG_VR_REPLACING, currReload);
+				// replace old register with a new one
+				VirtualRegister newRegister = new VirtualRegister(mode);
+				newRegister.setDefinition(currReload);
 				replaceVirtualRegister(currReload, spilledRegister, newRegister);
 				Utils.debugln(DEBUG_VR_REPLACING, currReload);
-				definitions.add(newRegister);
-				newRegister.setDefinition(currReload);
+
+				// calculate maps
+				definitions.put(currReload, newRegister);
+				definitionsBlocks.add(currReload.getOperationsBlock());
 			}
-			definitions.add(spilledRegister);
+			definitions.put(spilledRegister.getDefinition(), spilledRegister);
+			definitionsBlocks.add(spilledRegister.getDefinition().getOperationsBlock());
 
 			for (AssemblerOperation use : spilledRegister.getUsages()) {
-				VirtualRegister newDefinition = findDefinition(use, definitions, iteratedDominanceFrontier);
+				VirtualRegister newDefinition = findDefinition(use, use.getOperationsBlock(), definitions, definitionsBlocks,
+						iteratedDominanceFrontier, mode);
 				replaceVirtualRegister(use, spilledRegister, newDefinition);
 			}
 		}
+
+		program.calculateLiveInAndLiveOut();
 	}
 
-	private VirtualRegister findDefinition(AssemblerOperation use, Set<VirtualRegister> definitions,
-			Set<AssemblerOperationsBlock> iteratedDominanceFrontier) {
-		// TODO Auto-generated method stub
+	private VirtualRegister findDefinition(AssemblerOperation useInBlock, AssemblerOperationsBlock block,
+			Map<AssemblerOperation, VirtualRegister> definitions,
+			Set<AssemblerOperationsBlock> definitionsBlocks, Set<AssemblerOperationsBlock> iteratedDominanceFrontier, Bit mode) {
+
+		while (block != null) {
+			if (definitionsBlocks.contains(block)) { // the current block contains a definition, use it.
+				VirtualRegister foundDefinition = block.findDefinition(useInBlock, definitions);
+				if (foundDefinition != null) {
+					return foundDefinition;
+				}
+			}
+
+			if (iteratedDominanceFrontier.contains(block)) { // we need to insert a phi
+				VirtualRegister phiResult = new VirtualRegister(mode);
+
+				PhiWriteOperation phiWrite = block.getPhiWrite();
+				phiWrite.addWriteRegister(phiResult);
+				definitions.put(phiWrite, phiResult); // add the new definition
+
+				for (AssemblerOperationsBlock predecessor : block.getPredecessors()) {
+					PhiReadOperation phiRead = predecessor.getPhiRead();
+					VirtualRegister source = findDefinition(null, predecessor, definitions, definitionsBlocks, iteratedDominanceFrontier, mode);
+					phiRead.addPhiRelation(source, phiResult);
+				}
+			}
+
+			block = program.getIDom(block); // walk dominator tree upwards
+		}
+
 		return null;
 	}
 
@@ -103,6 +146,10 @@ public class SplittingSsaSpiller implements StackInfoSupplier {
 						field.set(object, replacementRegister);
 					} else if (fieldObject instanceof MemoryPointer) {
 						replaceVirtualRegister(fieldObject, originalRegister, replacementRegister);
+					} else if (fieldObject instanceof Collection && fieldObject != null) {
+						for (Object fieldItem : ((Collection<?>) fieldObject)) {
+							replaceVirtualRegister(fieldItem, originalRegister, replacementRegister);
+						}
 					}
 				}
 				classType = classType.getSuperclass();

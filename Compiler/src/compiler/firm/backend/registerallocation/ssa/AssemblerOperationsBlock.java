@@ -24,6 +24,7 @@ import compiler.firm.backend.storage.RegisterBased;
 import compiler.firm.backend.storage.VirtualRegister;
 import compiler.utils.Pair;
 import compiler.utils.Utils;
+
 import firm.nodes.Block;
 import firm.nodes.Node;
 
@@ -38,10 +39,10 @@ public class AssemblerOperationsBlock {
 	private final PhiReadOperation phiRead;
 	private final PhiWriteOperation phiWrite;
 
-	private final HashMap<AssemblerOperation, List<AssemblerOperation>> additionalOperations = new HashMap<>();
-
 	private final Set<AssemblerOperationsBlock> predecessors = new HashSet<>();
 	private final Set<AssemblerOperationsBlock> successors = new HashSet<>();
+
+	private final HashMap<AssemblerOperation, List<AssemblerOperation>> additionalOperations = new HashMap<>();
 
 	private final Map<VirtualRegister, Integer> uses = new HashMap<>();
 	private final Set<VirtualRegister> kills = new HashSet<>();
@@ -72,7 +73,8 @@ public class AssemblerOperationsBlock {
 				} else if (operation instanceof CmpOperation) {
 					conditionOrJump = operation;
 				}
-			} else if (operation instanceof PhiReadOperation) {
+			}
+			if (operation instanceof PhiReadOperation) {
 				phiRead = (PhiReadOperation) operation;
 			} else if (operation instanceof PhiWriteOperation) {
 				phiWrite = (PhiWriteOperation) operation;
@@ -100,9 +102,7 @@ public class AssemblerOperationsBlock {
 	}
 
 	public void calculateUsesAndKills() {
-		uses.clear();
-		kills.clear();
-		lastUsed.clear();
+		clear();
 
 		for (int i = operations.size() - 1; i >= 0; i--) {
 			AssemblerOperation operation = operations.get(i);
@@ -121,6 +121,17 @@ public class AssemblerOperationsBlock {
 				writeRegister.setDefinition(operation);
 			}
 		}
+	}
+
+	private void clear() {
+		liveIn.clear();
+		liveOut.clear();
+		uses.clear();
+		kills.clear();
+		lastUsed.clear();
+		wExit.clear();
+		sExit.clear();
+		additionalOperations.clear();
 	}
 
 	public boolean calculateLiveInAndOut() {
@@ -497,5 +508,37 @@ public class AssemblerOperationsBlock {
 
 	public Set<AssemblerOperationsBlock> getDominanceFrontier() {
 		return dominanceFrontier;
+	}
+
+	public VirtualRegister findDefinition(Map<AssemblerOperation, VirtualRegister> definitions) {
+		return findDefinition(null, definitions);
+	}
+
+	/**
+	 * Finds the first definition in this block dominating the given usage.
+	 * 
+	 * @param usage
+	 * @param definitions
+	 * @return
+	 */
+	public VirtualRegister findDefinition(AssemblerOperation usage, Map<AssemblerOperation, VirtualRegister> definitions) {
+		int usageIndex = (usage == null) ? -1 : operations.indexOf(usage);
+		int startIndex = usageIndex < 0 ? operations.size() - 1 : usageIndex - 1;
+
+		for (int i = startIndex; i >= 0; i--) {
+			VirtualRegister definedVariable = definitions.get(operations.get(i));
+			if (definedVariable != null) {
+				return definedVariable;
+			}
+		}
+		return null;
+	}
+
+	public PhiWriteOperation getPhiWrite() {
+		return phiWrite;
+	}
+
+	public PhiReadOperation getPhiRead() {
+		return phiRead;
 	}
 }

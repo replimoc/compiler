@@ -89,6 +89,14 @@ public final class RegisterAllocationPolicy {
 			{}
 	});
 
+	public static final RegisterAllocationPolicy A_B = new RegisterAllocationPolicy(new SingleRegister[][] {
+			// 64bit registers
+			{ SingleRegister.RAX, SingleRegister.RBX },
+			// 32 bit registers
+			{ SingleRegister.EAX, SingleRegister.EBX },
+			// 8 bit registers
+			{ SingleRegister.AL, SingleRegister.BL } });
+
 	private final SingleRegister[][] allowedRegisters;
 
 	private RegisterAllocationPolicy(SingleRegister[][] allowedRegisters) {
