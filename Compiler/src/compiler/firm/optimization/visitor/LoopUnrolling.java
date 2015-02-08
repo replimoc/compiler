@@ -138,6 +138,12 @@ public class LoopUnrolling {
 			correction = (int) (loopInfo.getCycleCount() % MAX_UNROLL_FACTOR);
 		}
 
+		for (Block loopBlock : loopBlocks) {
+			if (!loopBlock.equals(loopHeader) && FirmUtils.getLoopTailIfHeader(loopBlock) != null) {
+				return; // This loop contains another loop
+			}
+		}
+
 		System.out.println("loop cycle count: " + loopInfo.getCycleCount());
 
 		System.out.println("unroll factor: " + unrollFactor);
@@ -269,20 +275,11 @@ public class LoopUnrolling {
 	private static void unroll(EntityDetails entityDetails, LoopInfo loopInfo, int unrollFactor, HashMap<Node, Node> nodeReplacements,
 			boolean afterLoop) {
 		System.out.println(unrollFactor);
-		if (unrollFactor % 2 == 1 || unrollFactor <= 0) {
-			return;
-		}
 
 		Block loopHeader = loopInfo.getLoopHeader();
 		Graph graph = loopHeader.getGraph();
 
 		Set<Block> loopBlocks = FirmUtils.getLoopBlocks(loopInfo);
-
-		for (Block loopBlock : loopBlocks) {
-			if (!loopBlock.equals(loopHeader) && FirmUtils.getLoopTailIfHeader(loopBlock) != null) {
-				return; // This loop contains another loop
-			}
-		}
 
 		HashMap<Node, Node> blockPredecessors = new HashMap<>();
 		HashMap<Node, Node> nodeMapping = new HashMap<>();
