@@ -18,13 +18,11 @@ import firm.BackEdges.Edge;
 import firm.Entity;
 import firm.Graph;
 import firm.Mode;
-import firm.TargetValue;
 import firm.bindings.binding_irdom;
 import firm.nodes.Anchor;
 import firm.nodes.Bad;
 import firm.nodes.Block;
 import firm.nodes.Cmp;
-import firm.nodes.Const;
 import firm.nodes.End;
 import firm.nodes.Node;
 import firm.nodes.Phi;
@@ -87,24 +85,11 @@ public class LoopUnrolling {
 
 		if (loopInfo == null)
 			return;
-		System.out.println("unroll: " + loopInfo.getSignedCycleCount());
-
-		// if (getPhiCount(entityDetails, loopHeader) > 2) // TODO: Remove this
-		// return;
-
-		// if (!loopInfo.isOneBlockLoop()) // TODO: Remove this
-		// return;
-		// TODO: Check if it is the innermost loop!
-
-		int unrollFactor = MAX_UNROLL_FACTOR;
-		while (unrollFactor > 1 && (loopInfo.getCycleCount() % unrollFactor) != 0) {
-			unrollFactor -= 1;
-		}
 
 		Graph graph = loopHeader.getGraph();
 
 		int phiCount = getPhiCount(entityDetails, loopHeader);
-		if (phiCount <= 2) {
+		if (phiCount <= 2 && loopInfo.isOneBlockLoop()) {
 			boolean sideEffects = false;
 			for (Block block : FirmUtils.getLoopBlocks(loopInfo)) {
 				if (!loopHeader.equals(block) && entityDetails.getBlockInformation(block).hasSideEffects()) {
@@ -113,8 +98,6 @@ public class LoopUnrolling {
 			}
 
 			int value = (int) loopInfo.getStart() + (int) (loopInfo.getChange() * loopInfo.getCycleCount());
-			System.out.println("replace loop: " + value);
-			System.out.println(loopInfo.getLoopHeader());
 			// Just calculate result
 			if (!sideEffects && replaceLoopIfPossible(entityDetails, loopInfo, value, loopInfo.getLastLoopBlock(), nodeReplacements)) {
 				return;
@@ -122,30 +105,27 @@ public class LoopUnrolling {
 
 		}
 
-		unrollFactor = 0;
-		if (unrollFactor < 2) // TODO: Remove this
-			return;
-
 		Node memoryPhi = entityDetails.getBlockInformation(loopHeader).getMemoryPhi();
 
 		if (memoryPhi.getPredCount() > 2)
 			return;
 
 		// don't unroll too big blocks
-		// TODO Do not only use loop tail, use all content blocks
-		if (entityDetails.getBlockInformation(loopInfo.getLastLoopBlock()).getNumberOfNodes() > 30)
+		int nodeCount = 0;
+		Set<Block> loopBlocks = FirmUtils.getLoopBlocks(loopInfo);
+		for (Block loopBlock : loopBlocks) {
+			nodeCount += entityDetails.getBlockInformation(loopBlock).getNumberOfNodes();
+		}
+
+		if (nodeCount > 50)
 			return;
 
 		// replace the increment operation
 
-		System.out.println(unrollFactor);
-
-		if (unrollFactor % 2 == 1)
+		System.out.println(loopInfo.getCycleCount());
+		int unrollFactor = 0;
+		if (unrollFactor < 2 || unrollFactor % 2 == 1) // TODO: Remove this
 			return;
-
-		if (loopInfo.getCycleCount() > 0) {
-			System.out.println(loopInfo.getCycleCount());
-		}
 
 		for (int i = unrollFactor; i > 0 && i % 2 == 0; i = i / 2) {
 			Graph g = cmp.getGraph();
@@ -316,20 +296,13 @@ public class LoopUnrolling {
 
 		graph.keepAlive(copyVisitor.getNodeMapping().get(loopInfo.getLastLoopBlock()));
 
-		// TODO: Split here
-
-		int startBlockPredecessorNum = 0;
 		for (Node predecessor : dummyPredecessors) {// TODO: This should not be a loop
 			if (predecessor instanceof Bad) {
 				Node jmp = graph.newJmp(loopInfo.getLastLoopBlock());
 				Graph.exchange(predecessor, jmp);
 				break;
 			}
-			startBlockPredecessorNum++;
 		}
-
-		// TODO: More than two predecessors?
-		// nodeMapping.get(lastModeM).setPred(startBlockPredecessorNum == 0 ? 1 : 0, lastModeM);
 
 		BlockInformation loopHeaderInformation = entityDetails.getBlockInformation(loopHeader);
 		for (Phi phi : loopHeaderInformation.getPhis()) {
@@ -357,104 +330,5 @@ public class LoopUnrolling {
 		Graph.exchange(oldProjJmp, graph.newJmp(oldProjJmp.getBlock()));
 
 		// graph.keepAlive(nodeMapping.get(loopInfo.getLastLoopBlock()));
-	}
-
-	private static void unrollOld(EntityDetails entityDetails, LoopInfo loopInfo, int unrollFactor, HashMap<Node, Node> nodeReplacements) {
-		HashMap<Node, Node> changedNodes = new HashMap<>();
-		Block block = loopInfo.getLastLoopBlock();
-		Const incr = loopInfo.getIncr();
-		Node loopCounter = loopInfo.getConditionalPhi();
-		Node arithmeticNode = loopInfo.getArithmeticNode();
-		Node counter = loopInfo.getConditionalPhi();
-		Graph graph = block.getGraph();
-		Node loopPhi = entityDetails.getBlockInformation(loopInfo.getCmp().getBlock()).getMemoryPhi();
-		Node firstMemNode = loopPhi;
-		Node lastMemNode = loopPhi.getPred(1);
-		HashMap<Node, Node> inductions = new HashMap<Node, Node>();
-		inductions.put(loopInfo.getConditionalPhi(), loopInfo.getArithmeticNode());
-
-		nodeReplacements.put(loopInfo.getIncr(),
-				graph.newConst(loopInfo.getIncr().getTarval().mul(new TargetValue(unrollFactor, loopInfo.getIncr().getMode()))));
-
-		for (int i = 1; i < unrollFactor; i++) {
-			// create the 'i + 1' increment node for the new iteration
-			Node count = graph.newAdd(block, loopCounter,
-					graph.newConst(incr.getTarval().mul(new TargetValue(i, incr.getMode()))), loopCounter.getMode());
-			count.setBlock(block);
-
-			copyBlockNodes(entityDetails, changedNodes, block, arithmeticNode);
-
-			// adjust all predecessors
-			for (Entry<Node, Node> nodeEntry : changedNodes.entrySet()) {
-				if (!nodeEntry.getKey().equals(arithmeticNode)) {
-					Node blockNode = nodeEntry.getKey();
-					Node copy = nodeEntry.getValue();
-
-					// check dependencies for unrolled nodes
-					for (int j = 0; j < blockNode.getPredCount(); j++) {
-						if (blockNode.getPred(j).equals(counter)) {
-							// node is before the loop increment
-							copy.setPred(j, count);
-						} else if (blockNode.getPred(j).equals(arithmeticNode)) {
-							// node is after the loop increment
-							blockNode.setPred(j, count);
-						} else if (changedNodes.containsKey(blockNode.getPred(j))) {
-							copy.setPred(j, changedNodes.get(blockNode.getPred(j)));
-						} else if (blockNode.getPred(j).equals(firstMemNode)) {
-							// adjust memory flow
-							if (blockNode.getPred(j).getMode().equals(Mode.getM())) {
-								copy.setPred(j, lastMemNode);
-								if (!firstMemNode.equals(loopPhi)) {
-									firstMemNode = changedNodes.get(firstMemNode);
-								} else {
-									firstMemNode = copy;
-								}
-							}
-						} else if (blockNode.getPred(j).equals(lastMemNode)) {
-							// adjust memory flow
-							if (blockNode.getPred(j).getMode().equals(Mode.getM())) {
-								copy.setPred(j, loopPhi.getPred(1));
-								lastMemNode = loopPhi.getPred(1);
-							}
-						} else if (inductions.containsKey(blockNode.getPred(j))) {
-							// FIXME: to support more than 2 phis in the loop header
-							Node induction = BackEdges.getOuts(blockNode).iterator().next().node;
-							copy.setPred(j, blockNode);
-							for (int k = 0; k < induction.getPredCount(); k++) {
-								if (induction.getPred(k).equals(blockNode)) {
-									induction.setPred(k, copy);
-								}
-							}
-							inductions.put(blockNode, inductions.get(blockNode.getPred(j)));
-						}
-					}
-				}
-			}
-			// adjust loop phi node
-			for (int j = 0; j < loopPhi.getPredCount(); j++) {
-				if (changedNodes.containsKey(loopPhi.getPred(j))) {
-					loopPhi.setPred(j, changedNodes.get(loopPhi.getPred(j)));
-				}
-			}
-
-			// clear maps for new unroll iteration
-			Set<Node> nodes = entityDetails.getBlockInformation(block).getNodes();
-			nodes.clear();
-			for (Node n : changedNodes.values()) {
-				nodes.add(n);
-			}
-			changedNodes.clear();
-			counter = count;
-		}
-	}
-
-	private static void copyBlockNodes(EntityDetails entityDetails, HashMap<Node, Node> changedNodes, Block block, Node node) {
-		Graph graph = block.getGraph();
-		// copy the whole block
-		for (Node blockNode : entityDetails.getBlockInformation(block).getNodes()) {
-			if (!blockNode.equals(node)) {
-				changedNodes.put(blockNode, graph.copyNode(blockNode));
-			}
-		}
 	}
 }

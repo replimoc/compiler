@@ -280,18 +280,12 @@ public final class FirmUtils {
 		boolean addition = change > 0;
 		if (change == 0)
 			return null; // Endless loop
-		// } else if (change < 0) {
-		// relation = relation.inversed();
-		// change = -change;
-		// start = -start;
-		// border = -border;
-		// }
 
-		System.out.println("relation: " + relation);
-		System.out.println("change: " + change);
-		System.out.println("start: " + start);
-		System.out.println("border: " + border);
-		System.out.println("diff: " + (border - start));
+		// System.out.println("relation: " + relation);
+		// System.out.println("change: " + change);
+		// System.out.println("start: " + start);
+		// System.out.println("border: " + border);
+		// System.out.println("diff: " + (border - start));
 
 		switch (relation) {
 		case Greater:
@@ -406,20 +400,15 @@ public final class FirmUtils {
 					return null;
 
 				Relation relation = cmp.getRelation();
-				System.out.println(relation);
+
 				if (cmp.getLeft().equals(constant)) {
 					relation = relation.negated();
 				}
-				System.out.println("left: " + cmp.getLeft());
-				System.out.println("right: " + cmp.getRight());
 
 				// get cycle count for loop
 				Long cycleCount = getCycleCount(relation, constant, (Const) startingValue, incr);
 				if (cycleCount == null)
 					return null;
-
-				System.out.println("start: " + ((Const) startingValue).getTarval().asInt());
-				System.out.println("cyclecount: " + cycleCount);
 
 				long start = ((Const) startingValue).getTarval().asLong();
 				long border = constant.getTarval().asLong();
