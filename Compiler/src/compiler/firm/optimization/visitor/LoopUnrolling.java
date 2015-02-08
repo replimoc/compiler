@@ -113,13 +113,9 @@ public class LoopUnrolling {
 
 		// don't unroll too big blocks
 		int nodeCount = 0;
-		boolean sideEffects = false;
 		Set<Block> loopBlocks = FirmUtils.getLoopBlocks(loopInfo);
 		for (Block loopBlock : loopBlocks) {
 			nodeCount += entityDetails.getBlockInformation(loopBlock).getNumberOfNodes();
-			if (loopBlocks.contains(loopHeader)) {
-				sideEffects |= entityDetails.getBlockInformation(loopBlock).hasSideEffects();
-			}
 		}
 
 		if (nodeCount > 50)
@@ -130,7 +126,6 @@ public class LoopUnrolling {
 
 		// replace the increment operation
 
-		System.out.println(loopInfo.getCycleCount() % MAX_UNROLL_FACTOR);
 		int unrollFactor = 0;
 		int correction = 0;
 		if (loopInfo.getCycleCount() >= MAX_UNROLL_FACTOR) {
@@ -143,10 +138,6 @@ public class LoopUnrolling {
 				return; // This loop contains another loop
 			}
 		}
-
-		System.out.println("loop cycle count: " + loopInfo.getCycleCount());
-
-		System.out.println("unroll factor: " + unrollFactor);
 
 		Graph g = cmp.getGraph();
 
@@ -167,13 +158,11 @@ public class LoopUnrolling {
 			if (cmp.getPred(i) instanceof Const) {
 				Const temp = (Const) cmp.getPred(i);
 				Node newConst = g.newConst((temp.getTarval().asInt() - correction * (int) loopInfo.getChange()), temp.getMode());
-				System.out.println("new const: " + (temp.getTarval().asInt() - correction * loopInfo.getChange()));
 				cmp.setPred(i, newConst);
 			}
 		}
 
 		for (int i = unrollFactor; i > 0 && i % 2 == 0; i = i / 2) {
-			System.out.println("UNROLLING");
 			BackEdges.disable(g);
 			programDetails.updateGraphs(Arrays.asList(g));
 			BackEdges.enable(g);
@@ -274,8 +263,6 @@ public class LoopUnrolling {
 
 	private static void unroll(EntityDetails entityDetails, LoopInfo loopInfo, int unrollFactor, HashMap<Node, Node> nodeReplacements,
 			boolean afterLoop) {
-		System.out.println(unrollFactor);
-
 		Block loopHeader = loopInfo.getLoopHeader();
 		Graph graph = loopHeader.getGraph();
 
@@ -297,13 +284,10 @@ public class LoopUnrolling {
 			}
 		}
 
-		Node lastModeM = null;
 		Node memoryPhi = entityDetails.getBlockInformation(loopHeader).getMemoryPhi();
 		for (int i = 0; i < memoryPhi.getPredCount(); i++) {
 			if (!loopBlocks.contains(memoryPhi.getPred(i).getBlock())) {
 				nodeMapping.put(memoryPhi.getPred(i), graph.newNoMem());
-			} else {
-				lastModeM = memoryPhi.getPred(i);
 			}
 		}
 
@@ -347,17 +331,8 @@ public class LoopUnrolling {
 				}
 			}
 
-			System.out.println("loopHead: " + loopBody);
-			Node firstModeM = entityDetails.getBlockInformation(loopHeader).getFirstModeM();
-			Node connectModeMStart = firstModeM.getPred(loopHead);
-			Node lastConnectModeM = entityDetails.getBlockInformation(loopInfo.getLastLoopBlock()).getLastModeM();
+			Node oldPredJmp = loopHeader.getPred(loopHead);
 
-			// TODO: Loop if not loop tail
-			Node oldPredJmp = loopHeader.getPred(loopHead); // TODO: Fix this 0
-			System.out.println(oldPredJmp.getBlock());
-			System.out.println("OLD JMP 1: " + nodeMapping.get(oldPredJmp));
-
-			System.out.println("oldPredJmp: " + oldPredJmp);
 			if (oldPredJmp instanceof Proj) {
 				Node newJmp = graph.newProj(((Proj) oldPredJmp).getPred(), oldPredJmp.getMode(), ((Proj) oldPredJmp).getNum());
 				Graph.exchange(nodeMapping.get(oldPredJmp), newJmp);
@@ -365,23 +340,11 @@ public class LoopUnrolling {
 				Node newJmp = graph.newJmp(oldPredJmp.getBlock());
 				Graph.exchange(nodeMapping.get(oldPredJmp), newJmp);
 			}
-			// else
 			Node loopEndBlock = loopHeader.getPred(loopBody).getBlock();
-			// Loop End
 
-			Node successorLoop = null;
-			// if (oldPredJmp instanceof Proj) {
-			System.out.println(oldProjJmp.getBlock());
-			// successorLoop = graph.newProj(pred, mode, num)
-			// oldPredJmp.setBlock(nodeMapping.get(loopEndBlock));
-			// } else {
-			successorLoop = graph.newJmp(nodeMapping.get(loopEndBlock));
-			// }
+			Node successorLoop = graph.newJmp(nodeMapping.get(loopEndBlock));
+
 			Graph.exchange(oldPredJmp, successorLoop);
-			System.out.println("loopEndBlock: " + loopEndBlock);
-			System.out.println("OLD JMP 2: " + oldPredJmp);
-
-			System.out.println(oldPredJmp);
 
 			for (Phi phi : entityDetails.getBlockInformation(loopHeader).getPhis()) {
 				nodeMapping.get(phi).setPred(loopHead, phi.getPred(loopHead));
@@ -394,15 +357,8 @@ public class LoopUnrolling {
 			// Kill old condition
 			Node loopConditionProj = nodeMapping.get(loopInfo.getFirstLoopBlock().getPred(0));
 			Graph.exchange(loopConditionProj, graph.newJmp(loopConditionProj.getBlock()));
-
-			// System.out.println("first mode m: " + );
-
-			// nodeMapping.get(firstModeM).setPred(loopHead, connectModeMStart);
-			// firstModeM.setPred(loopHead, nodeMapping.get(lastConnectModeM));
-			System.out.println("first mode m: " + lastConnectModeM);
-
 		} else {
-			for (Node predecessor : dummyPredecessors) {// TODO: This should not be a loop
+			for (Node predecessor : dummyPredecessors) {
 				if (predecessor instanceof Bad) {
 					Node jmp = graph.newJmp(loopInfo.getLastLoopBlock());
 					Graph.exchange(predecessor, jmp);
@@ -425,9 +381,7 @@ public class LoopUnrolling {
 				}
 			}
 
-			// TODO Place for append
 			Node newJmp = graph.newJmp(nodeMapping.get(loopInfo.getLastLoopBlock()));
-			System.out.println(newJmp);
 
 			Node endNode = entityDetails.getBlockInformation(loopInfo.getLastLoopBlock()).getEndNode();
 			Graph.exchange(endNode, newJmp);
@@ -436,18 +390,6 @@ public class LoopUnrolling {
 			FirmUtils.removeKeepAlive(oldProjJmp.getBlock());
 			Graph.exchange(oldProjJmp, graph.newJmp(oldProjJmp.getBlock()));
 		}
-		// graph.keepAlive(nodeMapping.get(loopInfo.getLastLoopBlock()));
-		//
-		// if (afterLoop) {
-		// int required = oldProjJmp.getNum() == FirmUtils.TRUE ? FirmUtils.FALSE : FirmUtils.TRUE;
-		// Node condition = FirmUtils.getFirstSuccessor(loopInfo.getCmp());
-		// for (Edge edge : BackEdges.getOuts(condition)) {
-		// Proj proj = ((Proj) edge.node);
-		// if (proj.getNum() == required) {
-		// oldProjJmp = proj;
-		// }
-		// }
-		// }
-		// System.out.println(oldProjJmp);
+
 	}
 }
