@@ -17,9 +17,12 @@ public class LoopInfo {
 	private final Cmp cmp;
 	private final Block loopHeader;
 	private boolean negative;
+	private long change;
+	private long border;
+	private long start;
 
 	public LoopInfo(long cycleCount, Const startingValue, Const incr, Const constCmp, Node arithmeticNode,
-			Node conditionalPhi, Block firstLoopBlock, Block lastLoopBlock, Cmp cmp, Block loopHeader) {
+			Node conditionalPhi, Block firstLoopBlock, Block lastLoopBlock, Cmp cmp, Block loopHeader, long start, long border, long change) {
 		this.cycleCount = cycleCount; // Also allow MIN_INT
 		this.startingValue = startingValue;
 		this.incr = incr;
@@ -31,6 +34,9 @@ public class LoopInfo {
 		this.lastLoopBlock = lastLoopBlock;
 		this.loopHeader = loopHeader;
 		this.negative = cycleCount < 0;
+		this.start = start;
+		this.border = border;
+		this.change = change;
 	}
 
 	public boolean isOneBlockLoop() {
@@ -85,4 +91,15 @@ public class LoopInfo {
 		this.lastLoopBlock = lastLoopBlock;
 	}
 
+	public long getChange() {
+		return change;
+	}
+
+	public long getBorder() {
+		return border;
+	}
+
+	public long getStart() {
+		return start;
+	}
 }

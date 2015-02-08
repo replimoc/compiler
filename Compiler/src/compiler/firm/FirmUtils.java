@@ -287,32 +287,40 @@ public final class FirmUtils {
 			start = -start;
 			border = -border;
 		}
-		System.out.println(relation);
-		System.out.println("change: " + change);
-		System.out.println("start: " + start);
-		System.out.println("border: " + border);
 
 		switch (relation) {
 		case Greater:
 		case UnorderedGreater:
-			if (start < border) {
-				return (long) Math.ceil((double) Math.abs(border - start) / change);
+			if ((border - start) >= 0) {
+				return (long) 0;
+			} else if (start < border) {
+				return (long) Math.max(0, Math.ceil((double) (border - start) / change));
 			} else {
 				return (long) Math.ceil((Integer.MAX_VALUE - start + minIntOffset) / change) + 1;
 			}
 		case GreaterEqual:
 		case UnorderedGreaterEqual:
-			if (start < border) {
+			if ((border - start) > 0) {
+				return (long) 0;
+			} else if (start < border) {
 				return (long) Math.ceil((double) Math.abs(border - start + 1) / change);
 			} else {
 				return (long) Math.ceil((Integer.MAX_VALUE - start + minIntOffset) / change) + 1;
 			}
 		case Less:
 		case UnorderedLess:
-			return (long) Math.ceil((double) Math.abs(border - start) / change);
+			if ((border - start) <= 0) {
+				return (long) 0;
+			} else {
+				return (long) Math.ceil((double) Math.abs(border - start) / change);
+			}
 		case LessEqual:
 		case UnorderedLessEqual:
-			return (long) Math.ceil((double) Math.abs(border - start + 1) / change);
+			if ((border - start) < 0) {
+				return (long) 0;
+			} else {
+				return (long) Math.ceil((double) Math.abs(border - start + 1) / change);
+			}
 		default:
 			return null;
 		}
@@ -383,8 +391,12 @@ public final class FirmUtils {
 				System.out.println("start: " + ((Const) startingValue).getTarval().asInt());
 				System.out.println("cyclecount: " + cycleCount);
 
+				long start = ((Const) startingValue).getTarval().asLong();
+				long border = constant.getTarval().asLong();
+				long change = incr.getTarval().asLong();
+
 				return new LoopInfo(cycleCount, (Const) startingValue, incr, constant, arithmeticNode,
-						conditionalPhi, firstLoopBlock, loopTail, cmp, loopHeader);
+						conditionalPhi, firstLoopBlock, loopTail, cmp, loopHeader, start, border, change);
 			}
 		}
 		return null;
@@ -415,8 +427,12 @@ public final class FirmUtils {
 		return loopBlocks;
 	}
 
+	public static Set<Block> getLoopBlocks(LoopInfo loopInfo) {
+		return FirmUtils.getBlocksBetween(loopInfo.getLoopHeader(), loopInfo.getLastLoopBlock());
+	}
+
 	public static void removeKeepAlive(Node node) {
-		binding_irnode.add_End_keepalive(node.getGraph().getEnd().ptr, node.ptr);
+		binding_irnode.remove_End_keepalive(node.getGraph().getEnd().ptr, node.ptr);
 	}
 
 	public static Node getNextPredecessorWithOtherBlock(Node node, int predNum) {

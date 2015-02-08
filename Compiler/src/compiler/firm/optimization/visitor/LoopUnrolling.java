@@ -102,51 +102,25 @@ public class LoopUnrolling {
 		}
 
 		Graph graph = loopHeader.getGraph();
-		// int phiCount = getPhiCount(entityDetails, loopHeader);
-		// // unroll if block generates overflow
-		// if (loopInfo.getSignedCycleCount() == Integer.MAX_VALUE) {
-		// long count = (Integer.MAX_VALUE) - loopInfo.getStartingValue().getTarval().asLong();
-		// long mod = count % loopInfo.getIncr().getTarval().asLong();
-		// long target = (long) Math.ceil((double) (count) / loopInfo.getIncr().getTarval().asLong() + (mod == 0 ? 1 : 0));
-		// if (!isCalculatable(entityDetails, loopInfo.getLastLoopBlock())) {
-		// unrollFactor = MAX_UNROLL_FACTOR;
-		// while (unrollFactor > 1 && (target % unrollFactor) != 0) {
-		// unrollFactor -= 1;
-		// }
-		// if (unrollFactor < 2)
-		// return;
-		// } else if (phiCount <= 2) {
-		// // calculate loop result
-		// long value = Integer.MIN_VALUE + loopInfo.getIncr().getTarval().asLong() - mod - 1;
-		// // replaceLoopIfPossible(entityDetails, loopInfo, value, loopInfo.getLastLoopBlock(), nodeReplacements);
-		// // return; // FIXME
-		// }
-		// } else if (loopInfo.getSignedCycleCount() == Integer.MIN_VALUE) {
-		// long count = (Integer.MIN_VALUE) - loopInfo.getStartingValue().getTarval().asLong();
-		// long mod = count % loopInfo.getIncr().getTarval().asLong();
-		// long target = (long) Math.ceil((double) count / loopInfo.getIncr().getTarval().asLong()) + (mod == 0 ? 1 : 0);
-		// if (!isCalculatable(entityDetails, loopInfo.getLastLoopBlock())) {
-		// unrollFactor = MAX_UNROLL_FACTOR;
-		// while (unrollFactor > 1 && (target % unrollFactor) != 0) {
-		// unrollFactor -= 1;
-		// }
-		// if (unrollFactor < 2)
-		// return;
-		// } else if (phiCount <= 2) {
-		// // calculate loop result
-		// long value = Integer.MAX_VALUE + loopInfo.getIncr().getTarval().asLong() - mod + 1;
-		// // replaceLoopIfPossible(entityDetails, loopInfo, value, loopInfo.getLastLoopBlock(), nodeReplacements);
-		// // return; // FIXME
-		// }
-		// } else if (phiCount <= 2 && isCalculatable(entityDetails, loopInfo.getLastLoopBlock())) {
-		// // calculate loop result
-		// long value = loopInfo.getStartingValue().getTarval().asLong()
-		// + (loopInfo.getCycleCount() * loopInfo.getIncr().getTarval().asLong());
-		// // replaceLoopIfPossible(entityDetails, loopInfo, value, loopInfo.getLastLoopBlock(), nodeReplacements);
-		// // return; // FIXME
-		// } else if (loopInfo.getCycleCount() < 2 || (loopInfo.getCycleCount() % unrollFactor) != 0) {
-		// return;
-		// }
+
+		int phiCount = getPhiCount(entityDetails, loopHeader);
+		if (phiCount <= 2) {
+			boolean sideEffects = false;
+			for (Block block : FirmUtils.getLoopBlocks(loopInfo)) {
+				if (!loopHeader.equals(block) && entityDetails.getBlockInformation(block).hasSideEffects()) {
+					sideEffects = true;
+				}
+			}
+
+			int value = (int) loopInfo.getStart() + (int) (loopInfo.getChange() * loopInfo.getCycleCount());
+			System.out.println("replace loop: " + value);
+			System.out.println(loopInfo.getLoopHeader());
+			// Just calculate result
+			if (!sideEffects && replaceLoopIfPossible(entityDetails, loopInfo, value, loopInfo.getLastLoopBlock(), nodeReplacements)) {
+				return;
+			}
+
+		}
 
 		if (unrollFactor < 2) // TODO: Remove this
 			return;
@@ -201,10 +175,6 @@ public class LoopUnrolling {
 			}
 		}
 		return count;
-	}
-
-	private static boolean isCalculatable(EntityDetails entityDetails, Block block) {
-		return entityDetails.getBlockInformation(block).getNumberOfNodes() <= 2;
 	}
 
 	private static boolean replaceLoopIfPossible(EntityDetails entityDetails, LoopInfo loopInfo, long value, Block block,
@@ -265,8 +235,13 @@ public class LoopUnrolling {
 			nodeReplacements.put(preLoopJmp, newJmp);
 		}
 
+		FirmUtils.removeKeepAlive(entityDetails.getBlockInformation(loopHeader).getMemoryPhi());
 		// remove the control flow edge
-		loopHeader.setPred(0, block.getGraph().newBad(Mode.getX()));
+		for (int i = 0; i < loopHeader.getPredCount(); i++) {
+			loopHeader.setPred(i, block.getGraph().newBad(Mode.getX()));
+		}
+		FirmUtils.removeKeepAlive(loopHeader);
+
 		finishedLoops.add(block);
 		return true;
 	}
@@ -280,7 +255,7 @@ public class LoopUnrolling {
 		Block loopHeader = loopInfo.getLoopHeader();
 		Graph graph = loopHeader.getGraph();
 
-		Set<Block> loopBlocks = FirmUtils.getBlocksBetween(loopInfo.getLoopHeader(), loopInfo.getLastLoopBlock());
+		Set<Block> loopBlocks = FirmUtils.getLoopBlocks(loopInfo);
 
 		for (Block loopBlock : loopBlocks) {
 			if (!loopBlock.equals(loopHeader) && FirmUtils.getLoopTailIfHeader(loopBlock) != null) {
