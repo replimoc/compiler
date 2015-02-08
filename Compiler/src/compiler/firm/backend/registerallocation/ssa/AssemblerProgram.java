@@ -4,16 +4,18 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.LinkedList;
+import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Set;
 
 import compiler.firm.FirmUtils;
+import compiler.firm.backend.operations.ReloadOperation;
 import compiler.firm.backend.operations.dummy.MethodStartEndOperation;
 import compiler.firm.backend.operations.templates.AssemblerOperation;
 import compiler.firm.backend.storage.RegisterBundle;
+import compiler.firm.backend.storage.VirtualRegister;
 import compiler.utils.Utils;
-
 import firm.Graph;
 import firm.nodes.Block;
 
@@ -140,6 +142,53 @@ public class AssemblerProgram {
 
 	public AssemblerOperationsBlock getStartOperationsBlock() {
 		return operationsBlocks.get(graph.getStartBlock());
+	}
+
+	void calculateDominanceFrontiers() {
+		walkBlocksPostorder(new AssemblerOperationsBlockWalker() {
+			@Override
+			public void visitBlock(AssemblerOperationsBlock block) {
+				block.calculateDominanceFrontier();
+			}
+		});
+	}
+
+	Set<AssemblerOperationsBlock> calculateIteratedDominanceFrontier(Set<AssemblerOperationsBlock> blocks) {
+		Set<AssemblerOperationsBlock> result = new HashSet<>();
+	
+		FirmUtils.incrementBlockVisited(getGraph());
+		LinkedList<AssemblerOperationsBlock> workList = new LinkedList<>(blocks);
+		while (!workList.isEmpty()) {
+			AssemblerOperationsBlock curr = workList.pop();
+			result.addAll(curr.getDominanceFrontier());
+	
+			for (AssemblerOperationsBlock frontierElement : curr.getDominanceFrontier()) {
+				if (frontierElement.getBlock().blockVisited())
+					continue;
+	
+				frontierElement.getBlock().markBlockVisited();
+				workList.push(frontierElement);
+			}
+		}
+	
+		return result;
+	}
+
+	Map<VirtualRegister, List<ReloadOperation>> executeMinAlgorithm(final StackInfoSupplier stackInfoSupplier, final int availableRegisters, final boolean allowSpilling) {
+		final Map<VirtualRegister, List<ReloadOperation>> insertedReloads = new HashMap<>();
+	
+		walkBlocksReversePostorder(new AssemblerOperationsBlockWalker() {
+			@Override
+			public void visitBlock(AssemblerOperationsBlock operationsBlock) {
+				if (operationsBlock == null) {
+					return;
+				}
+	
+				operationsBlock.executeMinAlgorithm(insertedReloads, availableRegisters, stackInfoSupplier);
+			}
+		});
+	
+		return insertedReloads;
 	}
 
 }
