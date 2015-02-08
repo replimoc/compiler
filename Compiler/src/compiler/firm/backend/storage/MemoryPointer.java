@@ -1,6 +1,10 @@
 package compiler.firm.backend.storage;
 
+import java.util.Collections;
+import java.util.Set;
+
 import compiler.firm.backend.Bit;
+import compiler.utils.Utils;
 
 public class MemoryPointer extends Storage {
 
@@ -12,10 +16,6 @@ public class MemoryPointer extends Storage {
 
 	public MemoryPointer(int offset, RegisterBased register) {
 		this(offset, register, null, 0);
-	}
-
-	public MemoryPointer(RegisterBased register, RegisterBased factorRegister) {
-		this(0, register, factorRegister, 1);
 	}
 
 	public MemoryPointer(int offset, RegisterBased register, RegisterBased factorRegister, int factor) {
@@ -61,21 +61,31 @@ public class MemoryPointer extends Storage {
 	}
 
 	@Override
-	public RegisterBased[] getReadOnRightSideRegister() {
-		return getUsedRegister();
+	public Set<RegisterBased> getReadRegistersOnRightSide() {
+		return getReadRegisters();
 	}
 
 	@Override
-	public RegisterBased[] getUsedRegister() {
+	public Set<RegisterBased> getReadRegisters() {
 		if (factorRegister == null) {
-			return new RegisterBased[] { register };
+			return Utils.unionSet(register);
+		} else {
+			return Utils.unionSet(register, factorRegister);
 		}
-		return new RegisterBased[] { register, factorRegister };
+	}
+
+	@Override
+	public Set<RegisterBased> getWriteRegisters() {
+		return Collections.emptySet();
 	}
 
 	@Override
 	public boolean isSpilled() {
 		return true;
+	}
+
+	public boolean isPartSpilled() {
+		return register != null && register.isSpilled() || factorRegister != null && factorRegister.isSpilled();
 	}
 
 	@Override

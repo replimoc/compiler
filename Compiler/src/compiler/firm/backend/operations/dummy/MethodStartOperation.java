@@ -8,30 +8,34 @@ import java.util.Set;
 import compiler.firm.backend.Bit;
 import compiler.firm.backend.calling.CallingConvention;
 import compiler.firm.backend.operations.Comment;
+import compiler.firm.backend.operations.MovOperation;
 import compiler.firm.backend.operations.PushOperation;
 import compiler.firm.backend.operations.SubOperation;
 import compiler.firm.backend.storage.Constant;
 import compiler.firm.backend.storage.RegisterBased;
 import compiler.firm.backend.storage.RegisterBundle;
 import compiler.firm.backend.storage.SingleRegister;
+import compiler.firm.backend.storage.VirtualRegister;
+import compiler.utils.Pair;
 
 public class MethodStartOperation extends MethodStartEndOperation {
 
-	private Set<RegisterBased> writeRegisters = new HashSet<>();
+	private final List<Pair<SingleRegister, RegisterBased>> registerMoves = new LinkedList<>();
 
-	public MethodStartOperation(CallingConvention callingConvention, int stackItemSize) {
-		super(callingConvention, stackItemSize);
+	public MethodStartOperation(String comment, CallingConvention callingConvention, int stackItemSize, boolean isMain) {
+		super(comment, callingConvention, stackItemSize, isMain);
 	}
 
 	@Override
 	public String[] toStringWithSpillcode() {
-
 		List<String> result = new LinkedList<String>();
 
-		RegisterBundle[] registers = callingConvention.calleeSavedRegisters();
-		for (int i = 0; i < registers.length; i++) {
-			if (super.isRegisterSaveNeeded(registers[i])) {
-				result.add(new PushOperation(registers[i].getRegister(Bit.BIT64)).toString());
+		if (!isMain) {
+			RegisterBundle[] registers = callingConvention.calleeSavedRegisters();
+			for (int i = 0; i < registers.length; i++) {
+				if (super.isRegisterSaveNeeded(registers[i])) {
+					result.add(new PushOperation(registers[i].getRegister(Bit.BIT64)).toString());
+				}
 			}
 		}
 
@@ -41,20 +45,31 @@ public class MethodStartOperation extends MethodStartEndOperation {
 			result.add(new Comment("no items on stack, skip reservation").toString());
 		}
 
+		for (Pair<SingleRegister, RegisterBased> curr : registerMoves) {
+			result.add(new MovOperation(curr.first, curr.second).toString());
+		}
+
 		return result.toArray(new String[result.size()]);
 	}
 
 	@Override
 	public String getComment() {
-		return "MethodStartOperation" + writeRegisters;
+		return "MethodStartOperation " + registerMoves;
 	}
 
-	public void addWriteRegister(RegisterBased storage) {
-		writeRegisters.add(storage);
+	public void addWriteRegister(SingleRegister source, RegisterBased target) {
+		registerMoves.add(new Pair<SingleRegister, RegisterBased>(source, target));
+		if (target instanceof VirtualRegister) {
+			((VirtualRegister) target).addPreferedRegister(new VirtualRegister(source));
+		}
 	}
 
 	@Override
 	public Set<RegisterBased> getWriteRegisters() {
+		Set<RegisterBased> writeRegisters = new HashSet<>();
+		for (Pair<SingleRegister, RegisterBased> curr : registerMoves) {
+			writeRegisters.add(curr.second);
+		}
 		return writeRegisters;
 	}
 }

@@ -2,14 +2,14 @@ package compiler.firm.backend.operations;
 
 import compiler.firm.backend.operations.templates.AssemblerOperation;
 import compiler.firm.backend.operations.templates.SourceSourceDestinationOperation;
-import compiler.firm.backend.operations.templates.StorageRegisterRegisterOperationFactory;
+import compiler.firm.backend.operations.templates.SourceSourceDesinationOperationFactory;
 import compiler.firm.backend.storage.RegisterBased;
 import compiler.firm.backend.storage.Storage;
 
 public class SubOperation extends SourceSourceDestinationOperation {
 
-	public static StorageRegisterRegisterOperationFactory getFactory(final String comment) {
-		return new StorageRegisterRegisterOperationFactory() {
+	public static SourceSourceDesinationOperationFactory getFactory(final String comment) {
+		return new SourceSourceDesinationOperationFactory() {
 			@Override
 			public SourceSourceDestinationOperation instantiate(Storage source, RegisterBased source2, RegisterBased destination) {
 				return new SubOperation(comment, source, source2, destination);

@@ -6,32 +6,44 @@ import java.util.List;
 import java.util.Set;
 
 import compiler.firm.backend.Bit;
-import compiler.firm.backend.registerallocation.Interval;
+import compiler.firm.backend.operations.templates.AssemblerOperation;
 
 public class VirtualRegister extends RegisterBased {
 
 	private static int I = 0;
 
-	private final Bit mode;
 	private final int num;
-	private final LinkedList<Interval> lifetimes = new LinkedList<>();
+	private final Bit mode;
+	private final String comment;
 	private final List<VirtualRegister> preferedRegisters = new LinkedList<>();
 
 	private Storage register;
 	private boolean isSpilled;
 
+	private final Set<AssemblerOperation> usages = new HashSet<>();
+	private AssemblerOperation definition;
+
 	public VirtualRegister(Bit mode) {
-		this(mode, (RegisterBased) null);
+		this(mode, (String) null);
 	}
 
-	public VirtualRegister(Bit mode, RegisterBased register) {
-		this.mode = mode;
-		this.register = register;
-		this.num = I++;
+	public VirtualRegister(Bit mode, String comment) {
+		this(mode, (RegisterBased) null, comment);
+	}
+
+	public VirtualRegister(SingleRegister register) {
+		this(register.getMode(), register, null);
 	}
 
 	public VirtualRegister(Bit mode, RegisterBundle registerBundle) {
-		this(mode, registerBundle.getRegister(mode));
+		this(mode, registerBundle.getRegister(mode), null);
+	}
+
+	public VirtualRegister(Bit mode, RegisterBased register, String comment) {
+		this.mode = mode;
+		this.register = register;
+		this.num = I++;
+		this.comment = comment;
 	}
 
 	@Override
@@ -57,43 +69,9 @@ public class VirtualRegister extends RegisterBased {
 		return isSpilled;
 	}
 
-	private Interval getLifetimeInterval(int line) {
-		for (Interval curr : lifetimes) {
-			if (curr.contains(line)) {
-				return curr;
-			}
-		}
-		return null;
-	}
-
-	public void expandLifetime(int line, boolean read) {
-		if (lifetimes.isEmpty()) {
-			lifetimes.addLast(new Interval(line));
-			return;
-		}
-
-		Interval lastInterval = lifetimes.getLast();
-
-		if (line < lastInterval.getEnd()) {
-			throw new RuntimeException();
-		} else if (line == lastInterval.getEnd()) {
-			return; // do nothing
-		}
-
-		if (read) {
-			lastInterval.expandEnd(line);
-		} else {
-			lifetimes.addLast(new Interval(line));
-		}
-	}
-
 	@Override
 	public Bit getMode() {
 		return mode;
-	}
-
-	public boolean isAliveAt(int line) {
-		return getLifetimeInterval(line) != null;
 	}
 
 	public int getNum() {
@@ -127,9 +105,13 @@ public class VirtualRegister extends RegisterBased {
 		return preferredBundles;
 	}
 
+	public List<VirtualRegister> getPreferedRegisters() {
+		return preferedRegisters;
+	}
+
 	@Override
 	public MemoryPointer getMemoryPointer() {
-		return register.getMemoryPointer();
+		return register == null ? null : register.getMemoryPointer();
 	}
 
 	@Override
@@ -137,16 +119,24 @@ public class VirtualRegister extends RegisterBased {
 		register.setTemporaryStackOffset(temporaryStackOffset);
 	}
 
-	public String getLifetimes() {
-		StringBuilder builder = new StringBuilder();
-		for (Interval curr : lifetimes) {
-			builder.append(' ');
-			builder.append(curr);
-		}
-		return builder.toString();
+	@Override
+	public String getComment() {
+		return comment;
 	}
 
-	public LinkedList<Interval> getLiftimeIntervals() {
-		return lifetimes;
+	public void setDefinition(AssemblerOperation operation) {
+		this.definition = operation;
+	}
+
+	public void addUsage(AssemblerOperation operation) {
+		this.usages.add(operation);
+	}
+
+	public AssemblerOperation getDefinition() {
+		return definition;
+	}
+
+	public Set<AssemblerOperation> getUsages() {
+		return usages;
 	}
 }

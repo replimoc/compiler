@@ -1,14 +1,18 @@
 package compiler.firm.backend.storage;
 
+import java.util.Set;
+
 import compiler.firm.backend.Bit;
 
 public abstract class Storage {
 	@Override
 	public abstract String toString();
 
-	public abstract RegisterBased[] getUsedRegister();
+	public abstract Set<RegisterBased> getReadRegisters();
 
-	public abstract RegisterBased[] getReadOnRightSideRegister();
+	public abstract Set<RegisterBased> getWriteRegisters();
+
+	public abstract Set<RegisterBased> getReadRegistersOnRightSide();
 
 	public abstract boolean isSpilled();
 

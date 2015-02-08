@@ -7,6 +7,7 @@ import java.util.List;
 import firm.BackEdges;
 import firm.BackEdges.Edge;
 import firm.nodes.Block;
+import firm.nodes.Cmp;
 import firm.nodes.Cond;
 import firm.nodes.Jmp;
 import firm.nodes.Node;
@@ -34,7 +35,11 @@ public class BlockNodes {
 
 	public void visitNodes(BulkPhiNodeVisitor visitor, HashMap<Block, BlockNodes> blockNodes) {
 		for (Node curr : nodes) {
-			curr.accept(visitor);
+			if (curr instanceof Block) {
+				visitor.visit((Block) curr, phis);
+			} else if (!(curr instanceof Cmp)) {
+				curr.accept(visitor);
+			}
 		}
 
 		if (jumpNode != null) {
@@ -51,6 +56,8 @@ public class BlockNodes {
 			for (Edge e : BackEdges.getOuts(condNode)) {
 				phis.addAll(blockNodes.get(getNextNode(e.node)).phis);
 			}
+			visitor.visit((Cmp) condNode.getPred(0));
+
 			visitor.visit(phis);
 
 			// handle cond node

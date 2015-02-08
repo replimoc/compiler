@@ -1,5 +1,8 @@
 package compiler.firm.backend.registerallocation;
 
+import java.util.HashSet;
+import java.util.Set;
+
 import compiler.firm.backend.Bit;
 import compiler.firm.backend.storage.RegisterBundle;
 import compiler.firm.backend.storage.SingleRegister;
@@ -41,40 +44,40 @@ public final class RegisterAllocationPolicy {
 					SingleRegister.R13B, SingleRegister.R14B, SingleRegister.R15B }
 	});
 
-	public static final RegisterAllocationPolicy A_BP_B_12_13_14_15__DI_SI_D_C_8 = new RegisterAllocationPolicy(new SingleRegister[][] {
+	public static final RegisterAllocationPolicy BP_B_12_13_14_15__DI_SI_C_8_A_D = new RegisterAllocationPolicy(new SingleRegister[][] {
 			// 64bit registers
-			{ SingleRegister.RAX, SingleRegister.RBP, SingleRegister.RBX,
+			{ SingleRegister.RBP, SingleRegister.RBX,
 					SingleRegister.R12, SingleRegister.R13, SingleRegister.R14, SingleRegister.R15,
-					SingleRegister.RDI, SingleRegister.RSI, SingleRegister.RDX, SingleRegister.RCX,
-					SingleRegister.R8 },
+					SingleRegister.RDI, SingleRegister.RSI, SingleRegister.RCX,
+					SingleRegister.R8, SingleRegister.RAX, SingleRegister.RDX },
 			// 32 bit registers
-			{ SingleRegister.EAX, SingleRegister.EBP, SingleRegister.EBX,
+			{ SingleRegister.EBP, SingleRegister.EBX,
 					SingleRegister.R12D, SingleRegister.R13D, SingleRegister.R14D, SingleRegister.R15D,
-					SingleRegister.EDI, SingleRegister.ESI, SingleRegister.EDX, SingleRegister.ECX,
-					SingleRegister.R8D },
+					SingleRegister.EDI, SingleRegister.ESI, SingleRegister.ECX,
+					SingleRegister.R8D, SingleRegister.EAX, SingleRegister.EDX },
 			// 8 bit registers
-			{ SingleRegister.AL, SingleRegister.BPL, SingleRegister.BL,
+			{ SingleRegister.BPL, SingleRegister.BL,
 					SingleRegister.R12B, SingleRegister.R13B, SingleRegister.R14B, SingleRegister.R15B,
-					SingleRegister.DIL, SingleRegister.SIL, SingleRegister.DL, SingleRegister.CL,
-					SingleRegister.R8B }
+					SingleRegister.DIL, SingleRegister.SIL, SingleRegister.CL,
+					SingleRegister.R8B, SingleRegister.AL, SingleRegister.DL }
 	});
 
-	public static final RegisterAllocationPolicy A_BP_B_12_13_14_15__DI_SI_D_C_8_9_10_11 = new RegisterAllocationPolicy(new SingleRegister[][] {
+	public static final RegisterAllocationPolicy BP_B_12_13_14_15__DI_SI_C_8_9_10_11_A_D = new RegisterAllocationPolicy(new SingleRegister[][] {
 			// 64bit registers
-			{ SingleRegister.RAX, SingleRegister.RBP, SingleRegister.RBX,
+			{ SingleRegister.RBP, SingleRegister.RBX,
 					SingleRegister.R12, SingleRegister.R13, SingleRegister.R14, SingleRegister.R15,
-					SingleRegister.RDI, SingleRegister.RSI, SingleRegister.RDX, SingleRegister.RCX,
-					SingleRegister.R8, SingleRegister.R9, SingleRegister.R10, SingleRegister.R11 },
+					SingleRegister.RDI, SingleRegister.RSI, SingleRegister.RCX,
+					SingleRegister.R8, SingleRegister.R9, SingleRegister.R10, SingleRegister.R11, SingleRegister.RAX, SingleRegister.RDX },
 			// 32 bit registers
-			{ SingleRegister.EAX, SingleRegister.EBP, SingleRegister.EBX,
+			{ SingleRegister.EBP, SingleRegister.EBX,
 					SingleRegister.R12D, SingleRegister.R13D, SingleRegister.R14D, SingleRegister.R15D,
-					SingleRegister.EDI, SingleRegister.ESI, SingleRegister.EDX, SingleRegister.ECX,
-					SingleRegister.R8D, SingleRegister.R9D, SingleRegister.R10D, SingleRegister.R11D },
+					SingleRegister.EDI, SingleRegister.ESI, SingleRegister.ECX,
+					SingleRegister.R8D, SingleRegister.R9D, SingleRegister.R10D, SingleRegister.R11D, SingleRegister.EAX, SingleRegister.EDX },
 			// 8 bit registers
-			{ SingleRegister.AL, SingleRegister.BPL, SingleRegister.BL,
+			{ SingleRegister.BPL, SingleRegister.BL,
 					SingleRegister.R12B, SingleRegister.R13B, SingleRegister.R14B, SingleRegister.R15B,
-					SingleRegister.DIL, SingleRegister.SIL, SingleRegister.DL, SingleRegister.CL,
-					SingleRegister.R8B, SingleRegister.R9B, SingleRegister.R10B, SingleRegister.R11B }
+					SingleRegister.DIL, SingleRegister.SIL, SingleRegister.CL,
+					SingleRegister.R8B, SingleRegister.R9B, SingleRegister.R10B, SingleRegister.R11B, SingleRegister.AL, SingleRegister.DL }
 	});
 
 	public static final RegisterAllocationPolicy NO_REGISTERS = new RegisterAllocationPolicy(new SingleRegister[][] {
@@ -123,5 +126,13 @@ public final class RegisterAllocationPolicy {
 			}
 		}
 		return false;
+	}
+
+	public Set<RegisterBundle> getAllowedBundles(Bit mode) {
+		Set<RegisterBundle> allowedBundles = new HashSet<>();
+		for (SingleRegister curr : getAllowedRegisters(mode)) {
+			allowedBundles.add(curr.getRegisterBundle());
+		}
+		return allowedBundles;
 	}
 }

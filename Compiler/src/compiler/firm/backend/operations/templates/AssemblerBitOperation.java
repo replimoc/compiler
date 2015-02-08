@@ -39,9 +39,19 @@ public abstract class AssemblerBitOperation extends AssemblerOperation {
 				if (register.isSpilled()) {
 					VirtualRegister virtualRegister = (VirtualRegister) register;
 					if (!storageMapping.containsKey(register)) {
-						Storage storage = insertSpillcode(virtualRegister, result, false);
-						storageMapping.put(virtualRegister, storage);
+						if (virtualRegister.getPreferedRegisters().size() > 0
+								&& storageMapping.containsKey(virtualRegister.getPreferedRegisters().get(0))
+								&& virtualRegister.getPreferedRegisters().get(0).isSpilled()) {
+							VirtualRegister preferedVirtualRegister = virtualRegister.getPreferedRegisters().get(0);
+							SingleRegister temporaryRegister = preferedVirtualRegister.getRegisterBundle().getRegister(register.getMode());
+							storageMapping.put(virtualRegister, virtualRegister.getRegister());
+							virtualRegister.setStorage(temporaryRegister);
+						} else {
+							Storage storage = insertSpillcode(virtualRegister, result, false);
+							storageMapping.put(virtualRegister, storage);
+						}
 					}
+
 					storageMappingWrite.add(virtualRegister);
 				}
 			}

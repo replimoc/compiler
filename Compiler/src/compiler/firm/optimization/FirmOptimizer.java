@@ -8,13 +8,15 @@ import compiler.firm.optimization.evaluation.ProgramDetails;
 import compiler.firm.optimization.visitor.CommonSubexpressionEliminationVisitor;
 import compiler.firm.optimization.visitor.ConstantFoldingVisitor;
 import compiler.firm.optimization.visitor.ControlFlowVisitor;
+import compiler.firm.optimization.visitor.LoadStoreOptimiziationVisitor;
 import compiler.firm.optimization.visitor.LocalOptimizationVisitor;
+import compiler.firm.optimization.visitor.LoopFusionVisitor;
 import compiler.firm.optimization.visitor.LoopInvariantVisitor;
+import compiler.firm.optimization.visitor.LoopUnrolling;
 import compiler.firm.optimization.visitor.NormalizationVisitor;
 import compiler.firm.optimization.visitor.OptimizationVisitor;
 import compiler.firm.optimization.visitor.OptimizationVisitorFactory;
 import compiler.firm.optimization.visitor.StrengthReductionVisitor;
-import compiler.firm.optimization.visitor.UnrollingVisitor;
 
 import firm.BackEdges;
 import firm.BackEdges.Edge;
@@ -38,6 +40,7 @@ public final class FirmOptimizer {
 			// all optimizations should run on the current graph
 			// do not optimize evaluateGraphs out!
 			finished = true;
+			LoopUnrolling.unrollLoops(evaluateGraphs());
 			finished &= ObsoleteNodesEliminator.eliminateObsoleteGraphs(evaluateGraphs());
 			finished &= optimize(NormalizationVisitor.FACTORY);
 			finished &= optimize(ConstantFoldingVisitor.FACTORY);
@@ -46,11 +49,12 @@ public final class FirmOptimizer {
 			finished &= optimize(CommonSubexpressionEliminationVisitor.FACTORY);
 			finished &= optimize(LoopInvariantVisitor.FACTORY(evaluateGraphs()));
 			finished &= optimize(StrengthReductionVisitor.FACTORY);
+			finished &= optimize(LoadStoreOptimiziationVisitor.FACTORY(evaluateGraphs()));
 			finished &= ObsoleteNodesEliminator.eliminateObsoleteParameters(evaluateGraphs());
 			finished &= ObsoleteNodesEliminator.eliminateObsoleteNodes(evaluateGraphs());
 			finished &= MethodInliner.inlineCalls(evaluateGraphs());
+			finished &= optimize(LoopFusionVisitor.FACTORY(evaluateGraphs()));
 		} while (!finished);
-		optimize(UnrollingVisitor.FACTORY);
 	}
 
 	private static ProgramDetails evaluateGraphs() {
@@ -65,8 +69,8 @@ public final class FirmOptimizer {
 			LinkedList<Node> workList = new LinkedList<>();
 
 			OptimizationVisitor<T> visitor = visitorFactory.create();
-
 			BackEdges.enable(graph);
+			visitor.init(graph);
 			walkTopological(graph, workList, visitor);
 			workList(workList, visitor);
 			BackEdges.disable(graph);
@@ -77,6 +81,7 @@ public final class FirmOptimizer {
 
 			compiler.firm.FirmUtils.replaceNodes(targetValues);
 			compiler.firm.FirmUtils.removeBadsAndUnreachable(graph);
+
 		}
 		return finished;
 	}

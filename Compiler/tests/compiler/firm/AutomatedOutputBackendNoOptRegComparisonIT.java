@@ -9,6 +9,6 @@ public class AutomatedOutputBackendNoOptRegComparisonIT extends AbstractAutomate
 
 	@Override
 	protected boolean forkProcess() {
-		return false;
+		return true;
 	}
 }

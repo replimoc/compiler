@@ -18,6 +18,14 @@ public abstract class SourceSourceOperation extends AssemblerBitOperation {
 		this.source2 = source2;
 	}
 
+	public Storage getSource1() {
+		return source1;
+	}
+
+	public RegisterBased getSource2() {
+		return source2;
+	}
+
 	@Override
 	public Set<RegisterBased> getWriteRegisters() {
 		return Collections.emptySet();
@@ -25,7 +33,7 @@ public abstract class SourceSourceOperation extends AssemblerBitOperation {
 
 	@Override
 	public Set<RegisterBased> getReadRegisters() {
-		return Utils.<RegisterBased> unionSet(source1.getUsedRegister(), source2.getUsedRegister());
+		return Utils.<RegisterBased> unionSet(source1.getReadRegisters(), source2.getReadRegisters());
 	}
 
 }

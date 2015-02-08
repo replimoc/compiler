@@ -25,7 +25,7 @@ public abstract class StorageOperation extends AssemblerBitOperation {
 
 	@Override
 	public Set<RegisterBased> getReadRegisters() {
-		return Utils.unionSet(storage.getUsedRegister());
+		return Utils.unionSet(storage.getReadRegisters());
 	}
 
 	@Override

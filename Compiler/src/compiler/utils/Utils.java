@@ -7,6 +7,7 @@ import java.net.URISyntaxException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Scanner;
@@ -98,6 +99,15 @@ public class Utils {
 			for (int i = 0; i < curr.length; i++) {
 				result.add(curr[i]);
 			}
+		}
+		return result;
+	}
+
+	@SafeVarargs
+	public static <T> Set<T> unionSet(Set<T>... inputs) {
+		Set<T> result = new HashSet<>();
+		for (Collection<T> curr : inputs) {
+			result.addAll(curr);
 		}
 		return result;
 	}

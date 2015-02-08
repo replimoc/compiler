@@ -1,7 +1,5 @@
 package compiler.firm.backend.storage;
 
-import java.util.Arrays;
-
 import compiler.firm.backend.Bit;
 
 // Map for registers: https://upload.wikimedia.org/wikipedia/commons/4/41/Table_of_x86_Registers.png
@@ -63,7 +61,7 @@ public class RegisterBundle {
 
 	@Override
 	public String toString() {
-		return "RegisterBundle: " + registerId + "  " + Arrays.toString(registers);
+		return "RegisterBundle: " + registerId;
 	}
 
 	public int getRegisterId() {

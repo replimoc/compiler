@@ -4,16 +4,21 @@ import java.io.File;
 import java.io.IOException;
 import java.util.Arrays;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map.Entry;
+import java.util.Set;
 
+import com.sun.jna.Pointer;
 import compiler.utils.ExecutionFailedException;
 import compiler.utils.Pair;
 import compiler.utils.Utils;
 
 import firm.BackEdges;
+import firm.BackEdges.Edge;
 import firm.Backend;
+import firm.BlockWalker;
 import firm.ClassType;
 import firm.Dump;
 import firm.Entity;
@@ -22,10 +27,22 @@ import firm.Graph;
 import firm.MethodType;
 import firm.Mode;
 import firm.Program;
+import firm.Relation;
 import firm.Type;
 import firm.Util;
+import firm.bindings.binding_irdom;
 import firm.bindings.binding_irgopt;
+import firm.bindings.binding_irnode;
+import firm.nodes.Add;
+import firm.nodes.Address;
+import firm.nodes.Block;
+import firm.nodes.Call;
+import firm.nodes.Cmp;
+import firm.nodes.Cond;
+import firm.nodes.Const;
 import firm.nodes.Node;
+import firm.nodes.Phi;
+import firm.nodes.Proj;
 
 public final class FirmUtils {
 
@@ -62,7 +79,10 @@ public final class FirmUtils {
 		for (Entity entity : Program.getGlobalType().getMembers()) {
 			entity.setLdIdent(entity.getLdName().replaceAll("[()\\[\\];]", "_"));
 		}
-		Util.lowerSels();
+
+		for (Graph graph : Program.getGraphs()) {
+			Util.lowerSels(graph);
+		}
 	}
 
 	private static void layoutClass(ClassType cls) {
@@ -196,5 +216,249 @@ public final class FirmUtils {
 
 	public static Node newBad(Node node) {
 		return node.getGraph().newBad(node.getMode());
+	}
+
+	public static boolean blockPostdominates(Node block, Node block2) {
+		return binding_irdom.block_postdominates(block.ptr, block2.ptr) == 1;
+	}
+
+	public static boolean blockDominates(Node block, Node block2) {
+		return binding_irdom.block_dominates(block.ptr, block2.ptr) == 1;
+	}
+
+	public static void walkDominanceTree(Block block, BlockWalker walker) {
+		walker.visitBlock(block);
+
+		for (Pointer dominatedPtr = binding_irdom.get_Block_dominated_first(block.ptr); dominatedPtr != null; dominatedPtr = binding_irdom
+				.get_Block_dominated_next(dominatedPtr)) {
+			Block dominatedBlock = new Block(dominatedPtr);
+			walkDominanceTree(dominatedBlock, walker);
+		}
+	}
+
+	public static boolean isConstant(Node node) {
+		return node instanceof Const &&
+				(node.getMode().equals(Mode.getIs()) || node.getMode().equals(Mode.getBu()) || node.getMode().equals(Mode.getLu()));
+	}
+
+	public static Entity getCalledEntity(Call call) {
+		final Address address = (Address) call.getPred(1);
+		return address.getEntity();
+	}
+
+	public static Block getLoopTailIfHeader(Block block) {
+		for (Node pred : block.getPreds()) {
+			if (blockDominates(block, pred.getBlock())) {
+				return (Block) pred.getBlock();
+			}
+		}
+		return null;
+	}
+
+	public static Block getFirstLoopBlock(Cond condition) {
+		Block loopContentBlock = null;
+
+		for (Edge projEdge : BackEdges.getOuts(condition)) {
+			Proj proj = (Proj) projEdge.node;
+			if (BackEdges.getNOuts(proj) == 0)
+				return null;
+
+			Node successorBlock = FirmUtils.getFirstSuccessor(proj);
+
+			if (FirmUtils.blockPostdominates(condition.getBlock(), successorBlock)) {
+				loopContentBlock = (Block) successorBlock;
+			}
+		}
+		return loopContentBlock;
+	}
+
+	private static Long getCycleCount(Relation relation, Const constCmp, Const startingValue, Const incr) {
+		long start = startingValue.getTarval().asLong();
+		long border = constCmp.getTarval().asLong();
+		long change = incr.getTarval().asLong();
+
+		boolean addition = change > 0;
+		if (change == 0)
+			return null; // Endless loop
+
+		// System.out.println("relation: " + relation);
+		// System.out.println("change: " + change);
+		// System.out.println("start: " + start);
+		// System.out.println("border: " + border);
+		// System.out.println("diff: " + (border - start));
+
+		switch (relation) {
+		case Greater:
+		case UnorderedGreater:
+			if (start <= border) {
+				return (long) 0; // Runs never
+			} else { // start > border
+				if (addition) {
+					return (long) Math.ceil((Integer.MAX_VALUE - start) / change) + 1;
+				} else {
+					return (long) Math.ceil((double) Math.abs(border - start) / -change);
+				}
+			}
+		case GreaterEqual:
+		case UnorderedGreaterEqual:
+			if (start < border) {
+				return (long) 0; // Runs never
+			} else {// start >= border
+				if (addition) {
+					return (long) Math.ceil((Integer.MAX_VALUE - start) / change) + 1;
+				} else {
+					return (long) Math.ceil((double) Math.abs(border - start - 1) / -change);
+				}
+
+			}
+		case Less:
+		case UnorderedLess:
+			if (start >= border) {
+				return (long) 0; // Runs never
+			} else { // start > border
+				if (addition) {
+					return (long) Math.ceil((double) Math.abs(border - start) / change);
+				} else {
+					return (long) Math.ceil((Integer.MIN_VALUE - start) / change) + 1;
+				}
+			}
+		case LessEqual:
+		case UnorderedLessEqual:
+			if (start > border) {
+				return (long) 0; // Runs never
+			} else {// start >= border
+				if (addition) {
+					return (long) Math.ceil((double) Math.abs(border - start + 1) / change);
+				} else {
+					return (long) Math.ceil((Integer.MIN_VALUE - start) / change) + 1;
+				}
+
+			}
+		default:
+			return null;
+		}
+
+	}
+
+	public static LoopInfo getLoopInfos(Cmp cmp) {
+		Block loopHeader = (Block) cmp.getBlock();
+		Block loopTail = getLoopTailIfHeader(loopHeader);
+
+		if (loopTail == null)
+			return null;
+
+		Const constant = null;
+		Node conditionalPhi = null;
+		for (Node predecessor : cmp.getPreds()) {
+			if (predecessor instanceof Const) {
+				constant = (Const) predecessor;
+			} else {
+				conditionalPhi = predecessor;
+			}
+		}
+
+		if (constant == null || conditionalPhi == null)
+			return null; // Nothing found
+
+		int blockPredecessorLoop = -1;
+		for (int i = 0; i < loopHeader.getPredCount(); i++) {
+			if (loopHeader.getPred(i).getBlock().equals(loopTail)) {
+				blockPredecessorLoop = i;
+			}
+		}
+
+		if (conditionalPhi instanceof Phi && blockPredecessorLoop >= 0) {
+			Block firstLoopBlock = getFirstLoopBlock((Cond) getFirstSuccessor(cmp));
+
+			Node arithmeticNode = conditionalPhi.getPred(blockPredecessorLoop);
+
+			boolean onlyOneNodeBetweenPhi = false;
+			if (!(arithmeticNode instanceof Phi)) {
+				for (Node arithmeticNodePredecessor : arithmeticNode.getPreds()) {
+					if (arithmeticNodePredecessor.equals(conditionalPhi)) {
+						onlyOneNodeBetweenPhi = true;
+					}
+				}
+			}
+
+			if (arithmeticNode.getBlock() != null && firstLoopBlock != null && onlyOneNodeBetweenPhi &&
+					blockPostdominates(arithmeticNode.getBlock(), firstLoopBlock)) { // Add is always executed
+				Const incr = null;
+				if (arithmeticNode.getPredCount() > 1 && isConstant(arithmeticNode.getPred(1)) && arithmeticNode instanceof Add) {
+					incr = (Const) arithmeticNode.getPred(1);
+				} else if (arithmeticNode.getPredCount() > 1 && isConstant(arithmeticNode.getPred(0)) && arithmeticNode instanceof Add) {
+					incr = (Const) arithmeticNode.getPred(0);
+				} else {
+					return null;
+				}
+
+				Node startingValue = conditionalPhi.getPred(blockPredecessorLoop == 1 ? 0 : 1);
+				if (startingValue == null || !(startingValue instanceof Const))
+					return null;
+
+				if (!(arithmeticNode instanceof Add))
+					return null;
+
+				Relation relation = cmp.getRelation();
+
+				if (cmp.getLeft().equals(constant)) {
+					relation = relation.inversed();
+				}
+
+				// get cycle count for loop
+				Long cycleCount = getCycleCount(relation, constant, (Const) startingValue, incr);
+				if (cycleCount == null)
+					return null;
+
+				long start = ((Const) startingValue).getTarval().asLong();
+				long border = constant.getTarval().asLong();
+				long change = incr.getTarval().asLong();
+
+				return new LoopInfo(cycleCount, (Const) startingValue, incr, constant, arithmeticNode,
+						conditionalPhi, firstLoopBlock, loopTail, cmp, loopHeader, start, border, change);
+			}
+		}
+		return null;
+	}
+
+	/**
+	 * Walk from last to first and search all blocks.
+	 * 
+	 * @param first
+	 * @param last
+	 * @return
+	 */
+	public static final Set<Block> getBlocksBetween(Block first, Block last) {
+		Set<Block> loopBlocks = new HashSet<>();
+		LinkedList<Block> worklist = new LinkedList<>();
+		worklist.add(last);
+		while (!worklist.isEmpty()) {
+			Block block = worklist.pop();
+			if (!loopBlocks.contains(block)) {
+				loopBlocks.add(block);
+				if (!block.equals(first)) {
+					for (Node predecessor : block.getPreds()) {
+						worklist.add((Block) predecessor.getBlock());
+					}
+				}
+			}
+		}
+		return loopBlocks;
+	}
+
+	public static Set<Block> getLoopBlocks(LoopInfo loopInfo) {
+		return FirmUtils.getBlocksBetween(loopInfo.getLoopHeader(), loopInfo.getLastLoopBlock());
+	}
+
+	public static void removeKeepAlive(Node node) {
+		binding_irnode.remove_End_keepalive(node.getGraph().getEnd().ptr, node.ptr);
+	}
+
+	public static Node getNextPredecessorWithOtherBlock(Node node, int predNum) {
+		Node block = node.getBlock();
+		while (node.getBlock().equals(block) && node instanceof Phi) {
+			node = node.getPred(predNum);
+		}
+		return node;
 	}
 }

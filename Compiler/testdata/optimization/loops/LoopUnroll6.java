@@ -7,7 +7,7 @@ class Test {
 		i = i - 1;
 		System.out.println(i);
 		
-		int j = -16;	
+		int j = -17;	
 		while(j <= 0) {
 			j = j - 4;
 		}
