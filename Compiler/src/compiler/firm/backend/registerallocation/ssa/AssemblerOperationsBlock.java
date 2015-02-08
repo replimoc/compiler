@@ -13,13 +13,11 @@ import java.util.Map.Entry;
 import java.util.Set;
 
 import compiler.firm.FirmUtils;
-import compiler.firm.backend.operations.CmpOperation;
 import compiler.firm.backend.operations.ReloadOperation;
 import compiler.firm.backend.operations.SpillOperation;
 import compiler.firm.backend.operations.dummy.phi.PhiReadOperation;
 import compiler.firm.backend.operations.dummy.phi.PhiWriteOperation;
 import compiler.firm.backend.operations.templates.AssemblerOperation;
-import compiler.firm.backend.operations.templates.JumpOperation;
 import compiler.firm.backend.storage.RegisterBased;
 import compiler.firm.backend.storage.VirtualRegister;
 import compiler.utils.Pair;
@@ -35,7 +33,6 @@ public class AssemblerOperationsBlock {
 	private final Block block;
 	private final boolean isLoopHead;
 	private ArrayList<AssemblerOperation> operations;
-	private final AssemblerOperation conditionOrJump;
 	private final PhiReadOperation phiRead;
 	private final PhiWriteOperation phiWrite;
 
@@ -60,31 +57,22 @@ public class AssemblerOperationsBlock {
 		this.block = block;
 		this.operations = operations;
 
-		AssemblerOperation conditionOrJump = null;
 		PhiReadOperation phiRead = null;
 		PhiWriteOperation phiWrite = null;
 
 		for (AssemblerOperation operation : operations) {
 			operation.setOperationsBlock(this);
 
-			if (conditionOrJump == null) {
-				if (operation instanceof JumpOperation) {
-					conditionOrJump = operation;
-				} else if (operation instanceof CmpOperation) {
-					conditionOrJump = operation;
-				}
-			}
 			if (operation instanceof PhiReadOperation) {
 				phiRead = (PhiReadOperation) operation;
 			} else if (operation instanceof PhiWriteOperation) {
 				phiWrite = (PhiWriteOperation) operation;
 			}
 		}
-		this.conditionOrJump = conditionOrJump;
 		this.phiRead = phiRead;
 		this.phiWrite = phiWrite;
 
-		this.isLoopHead = FirmUtils.getLoopTailIfHeader(block) != null;
+		this.isLoopHead = FirmUtils.isLoopHead(block);
 	}
 
 	public void calculateTree(Map<Block, AssemblerOperationsBlock> operationsBlocks) {
@@ -395,7 +383,7 @@ public class AssemblerOperationsBlock {
 				couplingOperations.add(reloadOperation);
 				Utils.appendToKey(insertedReloads, reloadedRegister, reloadOperation);
 			}
-			predecessor.additionalOperations.put(predecessor.conditionOrJump, couplingOperations);
+			predecessor.additionalOperations.put(predecessor.phiRead, couplingOperations);
 			predecessor.mergeAdditionalOperations();
 		}
 	}

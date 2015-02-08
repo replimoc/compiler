@@ -1,5 +1,10 @@
 package compiler.firm.backend.registerallocation.ssa;
 
+import java.io.BufferedWriter;
+import java.io.IOException;
+import java.nio.charset.StandardCharsets;
+import java.nio.file.Files;
+import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -201,5 +206,29 @@ public class AssemblerProgram {
 			return operationsBlocks.get(new Block(idomPtr));
 		else
 			return null;
+	}
+
+	public void generatePlainAssemblerFile(String suffix) {
+		try {
+			final BufferedWriter writer = Files.newBufferedWriter(Paths.get(graph.getEntity().getLdName() + suffix), StandardCharsets.US_ASCII);
+
+			walkBlocksReversePostorder(new AssemblerOperationsBlockWalker() {
+				@Override
+				public void visitBlock(AssemblerOperationsBlock operationsBlock) {
+					try {
+						for (AssemblerOperation operation : operationsBlock.getOperations()) {
+							writer.write(operation.toString() + " # r:" + operation.getReadRegisters() + "; w:" + operation.getWriteRegisters());
+							writer.newLine();
+						}
+					} catch (IOException e) {
+						throw new RuntimeException(e);
+					}
+				}
+			});
+
+			writer.close();
+		} catch (IOException | RuntimeException e) {
+			e.printStackTrace();
+		}
 	}
 }

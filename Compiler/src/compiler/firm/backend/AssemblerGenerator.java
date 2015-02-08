@@ -5,7 +5,6 @@ import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
-import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -17,11 +16,9 @@ import compiler.firm.backend.operations.P2AlignOperation;
 import compiler.firm.backend.operations.TextOperation;
 import compiler.firm.backend.operations.templates.AssemblerOperation;
 import compiler.firm.backend.registerallocation.RegisterAllocationPolicy;
-import compiler.firm.backend.registerallocation.ssa.AssemblerOperationsBlock;
 import compiler.firm.backend.registerallocation.ssa.AssemblerProgram;
 import compiler.firm.backend.registerallocation.ssa.MustSpillException;
 import compiler.firm.backend.registerallocation.ssa.SimpleSsaSpiller;
-import compiler.firm.backend.registerallocation.ssa.SplittingSsaSpiller;
 import compiler.firm.backend.registerallocation.ssa.SsaRegisterAllocator;
 import compiler.utils.Utils;
 
@@ -74,13 +71,7 @@ public final class AssemblerGenerator {
 
 			AssemblerProgram assemblerProgram = visitor.getAssemblerProgram(graph);
 
-	//		SplittingSsaSpiller splittingSsaSpiller = new SplittingSsaSpiller(assemblerProgram);
-	//		splittingSsaSpiller.reduceRegisterPressure(2, true);
-
-			if (debugRegisterAllocation)
-				generatePlainAssemblerFile(Paths.get(graph.getEntity().getLdName() + ".plain"), assemblerProgram, blockInfos);
-
-			allocateRegistersSsa(graph, assemblerProgram, noRegisters);
+			allocateRegistersSsa(graph, assemblerProgram, noRegisters, debugRegisterAllocation);
 
 			ArrayList<AssemblerOperation> operationsList = generateOperationsList(assemblerProgram, blockInfos);
 			if (doPeephole) {
@@ -94,7 +85,13 @@ public final class AssemblerGenerator {
 		generateAssemblerFile(outputFile, assembler);
 	}
 
-	private static void allocateRegistersSsa(Graph graph, AssemblerProgram program, boolean noRegisters) {
+	private static void allocateRegistersSsa(Graph graph, AssemblerProgram program, boolean noRegisters, boolean debugRegisterAllocation) {
+		// RegisterAllocationPolicy policy = RegisterAllocationPolicy.A_B;
+		// SplittingSsaSpiller ssaSpiller = new SplittingSsaSpiller(program);
+		// ssaSpiller.reduceRegisterPressure(2, true);
+
+		if (debugRegisterAllocation)
+			program.generatePlainAssemblerFile(".plain");
 
 		SimpleSsaSpiller ssaSpiller = new SimpleSsaSpiller(program);
 		RegisterAllocationPolicy policy;
@@ -140,37 +137,6 @@ public final class AssemblerGenerator {
 			}
 		}
 		writer.close();
-	}
-
-	private static void generatePlainAssemblerFile(Path outputFile, final AssemblerProgram assemblerProgram, HashMap<Block, BlockInfo> blockInfos) {
-		try {
-			final BufferedWriter writer = Files.newBufferedWriter(outputFile, StandardCharsets.US_ASCII);
-
-			FirmGraphTraverser.walkBlocksAllocationFriendly(assemblerProgram.getGraph(), blockInfos, new BlockWalker() {
-				@Override
-				public void visitBlock(Block block) {
-					try {
-						AssemblerOperationsBlock operationsBlock = assemblerProgram.getOperationsBlock(block);
-						if (operationsBlock == null)
-							return;
-
-						for (AssemblerOperation operation : operationsBlock.getOperations()) {
-
-							writer.write(operation.toString() + " # r:" + operation.getReadRegisters() + "; w:" + operation.getWriteRegisters());
-							writer.newLine();
-
-						}
-					} catch (IOException e) {
-						throw new RuntimeException(e);
-					}
-				}
-			});
-
-			writer.close();
-
-		} catch (IOException | RuntimeException e) {
-			e.printStackTrace();
-		}
 	}
 
 	private static class BlockNodesWalker implements BlockWalker {

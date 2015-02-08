@@ -38,7 +38,9 @@ public class SplittingSsaSpiller implements StackInfoSupplier {
 		Map<VirtualRegister, List<ReloadOperation>> insertedReloads = program.executeMinAlgorithm(this, availableRegisters, allowSpilling);
 		program.calculateDominanceFrontiers();
 
-		Utils.debugln(false, insertedReloads);
+		Utils.debugln(true, "inserted reloads: " + insertedReloads);
+
+		program.generatePlainAssemblerFile(".nonSsa");
 
 		reestablishSsaProperty(insertedReloads);
 	}
@@ -110,6 +112,7 @@ public class SplittingSsaSpiller implements StackInfoSupplier {
 					VirtualRegister source = findDefinition(null, predecessor, definitions, definitionsBlocks, iteratedDominanceFrontier, mode);
 					phiRead.addPhiRelation(source, phiResult);
 				}
+				return phiResult;
 			}
 
 			block = program.getIDom(block); // walk dominator tree upwards
