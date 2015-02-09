@@ -92,13 +92,13 @@
 %\usenavigationsymbols[sfhHb]
 
 \title[]{Compiler: Assembler generation}
-%\subtitle{Karlsruhe Institute of Technology (KIT)}
+\subtitle{Norman B\"owing, Andreas Eberle, Aleksej Frank, Polina Goltsman and Valentin Zickner}
 
-\author[]{KIT}
+\author[Team replimoc: Norman B\"owing, Andreas Eberle, Aleksej Frank, Polina Goltsman and Valentin Zickner]{KIT}
 
 \AuthorTitleSep{\relax}
 
-\institute[]{KARLSRUHE INSTITUTE OF TECHNOLOGY (KIT)}
+\institute[Institute for Program Structures and Data Organization (IPD)]{KARLSRUHE INSTITUTE OF TECHNOLOGY (KIT)}
 %\institute[\raisebox{-4mm}{\includegraphics[height=5mm]{images/OU-Logo}}]
 %  {KARLSRUHE INSTITUTE OF TECHNOLOGY (KIT)}
 %\logo{\includegraphics[height=12mm]{images/OU-Logo}}
@@ -113,6 +113,42 @@
 
 \begin{frame}
   \maketitle
+\end{frame}
+
+\begin{frame}
+  \frametitle{Requirement: x86\_64 Assembler}
+\begin{itemize}
+  \item Precondition: Firm-Graph
+\visible<2-> {
+  \item Result: x86\_64 Assembler
+}
+\visible<3-> {
+  \item Tasks:
+  \begin{itemize}
+    \item Command selection
+    \item Command ordering
+    \item Naive register allocation: Use stack
+  \end{itemize}
+}
+\visible<4-> {
+  \item Problems:
+  \begin{itemize}
+    \item Memory access is expensive
+  \end{itemize}
+}
+\end{itemize}
+
+\begin{figure}
+\includegraphics[width=0.25\textwidth]{images/firmgraph.png}
+\visible<2-> {
+\begin{tikzpicture}
+\fill [white] (4,-1) -- (6.5,0) -- (6,2) -- cycle;
+\fill [kit!20] (4.8,0.25) -- (4.8,0.5) -- (5.75,0.5) -- (5.75,0.25) -- (6.25,0.75) -- (5.75,1.25) -- (5.75,1) -- (4.8,1) -- cycle;
+\end{tikzpicture}
+\includegraphics[width=0.45\textwidth]{images/assembler.png}
+}
+\end{figure}
+
 \end{frame}
 
 \begin{frame}
@@ -136,8 +172,8 @@ Challenges:
 }
 \begin{itemize}
 \visible<3-> { \item Firm nodes not extendable in jFirm }
-\visible<4-> { \item Two operand code in x86 64 assembler:\\
-$R2 \leftarrow add 2, R1$ $\Rightarrow$ $mov\ R1, R2$; $add\ 2, R2$ }
+\visible<4-> { \item Two operand code in x86\_64 assembler:\\
+$R2 \leftarrow add\ 2, R1$ $\Rightarrow$ $mov\ R1, R2$; $add\ 2, R2$ }
 \visible<5-> { \item Register allocation }
 \end{itemize}
 \end{frame}
@@ -147,7 +183,7 @@ $R2 \leftarrow add 2, R1$ $\Rightarrow$ $mov\ R1, R2$; $add\ 2, R2$ }
   \frametitle{Register Allocation: Linear Scan}
 
 \begin{itemize}
-\item Precondition: Linear register code
+\item Precondition: Linear block order with virtual registers
 \visible<5-> { \item Result: Mapping of Registers to Hardware-Registers }
 \end{itemize}
 
@@ -330,13 +366,13 @@ $R2 \leftarrow add 2, R1$ $\Rightarrow$ $mov\ R1, R2$; $add\ 2, R2$ }
 
 
 \begin{itemize}
-	\item Firm makes (good) work!
+	\item Firm makes life easier and more complicated
 	\begin{itemize}
 		\item Especially on Windows
 	\end{itemize}
 	\item Testing is important
 	\item GIT is nice, but using it can be tricky for beginners
-	\item Team coordination substantially
+	\item Team coordination substantial
 \end{itemize}
 
 \visible<2> {
