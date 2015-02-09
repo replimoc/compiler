@@ -255,7 +255,7 @@ Architecture without SSA
 \begin{tikzpicture}
 \node[fill=kit!10]			(buildig) { Build Inteference Graph };
 \node[fill=kit!10,right=of buildig]	(coloring) { Color Graph };
-\node[fill=kit!10,above=of coloring]	(outsource) { Outsource };
+\node[fill=kit!10,above=of coloring]	(outsource) { Spilling };
 
 \draw[<-,line width=1.5pt] (buildig.west) -- ++(-1cm,0);
 \draw[->,line width=1.5pt] (buildig) -- (coloring);
@@ -271,9 +271,9 @@ Architecture without SSA
 Architecture with SSA
 
 \begin{tikzpicture}
-\node[fill=kit!10]			(outsource) { Outsource };
+\node[fill=kit!10]			(outsource) { Spilling };
 \node[fill=kit!10,right=of outsource]	(coloring) { Color Graph };
-\node[fill=kit!10,right=of coloring]	(ssa) { SSA-Deconstruction };
+\node[fill=kit!10,right=of coloring]	(ssa) { SSA-Destruction };
 
 \draw[<-,line width=1.5pt] (outsource.west) -- ++(-1cm,0);
 \draw[->,line width=1.5pt] (coloring) -- (ssa);
@@ -285,7 +285,7 @@ Architecture with SSA
 
 \end{tikzpicture}
 }
-(source: Slides of lecture compiler, IPD)
+(source: Slides of lecture Compiler, IPD)
 \end{frame}
 
 \begin{frame}
@@ -403,7 +403,7 @@ Architecture with SSA
 
 
 \begin{itemize}
-	\item Firm makes life easier and more complicated
+	\item Firm makes life easier (and more complicated)
 	\begin{itemize}
 		\item Especially on Windows
 	\end{itemize}
@@ -424,16 +424,32 @@ Architecture with SSA
 \begin{frame}
   \frametitle{Implemented Optimizations}
 \begin{itemize}
-\item tbd
+\item Common Subexpression Elimination
+\item Constant Folding
+\item Control Flow Optimiziation
+\item Load Store Optimiziation
+\item Local Optimization
+\item Loop Fusion
+\item Loop Invariant
+\item Loop Unrolling
+\item Method Inlining
+\item Normalization
+\item Obsolete Nodes Elimination
+\item Peephole Optimizations
+\item Strength Reduction
 \end{itemize}
 \end{frame}
 
 \begin{frame}
   \frametitle{Facts and Numbers}
-Lines of code\\
-Commits\\
-Hours spend (way to much)\\
-tbd
+\begin{itemize}
+\item Lines of code: 30765
+\item Classes: 201
+\item Commits: appr. 2000 
+\item Craziest commit time: 5am
+\item Hours spend: way to much
+\item Longest work streak: 36/48 hours
+\end{itemize}
 \end{frame}
 
 \end{document}
