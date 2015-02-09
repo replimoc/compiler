@@ -51,7 +51,7 @@
 		line width=1pt,
 	},
 	cfb/.style={
-		color=firmblue,
+		color=kit,dashed,
 		line width=2pt,
 	},
 	asslabel/.style={
@@ -248,6 +248,45 @@ $R2 \leftarrow add\ 2, R1$ $\Rightarrow$ $mov\ R1, R2$; $add\ 2, R2$ }
 \end{tikzpicture}
 
 \end{frame}
+\begin{frame}
+  \frametitle{Register Allocation with Graph Coloring}
+Architecture without SSA
+
+\begin{tikzpicture}
+\node[fill=kit!10]			(buildig) { Build Inteference Graph };
+\node[fill=kit!10,right=of buildig]	(coloring) { Color Graph };
+\node[fill=kit!10,above=of coloring]	(outsource) { Outsource };
+
+\draw[<-,line width=1.5pt] (buildig.west) -- ++(-1cm,0);
+\draw[->,line width=1.5pt] (buildig) -- (coloring);
+\draw[->,line width=1.5pt] (coloring.east) -- ++(1cm,0);
+\draw[->,line width=1.5pt] (coloring) --  node[anchor=west] { not k-colorable } (outsource);
+\draw[->,line width=1.5pt] (outsource) -- ++($(buildig)-(coloring)$) -- (buildig);
+
+\draw[color=white] (buildig.south) -- ++(0,-5mm);
+
+\end{tikzpicture}
+\visible<2> {
+
+Architecture with SSA
+
+\begin{tikzpicture}
+\node[fill=kit!10]			(outsource) { Outsource };
+\node[fill=kit!10,right=of outsource]	(coloring) { Color Graph };
+\node[fill=kit!10,right=of coloring]	(ssa) { SSA-Deconstruction };
+
+\draw[<-,line width=1.5pt] (outsource.west) -- ++(-1cm,0);
+\draw[->,line width=1.5pt] (coloring) -- (ssa);
+\draw[->,line width=1.5pt] (outsource) -- (coloring);
+\draw[->,line width=1.5pt] (ssa.east) -- ++(1cm,0);
+
+\draw[color=white] (outsource.north) -- ++(0,3mm);
+\draw[color=white] (outsource.south) -- ++(0,-7mm);
+
+\end{tikzpicture}
+}
+(source: Slides of lecture compiler, IPD)
+\end{frame}
 
 \begin{frame}
   \frametitle{SSA-Based Register Allocation}
@@ -282,9 +321,7 @@ $R2 \leftarrow add\ 2, R1$ $\Rightarrow$ $mov\ R1, R2$; $add\ 2, R2$ }
 \visible<4-> { \draw[->,cfb]	(cond) to (left); }
 \visible<5-> { \draw[->,cfb]	(cond) to (right); }
 \visible<6-> {
-	\draw[->,cfb,dashed]	(cond) to (phi);
-	\draw[->,cfb]	(left) to (phi);
-	\draw[->,cfb]	(right) to (phi);
+	\draw[->,cfb]	(cond) to (phi);
 }
 
 
