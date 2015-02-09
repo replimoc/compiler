@@ -324,7 +324,11 @@ Architecture with SSA
 	\draw[->,cfb]	(cond) to (phi);
 }
 
-
+% Legend
+\draw[->,cf]	($(left-life-out.west)+(0,-2cm)$) -- ++(1cm,0) node[color=black,anchor=west] { Control flow };
+\visible<3-> {
+\draw[->,cfb]	($(left-life-out.west)+(0,-2.5cm)$) -- ++(1cm,0) node[color=black,anchor=west] { Dominance };
+}
 
 \end{tikzpicture}
 \end{center}
@@ -353,7 +357,7 @@ Architecture with SSA
 	\node [left=0mm of print] {b4:};
 }
 
-\visible<3-3> {
+\visible<3-4> {
 \node [ass]	at (10,2)					(aass)		{ $x \leftarrow 0$ };
 \node [ass,below=-0.1cm of aass]				(aajmp)		{ $jmp\ b2$ };
 \node [ass,below=-0.1cm of aajmp]				(acond)		{ $cmp\ x, 100$ };
@@ -369,18 +373,22 @@ Architecture with SSA
 \node [asslabel,align=right,left=0 of endnode]				(b4label)	{$b4:$};
 }
 
-\visible<4-> {
+\visible<4> {
+\draw[<->,line width=0.5mm,kit]    ($(b3label.west)+(6mm,0)$) to[out=165,in=-165] ($(b2label.west)+(6mm,0)$);
+}
+
+\visible<5-> {
 \node [ass]	at (10,2)					(aass)		{ $x \leftarrow 0$ };
 \node [ass,below=-0.1cm of aass]				(aajmp)		{ $jmp\ b2$ };
 \node [ass,below=-0.1cm of aajmp]				(loopass)	{ $x \leftarrow x + 1$ };
 \node [ass,below=-0.1cm of loopass]				(loopjmp)	{ $jmp\ b2$ };
-\visible<5-> {
+\visible<6-> {
 	\draw[color=red,line width=0.3mm]			(loopjmp.west) -- ++(1.35cm,0);
 }
 \node [ass,below=-0.1cm of loopjmp]				(acond)		{ $cmp\ x, 100$ };
 \node [ass,below=-0.1cm of acond]				(acondjmp1)	{ $jl\ b3$ };
 \node [ass,below=-0.1cm of acondjmp1]				(acondjmp2)	{ $jmp\ b4$ };
-\visible<5-> {
+\visible<6-> {
 	\draw[color=red,line width=0.3mm]			(acondjmp2.west) -- ++(1.35cm,0);
 }
 \node [ass,below=-0.1cm of acondjmp2]				(endnode)	{ $print\ x$ };
@@ -394,7 +402,7 @@ Architecture with SSA
 \end{tikzpicture}
 \begin{itemize}
 \visible<4-> {\item Move condition to the end of the loop}
-\visible<5-> {\item Peephole-Optimizations: Eliminate unneccessary jumps}
+\visible<6-> {\item Peephole-Optimizations: Eliminate unneccessary jumps}
 \end{itemize}
 \end{frame}
 
