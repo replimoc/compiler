@@ -91,7 +91,7 @@
 %\usenavigationsymbols[sfHhdb]
 %\usenavigationsymbols[sfhHb]
 
-\title[]{Compiler: Assembler generation}
+\title[]{Compiler: Assembler Generation}
 \subtitle{Norman B\"owing, Andreas Eberle, Aleksej Frank, Polina Goltsman and Valentin Zickner}
 
 \author[Team replimoc: Norman B\"owing, Andreas Eberle, Aleksej Frank, Polina Goltsman and Valentin Zickner]{KIT}
@@ -116,7 +116,7 @@
 \end{frame}
 
 \begin{frame}
-  \frametitle{Requirement: x86\_64 Assembler}
+  \frametitle{Tasks of Assembler Generation}
 \begin{itemize}
   \item Precondition: Firm-Graph
 \visible<2-> {
@@ -407,6 +407,42 @@ Architecture with SSA
 \end{frame}
 
 \begin{frame}
+  \frametitle{Implemented Optimizations}
+\begin{itemize}
+\item Common Subexpression Elimination
+\item Constant Folding
+\item Control Flow Optimiziation
+\item Load Store Optimiziation
+\item Local Optimization
+\item Loop Fusion
+\item Loop Invariant Code Motion
+\item Loop Unrolling
+\item Method Inlining
+\item Normalization
+\item Peephole Optimizations
+\item Procedure specialization and removal of side-effect free calls
+\item Strength Reduction
+\end{itemize}
+\end{frame}
+
+\begin{frame}
+  \frametitle{Facts and Numbers}
+\begin{itemize}
+\item Lines of code: 30765
+\item Classes: 201
+\item Active days: 106 (93.81\%)
+\item Commits: appr. 2000
+\begin{itemize}
+	\item average 18.5 commits per active day
+	\item 17.4 per all days
+\end{itemize}
+\item Craziest commit time: 5am
+\item Hours spend: way to much
+\item Longest work streak: 36/48 hours
+\end{itemize}
+\end{frame}
+
+\begin{frame}
   \frametitle{Conclusion}
 
 
@@ -429,35 +465,13 @@ Architecture with SSA
 }
 \end{frame}
 
-\begin{frame}
-  \frametitle{Implemented Optimizations}
-\begin{itemize}
-\item Common Subexpression Elimination
-\item Constant Folding
-\item Control Flow Optimiziation
-\item Load Store Optimiziation
-\item Local Optimization
-\item Loop Fusion
-\item Loop Invariant Code Motion
-\item Loop Unrolling
-\item Method Inlining
-\item Normalization
-\item Peephole Optimizations
-\item Procedure specialization and removal of side effect free calls
-\item Strength Reduction
-\end{itemize}
-\end{frame}
 
 \begin{frame}
-  \frametitle{Facts and Numbers}
-\begin{itemize}
-\item Lines of code: 30765
-\item Classes: 201
-\item Commits: appr. 2000 
-\item Craziest commit time: 5am
-\item Hours spend: way to much
-\item Longest work streak: 36/48 hours
-\end{itemize}
-\end{frame}
+  \vspace*{20\Ku}
+  \textbf{Thank you for your attention!}
 
+
+  \vspace*{10\Ku}
+  Questions?
+\end{frame}
 \end{document}
