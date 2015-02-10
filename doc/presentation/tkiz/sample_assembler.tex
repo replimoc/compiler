@@ -1,0 +1,13 @@
+\node [ass]	at (10,2)					(aass)		{ $R1 \leftarrow 12$ };
+\node [ass,below=-0.1cm of aass]				(acond)		{ $condition$ };
+\node [ass,below=-0.1cm of acond]				(acondjmp1)	{ $jnz\ ifcase$ };
+\node [ass,below=-0.1cm of acondjmp1]				(acondjmp2)	{ $jmp\ elsecase$ };
+\node [ass,below=-0.1cm of acondjmp2]				(ifass)		{ $R2 \leftarrow add\ 2, R1$ };
+\node [ass,below=-0.1cm of ifass]				(ifjmp)		{ $jmp\ end$ };
+\node [ass,below=-0.1cm of ifjmp]				(elseass)	{ $R3 \leftarrow add\ 4, R1$ };
+\node [ass,below=-0.1cm of elseass]				(elsejmp)	{ $jmp\ end$ };
+\node [ass,below=-0.1cm of elsejmp]				(endnode)	{ $R4 \leftarrow \Phi(R2, R3)$ };
+
+\node [asslabel,left=0 of ifass]				(iflabel)	{$ifcase:$};
+\node [asslabel,left=0 of elseass]				(elselabel)	{$elsecase:$};
+\node [asslabel,left=0 of endnode]				(endlabel)	{$end:$};

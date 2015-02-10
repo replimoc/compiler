@@ -342,4 +342,12 @@ public class NodeNumberPrintingVisitor implements BulkPhiNodeVisitor {
 		}
 	}
 
+	@Override
+	public void visit(Block block, List<Phi> phis) {
+		System.out.println(block.getNr());
+		for (Phi phi : phis) {
+			visit(phi);
+		}
+	}
+
 }

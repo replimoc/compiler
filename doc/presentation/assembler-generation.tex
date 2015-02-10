@@ -1,0 +1,483 @@
+ \documentclass[t]{beamer}
+%\documentclass[c]{beamer}
+\listfiles
+
+\mode<presentation>
+{
+  \usetheme[english,titlepage0]{KIT}
+% \usetheme[usefoot]{KIT}
+% \usetheme{KIT}
+
+%%  \usefonttheme{structurebold}
+
+  \setbeamercovered{transparent}
+
+  %\setbeamertemplate{enumerate items}[circle]
+  \setbeamertemplate{enumerate items}[ball]
+
+}
+\usepackage{babel}
+%\date{10.05.2010}
+%\DateText
+
+\newlength{\Ku}
+\setlength{\Ku}{1.43375pt}
+
+\usepackage[latin1]{inputenc}
+\usepackage[TS1,T1]{fontenc}
+\usepackage{array}
+\usepackage{multicol}
+\usepackage{lipsum}
+
+\usetikzlibrary{shadows,arrows,positioning,matrix,calc}
+\definecolor{kit}{RGB}{0,150,130}
+\definecolor{kitblue}{RGB}{73,48,164}
+\definecolor{firmred}{RGB}{255,153,153}
+\definecolor{firmblue}{RGB}{162,153,246}
+\definecolor{firmgreen}{RGB}{153,255,153}
+\definecolor{grey}{RGB}{130,130,130}
+\tikzset{
+	cfn/.style={
+		draw,rectangle
+	},
+	cond/.style={
+		fill=firmred
+	},
+	phi/.style={
+		fill=firmgreen
+	},
+	cf/.style={
+		color=firmblue,
+		line width=1pt,
+	},
+	cfb/.style={
+		color=kit,dashed,
+		line width=2pt,
+	},
+	asslabel/.style={
+		rectangle,
+		text width=1.5cm,
+		align=left
+	},
+	ass/.style={
+		rectangle,
+		text width=3cm,
+		align=left
+	},
+	assline/.style={
+		color=grey,
+		align=right
+	},
+	reglifetime/.style={
+		-,
+		line width=0.5mm,
+		draw=kit
+	},
+	helplinegrey/.style={
+		color=grey
+	},
+	resultregister/.style={ },
+	graphnode/.style={
+		circle,
+		draw=black
+	},
+	colorbox/.style={
+		minimum width=4mm,
+		minimum height=4mm,
+	},
+}
+
+%\usenavigationsymbols
+%\usenavigationsymbols[sfHhdb]
+%\usenavigationsymbols[sfhHb]
+
+\title[]{Compiler: Assembler Generation}
+\subtitle{Norman B\"owing, Andreas Eberle, Aleksej Frank, Polina Goltsman and Valentin Zickner}
+
+\author[Team replimoc: Norman B\"owing, Andreas Eberle, Aleksej Frank, Polina Goltsman and Valentin Zickner]{KIT}
+
+\AuthorTitleSep{\relax}
+
+\institute[Institute for Program Structures and Data Organization (IPD)]{KARLSRUHE INSTITUTE OF TECHNOLOGY (KIT)}
+%\institute[\raisebox{-4mm}{\includegraphics[height=5mm]{images/OU-Logo}}]
+%  {KARLSRUHE INSTITUTE OF TECHNOLOGY (KIT)}
+%\logo{\includegraphics[height=12mm]{images/OU-Logo}}
+
+\TitleImage[width=\titleimagewd]{images/20150205_093943}
+
+\newlength{\tmplen}
+
+\newcommand{\verysmall}{\fontsize{6pt}{8.6pt}\selectfont}
+
+\begin{document}
+
+\begin{frame}
+  \maketitle
+\end{frame}
+
+\begin{frame}
+  \frametitle{Tasks of Assembler Generation}
+\begin{itemize}
+  \item Precondition: Firm-Graph
+\visible<2-> {
+  \item Result: x86\_64 Assembler
+}
+\visible<3-> {
+  \item Tasks:
+  \begin{itemize}
+    \item Instruction selection
+    \item Instruction ordering
+    \item Naive register allocation: Use stack
+  \end{itemize}
+}
+\visible<4-> {
+  \item Problems:
+  \begin{itemize}
+    \item Memory access is expensive
+  \end{itemize}
+}
+\end{itemize}
+
+\begin{figure}
+\includegraphics[width=0.25\textwidth]{images/firmgraph.png}
+\visible<2-> {
+\begin{tikzpicture}
+\fill [white] (4,-1) -- (6.5,0) -- (6,2) -- cycle;
+\fill [kit!20] (4.8,0.25) -- (4.8,0.5) -- (5.75,0.5) -- (5.75,0.25) -- (6.25,0.75) -- (5.75,1.25) -- (5.75,1) -- (4.8,1) -- cycle;
+\end{tikzpicture}
+\includegraphics[width=0.45\textwidth]{images/assembler.png}
+}
+\end{figure}
+
+\end{frame}
+
+\begin{frame}
+  \frametitle{Principial procedure}
+
+\begin{tikzpicture}
+% Graph
+\input{tkiz/sample_graph.tex}
+
+\visible<2-> {
+% Arrow
+\fill [kit!20] (4.8,0.25) -- (4.8,0.5) -- (5.75,0.5) -- (5.75,0.25) -- (6.25,0.75) -- (5.75,1.25) -- (5.75,1) -- (4.8,1) -- cycle;
+
+% Assembler
+\input{tkiz/sample_assembler.tex}
+}
+\end{tikzpicture}
+
+\visible<3-> {
+Challenges:
+}
+\begin{itemize}
+\visible<3-> { \item Firm nodes not extendable in jFirm }
+\visible<4-> { \item Two operand code in x86\_64 assembler:\\
+$R2 \leftarrow add\ 2, R1$ $\Rightarrow$ $mov\ R1, R2$; $add\ 2, R2$ }
+\visible<5-> { \item Register allocation }
+\end{itemize}
+\end{frame}
+
+
+\begin{frame}
+  \frametitle{Register Allocation: Linear Scan}
+
+\begin{itemize}
+\item Precondition: Linear block order with virtual registers
+\visible<5-> { \item Result: Mapping of Registers to Hardware-Registers }
+\end{itemize}
+
+\begin{tikzpicture}
+\visible<2-> {
+	\input{tkiz/sample_assembler.tex}
+	\input{tkiz/sample_assembler_linenumber.tex}
+}
+
+\visible<3-> {
+	\input{tkiz/sample_lifetime_headline.tex}
+}
+
+\visible<4-> {
+	\input{tkiz/sample_lifetime.tex}
+}
+
+\visible<5-> {
+\node[resultregister,below=4.5cm of reg1] () { \textbf{\%rax} };
+\node[resultregister,below=4.5cm of reg2] () { \textbf{\%rbx} };
+\node[resultregister,below=4.5cm of reg3] () { \textbf{\%rax} };
+\node[resultregister,below=4.5cm of reg4] () { \textbf{\%rax} };
+}
+
+\end{tikzpicture}
+
+\end{frame}
+
+
+\begin{frame}
+  \frametitle{Linear Scan: Extension Graph Coloring}
+
+\begin{tikzpicture}
+	\input{tkiz/sample_lifetime_headline.tex}
+	\input{tkiz/sample_lifetime.tex}
+\visible<2-3> {
+	\node[graphnode,below right=0.5cm and 2cm of reg4]	(graphr1)	{ $R1$ };
+	\node[graphnode,right=2cm of graphr1]			(graphr2)	{ $R2$ };
+	\node[graphnode,below=2cm of graphr1]			(graphr3)	{ $R3$ };
+	\node[graphnode,right=2cm of graphr3]			(graphr4)	{ $R4$ };
+}
+\visible<4-> {
+	\node[graphnode,fill=kit!40,below right=0.5cm and 2cm of reg4]	(graphr1)	{ $R1$ };
+	\node[graphnode,fill=kitblue!40,right=2cm of graphr1]			(graphr2)	{ $R2$ };
+	\node[graphnode,fill=kit!40,below=2cm of graphr1]			(graphr3)	{ $R3$ };
+	\node[graphnode,fill=kit!40,right=2cm of graphr3]			(graphr4)	{ $R4$ };
+}
+
+\visible<3-> {
+	\draw (graphr1) -- (graphr2);
+	\draw (graphr3) -- (graphr2);
+}
+
+\visible<5-> {
+\node[colorbox,fill=kit!40,below=0.5cm of graphr3] (color1)	{ };
+\node[colorbox,fill=kitblue!40,below=0.2cm of color1] (color2)	{ };
+
+\node[right=0.5cm of color1] () { \textbf{\%rax} };
+\node[right=0.5cm of color2] () { \textbf{\%rbx} };
+}
+
+\end{tikzpicture}
+
+\end{frame}
+\begin{frame}
+  \frametitle{Register Allocation with Graph Coloring}
+Architecture without SSA
+
+\begin{tikzpicture}
+\node[fill=kit!10]			(buildig) { Build Inteference Graph };
+\node[fill=kit!10,right=of buildig]	(coloring) { Color Graph };
+\node[fill=kit!10,above=of coloring]	(outsource) { Spilling };
+
+\draw[<-,line width=1.5pt] (buildig.west) -- ++(-1cm,0);
+\draw[->,line width=1.5pt] (buildig) -- (coloring);
+\draw[->,line width=1.5pt] (coloring.east) -- ++(1cm,0);
+\draw[->,line width=1.5pt] (coloring) --  node[anchor=west] { not k-colorable } (outsource);
+\draw[->,line width=1.5pt] (outsource) -- ++($(buildig)-(coloring)$) -- (buildig);
+
+\draw[color=white] (buildig.south) -- ++(0,-5mm);
+
+\end{tikzpicture}
+\visible<2> {
+
+Architecture with SSA
+
+\begin{tikzpicture}
+\node[fill=kit!10]			(outsource) { Spilling };
+\node[fill=kit!10,right=of outsource]	(coloring) { Color Graph };
+\node[fill=kit!10,right=of coloring]	(ssa) { SSA-Destruction };
+
+\draw[<-,line width=1.5pt] (outsource.west) -- ++(-1cm,0);
+\draw[->,line width=1.5pt] (coloring) -- (ssa);
+\draw[->,line width=1.5pt] (outsource) -- (coloring);
+\draw[->,line width=1.5pt] (ssa.east) -- ++(1cm,0);
+
+\draw[color=white] (outsource.north) -- ++(0,3mm);
+\draw[color=white] (outsource.south) -- ++(0,-7mm);
+
+\end{tikzpicture}
+}
+(source: Slides of lecture Compiler, IPD)
+\end{frame}
+
+\begin{frame}
+  \frametitle{SSA-Based Register Allocation}
+
+\begin{center}
+\begin{tikzpicture}
+% Graph
+\input{tkiz/sample_graph_phi.tex}
+
+\visible<2-> {\node[above right=-3mm and 5mm of ass]	(ass-life-in) {in: \{\} }; }
+\visible<2> {\node[below right=-3mm and 5mm of ass]	(ass-life-out) 		{out: \{$b$\} };}
+\visible<3-> {\node[below right=-3mm and 5mm of ass]	(ass-life-out) 		{out: \{$b \leftarrow$ \%rax\} };}
+
+\visible<2> {\node[above right=-3mm and 5mm of cond]	(cond-life-in) 		{in: \{$b$\} };}
+\visible<3-> {\node[above right=-3mm and 5mm of cond]	(cond-life-in)		{in: \{$b \leftarrow$ \%rax\} };}
+\visible<2> {\node[below right=-3mm and 5mm of cond]	(cond-life-out) 	{out: \{$b$\} };}
+\visible<3-> {\node[below right=-3mm and 5mm of cond]	(cond-life-out) 	{out: \{$b \leftarrow$ \%rax\} };}
+
+\visible<2> {\node[above right=-5mm and -50mm of left]	(left-life-in) 	{in: \{$b$\} };}
+\visible<3-> {\node[above right=-5mm and -50mm of left]	(left-life-in) 	{in: \{$b \leftarrow$ \%rax\} };}
+\visible<2-> {\node[below right=-5mm and -50mm of left]	(left-life-out) 	{out: \{\} }; }
+
+\visible<2> {\node[above right=-5mm and 5mm of right]	(right-life-in) 	{in: \{$b$\} };}
+\visible<3-> {\node[above right=-5mm and 5mm of right]	(right-life-in) 	{in: \{$b \leftarrow$ \%rax\} };}
+\visible<2-> { \node[below right=-5mm and 5mm of right]	(right-life-out) 	{out: \{\} }; }
+
+\visible<2-> { \node[above right=-3mm and 5mm of phi]	(phi-life-in) 		{in: \{\} }; }
+\visible<2-6> {\node[below right=-3mm and 5mm of phi]	(phi-life-out) 		{out: \{$r$\} };}
+\visible<7-> {\node[below right=-3mm and 5mm of phi]	(phi-life-out) 		{out: \{$r \leftarrow$ \%rax\} };}
+
+\visible<3-> { \draw[->,cfb]	(ass) to (cond); }
+\visible<4-> { \draw[->,cfb]	(cond) to (left); }
+\visible<5-> { \draw[->,cfb]	(cond) to (right); }
+\visible<6-> {
+	\draw[->,cfb]	(cond) to (phi);
+}
+
+% Legend
+\draw[->,cf]	($(left-life-out.west)+(0,-2cm)$) -- ++(1cm,0) node[color=black,anchor=west] { Control flow };
+\visible<3-> {
+\draw[->,cfb]	($(left-life-out.west)+(0,-2.5cm)$) -- ++(1cm,0) node[color=black,anchor=west] { Dominance };
+}
+
+\end{tikzpicture}
+\end{center}
+\end{frame}
+
+\begin{frame}
+  \frametitle{Block Ordering}
+\begin{tikzpicture}
+\node [cfn,anchor=south] at (2,2)				(ass)		{ $x \leftarrow 0$ };
+\node [cfn,cond,below=0.75cm of ass]				(cond)		{ $x < 100$ };
+
+\node [cfn,below right=0.75cm and 0cm of cond]		(right)		{ $x \leftarrow x + 1$ };
+
+\node [cfn,below=2cm of cond]					(print)		{ $print\ x$ };
+
+
+\draw[->,cf]	(ass) to (cond);
+\draw[->,cf]	(cond) to (print);
+\draw[->,cf]	(cond) to (right);
+\draw[<-,cf]	(cond) -- ++(30mm,0) -- ++(0,-20mm) -- ++(-10mm,0) -- (right);
+
+\visible<2-> {
+	\node [left=0mm of ass] {b1:};
+	\node [left=0mm of cond] {b2:};
+	\node [left=0mm of right] {b3:};
+	\node [left=0mm of print] {b4:};
+}
+
+\visible<3-4> {
+\node [ass]	at (10,2)					(aass)		{ $x \leftarrow 0$ };
+\node [ass,below=-0.1cm of aass]				(aajmp)		{ $jmp\ b2$ };
+\node [ass,below=-0.1cm of aajmp]				(acond)		{ $cmp\ x, 100$ };
+\node [ass,below=-0.1cm of acond]				(acondjmp1)	{ $jl\ b3$ };
+\node [ass,below=-0.1cm of acondjmp1]				(acondjmp2)	{ $jmp\ b4$ };
+\node [ass,below=-0.1cm of acondjmp2]				(loopass)	{ $x \leftarrow x + 1$ };
+\node [ass,below=-0.1cm of loopass]				(loopjmp)	{ $jmp\ b2$ };
+\node [ass,below=-0.1cm of loopjmp]				(endnode)	{ $print\ x$ };
+
+\node [asslabel,align=right,left=0 of aass]					(b1label)	{$b1:$};
+\node [asslabel,align=right,left=0 of acond]				(b2label)	{$b2:$};
+\node [asslabel,align=right,left=0 of loopass]				(b3label)	{$b3:$};
+\node [asslabel,align=right,left=0 of endnode]				(b4label)	{$b4:$};
+}
+
+\visible<4> {
+\draw[<->,line width=0.5mm,kit]    ($(b3label.west)+(6mm,0)$) to[out=165,in=-165] ($(b2label.west)+(6mm,0)$);
+}
+
+\visible<5-> {
+\node [ass]	at (10,2)					(aass)		{ $x \leftarrow 0$ };
+\node [ass,below=-0.1cm of aass]				(aajmp)		{ $jmp\ b2$ };
+\node [ass,below=-0.1cm of aajmp]				(loopass)	{ $x \leftarrow x + 1$ };
+\node [ass,below=-0.1cm of loopass]				(loopjmp)	{ $jmp\ b2$ };
+\visible<6-> {
+	\draw[color=red,line width=0.3mm]			(loopjmp.west) -- ++(1.35cm,0);
+}
+\node [ass,below=-0.1cm of loopjmp]				(acond)		{ $cmp\ x, 100$ };
+\node [ass,below=-0.1cm of acond]				(acondjmp1)	{ $jl\ b3$ };
+\node [ass,below=-0.1cm of acondjmp1]				(acondjmp2)	{ $jmp\ b4$ };
+\visible<6-> {
+	\draw[color=red,line width=0.3mm]			(acondjmp2.west) -- ++(1.35cm,0);
+}
+\node [ass,below=-0.1cm of acondjmp2]				(endnode)	{ $print\ x$ };
+
+\node [asslabel,align=right,left=0 of aass]					(b1label)	{$b1:$};
+\node [asslabel,align=right,left=0 of acond]				(b2label)	{$b2:$};
+\node [asslabel,align=right,left=0 of loopass]				(b3label)	{$b3:$};
+\node [asslabel,align=right,left=0 of endnode]				(b4label)	{$b4:$};
+}
+
+\end{tikzpicture}
+\begin{itemize}
+\visible<4-> {\item Move condition to the end of the loop}
+\visible<6-> {\item Peephole-Optimizations: Eliminate unneccessary jumps}
+\end{itemize}
+\end{frame}
+
+\begin{frame}
+  \frametitle{Implemented Optimizations}
+\begin{itemize}
+\item Common Subexpression Elimination
+\item Constant Folding
+\item Control Flow Optimiziation
+\item Load Store Optimiziation
+\item Local Optimization
+\item Loop Fusion
+\item Loop Invariant Code Motion
+\item Loop Unrolling
+\item Method Inlining
+\item Normalization
+\item Peephole Optimizations
+\item Procedure specialization and removal of side-effect free calls
+\item Strength Reduction
+\end{itemize}
+\end{frame}
+
+\begin{frame}
+  \frametitle{Facts and Numbers}
+\begin{itemize}
+\item Lines of code: 30765
+\item Classes: 201
+\item Active days: 107 (93.86\%)
+\item Commits: 1973
+\begin{itemize}
+	\item average 18.4 commits per active day
+	\item 17.3 per all days
+\end{itemize}
+\item Craziest commit time: 5am
+\item Hours spend: way to much
+\item Longest work streak: 36/48 hours
+\end{itemize}
+\end{frame}
+
+\begin{frame}
+  \frametitle{Conclusion}
+
+
+\begin{itemize}
+	\item Firm makes life easier (and more complicated)
+	\begin{itemize}
+		\item Especially on Windows
+	\end{itemize}
+	\item Testing is important
+	\item GIT is nice, but using it can be tricky for beginners
+	\item Team coordination essential
+\end{itemize}
+
+\visible<2> {
+\begin{figure}
+\includegraphics[width=0.25\textwidth]{images/egg.jpg}
+\caption{ Source: www.real-drive.de }
+\label{fig:harps_example}
+\end{figure}
+}
+\end{frame}
+
+
+
+\begin{frame}{~}
+	\begin{center}
+	\LARGE
+	\vspace{1.9cm}
+	
+	Thank you for your attention!
+	
+	~
+	
+	Questions?
+	\end{center}
+\end{frame}
+
+\end{document}

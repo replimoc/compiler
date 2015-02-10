@@ -11,6 +11,14 @@ public class CmpOperation extends SourceSourceOperation {
 	}
 
 	@Override
+	public String[] toStringWithSpillcode() {
+		if (!source1.isSpilled() && source2.isSpilled()) {
+			return new String[] { toString() };
+		}
+		return super.toStringWithSpillcode();
+	}
+
+	@Override
 	public String getOperationString() {
 		return String.format("\tcmp%s %s, %s", source2.getMode(), source1.toString(), source2.toString());
 	}

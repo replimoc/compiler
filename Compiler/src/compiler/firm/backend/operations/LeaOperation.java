@@ -32,7 +32,7 @@ public class LeaOperation extends AssemblerBitOperation {
 
 	@Override
 	public Set<RegisterBased> getReadRegisters() {
-		return Utils.unionSet(addressStorage.getUsedRegister());
+		return Utils.unionSet(addressStorage.getReadRegisters());
 	}
 
 	@Override

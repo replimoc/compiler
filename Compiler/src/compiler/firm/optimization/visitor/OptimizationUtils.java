@@ -14,6 +14,7 @@ import firm.BackEdges.Edge;
 import firm.BlockWalker;
 import firm.Graph;
 import firm.Mode;
+import firm.bindings.binding_irdom;
 import firm.nodes.Anchor;
 import firm.nodes.Block;
 import firm.nodes.Jmp;
@@ -26,13 +27,19 @@ public class OptimizationUtils {
 	private final HashMap<Block, Set<Block>> dominators = new HashMap<>();
 	private final HashMap<Node, Node> backedges = new HashMap<>();
 	private final HashMap<Node, Node> inductionVariables = new HashMap<>();
-	private final HashMap<Block, Phi> loopPhis = new HashMap<>();
 	private final HashMap<Block, Set<Node>> blockNodes = new HashMap<>();
-	private boolean calculatedPhis = false;
+	private final HashSet<Block> conditionalBlocks = new HashSet<>();
 	private final Graph graph;
 
 	public OptimizationUtils(Graph graph) {
 		this.graph = graph;
+	}
+
+	public HashSet<Block> getIfBlocks() {
+		if (dominators.size() == 0 && backedges.size() == 0 || conditionalBlocks.size() == 0) {
+			calculateDominators();
+		}
+		return conditionalBlocks;
 	}
 
 	public HashMap<Block, Set<Block>> getDominators() {
@@ -54,17 +61,7 @@ public class OptimizationUtils {
 			calculateDominators();
 		}
 		calculateInductionVariables();
-		calculatedPhis = true;
 		return inductionVariables;
-	}
-
-	public HashMap<Block, Phi> getLoopPhis() {
-		if (backedges.size() == 0) {
-			calculateDominators();
-		}
-		if (!calculatedPhis)
-			calculateInductionVariables();
-		return loopPhis;
 	}
 
 	public HashMap<Block, Set<Node>> getBlockNodes() {
@@ -93,7 +90,7 @@ public class OptimizationUtils {
 			if (dominators.containsKey(b) && dominators.get(b).containsAll(loops)) {
 				for (Map.Entry<Node, Node> entry : backedges.entrySet()) {
 					if (entry.getValue().equals(b)) {
-						if (dominators.containsKey((Block) entry.getKey()) && !dominators.get((Block) entry.getKey()).contains(block)
+						if (dominators.containsKey(entry.getKey()) && !dominators.get(entry.getKey()).contains(block)
 								&& !dominatorBlocks.contains(entry.getKey())) {
 							// b and the looṕ header are on the same 'level'
 							sameLevelLoops.add(b);
@@ -134,10 +131,6 @@ public class OptimizationUtils {
 							inductionVariables.put(phi, node);
 						}
 					}
-				} else if (phi.getMode().equals(Mode.getM())) {
-					if (backedges.containsValue(phi.getBlock())) {
-						loopPhis.put((Block) phi.getBlock(), phi);
-					}
 				}
 
 			}
@@ -145,8 +138,10 @@ public class OptimizationUtils {
 		graph.walk(visitor);
 	}
 
-	private void calculateDominators() {
+	public void calculateDominators() {
 		Node start = graph.getStart();
+		binding_irdom.compute_postdoms(graph.ptr);
+		binding_irdom.compute_doms(graph.ptr);
 		final Block startBlock = (Block) start.getBlock();
 
 		BlockWalker walker = new BlockWalker() {
@@ -182,7 +177,7 @@ public class OptimizationUtils {
 						if (((edge.node instanceof Proj && edge.node.getMode().equals(Mode.getX()) || edge.node instanceof Jmp))) {
 							for (Edge backedge : BackEdges.getOuts(edge.node)) {
 								// visit dominated blocks
-								if (dominators.get((Block) backedge.node) != null && dominators.get((Block) backedge.node).contains(block)) {
+								if (dominators.get(backedge.node) != null && dominators.get(backedge.node).contains(block)) {
 									visitBlock((Block) backedge.node);
 								}
 							}
@@ -197,6 +192,17 @@ public class OptimizationUtils {
 							// found back edge to loop header
 							backedges.put(node.getBlock(), block);
 						}
+					}
+					boolean potentialIf = true;
+					for (Node node : block.getPreds()) {
+						if ((potentialIf && binding_irdom.block_postdominates(block.ptr, node.getBlock().ptr) == 1)
+								&& binding_irdom.block_dominates(block.ptr, node.getBlock().ptr) == 0) {
+							// no if
+							potentialIf = false;
+						}
+					}
+					if (potentialIf) {
+						conditionalBlocks.add(block);
 					}
 				}
 			}
@@ -226,4 +232,5 @@ public class OptimizationUtils {
 		};
 		graph.walk(visitor);
 	}
+
 }

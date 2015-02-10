@@ -69,7 +69,6 @@ public class LoadStoreOptimiziationVisitor extends OptimizationVisitor<Node> {
 	}
 
 	private Node getFirstMemoryPredecessor(Node node) {
-		// System.out.println("getFirstMemoryPredecessor " + node);
 		for (int i = 0; i < node.getPredCount(); i++) {
 			if (node.getPred(i).getMode().equals(Mode.getM())) {
 				return node.getPred(i);
@@ -132,7 +131,6 @@ public class LoadStoreOptimiziationVisitor extends OptimizationVisitor<Node> {
 		}
 
 		// third is value
-
 		return true;
 	}
 
@@ -189,18 +187,14 @@ public class LoadStoreOptimiziationVisitor extends OptimizationVisitor<Node> {
 		}
 		// store - load optimization
 		else if (existSavePathToLastMemNode(load, lastStoreNode) && sameMemoryAdress(load, lastStoreNode)) {
-			// System.out.println(getMethodName(load) + ":" + load + " to " + lastStoreNode + " optimiziation");
-
 			for (Edge edge : BackEdges.getOuts(load)) {
 				if (isMemProj(edge.node)) {
 					Node memProjPred = getMemProjPred(load);
-					// System.out.println(edge.node + " > " + memProjPred);
 					edge.node.setPred(edge.pos, memProjPred);
 				} else {
 					addReplacement(edge.node, edge.node.getGraph().newBad(edge.node.getMode()));
 					for (Edge projEdges : BackEdges.getOuts(edge.node)) {
 						projEdges.node.setPred(projEdges.pos, lastStoreNode.getPred(2));
-						// System.out.println(projEdges.node + " > " + lastStoreNode.getPred(2));
 					}
 				}
 			}
@@ -215,12 +209,7 @@ public class LoadStoreOptimiziationVisitor extends OptimizationVisitor<Node> {
 	public void visit(Store store) {
 		// // store - store optimization
 		if (existSavePathToLastMemNode(store, lastStoreNode) && sameMemoryAdress(store, lastStoreNode)) {
-			// System.out.println(getMethodName(store) + ":" + store + " to " + lastStoreNode);
-
 			store.setPred(0, lastStoreNode.getPred(0));
-
-			// we aren't allowed to mark lastStoreNode bad, as some nodes coult be dependent on it
-			// addReplacement(lastStoreNode, lastStoreNode.getGraph().newBad(lastStoreNode.getMode()));
 		}
 
 		lastStoreNode = store;

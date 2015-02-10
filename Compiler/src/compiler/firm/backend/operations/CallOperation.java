@@ -1,6 +1,8 @@
 package compiler.firm.backend.operations;
 
 import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.LinkedList;
@@ -8,8 +10,11 @@ import java.util.List;
 import java.util.Set;
 
 import compiler.firm.backend.Bit;
+import compiler.firm.backend.TransferGraphSolver;
+import compiler.firm.backend.X8664AssemblerGenerationVisitor;
 import compiler.firm.backend.calling.CallingConvention;
 import compiler.firm.backend.operations.templates.AssemblerOperation;
+import compiler.firm.backend.operations.templates.CurrentlyAliveRegistersNeeding;
 import compiler.firm.backend.storage.Constant;
 import compiler.firm.backend.storage.MemoryPointer;
 import compiler.firm.backend.storage.RegisterBased;
@@ -17,24 +22,30 @@ import compiler.firm.backend.storage.RegisterBundle;
 import compiler.firm.backend.storage.SingleRegister;
 import compiler.firm.backend.storage.Storage;
 import compiler.firm.backend.storage.VirtualRegister;
+import compiler.utils.Pair;
 import compiler.utils.Utils;
 
-public class CallOperation extends AssemblerOperation {
-	private static final int STACK_ITEM_SIZE = 8;
+public class CallOperation extends AssemblerOperation implements CurrentlyAliveRegistersNeeding {
 
 	private final String name;
 	private final List<Parameter> parameters;
 	private final CallingConvention callingConvention;
-	private List<RegisterBundle> usedRegisters = new LinkedList<>();
-	private final VirtualRegister result;
+	private final List<RegisterBundle> aliveRegisters = new LinkedList<>();
+	private final VirtualRegister resultRegister;
 
-	public CallOperation(Bit mode, String name, List<Parameter> parameters,
-			CallingConvention callingConvention) {
+	public CallOperation(String comment, Bit mode, String name, List<Parameter> parameters, CallingConvention callingConvention, boolean hasResult) {
+		super(comment);
 		this.name = name;
 		this.parameters = parameters;
 		this.callingConvention = callingConvention;
-		this.usedRegisters.add(RegisterBundle._SP);
-		this.result = new VirtualRegister(mode, callingConvention.getReturnRegister());
+		this.aliveRegisters.add(RegisterBundle._SP);
+
+		if (hasResult) {
+			this.resultRegister = new VirtualRegister(mode);
+			resultRegister.addPreferedRegister(new VirtualRegister(callingConvention.getReturnRegister().getRegister(mode)));
+		} else {
+			this.resultRegister = null;
+		}
 	}
 
 	@Override
@@ -55,17 +66,26 @@ public class CallOperation extends AssemblerOperation {
 
 	@Override
 	public Set<RegisterBased> getWriteRegisters() {
-		return Utils.<RegisterBased> unionSet(result);
+		if (resultRegister != null) {
+			return Utils.<RegisterBased> unionSet(resultRegister);
+		} else {
+			return Collections.emptySet();
+		}
 	}
 
 	public VirtualRegister getResult() {
-		return result;
+		return resultRegister;
 	}
 
 	private List<RegisterBundle> getSaveRegisters() {
 		List<RegisterBundle> saveRegisters = new ArrayList<>();
+
+		if (resultRegister != null && !resultRegister.isSpilled()) {
+			aliveRegisters.remove(resultRegister.getRegisterBundle()); // the result register is only alive because it will be written here
+		}
+
 		for (RegisterBundle register : callingConvention.callerSavedRegisters()) {
-			if (this.usedRegisters.contains(register)) {
+			if (this.aliveRegisters.contains(register)) {
 				saveRegisters.add(register);
 			}
 		}
@@ -83,21 +103,21 @@ public class CallOperation extends AssemblerOperation {
 		int numberOfStackParameters = parameters.size() - callingRegisters.length;
 
 		HashMap<RegisterBundle, MemoryPointer> registerStackLocations = new HashMap<>();
-		int stackPosition = STACK_ITEM_SIZE * (callerSavedRegisters.size() + Math.max(0, numberOfStackParameters) - 1);
-		int maxStackOffset = stackPosition + STACK_ITEM_SIZE;
+		int stackPosition = X8664AssemblerGenerationVisitor.STACK_ITEM_SIZE * (callerSavedRegisters.size() + Math.max(0, numberOfStackParameters) - 1);
+		int maxStackOffset = stackPosition + X8664AssemblerGenerationVisitor.STACK_ITEM_SIZE;
 
 		// Save all callerSavedRegisters to stack
 		for (RegisterBundle saveRegister : callerSavedRegisters) {
 			result.add(new PushOperation(saveRegister.getRegister(Bit.BIT64)).toString());
 			// maxStackOffset will be added by temporaryStackOffset
 			registerStackLocations.put(saveRegister, new MemoryPointer(stackPosition - maxStackOffset, SingleRegister.RSP));
-			stackPosition -= STACK_ITEM_SIZE;
+			stackPosition -= X8664AssemblerGenerationVisitor.STACK_ITEM_SIZE;
 		}
 
-		Constant stackAllocationSize = new Constant(STACK_ITEM_SIZE * numberOfStackParameters);
+		Constant stackAllocationSize = new Constant(X8664AssemblerGenerationVisitor.STACK_ITEM_SIZE * numberOfStackParameters);
 
 		if (numberOfStackParameters > 0) {
-			stackPosition = STACK_ITEM_SIZE * callerSavedRegisters.size();
+			stackPosition = X8664AssemblerGenerationVisitor.STACK_ITEM_SIZE * callerSavedRegisters.size();
 			// Copy parameters to stack
 			for (int i = numberOfStackParameters - 1; i >= 0; i--) {
 				Parameter source = parameters.get(i + callingRegisters.length);
@@ -113,10 +133,11 @@ public class CallOperation extends AssemblerOperation {
 
 				result.add(new PushOperation(sourceStorage).toString());
 				source.storage.setTemporaryStackOffset(0);
-				stackPosition += STACK_ITEM_SIZE;
+				stackPosition += X8664AssemblerGenerationVisitor.STACK_ITEM_SIZE;
 			}
 		}
 
+		List<Pair<Storage, RegisterBased>> parameterMoves = new LinkedList<>();
 		// Copy parameters in calling registers
 		for (int i = 0; i < parameters.size() && i < callingRegisters.length; i++) {
 			Parameter source = parameters.get(i);
@@ -127,11 +148,21 @@ public class CallOperation extends AssemblerOperation {
 				storage = registerStackLocations.get(storage.getRegisterBundle());
 			}
 			storage.setTemporaryStackOffset(maxStackOffset);
-			result.add(new MovOperation(storage, register.getRegister(source.mode)).toString());
-			storage.setTemporaryStackOffset(0);
+
+			parameterMoves.add(new Pair<Storage, RegisterBased>(storage, register.getRegister(source.mode)));
+		}
+		result.addAll(TransferGraphSolver.calculateOperations(parameterMoves));
+		for (Pair<Storage, RegisterBased> currMove : parameterMoves) {
+			currMove.first.setTemporaryStackOffset(0);
 		}
 
 		result.add(toString());
+		if (resultRegister != null) {
+			resultRegister.setTemporaryStackOffset(maxStackOffset);
+			result.addAll(Arrays.asList(new MovOperation(callingConvention.getReturnRegister().getRegister(resultRegister.getMode()), resultRegister)
+					.toString()));
+			resultRegister.setTemporaryStackOffset(0);
+		}
 
 		if (numberOfStackParameters > 0) {
 			result.add(new AddOperation(stackAllocationSize, SingleRegister.RSP, SingleRegister.RSP).toString());
@@ -152,8 +183,14 @@ public class CallOperation extends AssemblerOperation {
 			if (!(storage instanceof SingleRegister)) {
 				continue;
 			}
-			this.usedRegisters.add(((SingleRegister) storage).getRegisterBundle());
+			this.aliveRegisters.add(((SingleRegister) storage).getRegisterBundle());
 		}
+	}
+
+	@Override
+	public void setAliveRegisters(Set<RegisterBundle> registers) {
+		this.aliveRegisters.clear();
+		this.aliveRegisters.addAll(registers);
 	}
 
 	public static class Parameter {

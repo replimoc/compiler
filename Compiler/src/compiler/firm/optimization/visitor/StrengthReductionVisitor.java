@@ -20,7 +20,6 @@ public class StrengthReductionVisitor extends OptimizationVisitor<Node> {
 		}
 	};
 
-	private HashMap<Node, Node> backedges = new HashMap<>();
 	private HashMap<Block, Set<Block>> dominators = new HashMap<>();
 	private HashMap<Node, Node> inductionVariables = new HashMap<>();
 	private OptimizationUtils utils;
@@ -36,7 +35,7 @@ public class StrengthReductionVisitor extends OptimizationVisitor<Node> {
 		Node right = mul.getRight();
 
 		if (inductionVariables.containsKey(left)) {
-			if (dominators.get((Block) mul.getBlock()).contains(right.getBlock()) && !mul.getBlock().equals(right.getBlock())) {
+			if (dominators.get(left.getBlock()).contains(right.getBlock()) && !mul.getBlock().equals(right.getBlock())) {
 				// right block dominates this mul -> right comes before the loop header
 				if (left.getPred(0) != null && isConstant(left.getPred(0))) {
 					for (Edge suc : BackEdges.getOuts(mul)) {
@@ -44,7 +43,8 @@ public class StrengthReductionVisitor extends OptimizationVisitor<Node> {
 						if (left.equals(suc.node))
 							return;
 					}
-					Node pred = utils.getInnerMostLoopHeader((Block) mul.getBlock());
+					// get the loop header where the induction variable is
+					Node pred = left.getBlock();
 					if (pred == null)
 						return;
 					Node preLoopBlock = pred.getPred(0).getBlock();
@@ -67,13 +67,13 @@ public class StrengthReductionVisitor extends OptimizationVisitor<Node> {
 					Node constNode = mul.getGraph().newConst(((Const) constant).getTarval().mul(((Const) right).getTarval()));
 					Node dummy = mul.getGraph().newDummy(mul.getMode());
 					Node loopPhi = mul.getGraph().newPhi(pred, new Node[] { base, dummy }, mul.getMode());
-					Node add = mul.getGraph().newAdd(mul.getBlock(), loopPhi, constNode, mul.getMode());
+					Node add = mul.getGraph().newAdd(inductionVariables.get(left).getBlock(), loopPhi, constNode, mul.getMode());
 					loopPhi.setPred(1, add);
 					addReplacement(mul, loopPhi);
 				}
 			}
 		} else if (inductionVariables.containsKey(right) && !right.equals(mul)) {
-			if (dominators.get((Block) mul.getBlock()).contains(left.getBlock()) && !mul.getBlock().equals(left.getBlock())) {
+			if (dominators.get(right.getBlock()).contains(left.getBlock()) && !mul.getBlock().equals(left.getBlock())) {
 				// left block dominates this mul -> left comes before the loop header
 				if (right.getPred(0) != null && isConstant(right.getPred(0))) {
 					for (Edge suc : BackEdges.getOuts(mul)) {
@@ -81,7 +81,8 @@ public class StrengthReductionVisitor extends OptimizationVisitor<Node> {
 						if (right.equals(suc.node))
 							return;
 					}
-					Node pred = utils.getInnerMostLoopHeader((Block) mul.getBlock());
+					// get the loop header where the induction variable is
+					Node pred = right.getBlock();
 					if (pred == null)
 						return;
 					Node preLoopBlock = pred.getPred(0).getBlock();
@@ -104,7 +105,7 @@ public class StrengthReductionVisitor extends OptimizationVisitor<Node> {
 					Node constNode = mul.getGraph().newConst(((Const) constant).getTarval().mul(((Const) left).getTarval()));
 					Node dummy = mul.getGraph().newDummy(mul.getMode());
 					Node loopPhi = mul.getGraph().newPhi(pred, new Node[] { base, dummy }, mul.getMode());
-					Node add = mul.getGraph().newAdd(mul.getBlock(), loopPhi, constNode, mul.getMode());
+					Node add = mul.getGraph().newAdd(inductionVariables.get(right).getBlock(), loopPhi, constNode, mul.getMode());
 					loopPhi.setPred(1, add);
 					addReplacement(mul, loopPhi);
 				}
@@ -116,7 +117,7 @@ public class StrengthReductionVisitor extends OptimizationVisitor<Node> {
 	public void visit(Start start) {
 		utils = new OptimizationUtils(start.getGraph());
 		dominators = utils.getDominators();
-		backedges = utils.getBackEdges();
+		utils.getBackEdges();
 		inductionVariables = utils.getInductionVariables();
 	}
 }

@@ -4,14 +4,14 @@ import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
 
+import compiler.firm.backend.operations.CmpOperation;
 import compiler.firm.backend.operations.Comment;
 import compiler.firm.backend.operations.LabelOperation;
-import compiler.firm.backend.operations.MovOperation;
+import compiler.firm.backend.operations.TestOperation;
 import compiler.firm.backend.operations.jump.JmpOperation;
 import compiler.firm.backend.operations.templates.AssemblerOperation;
 import compiler.firm.backend.operations.templates.JumpOperation;
-import compiler.firm.backend.storage.MemoryPointer;
-import compiler.firm.backend.storage.SingleRegister;
+import compiler.firm.backend.storage.Constant;
 
 public class PeepholeOptimizer {
 
@@ -78,21 +78,28 @@ public class PeepholeOptimizer {
 					setAlignment(jump);
 					writeOperation(jump);
 				}
-			} else if (currentOperation instanceof MovOperation) {
-				MovOperation move = (MovOperation) currentOperation;
-				SingleRegister sourceRegister = move.getSource().getSingleRegister();
-				SingleRegister destinationRegister = move.getDestination().getSingleRegister();
-				MemoryPointer sourceMemoryPointer = move.getSource().getMemoryPointer();
-				MemoryPointer destinationMemoryPointer = move.getDestination().getMemoryPointer();
-
-				if ((sourceRegister != null && sourceRegister == destinationRegister) ||
-						(sourceMemoryPointer != null && sourceMemoryPointer == destinationMemoryPointer)) {
-					writeOperation(new Comment(currentOperation)); // discard move between the same register
+			} else if (currentOperation instanceof CmpOperation &&
+					((CmpOperation) currentOperation).getSource1() instanceof Constant) {
+				CmpOperation cmp = (CmpOperation) currentOperation;
+				Constant constant = (Constant) cmp.getSource1();
+				if (constant.getConstant() == 0) {
+					writeOperation(new TestOperation(cmp.toString(), cmp.getSource2(), cmp.getSource2()));
+				} else if (constant.getConstant() == 0xff && cmp.getSource2().getMode().equals(Bit.BIT8)) {
+					nextOperation();
+					if (currentOperation instanceof JumpOperation) {
+						// FIXME: This is only valid if Bit.BIT8 is used for booleans
+						writeOperation(new TestOperation(cmp.toString(), cmp.getSource2(), cmp.getSource2()));
+						JumpOperation jump = (JumpOperation) currentOperation;
+						currentOperation = jump.invert(jump.getLabel());
+						continue;
+					} else {
+						writeOperation(cmp);
+						continue; // Next operation already executed
+					}
 				} else {
 					writeOperation();
 				}
 				nextOperation();
-
 			} else { // default case
 				writeOperation();
 				nextOperation();

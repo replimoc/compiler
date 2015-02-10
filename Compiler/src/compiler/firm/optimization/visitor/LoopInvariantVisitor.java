@@ -2,6 +2,7 @@ package compiler.firm.optimization.visitor;
 
 import java.util.Arrays;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 
@@ -10,6 +11,7 @@ import compiler.firm.optimization.evaluation.ProgramDetails;
 import firm.BackEdges;
 import firm.BackEdges.Edge;
 import firm.Entity;
+import firm.Graph;
 import firm.Mode;
 import firm.nodes.Add;
 import firm.nodes.Address;
@@ -44,6 +46,7 @@ public class LoopInvariantVisitor extends OptimizationVisitor<Node> {
 	private HashMap<Node, Node> backedges = new HashMap<>();
 	private HashMap<Block, Set<Block>> dominators = new HashMap<>();
 	private HashMap<Block, Phi> loopPhis = new HashMap<>();
+	private HashSet<Block> ifBlocks = new HashSet<>();
 	private OptimizationUtils utils;
 
 	public LoopInvariantVisitor(ProgramDetails programDetails) {
@@ -209,18 +212,33 @@ public class LoopInvariantVisitor extends OptimizationVisitor<Node> {
 				Node mem = getMemoryBeforeLoop(callNode);
 				if (mem == null)
 					return null;
-				return callNode.getGraph().newCall(newBlock, mem, address, parameters, callNode.getType());
+				Set<Node> memsAfterCall = new HashSet<>();
+				for (Edge edge : BackEdges.getOuts(mem)) {
+					memsAfterCall.add(edge.node);
+				}
+				Graph graph = callNode.getGraph();
+				Node call = graph.newCall(newBlock, mem, address, parameters, callNode.getType());
+				Node projM = graph.newProj(call, Mode.getM(), 0);
+
+				for (Node memAfterCall : memsAfterCall) {
+					for (int i = 0; i < memAfterCall.getPredCount(); i++) {
+						memAfterCall.setPred(i, projM);
+					}
+				}
+				return call;
+
 			}
 		}, callNode, operandBlocks);
 	}
 
 	private Node getMemoryBeforeLoop(Call callNode) {
-		if (backedges.containsKey(callNode.getBlock())) {
-			Block loopBlock = (Block) backedges.get(callNode.getBlock());
-			if (loopPhis.containsKey(loopBlock)) {
-				Phi loopPhi = loopPhis.get(loopBlock);
-				return loopPhi.getPred(0);
-			}
+		Node pred = utils.getInnerMostLoopHeader((Block) callNode.getBlock());
+		if (pred == null)
+			return null;
+		Block loopBlock = (Block) backedges.get(callNode.getBlock());
+		if (loopPhis.containsKey(loopBlock)) {
+			Phi loopPhi = loopPhis.get(loopBlock);
+			return loopPhi.getPred(0);
 		}
 		return null;
 	}
@@ -234,11 +252,17 @@ public class LoopInvariantVisitor extends OptimizationVisitor<Node> {
 				Node pred = utils.getInnerMostLoopHeader((Block) node.getBlock());
 				if (pred == null)
 					return;
+				// do not move nodes inside if's
+				if (ifBlocks.contains(node.getBlock()))
+					return;
+
 				Block preLoopBlock = (Block) pred.getPred(0).getBlock();
 				// do not move nodes over dominator borders
 				Set<Block> domBorder = dominators.get(preLoopBlock);
 				if (domBorder.containsAll(operandBlocksList)) {
 					Node copy = factory.copyNode(preLoopBlock);
+					if (copy == null)
+						return;
 					addReplacement(node, copy);
 					if (node instanceof Call) {
 						for (Edge backEdge : BackEdges.getOuts(node)) {
@@ -277,7 +301,7 @@ public class LoopInvariantVisitor extends OptimizationVisitor<Node> {
 		utils = new OptimizationUtils(start.getGraph());
 		dominators = utils.getDominators();
 		backedges = utils.getBackEdges();
-		loopPhis = utils.getLoopPhis();
+		ifBlocks = utils.getIfBlocks();
 	}
 
 	private static interface NodeFactory {
