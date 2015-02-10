@@ -13,7 +13,6 @@ import firm.nodes.Address;
 import firm.nodes.Call;
 import firm.nodes.Load;
 import firm.nodes.Node;
-import firm.nodes.Phi;
 import firm.nodes.Proj;
 import firm.nodes.Store;
 
@@ -75,6 +74,8 @@ public class LoadStoreOptimiziationVisitor extends OptimizationVisitor<Node> {
 				return node.getPred(i);
 			} else if (node.getPred(i) instanceof Load || node.getPred(i) instanceof Store) {
 				return node.getPred(i);
+			} else if (node.getPred(i) instanceof Call) {
+				return node.getPred(i);
 			}
 		}
 		return null;
@@ -98,9 +99,7 @@ public class LoadStoreOptimiziationVisitor extends OptimizationVisitor<Node> {
 		while (currentNode != null && currentNode.equals(memoryNode) == false) {
 			if (currentNode.getBlock().equals(memoryNode.getBlock()) == false) { // nodes are not in the same block
 				return false;
-			} else if (currentNode instanceof Phi) { // phi -> no opt possible
-				return false;
-			} else if (currentNode instanceof Call && isSideEffectFree((Call) currentNode) == false) { // allow only call that are side effect free
+			} else if (currentNode instanceof Call && isSideEffectFree((Call) currentNode) == false) { // allow only calls that are side effect free
 				return false;
 			} else if (currentNode instanceof Store) { // if store then no opt possible
 				return false;
@@ -132,30 +131,6 @@ public class LoadStoreOptimiziationVisitor extends OptimizationVisitor<Node> {
 		}
 
 		// third is value
-		return true;
-	}
-
-	private boolean isAdressInSameBlock(Node node1, Node node2) {
-		// check if the two memory nodes are dependent on equal nodes
-
-		// if unequal number of nodes, then quit
-		if (node1.getPredCount() < 2 || node2.getPredCount() < 2) {
-			return false;
-		}
-
-		// first node is memory
-
-		// second successor is memory adress
-		if (node1.getPred(1).equals(node2.getPred(1)) == false) {
-			return false;
-		}
-
-		if (node1.getPred(1).getBlock().equals(node1.getBlock()) == false || node2.getPred(1).getBlock().equals(node2.getBlock()) == false) {
-			return false;
-		}
-
-		// third is value
-
 		return true;
 	}
 
@@ -194,7 +169,9 @@ public class LoadStoreOptimiziationVisitor extends OptimizationVisitor<Node> {
 	@Override
 	public void visit(Load load) {
 		// load - load optimization
-		if (existSavePathToLastMemNode(load, lastLoadNode) && sameMemoryAdress(load, lastLoadNode) && isAdressInSameBlock(load, lastLoadNode)) {
+		if (existSavePathToLastMemNode(load, lastLoadNode) && sameMemoryAdress(load, lastLoadNode)) {
+			// System.out.println(getMethodName(load) + ":" + load + " to " + lastLodeNode + " optimiziation");
+
 			for (Edge edge : BackEdges.getOuts(load)) {
 				if (isMemProj(edge.node)) {
 					Node memProjPred = getMemProjPred(load);
@@ -209,7 +186,7 @@ public class LoadStoreOptimiziationVisitor extends OptimizationVisitor<Node> {
 			addReplacement(load, load.getGraph().newBad(load.getMode()));
 		}
 		// store - load optimization
-		else if (existSavePathToLastMemNode(load, lastStoreNode) && sameMemoryAdress(load, lastStoreNode) && isAdressInSameBlock(load, lastStoreNode)) {
+		else if (existSavePathToLastMemNode(load, lastStoreNode) && sameMemoryAdress(load, lastStoreNode)) {
 			for (Edge edge : BackEdges.getOuts(load)) {
 				if (isMemProj(edge.node)) {
 					Node memProjPred = getMemProjPred(load);
