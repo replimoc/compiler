@@ -122,8 +122,8 @@ public class ConstantFoldingVisitor extends OptimizationVisitor<TargetValue> {
 		} else {
 			for (Edge suc : BackEdges.getOuts(node)) {
 				setTargetValue(suc.node, TargetValue.getUnknown());
+			}
 		}
-	}
 	}
 
 	private void modTransferFunction(Node node, TargetValue leftTarget, TargetValue rightTarget, TargetValue newTargetValue) {
@@ -146,8 +146,8 @@ public class ConstantFoldingVisitor extends OptimizationVisitor<TargetValue> {
 		} else {
 			for (Edge suc : BackEdges.getOuts(node)) {
 				setTargetValue(suc.node, TargetValue.getUnknown());
+			}
 		}
-	}
 	}
 
 	private void mulTransferFunction(Node node, TargetValue leftTarget, TargetValue rightTarget, TargetValue newTargetValue) {
@@ -190,7 +190,13 @@ public class ConstantFoldingVisitor extends OptimizationVisitor<TargetValue> {
 	@Override
 	public void visit(Conv conversion) {
 		TargetValue target = getTargetValue(conversion.getOp());
-		TargetValue newTargetValue = target.convertTo(conversion.getMode());
+		TargetValue newTargetValue;
+
+		if (target.isNegative()) { // Do not touch negative conversions
+			newTargetValue = TargetValue.getUnknown();
+		} else {
+			newTargetValue = target.convertTo(conversion.getMode());
+		}
 
 		unaryTransferFunction(conversion, target, newTargetValue);
 	}
@@ -357,7 +363,7 @@ public class ConstantFoldingVisitor extends OptimizationVisitor<TargetValue> {
 					break;
 				}
 			}
-				}
-			}
+		}
+	}
 
 }
