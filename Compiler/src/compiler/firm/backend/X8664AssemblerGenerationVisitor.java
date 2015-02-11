@@ -35,11 +35,13 @@ import compiler.firm.backend.operations.dummy.MethodEndOperation;
 import compiler.firm.backend.operations.dummy.MethodStartOperation;
 import compiler.firm.backend.operations.dummy.PhiReadOperation;
 import compiler.firm.backend.operations.dummy.PhiWriteOperation;
+import compiler.firm.backend.operations.jump.JeOperation;
 import compiler.firm.backend.operations.jump.JgOperation;
 import compiler.firm.backend.operations.jump.JgeOperation;
 import compiler.firm.backend.operations.jump.JlOperation;
 import compiler.firm.backend.operations.jump.JleOperation;
 import compiler.firm.backend.operations.jump.JmpOperation;
+import compiler.firm.backend.operations.jump.JneOperation;
 import compiler.firm.backend.operations.jump.JzOperation;
 import compiler.firm.backend.operations.templates.AssemblerOperation;
 import compiler.firm.backend.operations.templates.SourceSourceDesinationOperationFactory;
@@ -178,7 +180,7 @@ public class X8664AssemblerGenerationVisitor implements BulkPhiNodeVisitor {
 		if (blockLabels.containsKey(node)) {
 			blockLabel = blockLabels.get(node);
 		} else {
-			blockLabel = new LabelOperation("BLOCK_" + node.getNr());
+			blockLabel = new LabelOperation(".L" + node.getNr());
 			blockLabels.put(node, blockLabel);
 		}
 		return blockLabel;
@@ -553,8 +555,20 @@ public class X8664AssemblerGenerationVisitor implements BulkPhiNodeVisitor {
 		storageManagement.storeValue(node, newRegister);
 	}
 
-	private void visitDivMod(Node left, Node right, VirtualRegister result, VirtualRegister remainder) {
-		addOperation(new DivOperation(storageManagement.getStorage(left), storageManagement.getStorage(right), result, remainder));
+	private void visitDivMod(Node node, Node left, Node right, VirtualRegister result, VirtualRegister remainder) {
+		LabelOperation label1 = new LabelOperation(".L" + node.getNr() + "_1");
+		LabelOperation label2 = new LabelOperation(".L" + node.getNr() + "_2");
+		RegisterBased leftStorage = storageManagement.getValue(left);
+		addOperation(new CmpOperation(node.toString(), new Constant(-2147483648), leftStorage));
+		addOperation(new JneOperation(label1));
+
+		RegisterBased rightStorage = storageManagement.getValue(right);
+		addOperation(new CmpOperation(node.toString(), new Constant(-1), rightStorage));
+		addOperation(new JeOperation(label2));
+
+		addOperation(label1);
+		addOperation(new DivOperation(leftStorage, rightStorage, result, remainder));
+		addOperation(label2);
 	}
 
 	@Override
@@ -573,7 +587,7 @@ public class X8664AssemblerGenerationVisitor implements BulkPhiNodeVisitor {
 			}
 		} else {
 			result = new VirtualRegister(StorageManagement.getMode(div));
-			visitDivMod(div.getLeft(), right, result, null);
+			visitDivMod(div, div.getLeft(), right, result, null);
 		}
 		storageManagement.storeToBackEdges(div, result);
 	}
@@ -595,7 +609,7 @@ public class X8664AssemblerGenerationVisitor implements BulkPhiNodeVisitor {
 			}
 		} else {
 			result = new VirtualRegister(StorageManagement.getMode(mod));
-			visitDivMod(mod.getLeft(), right, null, result);
+			visitDivMod(mod, mod.getLeft(), right, null, result);
 		}
 
 		storageManagement.storeToBackEdges(mod, result);
