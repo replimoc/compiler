@@ -192,7 +192,7 @@ public class ConstantFoldingVisitor extends OptimizationVisitor<TargetValue> {
 		TargetValue target = getTargetValue(conversion.getOp());
 		TargetValue newTargetValue;
 
-		if (target.isNegative()) { // Do not touch negative conversions
+		if (target.isLong() && target.isNegative()) { // Do not touch negative conversions
 			newTargetValue = TargetValue.getUnknown();
 		} else {
 			newTargetValue = target.convertTo(conversion.getMode());
