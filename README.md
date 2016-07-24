@@ -22,8 +22,7 @@ Execute the following command (relative to the directory of this README):
 ## License and Copy
 
 It is **not** allowed to use this repository in relation with upcoming Compilerpraktikum. You should **not** read
-the source code if you are currently a Compilerpraktikum member. You are not allowed to copy the source code
-without permissions from one of the replimoc team.
+the source code if you are currently a Compilerpraktikum member. You are not allowed to copy the source code or even parts of it without written permissions from one of the replimoc team.
 
 ## Submodule mj-test
 
